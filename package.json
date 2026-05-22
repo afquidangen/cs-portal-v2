@@ -47,7 +47,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/afquidangen/cs-portal-v2/issues"
   },
