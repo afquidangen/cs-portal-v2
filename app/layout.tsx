@@ -31,11 +31,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground">
         
         {/* Navigation Shell */}
-        <nav className="border-b px-6 py-4 bg-card">
-          <h1 className="text-xl font-bold tracking-tight">
-            CS Portal
-          </h1>
-        </nav>
+
 
         {/* Content Viewport Wrapper */}
         <main className="flex-1 p-6">
