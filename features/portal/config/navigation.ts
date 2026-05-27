@@ -1,0 +1,74 @@
+import {
+  Bell,
+  BookMarked,
+  BookOpen,
+  CalendarDays,
+  CheckCircle2,
+  ClipboardCheck,
+  Database,
+  FileArchive,
+  FileDown,
+  FileSpreadsheet,
+  GraduationCap,
+  Inbox,
+  LayoutDashboard,
+  Link as LinkIcon,
+  Megaphone,
+  MessageSquareWarning,
+  Network,
+  Presentation,
+  Settings,
+  Upload,
+  UserCheck,
+  Users,
+} from "lucide-react"
+
+import type { Role } from "../data/portal-data"
+import type { ModuleId, NavItem } from "../types/navigation"
+
+export const roleNavigation: Record<Role, NavItem[]> = {
+  student: [
+    { id: "overview", label: "Overview", icon: LayoutDashboard },
+    { id: "grades", label: "Grades & Report", icon: FileSpreadsheet },
+    { id: "thesis", label: "Thesis Library", icon: BookOpen },
+    { id: "announcements", label: "Announcements", icon: Bell },
+    { id: "feedback", label: "Feedback Tickets", icon: MessageSquareWarning },
+    { id: "seminars", label: "Seminars", icon: Presentation },
+    { id: "availability", label: "Teacher Status", icon: CheckCircle2 },
+    { id: "instructors", label: "Instructor Info", icon: Network },
+    { id: "cso", label: "CSSO Records", icon: FileArchive },
+    { id: "curriculum", label: "Curriculum", icon: GraduationCap },
+    { id: "quick-links", label: "Quick Links", icon: LinkIcon },
+  ],
+  faculty: [
+    { id: "overview", label: "Overview", icon: LayoutDashboard },
+    { id: "classes", label: "Manage Class", icon: ClipboardCheck },
+    { id: "schedule", label: "Class Schedule", icon: CalendarDays },
+    { id: "grades", label: "Manage Grades", icon: FileSpreadsheet },
+    { id: "seminars", label: "My Events", icon: Presentation },
+    { id: "feedback", label: "Assigned Inbox", icon: Inbox },
+    { id: "availability", label: "My Availability", icon: UserCheck },
+    { id: "instructors", label: "Instructor Info", icon: Network },
+    { id: "templates", label: "Templates", icon: FileDown },
+  ],
+  admin: [
+    { id: "overview", label: "Overview", icon: LayoutDashboard },
+    { id: "users", label: "User Management", icon: Users },
+    { id: "academic", label: "Academic Setup", icon: Settings },
+    { id: "templates", label: "Templates & Uploads", icon: Upload },
+    { id: "classes", label: "Classes", icon: GraduationCap },
+    { id: "thesis", label: "Thesis Management", icon: BookMarked },
+    { id: "announcements", label: "Announcements", icon: Megaphone },
+    { id: "feedback", label: "Feedback Inbox", icon: MessageSquareWarning },
+    { id: "seminars", label: "Seminars", icon: Presentation },
+    { id: "availability", label: "Teacher Status", icon: CheckCircle2 },
+    { id: "cso", label: "CSSO Reports", icon: FileArchive },
+    { id: "audit", label: "Audit Logs", icon: Database },
+  ],
+}
+
+export const initialModule: Record<Role, ModuleId> = {
+  student: "overview",
+  faculty: "overview",
+  admin: "overview",
+}
