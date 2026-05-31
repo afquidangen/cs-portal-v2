@@ -8,7 +8,7 @@ export function SchedulePanel() {
     <Panel title="Weekly Schedule" eyebrow="Classes">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[620px] text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs uppercase text-slate-500">
+          <thead className="border-b border-glacier text-xs uppercase text-slate-blue dark:border-lapis">
             <tr>
               <th className="py-2 pr-4">Day</th>
               <th className="py-2 pr-4">Time</th>
@@ -17,18 +17,18 @@ export function SchedulePanel() {
               <th className="py-2">Room</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-glacier dark:divide-lapis">
             {scheduleSeed.map((item) => (
               <tr key={item.id}>
-                <td className="py-3 pr-4 font-medium text-slate-900">
+                <td className="py-3 pr-4 font-medium text-abyss dark:text-quartz">
                   {item.day}
                 </td>
-                <td className="py-3 pr-4 text-slate-600">{item.time}</td>
-                <td className="py-3 pr-4 text-slate-600">{item.subject}</td>
-                <td className="py-3 pr-4 text-slate-600">
+                <td className="py-3 pr-4 text-slate-blue dark:text-glacier">{item.time}</td>
+                <td className="py-3 pr-4 text-slate-blue dark:text-glacier">{item.subject}</td>
+                <td className="py-3 pr-4 text-slate-blue dark:text-glacier">
                   {item.instructor}
                 </td>
-                <td className="py-3 text-slate-600">{item.room}</td>
+                <td className="py-3 text-slate-blue dark:text-glacier">{item.room}</td>
               </tr>
             ))}
           </tbody>

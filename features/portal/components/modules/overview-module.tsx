@@ -1,33 +1,75 @@
 "use client"
 
+import { useCallback, useEffect, useState } from "react"
 import {
-  BarChart3,
   BookMarked,
   BookOpen,
-  CheckCircle2,
+  CalendarDays,
   ClipboardList,
+  Clock,
   GraduationCap,
-  Inbox,
   MessageSquareWarning,
-  Presentation,
   Users,
 } from "lucide-react"
 
-import { auditLogsSeed, roleProfiles } from "../../data/portal-data"
-import { calculateFinalGrade, gradeRemarks } from "../../lib/grades"
+import { roleProfiles } from "../../data/portal-data"
 import { Metric, Panel, StatusBadge } from "../shared/dashboard-ui"
 import { AnnouncementsPanel } from "./announcements-panel"
-import { FacultyAvailabilityPanel } from "./availability-module"
-import { FacultyGradesPanel } from "./grades-module"
-import { SchedulePanel } from "./schedule-panel"
 import type { PortalModuleProps } from "./types"
+
+function GreetingSection({ name, role }: { name: string; role: string }) {
+  const [greeting, setGreeting] = useState(() => {
+    const hour = new Date().getHours()
+    if (hour < 12) return "Good Morning"
+    else if (hour < 18) return "Good Afternoon"
+    else return "Good Evening"
+  })
+  const [now, setNow] = useState(new Date())
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  const dateStr = now.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  })
+  const timeStr = now.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+
+  return (
+    <div className="rounded-xl border border-glacier bg-white p-6 dark:border-lapis dark:bg-abyss/50">
+      <h2 className="text-2xl font-bold text-abyss dark:text-quartz">
+        {greeting}, {name}!
+      </h2>
+      <p className="mt-1 text-slate-blue dark:text-glacier">
+        Welcome to the ComSite Student Portal.
+      </p>
+      <div className="mt-3 flex items-center gap-4 text-sm text-slate-blue dark:text-glacier">
+        <div className="flex items-center gap-1.5">
+          <CalendarDays className="size-4" />
+          <span>{dateStr}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Clock className="size-4" />
+          <span className="tabular-nums">{timeStr}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function OverviewModule({ model }: PortalModuleProps) {
   const {
     gradeAverage,
     role,
     roster,
-    seminars,
     studentGrades,
     studentTickets,
     theses,
@@ -35,9 +77,12 @@ export function OverviewModule({ model }: PortalModuleProps) {
     userStats,
   } = model
 
+  const profile = roleProfiles[role]
+
   if (role === "admin") {
     return (
       <div className="space-y-5">
+        <GreetingSection name={profile.name} role={role} />
         <div className="grid gap-4 md:grid-cols-4">
           <Metric
             label="Students"
@@ -64,54 +109,16 @@ export function OverviewModule({ model }: PortalModuleProps) {
             tone="rose"
           />
         </div>
-
-        <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-          <Panel title="Priority System Modules" eyebrow="PDF roadmap">
-            <div className="grid gap-3 md:grid-cols-2">
-              {[
-                "Real-time grade notification updates",
-                "Online library for existing thesis",
-                "Announcements and CS updates",
-                "Instructor information and organizational chart",
-              ].map((item) => (
-                <div
-                  key={item}
-                  className="flex items-center gap-3 rounded-lg border border-slate-200 p-3"
-                >
-                  <CheckCircle2 className="size-5 text-emerald-600" />
-                  <span className="text-sm font-medium text-slate-800">
-                    {item}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Panel>
-          <Panel title="Recent Audit Logs" eyebrow="Traceability">
-            <div className="space-y-3">
-              {auditLogsSeed.map((log) => (
-                <div key={log.id} className="rounded-lg bg-slate-50 p-3">
-                  <p className="text-sm font-medium text-slate-900">
-                    {log.action}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {log.actor} - {log.time}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </Panel>
-        </div>
+        <AnnouncementsPanel model={model} />
       </div>
     )
   }
 
   if (role === "faculty") {
-    const assignedTickets = tickets.filter(
-      (ticket) => ticket.assignedTo === roleProfiles.faculty.name
-    )
     return (
       <div className="space-y-5">
-        <div className="grid gap-4 md:grid-cols-4">
+        <GreetingSection name={profile.name} role={role} />
+        <div className="grid gap-4 md:grid-cols-2">
           <Metric
             label="Handled Classes"
             value="4"
@@ -124,41 +131,20 @@ export function OverviewModule({ model }: PortalModuleProps) {
             icon={Users}
             tone="emerald"
           />
-          <Metric
-            label="Pending Tickets"
-            value={String(assignedTickets.length)}
-            icon={Inbox}
-            tone="amber"
-          />
-          <Metric
-            label="Hosted Events"
-            value={
-              String(
-                seminars.filter(
-                  (event) => event.host === roleProfiles.faculty.name
-                ).length
-              )
-            }
-            icon={Presentation}
-            tone="rose"
-          />
         </div>
-        <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-          <FacultyAvailabilityPanel model={model} />
-          <SchedulePanel />
-        </div>
-        <FacultyGradesPanel model={model} />
+        <AnnouncementsPanel model={model} />
       </div>
     )
   }
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-4 md:grid-cols-4">
+      <GreetingSection name={profile.name} role={role} />
+      <div className="grid gap-4 md:grid-cols-3">
         <Metric
           label="Current GWA"
           value={gradeAverage}
-          icon={BarChart3}
+          icon={BookOpen}
           tone="emerald"
         />
         <Metric
@@ -173,35 +159,6 @@ export function OverviewModule({ model }: PortalModuleProps) {
           icon={MessageSquareWarning}
           tone="amber"
         />
-        <Metric
-          label="Upcoming Events"
-          value={String(seminars.filter((event) => event.status === "Active").length)}
-          icon={Presentation}
-          tone="rose"
-        />
-      </div>
-      <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-        <SchedulePanel />
-        <Panel title="Grade Notifications" eyebrow="Real-time updates">
-          <div className="space-y-3">
-            {studentGrades.slice(0, 3).map((grade) => (
-              <div
-                key={grade.id}
-                className="rounded-lg border border-slate-200 p-3"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-slate-900">
-                    {grade.code} final grade posted
-                  </p>
-                  <StatusBadge value={gradeRemarks(calculateFinalGrade(grade))} />
-                </div>
-                <p className="mt-1 text-sm text-slate-500">
-                  {grade.subject} - {grade.updatedAt}
-                </p>
-              </div>
-            ))}
-          </div>
-        </Panel>
       </div>
       <AnnouncementsPanel model={model} />
     </div>

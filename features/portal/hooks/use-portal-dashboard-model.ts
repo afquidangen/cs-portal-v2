@@ -7,8 +7,9 @@ import { initialModule, roleNavigation } from "../config/navigation"
 import {
   type Announcement,
   type AvailabilityStatus,
+  type GradeRecord,
   type Role,
-  type SeminarRecord,
+  type StudentStatus,
   type ThesisRecord,
   type TicketStatus,
   type UserRecord,
@@ -18,9 +19,9 @@ import {
   feedbackSeed,
   gradeSeed,
   roleProfiles,
-  seminarSeed,
   thesisSeed,
   usersSeed,
+  sectionSeed,
 } from "../data/portal-data"
 import { csvEscape, downloadFile } from "../lib/downloads"
 import { calculateFinalGrade } from "../lib/grades"
@@ -41,10 +42,6 @@ export function usePortalDashboardModel(role: Role) {
   const [faculty, setFaculty] = useStoredState("comsite-faculty", facultySeed)
   const [grades, setGrades] = useStoredState("comsite-grades", gradeSeed)
   const [theses, setTheses] = useStoredState("comsite-theses", thesisSeed)
-  const [seminars, setSeminars] = useStoredState(
-    "comsite-seminars",
-    seminarSeed
-  )
   const [tickets, setTickets] = useStoredState(
     "comsite-feedback",
     feedbackSeed
@@ -57,28 +54,45 @@ export function usePortalDashboardModel(role: Role) {
     "comsite-class-roster",
     classRosterSeed
   )
+  const [sections, setSections] = useStoredState<Record<string, string[]>>(
+    "comsite-sections",
+    sectionSeed
+  )
+  const [myFacultyStatus, setMyFacultyStatus] =
+    useState<AvailabilityStatus>("Available")
+  const [myFacultyNotes, setMyFacultyNotes] = useState(
+    "Available for consultation."
+  )
+  const [showAddUser, setShowAddUser] = useState(false)
+  const [editingUser, setEditingUser] = useState<UserRecord | null>(null)
 
   const [roleFilter, setRoleFilter] = useState("All")
   const [thesisYearFilter, setThesisYearFilter] = useState("All")
   const [thesisCategoryFilter, setThesisCategoryFilter] = useState("All")
   const [uploadName, setUploadName] = useState("No file selected")
   const [newUser, setNewUser] = useState({
-    name: "",
+    firstName: "",
+    middleName: "",
+    lastName: "",
     email: "",
     role: "student" as Role,
+    year: "1",
+    section: "A",
+    studentStatus: "Regular" as StudentStatus,
+    curriculumId: "1",
+    major: "",
+    facultyType: "Regular",
+    title: "",
+    advisoryClass: "",
+    contactNumber: "",
+    sex: "Male",
+    birthday: "",
+    address: "",
   })
   const [feedbackDraft, setFeedbackDraft] = useState({
     category: "Academic",
     subject: "",
     description: "",
-    anonymous: false,
-  })
-  const [eventDraft, setEventDraft] = useState({
-    title: "",
-    speaker: "",
-    date: "",
-    location: "",
-    capacity: "30",
   })
   const [thesisDraft, setThesisDraft] = useState({
     title: "",
@@ -91,14 +105,14 @@ export function usePortalDashboardModel(role: Role) {
   const [announcementDraft, setAnnouncementDraft] = useState({
     title: "",
     content: "",
-    audience: "All Users",
+    audience: "All Users" as Announcement["audience"],
     priority: "Medium" as Announcement["priority"],
+    imageUrl: "",
   })
-  const [myFacultyStatus, setMyFacultyStatus] =
-    useState<AvailabilityStatus>("Available")
-  const [myFacultyNotes, setMyFacultyNotes] = useState(
-    "Available for consultation."
-  )
+  const [selectedYear, setSelectedYear] = useState<string | null>(null)
+  const [showUploadThesis, setShowUploadThesis] = useState(false)
+  const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null)
 
   const profile = roleProfiles[role]
   const navigation = roleNavigation[role]
@@ -107,7 +121,6 @@ export function usePortalDashboardModel(role: Role) {
     () => ({
       students: users.filter((user) => user.role === "student").length,
       faculty: users.filter((user) => user.role === "faculty").length,
-      admins: users.filter((user) => user.role === "admin").length,
     }),
     [users]
   )
@@ -152,7 +165,7 @@ export function usePortalDashboardModel(role: Role) {
   const filteredFaculty = useMemo(() => {
     const search = query.toLowerCase()
     return faculty.filter((member) =>
-      [member.name, member.position, member.role, member.status, member.notes]
+      [member.firstName, member.lastName, member.position, member.role, member.status, member.notes]
         .join(" ")
         .toLowerCase()
         .includes(search)
@@ -162,7 +175,8 @@ export function usePortalDashboardModel(role: Role) {
   const filteredUsers = useMemo(() => {
     const search = query.toLowerCase()
     return users.filter((user) => {
-      const matchesSearch = [user.name, user.email, user.id, user.role]
+      const fullName = `${user.firstName} ${user.middleName} ${user.lastName}`
+      const matchesSearch = [fullName, user.email, user.id, user.role]
         .join(" ")
         .toLowerCase()
         .includes(search)
@@ -177,6 +191,14 @@ export function usePortalDashboardModel(role: Role) {
       ticket.studentName === roleProfiles.student.name
   )
 
+  const yearSections = useMemo(() => {
+    const yearKeys = Object.keys(sections)
+    if (selectedYear) {
+      return { [selectedYear]: sections[selectedYear] || [] }
+    }
+    return Object.fromEntries(yearKeys.map((y) => [y, sections[y]]))
+  }, [sections, selectedYear])
+
   const selectedNav = navigation.find((item) => item.id === activeModule)
   const currentTitle = selectedNav?.label ?? "Dashboard"
 
@@ -184,6 +206,10 @@ export function usePortalDashboardModel(role: Role) {
     setActiveModule(moduleId)
     setQuery("")
     setSidebarOpen(false)
+    setShowAddUser(false)
+    setShowUploadThesis(false)
+    setShowCreateAnnouncement(false)
+    setSelectedYear(null)
   }
 
   function handleLogout() {
@@ -219,60 +245,41 @@ export function usePortalDashboardModel(role: Role) {
     )
   }
 
-  function downloadUserTemplate(roleName: Role) {
-    const rows = [
-      ["Name", "Email", "Role", "Course", "Year", "Section"],
-      ["Sample User", `${roleName}@school.edu`, roleName, "BSCS", "3", "A"],
-    ]
+  function downloadThesisPdf(thesis: ThesisRecord) {
     downloadFile(
-      `${roleName}-template.csv`,
-      rows.map((row) => row.map(csvEscape).join(",")).join("\n")
-    )
-  }
-
-  function downloadAttendees(event: SeminarRecord) {
-    const rows = [
-      ["Event", "Student ID"],
-      ...event.enlistedStudentIds.map((studentId) => [event.title, studentId]),
-    ]
-    downloadFile(
-      `${event.id}-attendees.csv`,
-      rows.map((row) => row.map(csvEscape).join(",")).join("\n")
-    )
-  }
-
-  function downloadThesisDetails(thesis: ThesisRecord) {
-    downloadFile(
-      `${thesis.id}-details.txt`,
-      [
-        thesis.title,
-        `Authors: ${thesis.authors}`,
-        `Year: ${thesis.year}`,
-        `Category: ${thesis.category}`,
-        `Adviser: ${thesis.adviser}`,
-        "",
-        thesis.abstract,
-      ].join("\n"),
-      "text/plain"
+      `${thesis.id}-${thesis.title.replace(/\s+/g, "-")}.pdf`,
+      `Title: ${thesis.title}\nAuthors: ${thesis.authors}\nYear: ${thesis.year}\nCategory: ${thesis.category}\nAdviser: ${thesis.adviser}\n\n${thesis.abstract}`,
+      "application/pdf"
     )
   }
 
   function updateGrade(
     id: string,
-    field: "midterm" | "finalTerm",
+    field: "midterm" | "finalTerm" | "remarks",
     value: string
   ) {
-    const numericValue = Number(value)
     setGrades((current) =>
       current.map((grade) =>
         grade.id === id
           ? {
               ...grade,
-              [field]: Number.isNaN(numericValue) ? 0 : numericValue,
+              ...(field === "remarks"
+                ? { remarks: value }
+                : { [field]: Number.isNaN(Number(value)) ? 0 : Number(value) }),
               updatedAt: "May 26, 2026",
             }
           : grade
       )
+    )
+  }
+
+  function releaseGrades() {
+    setGrades((current) =>
+      current.map((grade) => ({
+        ...grade,
+        remarks: grade.remarks || "Passed",
+        updatedAt: "May 26, 2026",
+      }))
     )
   }
 
@@ -288,10 +295,25 @@ export function usePortalDashboardModel(role: Role) {
               ...ticket,
               status,
               resolution: resolution ?? ticket.resolution,
+              resolvedAt:
+                status === "Resolved"
+                  ? new Date().toLocaleDateString("en-US", {
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })
+                  : status === "Pending" && ticket.resolvedAt
+                    ? undefined
+                    : ticket.resolvedAt,
             }
           : ticket
       )
     )
+  }
+
+  function handleFacultySelfStatus(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    updateFacultyStatus("FAC-014", myFacultyStatus, myFacultyNotes)
   }
 
   function updateFacultyStatus(
@@ -314,22 +336,81 @@ export function usePortalDashboardModel(role: Role) {
 
   function handleAddUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!newUser.name.trim() || !newUser.email.trim()) return
+    if (!newUser.firstName.trim() || !newUser.lastName.trim() || !newUser.email.trim()) return
+    const id = newUser.role === "student"
+      ? `USR-${String(users.length + 1).padStart(3, "0")}`
+      : `FAC-${String(users.length + 1).padStart(3, "0")}`
     setUsers((current) => [
       {
-        id: `USR-${String(current.length + 1).padStart(3, "0")}`,
-        name: newUser.name.trim(),
+        id,
+        firstName: newUser.firstName.trim(),
+        middleName: newUser.middleName.trim(),
+        lastName: newUser.lastName.trim(),
         email: newUser.email.trim(),
         role: newUser.role,
-        course: newUser.role === "student" ? "BSCS" : undefined,
-        year: newUser.role === "student" ? 1 : undefined,
-        section: newUser.role === "student" ? "A" : undefined,
-        position: newUser.role === "faculty" ? "Instructor" : undefined,
+        year: newUser.role === "student" ? Number(newUser.year) : undefined,
+        section: newUser.role === "student" ? newUser.section : undefined,
+        studentStatus: newUser.role === "student" ? newUser.studentStatus : undefined,
+        curriculumId: newUser.role === "student" ? newUser.curriculumId : undefined,
+        major: newUser.role === "student" ? newUser.major : undefined,
+        facultyType: newUser.role === "faculty" ? (newUser.facultyType as "Part Time" | "Regular") : undefined,
+        title: newUser.role === "faculty" ? newUser.title : undefined,
+        advisoryClass: newUser.role === "faculty" ? newUser.advisoryClass : undefined,
+        contactNumber: newUser.contactNumber,
+        sex: newUser.sex,
+        birthday: newUser.birthday,
+        address: newUser.address,
         status: "Active",
       },
       ...current,
     ])
-    setNewUser({ name: "", email: "", role: "student" })
+    setNewUser({
+      firstName: "", middleName: "", lastName: "", email: "", role: "student",
+      year: "1", section: "A", studentStatus: "Regular", curriculumId: "1",
+      major: "", facultyType: "Regular", title: "", advisoryClass: "",
+      contactNumber: "", sex: "Male", birthday: "", address: "",
+    })
+    setShowAddUser(false)
+    setEditingUser(null)
+  }
+
+  function handleUpdateUser(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!editingUser || !newUser.firstName.trim() || !newUser.lastName.trim() || !newUser.email.trim()) return
+    setUsers((current) =>
+      current.map((user) =>
+        user.id === editingUser.id
+          ? {
+              ...user,
+              firstName: newUser.firstName.trim(),
+              middleName: newUser.middleName.trim(),
+              lastName: newUser.lastName.trim(),
+              email: newUser.email.trim(),
+              role: newUser.role,
+              year: newUser.role === "student" ? Number(newUser.year) : undefined,
+              section: newUser.role === "student" ? newUser.section : undefined,
+              studentStatus: newUser.role === "student" ? newUser.studentStatus : undefined,
+              curriculumId: newUser.role === "student" ? newUser.curriculumId : undefined,
+              major: newUser.role === "student" ? newUser.major : undefined,
+              facultyType: newUser.role === "faculty" ? (newUser.facultyType as "Part Time" | "Regular") : undefined,
+              title: newUser.role === "faculty" ? newUser.title : undefined,
+              advisoryClass: newUser.role === "faculty" ? newUser.advisoryClass : undefined,
+              contactNumber: newUser.contactNumber,
+              sex: newUser.sex,
+              birthday: newUser.birthday,
+              address: newUser.address,
+            }
+          : user
+      )
+    )
+    setNewUser({
+      firstName: "", middleName: "", lastName: "", email: "", role: "student",
+      year: "1", section: "A", studentStatus: "Regular", curriculumId: "1",
+      major: "", facultyType: "Regular", title: "", advisoryClass: "",
+      contactNumber: "", sex: "Male", birthday: "", address: "",
+    })
+    setShowAddUser(false)
+    setEditingUser(null)
   }
 
   function handleFeedbackSubmit(event: FormEvent<HTMLFormElement>) {
@@ -341,17 +422,14 @@ export function usePortalDashboardModel(role: Role) {
     setTickets((current) => [
       {
         id,
-        studentId: feedbackDraft.anonymous ? undefined : roleProfiles.student.id,
-        studentName: feedbackDraft.anonymous
-          ? "Anonymous"
-          : roleProfiles.student.name,
+        studentId: roleProfiles.student.id,
+        studentName: roleProfiles.student.name,
         category: feedbackDraft.category,
         subject: feedbackDraft.subject.trim(),
         description: feedbackDraft.description.trim(),
         status: "Pending",
         submittedAt: "May 26, 2026",
         assignedTo: "Admin",
-        anonymous: feedbackDraft.anonymous,
       },
       ...current,
     ])
@@ -359,34 +437,6 @@ export function usePortalDashboardModel(role: Role) {
       category: "Academic",
       subject: "",
       description: "",
-      anonymous: false,
-    })
-  }
-
-  function handleCreateEvent(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!eventDraft.title.trim() || !eventDraft.date.trim()) return
-    setSeminars((current) => [
-      {
-        id: `SEM-${String(current.length + 1).padStart(3, "0")}`,
-        title: eventDraft.title.trim(),
-        speaker: eventDraft.speaker.trim() || "To be announced",
-        date: eventDraft.date.trim(),
-        location: eventDraft.location.trim() || "CS Department",
-        description: "New seminar created from the admin event manager.",
-        capacity: Number(eventDraft.capacity) || 30,
-        enlistedStudentIds: [],
-        host: roleProfiles.faculty.name,
-        status: "Active",
-      },
-      ...current,
-    ])
-    setEventDraft({
-      title: "",
-      speaker: "",
-      date: "",
-      location: "",
-      capacity: "30",
     })
   }
 
@@ -404,10 +454,7 @@ export function usePortalDashboardModel(role: Role) {
         abstract:
           thesisDraft.abstract.trim() ||
           "Abstract will be supplied after manuscript review.",
-        tags: thesisDraft.category
-          .split(" ")
-          .filter(Boolean)
-          .slice(0, 3),
+        tags: thesisDraft.category.split(" ").filter(Boolean).slice(0, 3),
       },
       ...current,
     ])
@@ -419,6 +466,7 @@ export function usePortalDashboardModel(role: Role) {
       adviser: "",
       abstract: "",
     })
+    setShowUploadThesis(false)
   }
 
   function handleCreateAnnouncement(event: FormEvent<HTMLFormElement>) {
@@ -426,51 +474,75 @@ export function usePortalDashboardModel(role: Role) {
     if (!announcementDraft.title.trim() || !announcementDraft.content.trim()) {
       return
     }
-    setAnnouncements((current) => [
-      {
-        id: `ANN-${String(current.length + 1).padStart(3, "0")}`,
-        title: announcementDraft.title.trim(),
-        content: announcementDraft.content.trim(),
-        date: "May 26, 2026",
-        audience: announcementDraft.audience,
-        priority: announcementDraft.priority,
-      },
-      ...current,
-    ])
+    if (editingAnnouncement) {
+      setAnnouncements((current) =>
+        current.map((a) =>
+          a.id === editingAnnouncement.id
+            ? {
+                ...a,
+                title: announcementDraft.title.trim(),
+                content: announcementDraft.content.trim(),
+                audience: announcementDraft.audience,
+                priority: announcementDraft.priority,
+                imageUrl: announcementDraft.imageUrl || undefined,
+              }
+            : a
+        )
+      )
+    } else {
+      setAnnouncements((current) => [
+        {
+          id: `ANN-${String(current.length + 1).padStart(3, "0")}`,
+          title: announcementDraft.title.trim(),
+          content: announcementDraft.content.trim(),
+          date: "May 26, 2026",
+          audience: announcementDraft.audience,
+          priority: announcementDraft.priority,
+          imageUrl: announcementDraft.imageUrl || undefined,
+        },
+        ...current,
+      ])
+    }
     setAnnouncementDraft({
       title: "",
       content: "",
       audience: "All Users",
       priority: "Medium",
+      imageUrl: "",
     })
+    setEditingAnnouncement(null)
+    setShowCreateAnnouncement(false)
   }
 
-  function handleEnlist(eventId: string) {
-    const studentId = roleProfiles.student.id
-    setSeminars((current) =>
-      current.map((event) => {
-        if (event.id !== eventId) return event
-        const alreadyEnlisted = event.enlistedStudentIds.includes(studentId)
-        if (alreadyEnlisted) {
-          return {
-            ...event,
-            enlistedStudentIds: event.enlistedStudentIds.filter(
-              (id) => id !== studentId
-            ),
-          }
-        }
-        if (event.enlistedStudentIds.length >= event.capacity) return event
-        return {
-          ...event,
-          enlistedStudentIds: [...event.enlistedStudentIds, studentId],
-        }
-      })
+  function handleUserStatusToggle(userId: string) {
+    setUsers((current) =>
+      current.map((user) =>
+        user.id === userId
+          ? { ...user, status: user.status === "Active" ? "Inactive" : "Active" }
+          : user
+      )
     )
   }
 
-  function handleFacultySelfStatus(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    updateFacultyStatus("FAC-014", myFacultyStatus, myFacultyNotes)
+  function deleteUser(userId: string) {
+    setUsers((current) => current.filter((user) => user.id !== userId))
+  }
+
+  function deleteThesis(thesisId: string) {
+    setTheses((current) => current.filter((t) => t.id !== thesisId))
+  }
+
+  function deleteAnnouncement(announcementId: string) {
+    setAnnouncements((current) =>
+      current.filter((a) => a.id !== announcementId)
+    )
+  }
+
+  function addSection(year: string, sectionName: string) {
+    setSections((current) => ({
+      ...current,
+      [year]: [...(current[year] || []), sectionName],
+    }))
   }
 
   return {
@@ -489,14 +561,24 @@ export function usePortalDashboardModel(role: Role) {
     setGrades,
     theses,
     setTheses,
-    seminars,
-    setSeminars,
     tickets,
     setTickets,
     announcements,
     setAnnouncements,
     roster,
     setRoster,
+    sections,
+    setSections,
+    showAddUser,
+    setShowAddUser,
+    editingUser,
+    setEditingUser,
+    showUploadThesis,
+    setShowUploadThesis,
+    showCreateAnnouncement,
+    setShowCreateAnnouncement,
+    editingAnnouncement,
+    setEditingAnnouncement,
     roleFilter,
     setRoleFilter,
     thesisYearFilter,
@@ -509,16 +591,17 @@ export function usePortalDashboardModel(role: Role) {
     setNewUser,
     feedbackDraft,
     setFeedbackDraft,
-    eventDraft,
-    setEventDraft,
     thesisDraft,
     setThesisDraft,
     announcementDraft,
     setAnnouncementDraft,
+    selectedYear,
+    setSelectedYear,
     myFacultyStatus,
     setMyFacultyStatus,
     myFacultyNotes,
     setMyFacultyNotes,
+    handleFacultySelfStatus,
     profile,
     navigation,
     userStats,
@@ -530,23 +613,26 @@ export function usePortalDashboardModel(role: Role) {
     studentTickets,
     selectedNav,
     currentTitle,
+    yearSections,
     selectModule,
     handleLogout,
     downloadGradeReport,
     downloadGradeTemplate,
-    downloadUserTemplate,
-    downloadAttendees,
-    downloadThesisDetails,
+    downloadThesisPdf,
     updateGrade,
+    releaseGrades,
     updateTicketStatus,
     updateFacultyStatus,
     handleAddUser,
+    handleUpdateUser,
     handleFeedbackSubmit,
-    handleCreateEvent,
     handleCreateThesis,
     handleCreateAnnouncement,
-    handleEnlist,
-    handleFacultySelfStatus,
+    handleUserStatusToggle,
+    deleteUser,
+    deleteThesis,
+    deleteAnnouncement,
+    addSection,
   }
 }
 

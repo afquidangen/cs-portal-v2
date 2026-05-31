@@ -1,6 +1,7 @@
 "use client"
 
-import { Download, Plus } from "lucide-react"
+import { useState } from "react"
+import { Download, Plus, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,13 +18,12 @@ import type { PortalModuleProps } from "./types"
 
 export function ThesisLibraryModule({ model }: PortalModuleProps) {
   const {
-    downloadThesisDetails,
+    downloadThesisPdf,
     filteredTheses,
     handleCreateThesis,
     query,
     role,
     setQuery,
-    setTheses,
     setThesisCategoryFilter,
     setThesisDraft,
     setThesisYearFilter,
@@ -31,7 +31,13 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
     thesisCategoryFilter,
     thesisDraft,
     thesisYearFilter,
+    showUploadThesis,
+    setShowUploadThesis,
+    deleteThesis,
   } = model
+
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+
   const categories = [
     "All",
     ...Array.from(new Set(theses.map((thesis) => thesis.category))),
@@ -43,8 +49,17 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-5">
-      {role === "admin" ? (
-        <Panel title="Upload Thesis Record" eyebrow="Repository management">
+      {role === "admin" || role === "faculty" ? (
+        <div className="flex justify-end">
+          <Button onClick={() => setShowUploadThesis(!showUploadThesis)}>
+            <Plus className="size-4" />
+            {showUploadThesis ? "Cancel" : "Upload Thesis"}
+          </Button>
+        </div>
+      ) : null}
+
+      {showUploadThesis ? (
+        <Panel title="Upload Thesis Manuscript" eyebrow="PDF format only">
           <form onSubmit={handleCreateThesis} className="grid gap-3 lg:grid-cols-2">
             <Input
               value={thesisDraft.title}
@@ -56,6 +71,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
               }
               placeholder="Thesis title"
               className="h-9 rounded-lg"
+              required
             />
             <Input
               value={thesisDraft.authors}
@@ -67,6 +83,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
               }
               placeholder="Authors"
               className="h-9 rounded-lg"
+              required
             />
             <Input
               value={thesisDraft.category}
@@ -109,7 +126,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
               />
               <Button type="submit" size="sm">
                 <Plus className="size-4" />
-                Save
+                Upload
               </Button>
             </div>
             <div className="lg:col-span-2">
@@ -129,7 +146,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
       ) : null}
 
       <Panel
-        title={role === "admin" ? "Thesis Records" : "Online Thesis Library"}
+        title="Thesis Manuscripts"
         eyebrow="Search and filter"
         actions={
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -157,49 +174,71 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
           {filteredTheses.map((thesis) => (
             <article
               key={thesis.id}
-              className="rounded-lg border border-slate-200 p-4"
+              className="rounded-lg border border-glacier bg-white p-4 dark:border-lapis dark:bg-abyss/50"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h4 className="font-semibold text-slate-950">
+                  <h4 className="font-semibold text-abyss dark:text-quartz">
                     {thesis.title}
                   </h4>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-slate-blue dark:text-glacier">
                     {thesis.authors} - {thesis.year}
                   </p>
                 </div>
                 <StatusBadge value={thesis.category} />
               </div>
-              <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">
+              <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-blue dark:text-glacier">
                 {thesis.abstract}
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 {thesis.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600"
+                    className="rounded-md bg-glacier/50 px-2 py-1 text-xs font-medium text-abyss dark:bg-lapis/50 dark:text-quartz"
                   >
                     {tag}
                   </span>
                 ))}
               </div>
               <div className="mt-4 flex gap-2">
-                <Button size="sm" onClick={() => downloadThesisDetails(thesis)}>
+                <Button size="sm" onClick={() => downloadThesisPdf(thesis)}>
                   <Download className="size-4" />
-                  Download Details
+                  Download PDF
                 </Button>
-                {role === "admin" ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      setTheses((current) =>
-                        current.filter((item) => item.id !== thesis.id)
-                      )
-                    }
-                  >
-                    Delete
-                  </Button>
+                {role === "admin" || role === "faculty" ? (
+                  <div className="flex gap-2">
+                    {confirmDelete === thesis.id ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            deleteThesis(thesis.id)
+                            setConfirmDelete(null)
+                          }}
+                        >
+                          Confirm
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setConfirmDelete(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-rose-200 text-rose-700 hover:bg-rose-50"
+                        onClick={() => setConfirmDelete(thesis.id)}
+                      >
+                        <Trash2 className="size-4" />
+                        Delete
+                      </Button>
+                    )}
+                  </div>
                 ) : null}
               </div>
             </article>

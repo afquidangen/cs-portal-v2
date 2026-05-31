@@ -1,6 +1,6 @@
 "use client"
 
-import { Check } from "lucide-react"
+import { Check, Undo2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,7 +35,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
   if (role === "student") {
     return (
       <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
-        <Panel title="Submission Console" eyebrow="Feedback and complaints">
+        <Panel title="Submission Console" eyebrow="Feedback and concerns">
           <form onSubmit={handleFeedbackSubmit} className="space-y-3">
             <Select
               value={feedbackDraft.category}
@@ -69,20 +69,6 @@ export function FeedbackModule({ model }: PortalModuleProps) {
               }
               placeholder="Describe the concern or suggestion"
             />
-            <label className="flex items-center gap-2 text-sm text-slate-600">
-              <input
-                type="checkbox"
-                checked={feedbackDraft.anonymous}
-                onChange={(event) =>
-                  setFeedbackDraft((current) => ({
-                    ...current,
-                    anonymous: event.target.checked,
-                  }))
-                }
-                className="size-4 rounded border-slate-300"
-              />
-              Submit anonymously
-            </label>
             <Button type="submit" className="w-full">
               <SendIcon />
               Submit Ticket
@@ -113,25 +99,30 @@ export function FeedbackModule({ model }: PortalModuleProps) {
         {visibleTickets.map((ticket) => (
           <div
             key={ticket.id}
-            className="rounded-lg border border-slate-200 p-4"
+            className="rounded-lg border border-glacier bg-white p-4 dark:border-lapis dark:bg-abyss/50"
           >
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-              <div>
+              <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h4 className="font-semibold text-slate-950">
+                  <h4 className="font-semibold text-abyss dark:text-quartz">
                     {ticket.subject}
                   </h4>
                   <StatusBadge value={ticket.status} />
                 </div>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-slate-blue dark:text-glacier">
                   {ticket.id} - {ticket.studentName} - {ticket.submittedAt}
                 </p>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
+                <p className="mt-3 text-sm leading-6 text-slate-blue dark:text-glacier">
                   {ticket.description}
                 </p>
                 {ticket.resolution ? (
-                  <p className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">
+                  <p className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">
                     {ticket.resolution}
+                    {ticket.resolvedAt ? (
+                      <span className="ml-2 text-xs opacity-70">
+                        Resolved: {ticket.resolvedAt}
+                      </span>
+                    ) : null}
                   </p>
                 ) : null}
               </div>
@@ -143,20 +134,35 @@ export function FeedbackModule({ model }: PortalModuleProps) {
                   }
                   options={ticketStatusOptions}
                 />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    updateTicketStatus(
-                      ticket.id,
-                      "Resolved",
-                      "Reviewed and marked as resolved by the portal user."
-                    )
-                  }
-                >
-                  <Check className="size-4" />
-                  Resolve
-                </Button>
+                <div className="flex gap-2">
+                  {ticket.status === "Resolved" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        updateTicketStatus(ticket.id, "In Progress")
+                      }
+                    >
+                      <Undo2 className="size-4" />
+                      Undo
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        updateTicketStatus(
+                          ticket.id,
+                          "Resolved",
+                          "Reviewed and marked as resolved."
+                        )
+                      }
+                    >
+                      <Check className="size-4" />
+                      Resolve
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

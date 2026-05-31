@@ -1,18 +1,16 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import {
-  Clock3,
   GraduationCap,
-  LogOut,
   Menu,
-  Plus,
-  ShieldCheck,
-  UserCircle,
+  PanelLeftClose,
+  PanelLeftOpen,
   X,
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useDashboardProfile } from "@/components/providers/theme-provider"
 
 import type { Role } from "../data/portal-data"
 import { usePortalDashboardModel } from "../hooks/use-portal-dashboard-model"
@@ -27,15 +25,18 @@ import { FeedbackModule } from "./modules/feedback-module"
 import { GradesModule } from "./modules/grades-module"
 import { InstructorsModule } from "./modules/instructors-module"
 import { OverviewModule } from "./modules/overview-module"
-import { QuickLinksModule } from "./modules/quick-links-module"
 import { SchedulePanel } from "./modules/schedule-panel"
-import { SeminarsModule } from "./modules/seminars-module"
-import { TemplatesModule } from "./modules/templates-module"
 import { ThesisLibraryModule } from "./modules/thesis-library-module"
 import { UsersModule } from "./modules/users-module"
 
 export function RoleDashboard({ role }: { role: Role }) {
   const model = usePortalDashboardModel(role)
+  const { setProfile } = useDashboardProfile()
+  const [collapsed, setCollapsed] = useState(false)
+
+  useEffect(() => {
+    setProfile(model.profile.name, role)
+  }, [model.profile.name, role, setProfile])
 
   function renderModule() {
     if (model.activeModule === "overview") return <OverviewModule model={model} />
@@ -45,7 +46,6 @@ export function RoleDashboard({ role }: { role: Role }) {
       return <AnnouncementManagerModule model={model} />
     }
     if (model.activeModule === "feedback") return <FeedbackModule model={model} />
-    if (model.activeModule === "seminars") return <SeminarsModule model={model} />
     if (model.activeModule === "availability") {
       return <AvailabilityModule model={model} />
     }
@@ -55,31 +55,27 @@ export function RoleDashboard({ role }: { role: Role }) {
     if (model.activeModule === "cso") return <CsoModule />
     if (model.activeModule === "schedule") return <SchedulePanel />
     if (model.activeModule === "curriculum") return <CurriculumModule />
-    if (model.activeModule === "quick-links") return <QuickLinksModule />
     if (model.activeModule === "users") return <UsersModule model={model} />
     if (model.activeModule === "academic") return <AcademicModule />
-    if (model.activeModule === "templates") return <TemplatesModule model={model} />
     if (model.activeModule === "classes") return <ClassesModule model={model} />
     if (model.activeModule === "audit") return <AuditModule />
     return <OverviewModule model={model} />
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f8fb] text-slate-950">
+    <main className="min-h-screen bg-quartz text-abyss dark:bg-abyss dark:text-quartz">
       <div className="flex min-h-screen">
-        <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 md:hidden">
+        <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b border-glacier bg-white px-4 py-3 dark:border-lapis dark:bg-abyss md:hidden">
           <div className="flex items-center gap-2">
-            {role === "admin" ? (
-              <ShieldCheck className="size-6 text-sky-700" />
-            ) : (
-              <GraduationCap className="size-6 text-sky-700" />
-            )}
-            <span className="font-semibold capitalize">{role} Portal</span>
+            <div className="flex size-8 items-center justify-center rounded-lg bg-abyss text-quartz dark:bg-quartz dark:text-abyss">
+              <GraduationCap className="size-4" />
+            </div>
+            <span className="font-semibold capitalize text-abyss dark:text-quartz">{role} Portal</span>
           </div>
           <button
             type="button"
             onClick={() => model.setSidebarOpen((open) => !open)}
-            className="rounded-lg p-2 hover:bg-slate-100"
+            className="rounded-lg p-2 text-slate-blue hover:bg-glacier/50 dark:text-glacier dark:hover:bg-lapis/50"
             aria-label="Toggle navigation"
           >
             {model.sidebarOpen ? (
@@ -93,7 +89,7 @@ export function RoleDashboard({ role }: { role: Role }) {
         {model.sidebarOpen ? (
           <button
             type="button"
-            className="fixed inset-0 z-30 bg-slate-950/40 md:hidden"
+            className="fixed inset-0 z-30 bg-abyss/40 dark:bg-abyss/80 md:hidden"
             onClick={() => model.setSidebarOpen(false)}
             aria-label="Close navigation"
           />
@@ -101,37 +97,23 @@ export function RoleDashboard({ role }: { role: Role }) {
 
         <aside
           className={cn(
-            "fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-slate-200 bg-white transition-transform md:static md:translate-x-0",
-            model.sidebarOpen ? "translate-x-0" : "-translate-x-full"
+            "fixed inset-y-0 left-0 z-40 flex flex-col border-r border-glacier bg-white transition-all md:static dark:border-lapis dark:bg-abyss",
+            collapsed ? "w-16" : "w-72",
+            model.sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
           )}
         >
-          <div className="border-b border-slate-200 p-5">
-            <div className="flex items-center gap-3">
-              <div className="flex size-11 items-center justify-center rounded-lg bg-sky-700 text-white">
-                {role === "admin" ? (
-                  <ShieldCheck className="size-5" />
-                ) : (
-                  <GraduationCap className="size-5" />
-                )}
-              </div>
-              <div>
-                <h1 className="font-semibold text-slate-950">ComSite</h1>
-                <p className="text-sm capitalize text-slate-500">
-                  {role} workspace
-                </p>
-              </div>
-            </div>
-            <div className="mt-5 rounded-lg bg-slate-50 p-3">
-              <p className="text-sm font-semibold text-slate-950">
-                {model.profile.name}
-              </p>
-              <p className="mt-1 text-xs leading-5 text-slate-500">
-                {model.profile.title}
-              </p>
-            </div>
+          <div className="flex items-center justify-end border-b border-glacier p-3 dark:border-lapis">
+            <button
+              type="button"
+              onClick={() => setCollapsed(!collapsed)}
+              className="hidden rounded-lg p-1.5 text-slate-blue transition hover:bg-glacier/50 md:block dark:text-glacier dark:hover:bg-lapis/50"
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+            </button>
           </div>
 
-          <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+          <nav className="flex-1 space-y-1 overflow-y-auto p-2">
             {model.navigation.map((item) => {
               const Icon = item.icon
               const active = item.id === model.activeModule
@@ -142,62 +124,31 @@ export function RoleDashboard({ role }: { role: Role }) {
                   onClick={() => model.selectModule(item.id)}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition",
+                    collapsed ? "justify-center" : "",
                     active
-                      ? "bg-sky-700 text-white"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
+                      ? "bg-abyss text-quartz dark:bg-quartz dark:text-abyss"
+                      : "text-slate-blue hover:bg-glacier/50 hover:text-abyss dark:text-glacier dark:hover:bg-lapis/50 dark:hover:text-quartz"
                   )}
+                  title={collapsed ? item.label : undefined}
                 >
-                  <Icon className="size-4" />
-                  <span>{item.label}</span>
+                  <Icon className="size-4 shrink-0" />
+                  {!collapsed ? <span>{item.label}</span> : null}
                 </button>
               )
             })}
           </nav>
 
-          <div className="border-t border-slate-200 p-3">
-            <button
-              type="button"
-              onClick={model.handleLogout}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-rose-700 transition hover:bg-rose-50"
-            >
-              <LogOut className="size-4" />
-              Logout
-            </button>
-          </div>
+          <div className="border-t border-glacier p-2 dark:border-lapis" />
         </aside>
 
         <section className="min-w-0 flex-1 px-4 pb-8 pt-20 md:p-8">
-          <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-sm font-medium uppercase tracking-wide text-slate-500">
-                {role === "admin"
-                  ? "Academic operations"
-                  : role === "faculty"
-                    ? "Instructor management"
-                    : "Student services"}
-              </p>
-              <h2 className="mt-1 text-2xl font-semibold text-slate-950 md:text-3xl">
+          {model.activeModule !== "overview" ? (
+            <header className="mb-6">
+              <h2 className="text-2xl font-semibold text-abyss dark:text-quartz md:text-3xl">
                 {model.currentTitle}
               </h2>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                onClick={() => model.selectModule(role === "student" ? "feedback" : "audit")}
-              >
-                <Clock3 className="size-4" />
-                Activity
-              </Button>
-              <Button onClick={() => model.selectModule(role === "admin" ? "users" : "availability")}>
-                {role === "admin" ? (
-                  <Plus className="size-4" />
-                ) : (
-                  <UserCircle className="size-4" />
-                )}
-                {role === "admin" ? "Add Account" : "Update Status"}
-              </Button>
-            </div>
-          </header>
+            </header>
+          ) : null}
 
           {renderModule()}
         </section>

@@ -8,21 +8,40 @@ export type AvailabilityStatus =
 
 export type TicketStatus = "Pending" | "In Progress" | "Resolved"
 
+export type StudentStatus = "Regular" | "Irregular" | "Overstayed" | "Transferee" | "Shifter"
+
+export type FacultyType = "Part Time" | "Regular"
+
+export type AnnouncementAudience = "All Users" | "Students" | "Faculty"
+
 export type UserRecord = {
   id: string
-  name: string
+  firstName: string
+  middleName: string
+  lastName: string
   email: string
   role: Role
-  course?: string
   year?: number
   section?: string
-  position?: string
+  studentStatus?: StudentStatus
+  curriculumId?: string
+  major?: string
+  advisoryClass?: string
+  facultyType?: FacultyType
+  title?: string
+  contactNumber?: string
+  sex?: string
+  birthday?: string
+  address?: string
+  profilePicture?: string
   status: "Active" | "Inactive"
 }
 
 export type FacultyRecord = {
   id: string
-  name: string
+  firstName: string
+  middleName: string
+  lastName: string
   position: string
   role: string
   email: string
@@ -30,6 +49,14 @@ export type FacultyRecord = {
   status: AvailabilityStatus
   notes: string
   schedule: string[]
+  facultyType?: FacultyType
+  title?: string
+  advisoryClass?: string
+  contactNumber?: string
+  sex?: string
+  birthday?: string
+  address?: string
+  profilePicture?: string
 }
 
 export type GradeRecord = {
@@ -39,8 +66,14 @@ export type GradeRecord = {
   subject: string
   code: string
   units: number
+  lecUnits: number
+  labUnits: number
   midterm: number
   finalTerm: number
+  finalRating: number
+  transmutedGrade: number
+  equivalent: string
+  remarks: string
   updatedAt: string
 }
 
@@ -53,19 +86,7 @@ export type ThesisRecord = {
   adviser: string
   abstract: string
   tags: string[]
-}
-
-export type SeminarRecord = {
-  id: string
-  title: string
-  speaker: string
-  date: string
-  location: string
-  description: string
-  capacity: number
-  enlistedStudentIds: string[]
-  host: string
-  status: "Active" | "Closed"
+  fileUrl?: string
 }
 
 export type FeedbackTicket = {
@@ -79,7 +100,7 @@ export type FeedbackTicket = {
   submittedAt: string
   assignedTo: string
   resolution?: string
-  anonymous: boolean
+  resolvedAt?: string
 }
 
 export type Announcement = {
@@ -87,8 +108,9 @@ export type Announcement = {
   title: string
   content: string
   date: string
-  audience: string
+  audience: AnnouncementAudience
   priority: "High" | "Medium" | "Low"
+  imageUrl?: string
 }
 
 export type ScheduleItem = {
@@ -101,10 +123,25 @@ export type ScheduleItem = {
   section: string
 }
 
+export type CurriculumSubject = {
+  code: string
+  name: string
+  lecUnits: number
+  labUnits: number
+  totalUnits: number
+}
+
 export type CurriculumTerm = {
   year: string
   term: string
-  subjects: string[]
+  subjects: CurriculumSubject[]
+}
+
+export type Curriculum = {
+  id: string
+  name: string
+  major?: string
+  terms: CurriculumTerm[]
 }
 
 export type ClassStudent = {
@@ -121,6 +158,7 @@ export type CsoReport = {
   date: string
   summary: string
   total?: string
+  fileUrl?: string
 }
 
 export const availabilityOptions: AvailabilityStatus[] = [
@@ -134,6 +172,14 @@ export const ticketStatusOptions: TicketStatus[] = [
   "Pending",
   "In Progress",
   "Resolved",
+]
+
+export const studentStatusOptions: StudentStatus[] = [
+  "Regular",
+  "Irregular",
+  "Overstayed",
+  "Transferee",
+  "Shifter",
 ]
 
 export const roleProfiles = {
@@ -160,46 +206,81 @@ export const roleProfiles = {
 export const usersSeed: UserRecord[] = [
   {
     id: "2024-001245",
-    name: "Juan Dela Cruz",
-    email: "juan@student.edu",
+    firstName: "Juan",
+    middleName: "Dela",
+    lastName: "Cruz",
+    email: "juan@gmail.com",
     role: "student",
-    course: "BSCS",
     year: 3,
     section: "A",
+    studentStatus: "Regular",
+    curriculumId: "1",
+    contactNumber: "09123456789",
+    sex: "Male",
+    birthday: "2000-01-15",
+    address: "Candon City, Ilocos Sur",
     status: "Active",
   },
   {
     id: "2024-001284",
-    name: "Kyla Mendoza",
-    email: "kyla@student.edu",
+    firstName: "Kyla",
+    middleName: "M.",
+    lastName: "Mendoza",
+    email: "kyla@gmail.com",
     role: "student",
-    course: "BSCS",
     year: 3,
     section: "A",
+    studentStatus: "Regular",
+    curriculumId: "1",
+    contactNumber: "09123456780",
+    sex: "Female",
+    birthday: "2001-03-22",
+    address: "Santa Cruz, Ilocos Sur",
     status: "Active",
   },
   {
     id: "FAC-014",
-    name: "Maria Santos",
-    email: "maria@faculty.edu",
+    firstName: "Maria",
+    middleName: "C.",
+    lastName: "Santos",
+    email: "maria@ispsc.edu.ph",
     role: "faculty",
-    position: "Assistant Professor",
+    facultyType: "Regular",
+    title: "MIT",
+    advisoryClass: "BSCS 3A",
+    contactNumber: "09123456781",
+    sex: "Female",
+    birthday: "1985-06-10",
+    address: "Candon City, Ilocos Sur",
     status: "Active",
   },
   {
     id: "FAC-018",
-    name: "Christian Galinato",
-    email: "christian@faculty.edu",
+    firstName: "Christian",
+    middleName: "G.",
+    lastName: "Galinato",
+    email: "christian@ispsc.edu.ph",
     role: "faculty",
-    position: "Instructor I",
+    facultyType: "Regular",
+    title: "MIT",
+    advisoryClass: "BSCS 3B",
+    contactNumber: "09123456782",
+    sex: "Male",
+    birthday: "1990-09-05",
+    address: "San Juan, Ilocos Sur",
     status: "Active",
   },
   {
     id: "ADM-001",
-    name: "Alyssa Admin",
+    firstName: "Alyssa",
+    middleName: "A.",
+    lastName: "Admin",
     email: "admin@portal.edu",
     role: "admin",
-    position: "Portal Administrator",
+    contactNumber: "09123456783",
+    sex: "Female",
+    birthday: "1988-12-20",
+    address: "Vigan City, Ilocos Sur",
     status: "Active",
   },
 ]
@@ -207,47 +288,83 @@ export const usersSeed: UserRecord[] = [
 export const facultySeed: FacultyRecord[] = [
   {
     id: "FAC-014",
-    name: "Maria Santos",
+    firstName: "Maria",
+    middleName: "C.",
+    lastName: "Santos",
     position: "Assistant Professor",
     role: "Program Chair Support",
-    email: "maria@faculty.edu",
+    email: "maria@ispsc.edu.ph",
     education: "MS Computer Science",
     status: "Available",
     notes: "Available for capstone consultation in Room 402.",
     schedule: ["Mon 9:00-11:00", "Wed 13:00-15:00"],
+    facultyType: "Regular",
+    title: "MIT",
+    advisoryClass: "BSCS 3A",
+    contactNumber: "09123456781",
+    sex: "Female",
+    birthday: "1985-06-10",
+    address: "Candon City, Ilocos Sur",
   },
   {
     id: "FAC-018",
-    name: "Christian Galinato",
+    firstName: "Christian",
+    middleName: "G.",
+    lastName: "Galinato",
     position: "Instructor I",
     role: "Software Engineering Coordinator",
-    email: "christian@faculty.edu",
+    email: "christian@ispsc.edu.ph",
     education: "MS Information Technology",
     status: "In Class",
     notes: "Teaching BSCS 3A until 3:00 PM.",
     schedule: ["Tue 10:00-12:00", "Thu 9:00-11:00"],
+    facultyType: "Regular",
+    title: "MIT",
+    advisoryClass: "BSCS 3B",
+    contactNumber: "09123456782",
+    sex: "Male",
+    birthday: "1990-09-05",
+    address: "San Juan, Ilocos Sur",
   },
   {
     id: "FAC-021",
-    name: "Kyla Cablay",
+    firstName: "Kyla",
+    middleName: "D.",
+    lastName: "Cablay",
     position: "Instructor I",
     role: "Research Adviser",
-    email: "kyla@faculty.edu",
+    email: "kyla@ispsc.edu.ph",
     education: "MIT - Data Analytics",
     status: "Consultation Only",
     notes: "Consultation by appointment for thesis topic validation.",
     schedule: ["Fri 8:00-11:00"],
+    facultyType: "Regular",
+    title: "MIT",
+    advisoryClass: "BSCS 3C",
+    contactNumber: "09123456784",
+    sex: "Female",
+    birthday: "1992-11-15",
+    address: "Candon City, Ilocos Sur",
   },
   {
     id: "FAC-026",
-    name: "Hezron Gagarin",
+    firstName: "Hezron",
+    middleName: "G.",
+    lastName: "Gagarin",
     position: "Instructor II",
     role: "Systems Development Lead",
-    email: "hezron@faculty.edu",
+    email: "hezron@ispsc.edu.ph",
     education: "MS Software Engineering",
     status: "Out of Office",
     notes: "Attending department planning meeting.",
     schedule: ["Mon 13:00-16:00", "Thu 13:00-16:00"],
+    facultyType: "Regular",
+    title: "MIT",
+    advisoryClass: "BSCS 4A",
+    contactNumber: "09123456785",
+    sex: "Male",
+    birthday: "1988-04-25",
+    address: "Santa Lucia, Ilocos Sur",
   },
 ]
 
@@ -259,8 +376,14 @@ export const gradeSeed: GradeRecord[] = [
     subject: "Web Systems and Technologies",
     code: "CS311",
     units: 3,
+    lecUnits: 2,
+    labUnits: 1,
     midterm: 1.5,
     finalTerm: 1.25,
+    finalRating: 1.38,
+    transmutedGrade: 1.25,
+    equivalent: "1.25",
+    remarks: "Passed",
     updatedAt: "May 25, 2026",
   },
   {
@@ -270,8 +393,14 @@ export const gradeSeed: GradeRecord[] = [
     subject: "Database Systems",
     code: "CS312",
     units: 3,
+    lecUnits: 2,
+    labUnits: 1,
     midterm: 1.75,
     finalTerm: 1.5,
+    finalRating: 1.63,
+    transmutedGrade: 1.5,
+    equivalent: "1.50",
+    remarks: "Passed",
     updatedAt: "May 24, 2026",
   },
   {
@@ -281,8 +410,14 @@ export const gradeSeed: GradeRecord[] = [
     subject: "Software Engineering",
     code: "CS313",
     units: 3,
+    lecUnits: 2,
+    labUnits: 1,
     midterm: 1.25,
     finalTerm: 1.25,
+    finalRating: 1.25,
+    transmutedGrade: 1.25,
+    equivalent: "1.25",
+    remarks: "Passed",
     updatedAt: "May 26, 2026",
   },
   {
@@ -292,8 +427,14 @@ export const gradeSeed: GradeRecord[] = [
     subject: "Web Systems and Technologies",
     code: "CS311",
     units: 3,
+    lecUnits: 2,
+    labUnits: 1,
     midterm: 2,
     finalTerm: 1.75,
+    finalRating: 1.88,
+    transmutedGrade: 1.75,
+    equivalent: "1.75",
+    remarks: "Passed",
     updatedAt: "May 23, 2026",
   },
 ]
@@ -306,8 +447,7 @@ export const thesisSeed: ThesisRecord[] = [
     year: 2026,
     category: "Software Engineering",
     adviser: "Dr. Maria Santos",
-    abstract:
-      "A study on using intelligent automation to improve school service delivery, academic monitoring, and reporting.",
+    abstract: "A study on using intelligent automation to improve school service delivery, academic monitoring, and reporting.",
     tags: ["AI", "MERN", "Automation"],
   },
   {
@@ -317,8 +457,7 @@ export const thesisSeed: ThesisRecord[] = [
     year: 2025,
     category: "Information Systems",
     adviser: "Prof. Christian Galinato",
-    abstract:
-      "A mobile-first attendance platform that supports QR validation, instructor reports, and absence analytics.",
+    abstract: "A mobile-first attendance platform that supports QR validation, instructor reports, and absence analytics.",
     tags: ["Mobile", "Attendance", "Analytics"],
   },
   {
@@ -328,51 +467,8 @@ export const thesisSeed: ThesisRecord[] = [
     year: 2024,
     category: "Research Repository",
     adviser: "Prof. Kyla Cablay",
-    abstract:
-      "A searchable archive for approved thesis manuscripts with tagging, category filters, and secure file delivery.",
+    abstract: "A searchable archive for approved thesis manuscripts with tagging, category filters, and secure file delivery.",
     tags: ["Library", "Search", "Archive"],
-  },
-]
-
-export const seminarSeed: SeminarRecord[] = [
-  {
-    id: "SEM-001",
-    title: "AI Tools for Capstone Development",
-    speaker: "Dr. Elena Ramos",
-    date: "June 4, 2026",
-    location: "CS Lab 2",
-    description:
-      "Hands-on session on using AI tools responsibly during proposal and prototype development.",
-    capacity: 50,
-    enlistedStudentIds: ["2024-001245", "2024-001284", "2024-001310"],
-    host: "Maria Santos",
-    status: "Active",
-  },
-  {
-    id: "SEM-002",
-    title: "Cybersecurity Awareness for Student Developers",
-    speaker: "Engr. Paolo Reyes",
-    date: "June 12, 2026",
-    location: "Auditorium",
-    description:
-      "Security fundamentals for web applications, authentication, and safe data handling.",
-    capacity: 35,
-    enlistedStudentIds: ["2024-001284"],
-    host: "Christian Galinato",
-    status: "Active",
-  },
-  {
-    id: "SEM-003",
-    title: "Research Writing and Abstract Clinic",
-    speaker: "Prof. Kyla Cablay",
-    date: "June 18, 2026",
-    location: "Room 301",
-    description:
-      "Workshop for refining thesis abstracts, keywords, and research categorization.",
-    capacity: 25,
-    enlistedStudentIds: [],
-    host: "Kyla Cablay",
-    status: "Active",
   },
 ]
 
@@ -383,25 +479,21 @@ export const feedbackSeed: FeedbackTicket[] = [
     studentName: "Juan Dela Cruz",
     category: "Facilities",
     subject: "Laboratory air-conditioning schedule",
-    description:
-      "The afternoon lab session becomes difficult because Lab 203 is too warm during Web Systems.",
+    description: "The afternoon lab session becomes difficult because Lab 203 is too warm during Web Systems.",
     status: "In Progress",
     submittedAt: "May 25, 2026",
     assignedTo: "Maria Santos",
     resolution: "Raised to department maintenance coordinator.",
-    anonymous: false,
   },
   {
     id: "FB-1002",
     studentName: "Anonymous",
     category: "Academic",
     subject: "Clarify grade posting timeline",
-    description:
-      "Students need a clearer schedule for midterm and final grade publication.",
+    description: "Students need a clearer schedule for midterm and final grade publication.",
     status: "Pending",
     submittedAt: "May 26, 2026",
     assignedTo: "Admin",
-    anonymous: true,
   },
 ]
 
@@ -409,8 +501,7 @@ export const announcementsSeed: Announcement[] = [
   {
     id: "ANN-001",
     title: "Midterm Grade Updates Available",
-    content:
-      "Faculty members have started uploading verified midterm grades. Students will receive notices as grades are posted.",
+    content: "Faculty members have started uploading verified midterm grades. Students will receive notices as grades are posted.",
     date: "May 26, 2026",
     audience: "Students",
     priority: "High",
@@ -418,17 +509,15 @@ export const announcementsSeed: Announcement[] = [
   {
     id: "ANN-002",
     title: "Capstone Proposal Clinic",
-    content:
-      "All third-year students are invited to attend the proposal clinic before submitting initial thesis topics.",
+    content: "All third-year students are invited to attend the proposal clinic before submitting initial thesis topics.",
     date: "June 3, 2026",
-    audience: "BSCS 3rd Year",
+    audience: "Students",
     priority: "Medium",
   },
   {
     id: "ANN-003",
     title: "CS Department System Maintenance",
-    content:
-      "The portal will undergo scheduled maintenance from 8:00 PM to 10:00 PM on Saturday.",
+    content: "The portal will undergo scheduled maintenance from 8:00 PM to 10:00 PM on Saturday.",
     date: "June 6, 2026",
     audience: "All Users",
     priority: "Low",
@@ -474,26 +563,356 @@ export const scheduleSeed: ScheduleItem[] = [
   },
 ]
 
-export const curriculumSeed: CurriculumTerm[] = [
+export const curriculumSeed: Curriculum[] = [
   {
-    year: "Third Year",
-    term: "Second Semester",
-    subjects: [
-      "Web Systems and Technologies",
-      "Database Systems",
-      "Software Engineering",
-      "Operating Systems",
-      "Technopreneurship",
+    id: "1",
+    name: "Old Curriculum (CMO No. 25 Series 2015 Board Resolution No. 17 s. 2011)",
+    terms: [
+      {
+        year: "First Year",
+        term: "First Semester",
+        subjects: [
+          { code: "CS 101", name: "Introduction to Computing", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 102", name: "Fundamentals of Programming", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "Gen Ed 103", name: "Mathematics in the Modern World", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 104", name: "Understanding the Self", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "GE Elec 1", name: "People and the Earth's Ecosystems", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 110", name: "The Entrepreneurial Mind", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "PATHFit 1", name: "Movement Competency Training or MCT", lecUnits: 2, labUnits: 0, totalUnits: 2 },
+          { code: "NSTP 1", name: "CWTS/ROTC 1", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "First Year",
+        term: "Second Semester",
+        subjects: [
+          { code: "CS 104", name: "Discrete Structures 1", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 103", name: "Intermediate Programming", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 105", name: "Fundamentals of Human Computer Interaction", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 101", name: "Purposive Communication", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "PATHFit 2", name: "Exercise-based Fitness Activities", lecUnits: 2, labUnits: 0, totalUnits: 2 },
+          { code: "GE Elec 2", name: "Philippine Popular Culture", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "NSTP 2", name: "CWTS/ROTC 2", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Second Year",
+        term: "First Semester",
+        subjects: [
+          { code: "CS 201", name: "Data Structures and Algorithms", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 202", name: "Discrete Structures 2", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 107", name: "The Contemporary World", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 108", name: "Art Appreciation", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "PATHFit 3", name: "Dances", lecUnits: 2, labUnits: 0, totalUnits: 2 },
+          { code: "CS 203", name: "Social Issues and Professional Practices", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 204", name: "Parallel and Distributed Computing", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 205", name: "Object-Oriented Programming", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Second Year",
+        term: "Second Semester",
+        subjects: [
+          { code: "CS 206", name: "System Fundamentals", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 106", name: "Ethics", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 207", name: "Information Management", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 208", name: "Architecture and Organization", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "Gen Ed 105", name: "Science, Technology & Society", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Math", name: "Differential and Integral Calculus", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "PATHFit 4", name: "Sports", lecUnits: 2, labUnits: 0, totalUnits: 2 },
+        ],
+      },
+      {
+        year: "Third Year",
+        term: "First Semester",
+        subjects: [
+          { code: "CS 301", name: "Programming Languages", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 302", name: "Automata Theory and Formal Languages", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 303", name: "Networks and Communications", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 304", name: "Operating Systems", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 305", name: "Software Engineering 1", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 306", name: "Computational Science", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 307", name: "Quantitative Methods", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Elective 1", name: "Communicating Effectively", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Third Year",
+        term: "Second Semester",
+        subjects: [
+          { code: "CS 308", name: "Software Engineering 2: Implementation and Management", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 309", name: "Algorithm and Complexity", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 310", name: "Intelligent System", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "Gen Ed 102", name: "Readings in Philippine History", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 311", name: "Graphics and Visual Arts Computing", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 312", name: "Research Methodology", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 313", name: "Web Development", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "Elective 2", name: "Creative Writing", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Mid Year",
+        term: "",
+        subjects: [
+          { code: "CS 314", name: "Ojt/Practicum (200 hours)", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Fourth Year",
+        term: "First Semester",
+        subjects: [
+          { code: "CS 401", name: "Seminars and Tours", lecUnits: 1, labUnits: 0, totalUnits: 1 },
+          { code: "CS 404", name: "Project Study 1", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 402", name: "Multimedia System", lecUnits: 2, labUnits: 11, totalUnits: 13 },
+          { code: "Rizal", name: "Rizal's Life and Works", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Fourth Year",
+        term: "Second Semester",
+        subjects: [
+          { code: "CS 403", name: "Information Assurance and Security", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 405", name: "Project Study 2", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+        ],
+      },
     ],
   },
   {
-    year: "Fourth Year",
-    term: "First Semester",
-    subjects: [
-      "Thesis Writing 1",
-      "Professional Elective 3",
-      "Internship Preparation",
-      "Information Assurance",
+    id: "2",
+    name: "New Curriculum",
+    major: "Embedded Systems and AI Specialization",
+    terms: [
+      {
+        year: "First Year",
+        term: "First Semester",
+        subjects: [
+          { code: "Gen Ed 101", name: "Understanding The Self", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 102", name: "Mathematics in the Modern World", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "GE Elec 101", name: "People and Earth's Ecosystem", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 103", name: "The Entrepreneurial Mind", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "PATHFit 1", name: "Movement Competency Training or MCT", lecUnits: 2, labUnits: 0, totalUnits: 2 },
+          { code: "NSTP 1", name: "CWTS 1 / ROTC 1", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CC101", name: "Introduction to Computing", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CC102", name: "Fundamentals of Programming", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "First Year",
+        term: "Second Semester",
+        subjects: [
+          { code: "Gen Ed 104", name: "Art Appreciation", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "PATHFit 2", name: "Exercise-based Fitness Activities", lecUnits: 2, labUnits: 0, totalUnits: 2 },
+          { code: "NSTP 2", name: "CWTS 2 / ROTC 2", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CC103", name: "Intermediate Programming", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CC104", name: "Data Structures and Algorithms", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CC105", name: "Information Management", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 101", name: "Fundamentals of HCI and Office Application", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 102", name: "Discrete Structures", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 103", name: "Object-Oriented Programming", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Second Year",
+        term: "First Semester",
+        subjects: [
+          { code: "Gen Ed 105", name: "Science, Technology, and Society", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Math 1", name: "Calculus 1", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 106", name: "Probability and Statistics", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "PATHFit 3", name: "Choice of Dances", lecUnits: 2, labUnits: 0, totalUnits: 2 },
+          { code: "CS 104", name: "Programming Languages", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 105", name: "Data Communication and Networks 1", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 106", name: "Web Development 1", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CC 106", name: "Applications Development and Emerging Technologies", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 107", name: "Systems Analysis and Design", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Second Year",
+        term: "Second Semester",
+        subjects: [
+          { code: "Gen Ed 107", name: "Purposive Communication", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 108", name: "Readings in Philippine History", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "PATHFit 4", name: "Sports", lecUnits: 2, labUnits: 0, totalUnits: 2 },
+          { code: "CS 108", name: "Web Development 2", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 109", name: "Intelligent and Embedded Systems", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 110", name: "Software Engineering and Software Testing", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 111", name: "Parallel and Distributed Computing", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 112", name: "Multimedia Systems and Animation", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS Elective 1", name: "Advanced Embedded Systems", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Third Year",
+        term: "First Semester",
+        subjects: [
+          { code: "GE Elec 102", name: "Philippine Popular Culture", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "GE Elec 103", name: "Reading Visual Art", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Math 2", name: "Calculus 2", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 113", name: "Data Communications and Networks 2", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 114", name: "Graphics and Visual Arts Computing", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 115", name: "Automata Theory and Formal Languages", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 116", name: "Algorithm and Complexity", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS Elective 2", name: "Wireless Sensor Networks", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Third Year",
+        term: "Second Semester",
+        subjects: [
+          { code: "Gen Ed 109", name: "Contemporary World", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 110", name: "Ethics", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 111", name: "Gender and Society", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "GE Elec 104", name: "Communicating Effectively", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 117", name: "Quantitative Methods - Advanced Statistics", lecUnits: 2, labUnits: 0, totalUnits: 3 },
+          { code: "CS 118", name: "Operating Systems and Architecture Organization", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "Thesis 1", name: "Thesis Study 1", lecUnits: 1, labUnits: 0, totalUnits: 3 },
+          { code: "CS Elective 3", name: "Edge Computing and AI", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Mid Year",
+        term: "",
+        subjects: [
+          { code: "OJT", name: "Industry Immersion (280 hours)", lecUnits: 1, labUnits: 0, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Fourth Year",
+        term: "First Semester",
+        subjects: [
+          { code: "Thesis 2", name: "Thesis Study 2", lecUnits: 1, labUnits: 0, totalUnits: 3 },
+          { code: "CS 119", name: "Seminars and Tours", lecUnits: 1, labUnits: 0, totalUnits: 1 },
+        ],
+      },
+      {
+        year: "Fourth Year",
+        term: "Second Semester",
+        subjects: [
+          { code: "CS 120", name: "Technopreneurship", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 121", name: "Social and Professional Practice", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 122", name: "Computational Science", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Rizal", name: "Rizal's Life and Works", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "3",
+    name: "New Curriculum",
+    major: "Secure Software Engineering Specialization",
+    terms: [
+      {
+        year: "First Year",
+        term: "First Semester",
+        subjects: [
+          { code: "Gen Ed 101", name: "Understanding The Self", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 102", name: "Mathematics in the Modern World", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "GE Elec 101", name: "People and Earth's Ecosystem", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 103", name: "The Entrepreneurial Mind", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "PATHFit 1", name: "Movement Competency Training or MCT", lecUnits: 2, labUnits: 0, totalUnits: 2 },
+          { code: "NSTP 1", name: "CWTS 1 / ROTC 1", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CC101", name: "Introduction to Computing", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CC102", name: "Fundamentals of Programming", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "First Year",
+        term: "Second Semester",
+        subjects: [
+          { code: "Gen Ed 104", name: "Art Appreciation", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "PATHFit 2", name: "Exercise-based Fitness Activities", lecUnits: 2, labUnits: 0, totalUnits: 2 },
+          { code: "NSTP 2", name: "CWTS 2 / ROTC 2", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CC103", name: "Intermediate Programming", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CC104", name: "Data Structures and Algorithms", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CC105", name: "Information Management", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 101", name: "Fundamentals of HCI and Office Application", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 102", name: "Discrete Structures", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 103", name: "Object-Oriented Programming", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Second Year",
+        term: "First Semester",
+        subjects: [
+          { code: "Gen Ed 105", name: "Science, Technology, and Society", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Math 1", name: "Calculus 1", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 106", name: "Probability and Statistics", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "PATHFit 3", name: "Choice of Dances", lecUnits: 2, labUnits: 0, totalUnits: 2 },
+          { code: "CS 104", name: "Programming Languages", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 105", name: "Data Communication and Networks 1", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 106", name: "Web Development 1", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CC 106", name: "Applications Development and Emerging Technologies", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 107", name: "Systems Analysis and Design", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Second Year",
+        term: "Second Semester",
+        subjects: [
+          { code: "Gen Ed 107", name: "Purposive Communication", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 108", name: "Readings in Philippine History", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "PATHFit 4", name: "Sports", lecUnits: 2, labUnits: 0, totalUnits: 2 },
+          { code: "CS 108", name: "Web Development 2", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 109", name: "Intelligent and Embedded Systems", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 110", name: "Software Engineering and Software Testing", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 111", name: "Parallel and Distributed Computing", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 112", name: "Multimedia Systems and Animation", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS Elective 1", name: "Principles of Blockchain", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Third Year",
+        term: "First Semester",
+        subjects: [
+          { code: "GE Elec 102", name: "Philippine Popular Culture", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "GE Elec 103", name: "Reading Visual Art", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Math 2", name: "Calculus 2", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 113", name: "Data Communications and Networks 2", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 114", name: "Graphics and Visual Arts Computing", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "CS 115", name: "Automata Theory and Formal Languages", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 116", name: "Algorithm and Complexity", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS Elective 2", name: "Continuous Integration/Continuous Deployment (CI/CD)", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Third Year",
+        term: "Second Semester",
+        subjects: [
+          { code: "Gen Ed 109", name: "Contemporary World", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 110", name: "Ethics", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Gen Ed 111", name: "Gender and Society", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "GE Elec 104", name: "Communicating Effectively", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 117", name: "Quantitative Methods - Advanced Statistics", lecUnits: 2, labUnits: 0, totalUnits: 3 },
+          { code: "CS 118", name: "Operating Systems and Architecture Organization", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+          { code: "Thesis 1", name: "Thesis Study 1", lecUnits: 1, labUnits: 0, totalUnits: 3 },
+          { code: "CS Elective 3", name: "Secure Software Development (Web3)", lecUnits: 2, labUnits: 1, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Mid Year",
+        term: "",
+        subjects: [
+          { code: "OJT", name: "Industry Immersion (280 hours)", lecUnits: 1, labUnits: 0, totalUnits: 3 },
+        ],
+      },
+      {
+        year: "Fourth Year",
+        term: "First Semester",
+        subjects: [
+          { code: "Thesis 2", name: "Thesis Study 2", lecUnits: 1, labUnits: 0, totalUnits: 3 },
+          { code: "CS 119", name: "Seminars and Tours", lecUnits: 1, labUnits: 0, totalUnits: 1 },
+        ],
+      },
+      {
+        year: "Fourth Year",
+        term: "Second Semester",
+        subjects: [
+          { code: "CS 120", name: "Technopreneurship", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 121", name: "Social and Professional Practice", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "CS 122", name: "Computational Science", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+          { code: "Rizal", name: "Rizal's Life and Works", lecUnits: 3, labUnits: 0, totalUnits: 3 },
+        ],
+      },
     ],
   },
 ]
@@ -523,6 +942,30 @@ export const classRosterSeed: ClassStudent[] = [
     section: "BSCS 3A",
     enrolled: true,
   },
+  {
+    id: "2024-001330",
+    name: "Carlos Dela Vega",
+    section: "BSCS 3A",
+    enrolled: true,
+  },
+  {
+    id: "2024-001341",
+    name: "Sofia Ramirez",
+    section: "BSCS 3A",
+    enrolled: true,
+  },
+  {
+    id: "2024-001355",
+    name: "Miguel Santos",
+    section: "BSCS 3A",
+    enrolled: true,
+  },
+  {
+    id: "2024-001362",
+    name: "Angela Cruz",
+    section: "BSCS 3A",
+    enrolled: true,
+  },
 ]
 
 export const csoReportsSeed: CsoReport[] = [
@@ -531,16 +974,14 @@ export const csoReportsSeed: CsoReport[] = [
     title: "CodeSprint Orientation",
     type: "Event",
     date: "May 18, 2026",
-    summary:
-      "Orientation for incoming computing students and organization volunteers.",
+    summary: "Orientation for incoming computing students and organization volunteers.",
   },
   {
     id: "CSSO-002",
     title: "April Financial Summary",
     type: "Financial",
     date: "May 2, 2026",
-    summary:
-      "Collected membership fees, printing expenses, and event material purchases.",
+    summary: "Collected membership fees, printing expenses, and event material purchases.",
     total: "PHP 12,450 balance",
   },
   {
@@ -548,23 +989,7 @@ export const csoReportsSeed: CsoReport[] = [
     title: "Peer Tutorial Program",
     type: "Accomplishment",
     date: "April 29, 2026",
-    summary:
-      "Completed four tutorial sessions covering programming fundamentals and database design.",
-  },
-]
-
-export const quickLinksSeed = [
-  {
-    label: "CS Facebook Page",
-    href: "https://facebook.com",
-  },
-  {
-    label: "College LMS",
-    href: "https://example.edu/lms",
-  },
-  {
-    label: "Library Portal",
-    href: "https://example.edu/library",
+    summary: "Completed four tutorial sessions covering programming fundamentals and database design.",
   },
 ]
 
@@ -587,19 +1012,25 @@ export const subjectsSeed = [
   {
     code: "CS311",
     title: "Web Systems and Technologies",
-    units: 3,
+    lecUnits: 2,
+    labUnits: 1,
+    totalUnits: 3,
     instructor: "Maria Santos",
   },
   {
     code: "CS312",
     title: "Database Systems",
-    units: 3,
+    lecUnits: 2,
+    labUnits: 1,
+    totalUnits: 3,
     instructor: "Hezron Gagarin",
   },
   {
     code: "CS313",
     title: "Software Engineering",
-    units: 3,
+    lecUnits: 2,
+    labUnits: 1,
+    totalUnits: 3,
     instructor: "Kyla Cablay",
   },
 ]
@@ -624,3 +1055,10 @@ export const auditLogsSeed = [
     time: "May 25, 2026 3:48 PM",
   },
 ]
+
+export const sectionSeed: Record<string, string[]> = {
+  "First Year": ["BSCS 1A", "BSCS 1B", "BSCS 1C", "BSCS 1D"],
+  "Second Year": ["BSCS 2A", "BSCS 2B", "BSCS 2C", "BSCS 2D"],
+  "Third Year": ["BSCS 3A", "BSCS 3B", "BSCS 3C"],
+  "Fourth Year": ["BSCS 4A", "BSCS 4B", "BSCS 4C"],
+}
