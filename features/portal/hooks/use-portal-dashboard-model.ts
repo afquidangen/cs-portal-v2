@@ -1067,6 +1067,16 @@ export function usePortalDashboardModel(role: Role) {
     }
   }
 
+  function handleUpdateSchedule(updated: ScheduleItem) {
+    setClassSchedules((current) =>
+      current.map((item) => (item.id === updated.id ? updated : item))
+    )
+  }
+
+  function handleDeleteSchedule(id: string) {
+    setClassSchedules((current) => current.filter((item) => item.id !== id))
+  }
+
   async function handleGradeWorkbookUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     if (!file) return
@@ -1647,6 +1657,8 @@ export function usePortalDashboardModel(role: Role) {
     handleSaveStudent,
     handleAddClassSection,
     handleCreateSchedule,
+    handleUpdateSchedule,
+    handleDeleteSchedule,
     handleScheduleUpload,
     handleGradeWorkbookUpload,
     handleAddSemester,

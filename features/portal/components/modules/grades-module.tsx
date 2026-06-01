@@ -10,6 +10,7 @@ import {
   calculateGradePercentage,
   gradeRemarkOptions,
   gradeRemarks,
+  transmutedToEquivalent,
 } from "../../lib/grades"
 import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
@@ -168,7 +169,7 @@ export function FacultyGradesPanel({
       <p className="mb-4 text-sm text-muted-foreground">{uploadName}</p>
 
       <div className="overflow-x-auto rounded-2xl border border-border">
-        <table className="w-full min-w-[1080px] text-left text-sm">
+        <table className="w-full min-w-[960px] text-left text-sm">
           <thead className="bg-muted text-foreground">
             <tr className="border-b border-border">
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
@@ -178,19 +179,16 @@ export function FacultyGradesPanel({
                 Subject
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Midterm %
+                Midterms
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Midterm Eq.
+                Tentative Final Grade
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Final %
+                Final Grade
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Final Eq.
-              </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Final Rating
+                Transmuted
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
                 Remarks
@@ -203,7 +201,11 @@ export function FacultyGradesPanel({
 
           <tbody className="divide-y divide-border bg-card">
             {visibleGrades.map((grade) => {
-              const finalGrade = calculateFinalGrade(grade)
+              const finalGrade = calculateGradePercentage(grade)
+              const transmuted =
+                finalGrade !== undefined
+                  ? transmutedToEquivalent(finalGrade)
+                  : undefined
 
               return (
                 <tr key={grade.id} className="transition-colors hover:bg-muted/50">
@@ -241,20 +243,6 @@ export function FacultyGradesPanel({
                   <td className="px-4 py-3">
                     <Input
                       type="number"
-                      step="0.25"
-                      min="1"
-                      max="5"
-                      value={grade.midterm}
-                      onChange={(event) =>
-                        updateGrade(grade.id, "midterm", event.target.value)
-                      }
-                      className="h-9 w-24 rounded-2xl"
-                    />
-                  </td>
-
-                  <td className="px-4 py-3">
-                    <Input
-                      type="number"
                       min="0"
                       max="100"
                       value={grade.finalTransmuted ?? ""}
@@ -269,22 +257,16 @@ export function FacultyGradesPanel({
                     />
                   </td>
 
-                  <td className="px-4 py-3">
-                    <Input
-                      type="number"
-                      step="0.25"
-                      min="1"
-                      max="5"
-                      value={grade.finalTerm}
-                      onChange={(event) =>
-                        updateGrade(grade.id, "finalTerm", event.target.value)
-                      }
-                      className="h-9 w-24 rounded-2xl"
-                    />
+                  <td className="px-4 py-3 font-semibold text-foreground">
+                    {finalGrade !== undefined
+                      ? finalGrade.toFixed(2)
+                      : "N/A"}
                   </td>
 
                   <td className="px-4 py-3 font-semibold text-foreground">
-                    {finalGrade.toFixed(2)}
+                    {transmuted !== undefined
+                      ? transmuted.toFixed(2)
+                      : "N/A"}
                   </td>
 
                   <td className="px-4 py-3">

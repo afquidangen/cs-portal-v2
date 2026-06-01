@@ -5,7 +5,14 @@ import { BookMarked, Pencil, Plus, Trash2, Users, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
+import type { ScheduleItem } from "../../data/portal-data"
 import { Panel, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
@@ -106,12 +113,17 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
 function AdminView({ model }: { model: PortalModuleProps["model"] }) {
   const {
     classSchedules, handleAddClassSection, handleCreateSchedule,
+    handleUpdateSchedule, handleDeleteSchedule,
     handleScheduleUpload, newSectionName, scheduleDraft,
     selectedClassYear, setNewSectionName, setScheduleDraft,
     setSelectedClassYear, setRoster, yearSections, roster,
   } = model
 
   const [adminTab, setAdminTab] = useState("Sections")
+  const [editingSchedule, setEditingSchedule] = useState<ScheduleItem | null>(null)
+  const [deleteScheduleId, setDeleteScheduleId] = useState<string | null>(null)
+  const [scheduleFilterYear, setScheduleFilterYear] = useState(yearSections[0]?.year ?? "")
+  const [scheduleFilterSection, setScheduleFilterSection] = useState(yearSections[0]?.sections[0] ?? "")
 
   const selectedYear = yearSections.find((y) => y.year === selectedClassYear)
 
@@ -120,6 +132,13 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
     const sections = selectedYear.sections
     return roster.filter((s) => sections.includes(s.section))
   }, [roster, selectedYear])
+
+  const scheduleYear = yearSections.find((y) => y.year === scheduleFilterYear)
+
+  const filteredSchedules = useMemo(() => {
+    if (!scheduleFilterSection) return classSchedules
+    return classSchedules.filter((s) => s.section === scheduleFilterSection)
+  }, [classSchedules, scheduleFilterSection])
 
   return (
     <div className="space-y-5">
@@ -295,15 +314,50 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
             </div>
           </Panel>
 
-          <Panel title={`All Schedules (${classSchedules.length})`} eyebrow="Sections and instructors">
-            {classSchedules.length === 0 ? (
+          <Panel
+            title={`All Schedules (${filteredSchedules.length})`}
+            eyebrow="Sections and instructors"
+            actions={
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-card p-0.5">
+                  {yearSections.map((item) => (
+                    <button
+                      key={item.year}
+                      type="button"
+                      onClick={() => {
+                        setScheduleFilterYear(item.year)
+                        setScheduleFilterSection(item.sections[0] ?? "")
+                      }}
+                      className={
+                        scheduleFilterYear === item.year
+                          ? "rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground"
+                          : "rounded-md px-2.5 py-1 text-xs font-medium text-foreground/70 transition hover:text-foreground"
+                      }
+                    >
+                      {item.year}
+                    </button>
+                  ))}
+                </div>
+                <select
+                  value={scheduleFilterSection}
+                  onChange={(e) => setScheduleFilterSection(e.target.value)}
+                  className="h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+                >
+                  {scheduleYear?.sections.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+            }
+          >
+            {filteredSchedules.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Trash2 className="mb-3 size-10 text-muted-foreground/50" />
                 <p className="text-sm text-muted-foreground">No schedules yet.</p>
               </div>
             ) : (
               <div className="overflow-x-auto rounded-2xl border border-border">
-                <table className="w-full min-w-[720px] text-left text-sm">
+                <table className="w-full min-w-[800px] text-left text-sm">
                   <thead className="bg-muted text-foreground">
                     <tr className="border-b border-border">
                       <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Section</th>
@@ -311,16 +365,27 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                       <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Instructor</th>
                       <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Schedule</th>
                       <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Room</th>
+                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border bg-card">
-                    {classSchedules.map((item) => (
+                    {filteredSchedules.map((item) => (
                       <tr key={item.id} className="transition-colors hover:bg-muted/50">
                         <td className="px-4 py-3 font-medium text-foreground">{item.section}</td>
                         <td className="px-4 py-3 text-foreground/80">{item.subject}</td>
                         <td className="px-4 py-3 text-foreground/80">{item.instructor}</td>
                         <td className="px-4 py-3 text-foreground/80">{item.day}, {item.time}</td>
                         <td className="px-4 py-3 text-foreground/80">{item.room}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1">
+                            <Button type="button" size="sm" variant="ghost" className="rounded-xl" onClick={() => setEditingSchedule(item)}>
+                              <Pencil className="size-3.5" />
+                            </Button>
+                            <Button type="button" size="sm" variant="ghost" className="rounded-xl text-red-500 hover:text-red-600" onClick={() => setDeleteScheduleId(item.id)}>
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -328,6 +393,76 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
               </div>
             )}
           </Panel>
+
+          <Dialog open={!!editingSchedule} onOpenChange={(open) => { if (!open) setEditingSchedule(null) }}>
+            <DialogContent className="max-w-lg rounded-[28px] border border-border bg-card shadow-2xl">
+              <DialogHeader>
+                <DialogTitle>Edit Schedule</DialogTitle>
+              </DialogHeader>
+              {editingSchedule ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    handleUpdateSchedule(editingSchedule)
+                    setEditingSchedule(null)
+                  }}
+                  className="grid gap-3 sm:grid-cols-2"
+                >
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-xs font-medium text-foreground/70">Section</label>
+                    <Input value={editingSchedule.section} onChange={(e) => setEditingSchedule((c) => ({ ...c!, section: e.target.value }))} className="h-10 rounded-2xl" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground/70">Subject</label>
+                    <Input value={editingSchedule.subject} onChange={(e) => setEditingSchedule((c) => ({ ...c!, subject: e.target.value }))} className="h-10 rounded-2xl" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground/70">Instructor</label>
+                    <Input value={editingSchedule.instructor} onChange={(e) => setEditingSchedule((c) => ({ ...c!, instructor: e.target.value }))} className="h-10 rounded-2xl" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground/70">Day</label>
+                    <Input value={editingSchedule.day} onChange={(e) => setEditingSchedule((c) => ({ ...c!, day: e.target.value }))} className="h-10 rounded-2xl" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground/70">Time</label>
+                    <Input value={editingSchedule.time} onChange={(e) => setEditingSchedule((c) => ({ ...c!, time: e.target.value }))} className="h-10 rounded-2xl" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground/70">Room</label>
+                    <Input value={editingSchedule.room} onChange={(e) => setEditingSchedule((c) => ({ ...c!, room: e.target.value }))} className="h-10 rounded-2xl" />
+                  </div>
+                  <div className="flex items-end gap-2 sm:col-span-2">
+                    <Button type="submit" className="rounded-2xl"><Pencil className="size-4" /> Update Schedule</Button>
+                    <Button type="button" variant="outline" className="rounded-2xl" onClick={() => setEditingSchedule(null)}>Cancel</Button>
+                  </div>
+                </form>
+              ) : null}
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={!!deleteScheduleId} onOpenChange={(open) => { if (!open) setDeleteScheduleId(null) }}>
+            <DialogContent className="max-w-sm rounded-[28px] border border-border bg-card shadow-2xl">
+              <DialogHeader>
+                <DialogTitle>Delete Schedule</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-foreground/70">Are you sure you want to delete this schedule entry? This action cannot be undone.</p>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" className="rounded-2xl" onClick={() => setDeleteScheduleId(null)}>Cancel</Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="rounded-2xl"
+                  onClick={() => {
+                    if (deleteScheduleId) handleDeleteSchedule(deleteScheduleId)
+                    setDeleteScheduleId(null)
+                  }}
+                >
+                  <Trash2 className="size-4" /> Delete
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </>
       ) : null}
     </div>

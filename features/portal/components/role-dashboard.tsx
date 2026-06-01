@@ -455,24 +455,24 @@ export function RoleDashboard({ role }: { role: Role }) {
                   </Button>
 
                   {showNotifications ? (
-                    <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-border bg-white shadow-xl dark:bg-[#0f172a]">
+                    <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-border bg-white shadow-xl dark:bg-white">
                       <div className="flex items-center justify-between border-b border-border px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <Bell className="size-4 text-foreground" />
-                          <p className="text-sm font-semibold text-foreground">Notifications</p>
+                          <Bell className="size-4 text-foreground dark:text-black" />
+                          <p className="text-sm font-semibold text-foreground dark:text-black">Notifications</p>
                         </div>
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary dark:text-black">
                           {visibleAnnouncements.length} new
                         </span>
                       </div>
                       <div className="max-h-80 space-y-1 overflow-y-auto p-2">
                         {visibleAnnouncements.length === 0 ? (
                           <div className="flex flex-col items-center gap-2 px-2 py-10 text-center">
-                            <Bell className="size-8 text-muted-foreground/40" />
-                            <p className="text-sm font-medium text-muted-foreground">
+                            <Bell className="size-8 text-muted-foreground/40 dark:text-gray-400" />
+                            <p className="text-sm font-medium text-muted-foreground dark:text-gray-600">
                               No notifications yet
                             </p>
-                            <p className="text-xs text-muted-foreground/60">
+                            <p className="text-xs text-muted-foreground/60 dark:text-gray-400">
                               Announcements will appear here
                             </p>
                           </div>
@@ -496,14 +496,14 @@ export function RoleDashboard({ role }: { role: Role }) {
                                     setShowNotifications(false)
                                   }
                                 }}
-                                className="group cursor-pointer rounded-xl border border-transparent px-3 py-3 transition-all hover:border-border hover:bg-muted/60"
+                                className="group cursor-pointer rounded-xl border border-transparent px-3 py-3 transition-all hover:border-border hover:bg-muted/60 dark:hover:bg-gray-100"
                               >
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex items-center gap-2 min-w-0">
                                     {!isRead ? (
                                       <span className="mt-1.5 size-2 shrink-0 rounded-full bg-blue-500" />
                                     ) : null}
-                                    <p className={"text-sm truncate " + (isRead ? "font-medium text-foreground/80" : "font-semibold text-foreground")}>
+                                    <p className={"text-sm truncate " + (isRead ? "font-medium text-foreground/80 dark:text-black/70" : "font-semibold text-foreground dark:text-black")}>
                                       {ann.title}
                                     </p>
                                   </div>
@@ -511,22 +511,22 @@ export function RoleDashboard({ role }: { role: Role }) {
                                     className={
                                       "mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none " +
                                       (ann.priority === "High"
-                                        ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
+                                        ? "bg-red-100 text-red-700 dark:bg-red-100 dark:text-red-700"
                                         : ann.priority === "Medium"
-                                          ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
-                                          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400")
+                                          ? "bg-amber-100 text-amber-700 dark:bg-amber-100 dark:text-amber-700"
+                                          : "bg-slate-100 text-slate-600 dark:bg-slate-100 dark:text-slate-600")
                                     }
                                   >
                                     {ann.priority}
                                   </span>
                                 </div>
-                                <p className={"mt-1 line-clamp-2 text-xs leading-relaxed " + (isRead ? "text-muted-foreground/60" : "text-muted-foreground")}>
+                                <p className={"mt-1 line-clamp-2 text-xs leading-relaxed " + (isRead ? "text-muted-foreground/60 dark:text-gray-500" : "text-muted-foreground dark:text-gray-600")}>
                                   {ann.content}
                                 </p>
-                                <div className="mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground/70">
+                                <div className="mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground/70 dark:text-gray-500">
                                   <span>{ann.date}</span>
-                                  <span className="size-1 rounded-full bg-muted-foreground/30" />
-                                  <span className="rounded bg-muted px-1.5 py-0.5">{ann.audience}</span>
+                                  <span className="size-1 rounded-full bg-muted-foreground/30 dark:bg-gray-400" />
+                                  <span className="rounded bg-muted px-1.5 py-0.5 dark:bg-gray-200 dark:text-gray-700">{ann.audience}</span>
                                 </div>
                               </div>
                             )
@@ -609,22 +609,25 @@ export function RoleDashboard({ role }: { role: Role }) {
                 ) : null}
 
                 {role === "faculty" ? (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <Metric
-                      label="Handled Classes"
-                      value={String(model.facultyClassSections.length)}
-                      icon={ClipboardList}
-                      tone="sky"
-                    />
-                    <Metric
-                      label="Students Enrolled"
-                      value={String(
-                        model.facultyClassStudents.filter((s) => s.enrolled).length
-                      )}
-                      icon={Users}
-                      tone="emerald"
-                    />
-                  </div>
+                  <>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <Metric
+                        label="Handled Classes"
+                        value={String(model.facultyClassSections.length)}
+                        icon={ClipboardList}
+                        tone="sky"
+                      />
+                      <Metric
+                        label="Students Enrolled"
+                        value={String(
+                          model.facultyClassStudents.filter((s) => s.enrolled).length
+                        )}
+                        icon={Users}
+                        tone="emerald"
+                      />
+                    </div>
+                    <SchedulePanel model={model} />
+                  </>
                 ) : null}
 
                 {/* --- STATUS OVERVIEW PLACED AT THE TOP OF QUICK ACCESS LINKS --- */}

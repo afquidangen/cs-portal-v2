@@ -114,20 +114,7 @@ function FacultyCard({
 }
 
 function AdminStatusEditor({ model }: PortalModuleProps) {
-  const { faculty, updateFacultyStatus } = model
-  const [editStatus, setEditStatus] = useState<Record<string, AvailabilityStatus>>({})
-  const [editNotes, setEditNotes] = useState<Record<string, string>>({})
-  const [saving, setSaving] = useState<Record<string, boolean>>({})
-
-  function handleSave(member: (typeof faculty)[number]) {
-    const status = editStatus[member.id] ?? member.status
-    const notes = editNotes[member.id] ?? member.notes
-    setSaving((prev) => ({ ...prev, [member.id]: true }))
-    updateFacultyStatus(member.id, status, notes)
-    setTimeout(() => {
-      setSaving((prev) => ({ ...prev, [member.id]: false }))
-    }, 400)
-  }
+  const { faculty } = model
 
   return (
     <Panel title="Manage Faculty Status" eyebrow="Admin control panel">
@@ -144,28 +131,7 @@ function AdminStatusEditor({ model }: PortalModuleProps) {
                   {member.position} &middot; {member.role}
                 </p>
                 <p className="mt-1 text-xs text-foreground/50">{member.email}</p>
-
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <Select
-                    value={editStatus[member.id] ?? member.status}
-                    onChange={(value) =>
-                      setEditStatus((prev) => ({
-                        ...prev,
-                        [member.id]: value as AvailabilityStatus,
-                      }))
-                    }
-                    options={availabilityOptions}
-                    label="Status"
-                  />
-                  <Textarea
-                    value={editNotes[member.id] ?? member.notes}
-                    onChange={(value) =>
-                      setEditNotes((prev) => ({ ...prev, [member.id]: value }))
-                    }
-                    placeholder="Notes"
-                    rows={2}
-                  />
-                </div>
+                <p className="mt-2 text-sm text-foreground/80">{member.notes}</p>
 
                 {member.schedule.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2 text-xs text-foreground/70">
@@ -182,23 +148,7 @@ function AdminStatusEditor({ model }: PortalModuleProps) {
               </div>
 
               <div className="flex items-start gap-3 lg:flex-col">
-                <StatusBadge
-                  value={editStatus[member.id] ?? member.status}
-                />
-                <Button
-                  size="sm"
-                  className="rounded-2xl"
-                  onClick={() => handleSave(member)}
-                  disabled={saving[member.id]}
-                >
-                  <Save
-                    className={cn(
-                      "size-4",
-                      saving[member.id] && "animate-spin"
-                    )}
-                  />
-                  {saving[member.id] ? "Saving..." : "Save"}
-                </Button>
+                <StatusBadge value={member.status} />
               </div>
             </div>
           </div>

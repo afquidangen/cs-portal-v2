@@ -8,15 +8,16 @@ export const gradeRemarkOptions = [
 ]
 
 export function transmutedToEquivalent(score: number) {
-  if (score >= 99) return 1
-  if (score >= 96) return 1.25
-  if (score >= 93) return 1.5
-  if (score >= 90) return 1.75
-  if (score >= 87) return 2
-  if (score >= 84) return 2.25
-  if (score >= 81) return 2.5
-  if (score >= 78) return 2.75
+  if (score >= 97) return 1
+  if (score >= 94) return 1.25
+  if (score >= 91) return 1.5
+  if (score >= 88) return 1.75
+  if (score >= 85) return 2
+  if (score >= 82) return 2.25
+  if (score >= 79) return 2.5
+  if (score >= 76) return 2.75
   if (score >= 75) return 3
+  if (score >= 72) return 4
   return 5
 }
 
