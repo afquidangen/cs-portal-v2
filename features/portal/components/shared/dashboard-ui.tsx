@@ -84,40 +84,40 @@ export function Metric({
         "border-slate-300 bg-slate-200/70 dark:border-slate-500/20 dark:bg-slate-500/12",
       icon: "border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-500/30 dark:bg-slate-500/15 dark:text-slate-300",
       glow: "bg-[rgb(148_163_184_/_0.18)] dark:bg-[rgb(148_163_184_/_0.10)]",
-      label: "text-black dark:text-white",
-      value: "text-black dark:text-white",
+      label: "text-foreground",
+      value: "text-foreground",
     },
     emerald: {
       shell:
         "border-emerald-300 bg-emerald-200/70 dark:border-emerald-500/20 dark:bg-emerald-500/12",
       icon: "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300",
       glow: "bg-[rgb(16_185_129_/_0.18)] dark:bg-[rgb(16_185_129_/_0.10)]",
-      label: "text-black dark:text-white",
-      value: "text-black dark:text-white",
+      label: "text-foreground",
+      value: "text-foreground",
     },
     amber: {
       shell:
         "border-amber-300 bg-amber-200/70 dark:border-amber-500/20 dark:bg-amber-500/12",
       icon: "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300",
       glow: "bg-[rgb(245_158_11_/_0.18)] dark:bg-[rgb(245_158_11_/_0.10)]",
-      label: "text-black dark:text-white",
-      value: "text-black dark:text-white",
+      label: "text-foreground",
+      value: "text-foreground",
     },
     rose: {
       shell:
         "border-rose-300 bg-rose-200/70 dark:border-rose-500/20 dark:bg-rose-500/12",
       icon: "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300",
       glow: "bg-[rgb(244_63_94_/_0.18)] dark:bg-[rgb(244_63_94_/_0.10)]",
-      label: "text-black dark:text-white",
-      value: "text-black dark:text-white",
+      label: "text-foreground",
+      value: "text-foreground",
     },
     sky: {
       shell:
         "border-sky-300 bg-sky-200/70 dark:border-sky-500/20 dark:bg-sky-500/12",
       icon: "border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-300",
       glow: "bg-[rgb(14_165_233_/_0.18)] dark:bg-[rgb(14_165_233_/_0.10)]",
-      label: "text-black dark:text-white",
-      value: "text-black dark:text-white",
+      label: "text-foreground",
+      value: "text-foreground",
     },
   }
 
