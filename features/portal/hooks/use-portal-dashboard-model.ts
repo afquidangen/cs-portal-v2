@@ -1226,7 +1226,10 @@ export function usePortalDashboardModel(role: Role) {
 
   function handleFacultySelfStatus(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    updateFacultyStatus("FAC-014", myFacultyStatus, myFacultyNotes)
+    const facultyMember = faculty.find((f) => f.email === profile.email)
+    if (facultyMember) {
+      updateFacultyStatus(facultyMember.id, myFacultyStatus, myFacultyNotes)
+    }
   }
 
   return {

@@ -42,6 +42,7 @@ export const roleNavigation: Record<Role, NavItem[]> = {
     { id: "classes", label: "Manage Class", icon: ClipboardCheck },
     { id: "schedule", label: "Class Schedule", icon: CalendarDays },
     { id: "grades", label: "Manage Grades", icon: FileSpreadsheet },
+    { id: "availability", label: "My Status", icon: CheckCircle2 },
     { id: "instructors", label: "Instructor Info", icon: Network },
   ],
   admin: [
