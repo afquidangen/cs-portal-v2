@@ -73,21 +73,6 @@ export function FeedbackModule({ model }: PortalModuleProps) {
               placeholder="Describe the concern or suggestion"
             />
 
-            <label className="flex items-center gap-2 text-sm text-foreground/80">
-              <input
-                type="checkbox"
-                checked={feedbackDraft.anonymous}
-                onChange={(event) =>
-                  setFeedbackDraft((current) => ({
-                    ...current,
-                    anonymous: event.target.checked,
-                  }))
-                }
-                className="size-4 rounded border border-border bg-background accent-primary"
-              />
-              Submit anonymously
-            </label>
-
             <Button type="submit" className="w-full rounded-2xl">
               <SendIcon />
               Submit Ticket

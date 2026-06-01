@@ -5,7 +5,6 @@ import {
   BookOpen,
   ClipboardList,
   MessageSquareWarning,
-  Presentation,
   Users,
 } from "lucide-react"
 
@@ -21,7 +20,6 @@ export function OverviewModule({ model }: PortalModuleProps) {
     facultyClassStudents,
     gradeAverage,
     role,
-    seminars,
     studentGrades,
     studentTickets,
   } = model
@@ -55,7 +53,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Metric
           label="Current GWA"
           value={gradeAverage}
@@ -75,14 +73,6 @@ export function OverviewModule({ model }: PortalModuleProps) {
           )}
           icon={MessageSquareWarning}
           tone="amber"
-        />
-        <Metric
-          label="Upcoming Events"
-          value={String(
-            seminars.filter((event) => event.status === "Active").length
-          )}
-          icon={Presentation}
-          tone="rose"
         />
       </div>
 

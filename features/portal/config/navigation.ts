@@ -30,7 +30,7 @@ export const roleNavigation: Record<Role, NavItem[]> = {
     { id: "thesis", label: "Thesis Library", icon: BookOpen },
     { id: "announcements", label: "Announcements", icon: Bell },
     { id: "feedback", label: "Feedback Tickets", icon: MessageSquareWarning },
-    { id: "seminars", label: "Seminars", icon: Presentation },
+    { id: "profile", label: "Profile", icon: UserCircle },
     { id: "availability", label: "Teacher Status", icon: CheckCircle2 },
     { id: "instructors", label: "Instructor Info", icon: Network },
     { id: "cso", label: "CSSO Records", icon: FileArchive },

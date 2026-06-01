@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   Sparkles,
   Sun,
+  UserCircle,
   X,
 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
@@ -65,6 +66,7 @@ import { GreetingCard } from "./modules/greeting-card"
 import { InstructorsModule } from "./modules/instructors-module"
 import { LiveAnnouncementCard } from "./modules/live-announcement-card"
 import { OverviewModule } from "./modules/overview-module"
+import { ProfileModule } from "./modules/profile-module"
 import { ProfileDialog } from "./modules/profile-dialog"
 import { QuickLinksModule } from "./modules/quick-links-module"
 import { SchedulePanel } from "./modules/schedule-panel"
@@ -111,6 +113,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       academic: <AcademicModule model={model} />,
       templates: <TemplatesModule model={model} />,
       classes: <ClassesModule model={model} />,
+      profile: <ProfileModule model={model} />,
       audit: <AuditModule />,
       about: <AboutModule />,
     }
@@ -270,13 +273,13 @@ export function RoleDashboard({ role }: { role: Role }) {
               moduleId: "quick-links",
             },
             {
-              label: "Seminars",
-              description: "Stay updated on upcoming activities",
-              icon: Bell,
+              label: "My Profile",
+              description: "View and edit your personal information",
+              icon: UserCircle,
               tone: "edu-ring-abyss edu-bg-soft-abyss",
               iconTone:
                 "border-amber-200 bg-amber-100 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300",
-              moduleId: "seminars",
+              moduleId: "profile",
             },
           ]
 
