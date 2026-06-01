@@ -1,12 +1,17 @@
 "use client"
 
-import { Download } from "lucide-react"
+import { Download, Send, Upload } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-import { calculateFinalGrade, gradeRemarks } from "../../lib/grades"
-import { Panel, StatusBadge } from "../shared/dashboard-ui"
+import {
+  calculateFinalGrade,
+  calculateGradePercentage,
+  gradeRemarkOptions,
+  gradeRemarks,
+} from "../../lib/grades"
+import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
 export function GradesModule({ model }: PortalModuleProps) {
@@ -28,7 +33,7 @@ export function GradesModule({ model }: PortalModuleProps) {
       }
     >
       <div className="overflow-x-auto rounded-2xl border border-border">
-        <table className="w-full min-w-[720px] text-left text-sm">
+        <table className="w-full min-w-[820px] text-left text-sm">
           <thead className="bg-muted text-foreground">
             <tr className="border-b border-border">
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
@@ -44,6 +49,9 @@ export function GradesModule({ model }: PortalModuleProps) {
                 Final Term
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                Percentage
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
                 Final Grade
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
@@ -55,6 +63,7 @@ export function GradesModule({ model }: PortalModuleProps) {
           <tbody className="divide-y divide-border bg-card">
             {studentGrades.map((grade) => {
               const finalGrade = calculateFinalGrade(grade)
+              const percentage = calculateGradePercentage(grade)
 
               return (
                 <tr key={grade.id} className="transition-colors hover:bg-muted/50">
@@ -71,11 +80,14 @@ export function GradesModule({ model }: PortalModuleProps) {
                   <td className="px-4 py-3 text-foreground/80">
                     {grade.finalTerm.toFixed(2)}
                   </td>
+                  <td className="px-4 py-3 text-foreground/80">
+                    {percentage !== undefined ? percentage.toFixed(2) : "N/A"}
+                  </td>
                   <td className="px-4 py-3 font-semibold text-foreground">
                     {finalGrade.toFixed(2)}
                   </td>
                   <td className="px-4 py-3">
-                    <StatusBadge value={gradeRemarks(finalGrade)} />
+                    <StatusBadge value={gradeRemarks(finalGrade, grade.remarks)} />
                   </td>
                 </tr>
               )
@@ -91,21 +103,72 @@ export function FacultyGradesPanel({
   model,
   full = false,
 }: PortalModuleProps & { full?: boolean }) {
-  const { downloadGradeTemplate, grades, updateGrade } = model
+  const {
+    downloadGradeTemplate,
+    facultyClassSections,
+    facultyGradeRecords,
+    handleGradeWorkbookUpload,
+    releaseGradesForSection,
+    selectedGradeSection,
+    setSelectedGradeSection,
+    updateGrade,
+    updateGradeRemarks,
+    uploadName,
+  } = model
+  const visibleGrades = full ? facultyGradeRecords : facultyGradeRecords.slice(0, 4)
 
   return (
     <Panel
       title="Manage Grades"
-      eyebrow="Midterm and final term encoding"
+      eyebrow="Section grade encoding"
       actions={
-        <Button size="sm" onClick={downloadGradeTemplate} className="rounded-2xl">
-          <Download className="size-4" />
-          Template
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" onClick={downloadGradeTemplate} className="rounded-2xl">
+            <Download className="size-4" />
+            Template
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => releaseGradesForSection(selectedGradeSection)}
+            className="rounded-2xl"
+          >
+            <Send className="size-4" />
+            Release
+          </Button>
+        </div>
       }
     >
+      <div className="mb-4 flex flex-wrap gap-2">
+        {facultyClassSections.map((section) => (
+          <Button
+            key={section}
+            type="button"
+            variant={selectedGradeSection === section ? "default" : "outline"}
+            onClick={() => setSelectedGradeSection(section)}
+            className="rounded-xl"
+          >
+            {section}
+          </Button>
+        ))}
+      </div>
+
+      <div className="mb-4 grid gap-3 md:grid-cols-[1fr_auto]">
+        <Input
+          type="file"
+          accept=".xlsx"
+          onChange={handleGradeWorkbookUpload}
+          className="h-10 rounded-2xl"
+        />
+        <Button type="button" variant="outline" className="rounded-2xl">
+          <Upload className="size-4" />
+          Upload Excel
+        </Button>
+      </div>
+      <p className="mb-4 text-sm text-muted-foreground">{uploadName}</p>
+
       <div className="overflow-x-auto rounded-2xl border border-border">
-        <table className="w-full min-w-[780px] text-left text-sm">
+        <table className="w-full min-w-[1080px] text-left text-sm">
           <thead className="bg-muted text-foreground">
             <tr className="border-b border-border">
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
@@ -115,13 +178,22 @@ export function FacultyGradesPanel({
                 Subject
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Midterm
+                Midterm %
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Final Term
+                Midterm Eq.
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Computed
+                Final %
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                Final Eq.
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                Final Rating
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                Remarks
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
                 Status
@@ -130,7 +202,7 @@ export function FacultyGradesPanel({
           </thead>
 
           <tbody className="divide-y divide-border bg-card">
-            {(full ? grades : grades.slice(0, 4)).map((grade) => {
+            {visibleGrades.map((grade) => {
               const finalGrade = calculateFinalGrade(grade)
 
               return (
@@ -140,12 +212,30 @@ export function FacultyGradesPanel({
                       {grade.student}
                     </p>
                     <p className="text-xs text-foreground/70">
-                      {grade.studentId}
+                      {grade.studentId} - {grade.section}
                     </p>
                   </td>
 
                   <td className="px-4 py-3 text-foreground/80">
-                    {grade.code}
+                    <p>{grade.code}</p>
+                    <p className="text-xs text-foreground/70">{grade.subject}</p>
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={grade.midtermTransmuted ?? ""}
+                      onChange={(event) =>
+                        updateGrade(
+                          grade.id,
+                          "midtermTransmuted",
+                          event.target.value
+                        )
+                      }
+                      className="h-9 w-24 rounded-2xl"
+                    />
                   </td>
 
                   <td className="px-4 py-3">
@@ -157,6 +247,23 @@ export function FacultyGradesPanel({
                       value={grade.midterm}
                       onChange={(event) =>
                         updateGrade(grade.id, "midterm", event.target.value)
+                      }
+                      className="h-9 w-24 rounded-2xl"
+                    />
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={grade.finalTransmuted ?? ""}
+                      onChange={(event) =>
+                        updateGrade(
+                          grade.id,
+                          "finalTransmuted",
+                          event.target.value
+                        )
                       }
                       className="h-9 w-24 rounded-2xl"
                     />
@@ -181,7 +288,15 @@ export function FacultyGradesPanel({
                   </td>
 
                   <td className="px-4 py-3">
-                    <StatusBadge value={gradeRemarks(finalGrade)} />
+                    <Select
+                      value={grade.remarks || "Passed"}
+                      onChange={(value) => updateGradeRemarks(grade.id, value)}
+                      options={gradeRemarkOptions}
+                    />
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <StatusBadge value={grade.released ? "Released" : "Draft"} />
                   </td>
                 </tr>
               )

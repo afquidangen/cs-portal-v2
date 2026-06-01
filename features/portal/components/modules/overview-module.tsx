@@ -4,30 +4,26 @@ import {
   BarChart3,
   BookOpen,
   ClipboardList,
-  Inbox,
   MessageSquareWarning,
   Presentation,
   Users,
 } from "lucide-react"
 
-import { roleProfiles } from "../../data/portal-data"
 import { calculateFinalGrade, gradeRemarks } from "../../lib/grades"
 import { Metric, Panel, StatusBadge } from "../shared/dashboard-ui"
 import { AnnouncementsPanel } from "./announcements-panel"
-import { FacultyAvailabilityPanel } from "./availability-module"
-import { FacultyGradesPanel } from "./grades-module"
 import { SchedulePanel } from "./schedule-panel"
 import type { PortalModuleProps } from "./types"
 
 export function OverviewModule({ model }: PortalModuleProps) {
   const {
+    facultyClassSections,
+    facultyClassStudents,
     gradeAverage,
     role,
-    roster,
     seminars,
     studentGrades,
     studentTickets,
-    tickets,
   } = model
 
   if (role === "admin") {
@@ -35,49 +31,24 @@ export function OverviewModule({ model }: PortalModuleProps) {
   }
 
   if (role === "faculty") {
-    const assignedTickets = tickets.filter(
-      (ticket) => ticket.assignedTo === roleProfiles.faculty.name
-    )
-
     return (
       <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2">
           <Metric
             label="Handled Classes"
-            value="4"
+            value={String(facultyClassSections.length)}
             icon={ClipboardList}
             tone="sky"
           />
           <Metric
             label="Students Enrolled"
-            value={String(roster.filter((student) => student.enrolled).length)}
+            value={String(
+              facultyClassStudents.filter((student) => student.enrolled).length
+            )}
             icon={Users}
             tone="emerald"
           />
-          <Metric
-            label="Pending Tickets"
-            value={String(assignedTickets.length)}
-            icon={Inbox}
-            tone="amber"
-          />
-          <Metric
-            label="Hosted Events"
-            value={String(
-              seminars.filter(
-                (event) => event.host === roleProfiles.faculty.name
-              ).length
-            )}
-            icon={Presentation}
-            tone="rose"
-          />
         </div>
-
-        <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-          <FacultyAvailabilityPanel model={model} />
-          <SchedulePanel />
-        </div>
-
-        <FacultyGradesPanel model={model} />
       </div>
     )
   }
@@ -116,7 +87,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-        <SchedulePanel />
+        <SchedulePanel model={model} />
 
         <Panel title="Grade Notifications" eyebrow="Real-time updates">
           <div className="space-y-3">

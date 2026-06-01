@@ -2,8 +2,11 @@
 
 import { scheduleSeed } from "../../data/portal-data"
 import { Panel } from "../shared/dashboard-ui"
+import type { PortalModuleProps } from "./types"
 
-export function SchedulePanel() {
+export function SchedulePanel({ model }: Partial<PortalModuleProps> = {}) {
+  const schedules = model?.visibleSchedules ?? scheduleSeed
+
   return (
     <Panel title="Weekly Schedule" eyebrow="Classes">
       <div className="overflow-x-auto rounded-2xl border border-border">
@@ -29,7 +32,7 @@ export function SchedulePanel() {
           </thead>
 
           <tbody className="divide-y divide-border bg-card">
-            {scheduleSeed.map((item) => (
+            {schedules.map((item) => (
               <tr key={item.id} className="transition-colors hover:bg-muted/50">
                 <td className="px-4 py-3 font-medium text-foreground">
                   {item.day}

@@ -50,6 +50,7 @@ import { cn } from "@/lib/utils"
 
 import type { Role } from "../data/portal-data"
 import { usePortalDashboardModel } from "../hooks/use-portal-dashboard-model"
+import type { ModuleId } from "../types/navigation"
 import { AcademicModule } from "./modules/academic-module"
 import { AnnouncementManagerModule } from "./modules/announcement-manager-module"
 import { AuditModule } from "./modules/audit-module"
@@ -103,7 +104,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       availability: <AvailabilityModule model={model} />,
       instructors: <InstructorsModule model={model} />,
       cso: <CsoModule />,
-      schedule: <SchedulePanel />,
+      schedule: <SchedulePanel model={model} />,
       curriculum: <CurriculumModule />,
       "quick-links": <QuickLinksModule />,
       users: <UsersModule model={model} />,
@@ -238,24 +239,6 @@ export function RoleDashboard({ role }: { role: Role }) {
               iconTone:
                 "border-indigo-200 bg-indigo-100 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300",
               moduleId: "grades",
-            },
-            {
-              label: "Availability",
-              description: "Update consultation and class presence",
-              icon: Bell,
-              tone: "edu-ring-slate edu-bg-soft-slate",
-              iconTone:
-                "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-500/30 dark:bg-slate-500/15 dark:text-slate-300",
-              moduleId: "availability",
-            },
-            {
-              label: "Seminars",
-              description: "Track events, trainings, and activities",
-              icon: Layers3,
-              tone: "edu-ring-abyss edu-bg-soft-abyss",
-              iconTone:
-                "border-amber-200 bg-amber-100 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300",
-              moduleId: "seminars",
             },
           ]
         : [
@@ -406,7 +389,10 @@ export function RoleDashboard({ role }: { role: Role }) {
                   )}
                 >
                   <Avatar className="size-10 ring-1 ring-white/15">
-                    <AvatarImage src="/avatars/01.png" alt={model.profile.name} />
+                    <AvatarImage
+                      src={model.profilePhotoUrl || "/avatars/01.png"}
+                      alt={model.profile.name}
+                    />
                     <AvatarFallback className="bg-white/10 text-white">
                       {getInitials(model.profile.name)}
                     </AvatarFallback>
@@ -449,7 +435,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                           key={item.id}
                           type="button"
                           onClick={() => {
-                            model.selectModule(item.id)
+                            model.selectModule(item.id as ModuleId)
                             model.setSidebarOpen(false)
                           }}
                           className={cn(
@@ -557,7 +543,10 @@ export function RoleDashboard({ role }: { role: Role }) {
                   className="hidden items-center gap-3 rounded-2xl border border-border bg-card px-3 py-2 shadow-sm transition hover:bg-accent/40 sm:flex"
                 >
                   <Avatar className="size-8 ring-1 ring-border">
-                    <AvatarImage src="/avatars/01.png" alt={model.profile.name} />
+                    <AvatarImage
+                      src={model.profilePhotoUrl || "/avatars/01.png"}
+                      alt={model.profile.name}
+                    />
                     <AvatarFallback className="bg-primary/10 text-primary">
                       {getInitials(model.profile.name)}
                     </AvatarFallback>
@@ -638,56 +627,61 @@ export function RoleDashboard({ role }: { role: Role }) {
                   </div>
                 ) : null}
 
-                <div className="pt-2 text-center">
-                  <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
-                    Quick access
-                  </p>
-                </div>
+                {role !== "faculty" ? (
+                  <>
+                    <div className="pt-2 text-center">
+                      <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
+                        Quick access
+                      </p>
+                    </div>
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  {quickAccessItems.map((item) => {
-                    const Icon = item.icon
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                      {quickAccessItems.map((item) => {
+                        const Icon = item.icon
 
-                    return (
-                      <button
-                        key={item.label}
-                        type="button"
-                        onClick={() => model.selectModule(item.moduleId)}
-                        className="group text-left"
-                      >
-                        <Card
-                          className={cn(
-                            "overflow-hidden rounded-[28px] border bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md",
-                            item.tone
-                          )}
-                        >
-                          <CardContent className="p-5">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="min-w-0">
-                                <p className="text-base font-semibold tracking-tight text-foreground">
-                                  {item.label}
-                                </p>
-                                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                  {item.description}
-                                </p>
-                              </div>
+                        return (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => model.selectModule(item.moduleId as ModuleId)}
+                            className="group text-left"
+                          >
+                            <Card
+                              className={cn(
+                                "overflow-hidden rounded-[28px] border bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md",
+                                item.tone
+                              )}
+                            >
+                              <CardContent className="p-5">
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="min-w-0">
+                                    <p className="text-base font-semibold tracking-tight text-foreground">
+                                      {item.label}
+                                    </p>
+                                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                      {item.description}
+                                    </p>
+                                  </div>
 
-                              <div
-                                className={cn(
-                                  "flex size-14 shrink-0 items-center justify-center rounded-2xl border shadow-sm backdrop-blur-sm transition-transform duration-200 group-hover:scale-105",
-                                  item.iconTone
-                                )}
-                              >
-                                <Icon className="size-6" strokeWidth={2.2} />
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </button>
-                    )
-                  })}
-                </div>
+                                  <div
+                                    className={cn(
+                                      "flex size-14 shrink-0 items-center justify-center rounded-2xl border shadow-sm backdrop-blur-sm transition-transform duration-200 group-hover:scale-105",
+                                      item.iconTone
+                                    )}
+                                  >
+                                    <Icon className="size-6" strokeWidth={2.2} />
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </>
+                ) : null}
 
+                {role !== "faculty" ? (
                 <Card className="relative overflow-hidden rounded-[32px] border border-border bg-card shadow-sm">
                   <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.10),transparent_32%),radial-gradient(circle_at_right,hsl(var(--foreground)/0.04),transparent_26%)]" />
                   <CardHeader className="relative pb-5">
@@ -762,13 +756,16 @@ export function RoleDashboard({ role }: { role: Role }) {
                     </div>
                   </CardContent>
                 </Card>
+                ) : null}
 
                 <Card className="overflow-hidden rounded-[32px] border border-border bg-card shadow-sm">
                   <CardHeader className="pb-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <CardTitle className="text-xl font-semibold tracking-tight text-black dark:text-white">
-                          News & Announcements
+                          {role === "faculty"
+                            ? "Announcements and CS Updates"
+                            : "News & Announcements"}
                         </CardTitle>
                         <CardDescription className="mt-1 text-muted-foreground">
                           Featured updates with highlighted headlines and full article view

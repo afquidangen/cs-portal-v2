@@ -18,7 +18,6 @@ import type { PortalModuleProps } from "./types"
 export function ThesisLibraryModule({ model }: PortalModuleProps) {
   const {
     confirmAndDeleteThesis,
-    downloadThesisDetails,
     filteredTheses,
     handleCreateThesis,
     query,
@@ -120,10 +119,16 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
     const file = event.target.files?.[0]
 
     if (!file) return
+    if (file.type !== "application/pdf" && !file.name.endsWith(".pdf")) {
+      window.alert("Please upload a PDF manuscript.")
+      event.target.value = ""
+      return
+    }
 
     setThesisDraft((current) => ({
       ...current,
       pdfUrl: URL.createObjectURL(file),
+      fileName: file.name,
     }))
   }}
 />
@@ -229,7 +234,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
 >
   <a
     href={thesis.pdfUrl}
-    download={`${thesis.title}.pdf`}
+    download={thesis.fileName || `${thesis.title}.pdf`}
     target="_blank"
     rel="noopener noreferrer"
   >

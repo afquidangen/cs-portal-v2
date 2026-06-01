@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import {
+  type ChangeEvent,
   type FormEvent,
   useEffect,
   useMemo,
@@ -18,8 +19,12 @@ import { initialModule, roleNavigation } from "../config/navigation"
 import {
   type Announcement,
   type AvailabilityStatus,
+  type ClassStudent,
   type CurriculumRecord,
+  type GradeRecord,
+  type ProfileDetails,
   type Role,
+  type ScheduleItem,
   type SeminarRecord,
   type ThesisRecord,
   type TicketStatus,
@@ -27,17 +32,20 @@ import {
   announcementsSeed,
   classRosterSeed,
   curriculumCatalogSeed,
+  facultyHandledSections,
   facultySeed,
   feedbackSeed,
   gradeSeed,
   roleProfiles,
+  scheduleSeed,
   seminarSeed,
   thesisSeed,
   usersSeed,
   yearSectionsSeed,
 } from "../data/portal-data"
 import { csvEscape, downloadFile } from "../lib/downloads"
-import { calculateFinalGrade } from "../lib/grades"
+import { calculateFinalGrade, transmutedToEquivalent } from "../lib/grades"
+import { parseGradeWorkbook, parseScheduleWorkbook } from "../lib/xlsx"
 import type { ModuleId } from "../types/navigation"
 import { useStoredState } from "./use-stored-state"
 
@@ -83,6 +91,91 @@ function parseTestSession(value: string | null) {
   }
 }
 
+function normalizeName(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "")
+}
+
+function splitProfileName(name: string) {
+  const parts = name.split(" ").filter(Boolean)
+  return {
+    firstName: parts[0] ?? "",
+    middleName: parts.length > 2 ? parts.slice(1, -1).join(" ") : "",
+    lastName: parts.length > 1 ? parts[parts.length - 1] : "",
+  }
+}
+
+function createProfileDetails(
+  profile: TestSessionProfile | typeof roleProfiles[Role],
+  user?: UserRecord
+): ProfileDetails {
+  const nameParts = splitProfileName(profile.name)
+
+  return {
+    photoUrl: user?.photoUrl ?? "",
+    firstName: user?.firstName ?? nameParts.firstName,
+    middleName: user?.middleName ?? nameParts.middleName,
+    lastName: user?.lastName ?? nameParts.lastName,
+    email: user?.email ?? profile.email,
+    contactNumber: user?.contactNumber ?? "0917 000 0000",
+    sex: user?.sex ?? "Female",
+    birthday: user?.birthday ?? "",
+    address: user?.address ?? "Candon City, Ilocos Sur",
+  }
+}
+
+function getProfileFullName(details: ProfileDetails) {
+  return [details.firstName, details.middleName, details.lastName]
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(" ")
+}
+
+function buildGradeFromImport(
+  imported: {
+    student: string
+    section: string
+    subject: string
+    code: string
+    midtermTransmuted?: number
+    midtermEquivalent?: number
+    finalTransmuted?: number
+    finalEquivalent?: number
+    remarks?: string
+  },
+  studentId: string,
+  index: number
+): GradeRecord {
+  const midterm = imported.midtermEquivalent ?? 5
+  const finalTerm = imported.finalEquivalent ?? 5
+  const gradePercentage =
+    imported.midtermTransmuted !== undefined &&
+    imported.finalTransmuted !== undefined
+      ? Number(
+          ((imported.midtermTransmuted + imported.finalTransmuted) / 2).toFixed(
+            2
+          )
+        )
+      : undefined
+
+  return {
+    id: `GR-UP-${Date.now()}-${index}`,
+    studentId,
+    student: imported.student,
+    section: imported.section,
+    subject: imported.subject,
+    code: imported.code,
+    units: 3,
+    midtermTransmuted: imported.midtermTransmuted,
+    midterm,
+    finalTransmuted: imported.finalTransmuted,
+    finalTerm,
+    gradePercentage,
+    remarks: imported.remarks || "Passed",
+    released: false,
+    updatedAt: "June 1, 2026",
+  }
+}
+
 export function usePortalDashboardModel(role: Role) {
   const router = useRouter()
   const [activeModule, setActiveModule] = useState<ModuleId>(
@@ -121,6 +214,10 @@ export function usePortalDashboardModel(role: Role) {
     "comsite-year-sections",
     yearSectionsSeed
   )
+  const [classSchedules, setClassSchedules] = useStoredState<ScheduleItem[]>(
+    "comsite-class-schedules",
+    scheduleSeed
+  )
 
   const [roleFilter, setRoleFilter] = useState("All")
   const [selectedUserType, setSelectedUserType] =
@@ -128,12 +225,28 @@ export function usePortalDashboardModel(role: Role) {
   const [selectedAcademicSection, setSelectedAcademicSection] =
     useState("Semesters")
   const [selectedClassYear, setSelectedClassYear] = useState("First Year")
+  const [selectedClassSection, setSelectedClassSection] = useState("BSCS 3A")
+  const [selectedGradeSection, setSelectedGradeSection] = useState("BSCS 3A")
   const [selectedCurriculumId, setSelectedCurriculumId] = useState("CURR-001")
   const [curriculumFilter, setCurriculumFilter] = useState("All")
   const [showAddUserForm, setShowAddUserForm] = useState(false)
   const [showThesisUploadForm, setShowThesisUploadForm] = useState(false)
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false)
   const [newSectionName, setNewSectionName] = useState("")
+  const [studentDraft, setStudentDraft] = useState({
+    id: "",
+    name: "",
+    section: "BSCS 3A",
+  })
+  const [editingStudentId, setEditingStudentId] = useState<string | null>(null)
+  const [scheduleDraft, setScheduleDraft] = useState({
+    day: "",
+    time: "",
+    subject: "",
+    room: "",
+    instructor: "",
+    section: "BSCS 3A",
+  })
   const [newCurriculum, setNewCurriculum] = useState({
     name: "",
     major: "",
@@ -178,6 +291,7 @@ export function usePortalDashboardModel(role: Role) {
     adviser: "",
     abstract: "",
     pdfUrl: "",
+    fileName: "",
   })
   const [announcementDraft, setAnnouncementDraft] = useState({
     title: "",
@@ -271,7 +385,21 @@ export function usePortalDashboardModel(role: Role) {
     })
   }, [setCurricula])
 
-  const profile = sessionProfile ?? roleProfiles[role]
+  const rawProfile = sessionProfile ?? roleProfiles[role]
+  const profileUser = users.find((user) => user.id === rawProfile.id)
+  const [profileDetails, setProfileDetails] = useStoredState<ProfileDetails>(
+    `comsite-profile-details-${rawProfile.id}`,
+    createProfileDetails(rawProfile, profileUser)
+  )
+  const profileName = getProfileFullName(profileDetails)
+  const profile = {
+    ...rawProfile,
+    name: profileName || rawProfile.name,
+    email: profileDetails.email || rawProfile.email,
+    title: role === "faculty" ? "Faculty Member" : rawProfile.title,
+  }
+  const profileAdvisoryClass = profileUser?.advisoryClass
+  const profilePhotoUrl = profileDetails.photoUrl
   const navigation = roleNavigation[role]
 
   const userStats = useMemo(
@@ -283,9 +411,66 @@ export function usePortalDashboardModel(role: Role) {
     [users]
   )
 
+  const allClassSections = useMemo(
+    () => yearSections.flatMap((item) => item.sections),
+    [yearSections]
+  )
+
+  const facultyClassSections = useMemo(() => {
+    const configured = facultyHandledSections[profile.id] ?? []
+    const advisory = profileAdvisoryClass ? [profileAdvisoryClass] : []
+    const scheduleSections = classSchedules
+      .filter((item) => item.instructor === profile.name)
+      .map((item) => item.section)
+
+    return Array.from(
+      new Set([...configured, ...advisory, ...scheduleSections])
+    ).filter(Boolean)
+  }, [classSchedules, profile.id, profile.name, profileAdvisoryClass])
+
+  const activeClassSection =
+    role === "faculty" && !facultyClassSections.includes(selectedClassSection)
+      ? facultyClassSections[0] ?? selectedClassSection
+      : selectedClassSection
+
+  const activeGradeSection =
+    role === "faculty" && !facultyClassSections.includes(selectedGradeSection)
+      ? facultyClassSections[0] ?? selectedGradeSection
+      : selectedGradeSection
+
+  const facultyClassStudents = useMemo(
+    () =>
+      roster.filter(
+        (student) =>
+          student.section === activeClassSection &&
+          facultyClassSections.includes(student.section)
+      ),
+    [activeClassSection, facultyClassSections, roster]
+  )
+
+  const facultyGradeRecords = useMemo(
+    () =>
+      grades.filter(
+        (grade) =>
+          grade.section === activeGradeSection &&
+          facultyClassSections.includes(grade.section)
+      ),
+    [activeGradeSection, facultyClassSections, grades]
+  )
+
+  const visibleSchedules = useMemo(() => {
+    if (role !== "faculty") return classSchedules
+    return classSchedules.filter((item) =>
+      facultyClassSections.includes(item.section)
+    )
+  }, [classSchedules, facultyClassSections, role])
+
   const studentGrades = useMemo(
-    () => grades.filter((grade) => grade.studentId === roleProfiles.student.id),
-    [grades]
+    () =>
+      grades.filter(
+        (grade) => grade.studentId === profile.id && grade.released !== false
+      ),
+    [grades, profile.id]
   )
 
   const gradeAverage = useMemo(() => {
@@ -343,8 +528,8 @@ export function usePortalDashboardModel(role: Role) {
 
   const studentTickets = tickets.filter(
     (ticket) =>
-      ticket.studentId === roleProfiles.student.id ||
-      ticket.studentName === roleProfiles.student.name
+      ticket.studentId === profile.id ||
+      ticket.studentName === profile.name
   )
 
   const selectedNav = navigation.find((item) => item.id === activeModule)
@@ -381,8 +566,28 @@ export function usePortalDashboardModel(role: Role) {
 
   function downloadGradeTemplate() {
     const rows = [
-      ["Student ID", "Student Name", "Subject Code", "Midterm", "Final Term"],
-      ...roster.map((student) => [student.id, student.name, "CS311", "", ""]),
+      [
+        "Student ID",
+        "Student Name",
+        "Section",
+        "Subject Code",
+        "Midterm %",
+        "Midterm Equivalent",
+        "Final %",
+        "Final Equivalent",
+        "Remarks",
+      ],
+      ...facultyClassStudents.map((student) => [
+        student.id,
+        student.name,
+        student.section,
+        "CS304",
+        "",
+        "",
+        "",
+        "",
+        "Passed",
+      ]),
     ]
     downloadFile(
       "grade-template.csv",
@@ -413,36 +618,70 @@ export function usePortalDashboardModel(role: Role) {
   }
 
   function downloadThesisDetails(thesis: ThesisRecord) {
-    downloadFile(
-      `${thesis.id}-manuscript.pdf`,
-      [
-        thesis.title,
-        `Authors: ${thesis.authors}`,
-        `Year: ${thesis.year}`,
-        `Category: ${thesis.category}`,
-        `Adviser: ${thesis.adviser}`,
-        "",
-        thesis.abstract,
-      ].join("\n"),
-      "application/pdf"
-    )
+    const link = document.createElement("a")
+    link.href = thesis.pdfUrl
+    link.download = thesis.fileName || `${thesis.title}.pdf`
+    link.click()
   }
 
   function updateGrade(
     id: string,
-    field: "midterm" | "finalTerm",
+    field: "midterm" | "finalTerm" | "midtermTransmuted" | "finalTransmuted",
     value: string
   ) {
     const numericValue = Number(value)
     setGrades((current) =>
+      current.map((grade) => {
+        if (grade.id !== id) return grade
+
+        const safeValue = Number.isNaN(numericValue) ? 0 : numericValue
+        const nextGrade = {
+          ...grade,
+          [field]: safeValue,
+          updatedAt: "June 1, 2026",
+        }
+
+        if (field === "midtermTransmuted") {
+          nextGrade.midterm = transmutedToEquivalent(safeValue)
+        }
+
+        if (field === "finalTransmuted") {
+          nextGrade.finalTerm = transmutedToEquivalent(safeValue)
+        }
+
+        nextGrade.gradePercentage =
+          nextGrade.midtermTransmuted !== undefined &&
+          nextGrade.finalTransmuted !== undefined
+            ? Number(
+                (
+                  (nextGrade.midtermTransmuted + nextGrade.finalTransmuted) /
+                  2
+                ).toFixed(2)
+              )
+            : nextGrade.gradePercentage
+
+        return nextGrade
+      })
+    )
+  }
+
+  function updateGradeRemarks(id: string, remarks: string) {
+    setGrades((current) =>
       current.map((grade) =>
-        grade.id === id
-          ? {
-              ...grade,
-              [field]: Number.isNaN(numericValue) ? 0 : numericValue,
-              updatedAt: "May 26, 2026",
-            }
-          : grade
+        grade.id === id ? { ...grade, remarks, updatedAt: "June 1, 2026" } : grade
+      )
+    )
+  }
+
+  function releaseGradesForSection(section: string) {
+    const approved = window.confirm(
+      `Release grades for ${section} to students?`
+    )
+    if (!approved) return
+
+    setGrades((current) =>
+      current.map((grade) =>
+        grade.section === section ? { ...grade, released: true } : grade
       )
     )
   }
@@ -582,6 +821,81 @@ export function usePortalDashboardModel(role: Role) {
     )
   }
 
+  function handleProfilePhotoChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      setProfileDetails((current) => ({
+        ...current,
+        photoUrl: typeof reader.result === "string" ? reader.result : "",
+      }))
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function resetStudentDraft(section = activeClassSection) {
+    setStudentDraft({ id: "", name: "", section })
+    setEditingStudentId(null)
+  }
+
+  function startEditStudent(student: ClassStudent) {
+    setStudentDraft({
+      id: student.id,
+      name: student.name,
+      section: student.section,
+    })
+    setEditingStudentId(student.id)
+  }
+
+  function handleSaveStudent(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!studentDraft.id.trim() || !studentDraft.name.trim()) return
+
+    setRoster((current) => {
+      const exists = current.some((student) => student.id === editingStudentId)
+
+      if (exists) {
+        return current.map((student) =>
+          student.id === editingStudentId
+            ? {
+                ...student,
+                id: studentDraft.id.trim(),
+                name: studentDraft.name.trim(),
+                section: studentDraft.section,
+              }
+            : student
+        )
+      }
+
+      return [
+        {
+          id: studentDraft.id.trim(),
+          name: studentDraft.name.trim(),
+          section: studentDraft.section,
+          enrolled: true,
+        },
+        ...current,
+      ]
+    })
+
+    setGrades((current) =>
+      current.map((grade) =>
+        grade.studentId === editingStudentId
+          ? {
+              ...grade,
+              studentId: studentDraft.id.trim(),
+              student: studentDraft.name.trim(),
+              section: studentDraft.section,
+            }
+          : grade
+      )
+    )
+
+    resetStudentDraft(studentDraft.section)
+  }
+
   function handleAddClassSection(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!newSectionName.trim()) return
@@ -598,6 +912,147 @@ export function usePortalDashboardModel(role: Role) {
       )
     )
     setNewSectionName("")
+  }
+
+  function handleCreateSchedule(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!scheduleDraft.section.trim() || !scheduleDraft.subject.trim()) return
+
+    setClassSchedules((current) => [
+      {
+        id: `SCH-${String(current.length + 1).padStart(3, "0")}`,
+        day: scheduleDraft.day.trim() || "TBA",
+        time: scheduleDraft.time.trim() || "TBA",
+        subject: scheduleDraft.subject.trim(),
+        room: scheduleDraft.room.trim() || "TBA",
+        instructor: scheduleDraft.instructor.trim() || profile.name,
+        section: scheduleDraft.section.trim(),
+      },
+      ...current,
+    ])
+
+    setScheduleDraft({
+      day: "",
+      time: "",
+      subject: "",
+      room: "",
+      instructor: "",
+      section: activeClassSection,
+    })
+  }
+
+  async function handleScheduleUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    try {
+      const importedRows = await parseScheduleWorkbook(file)
+      if (!importedRows.length) {
+        window.alert("No schedule rows were found in the uploaded workbook.")
+        return
+      }
+
+      setClassSchedules((current) => [
+        ...importedRows.map((row, index) => ({
+          id: `SCH-UP-${Date.now()}-${index}`,
+          ...row,
+        })),
+        ...current,
+      ])
+      setUploadName(file.name)
+    } catch (error) {
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to read the uploaded schedule workbook."
+      )
+    } finally {
+      event.target.value = ""
+    }
+  }
+
+  async function handleGradeWorkbookUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    try {
+      const importedRows = await parseGradeWorkbook(file)
+      if (!importedRows.length) {
+        window.alert("No grade rows were found in the uploaded workbook.")
+        return
+      }
+
+      const knownStudents = new Map(
+        roster.map((student) => [normalizeName(student.name), student])
+      )
+      const importedStudents = new Map<string, ClassStudent>()
+
+      importedRows.forEach((row, index) => {
+        const key = normalizeName(row.student)
+        if (knownStudents.has(key) || importedStudents.has(key)) return
+
+        importedStudents.set(key, {
+          id: `UP-${String(Date.now()).slice(-5)}-${index + 1}`,
+          name: row.student,
+          section: row.section || activeGradeSection,
+          enrolled: true,
+        })
+      })
+
+      if (importedStudents.size) {
+        setRoster((current) => [...Array.from(importedStudents.values()), ...current])
+      }
+
+      setGrades((current) => {
+        const nextGrades = [...current]
+
+        importedRows.forEach((row, index) => {
+          const student =
+            knownStudents.get(normalizeName(row.student)) ??
+            importedStudents.get(normalizeName(row.student))
+
+          if (!student) return
+
+          const importedGrade = buildGradeFromImport(
+            {
+              ...row,
+              section: row.section || activeGradeSection,
+            },
+            student.id,
+            index
+          )
+          const existingIndex = nextGrades.findIndex(
+            (grade) =>
+              grade.studentId === student.id &&
+              grade.section === importedGrade.section &&
+              grade.code === importedGrade.code
+          )
+
+          if (existingIndex >= 0) {
+            nextGrades[existingIndex] = {
+              ...nextGrades[existingIndex],
+              ...importedGrade,
+              id: nextGrades[existingIndex].id,
+            }
+          } else {
+            nextGrades.unshift(importedGrade)
+          }
+        })
+
+        return nextGrades
+      })
+
+      setSelectedGradeSection(importedRows[0]?.section || activeGradeSection)
+      setUploadName(file.name)
+    } catch (error) {
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to read the uploaded grade workbook."
+      )
+    } finally {
+      event.target.value = ""
+    }
   }
 
   function handleAddCurriculum(event: FormEvent<HTMLFormElement>) {
@@ -678,7 +1133,13 @@ export function usePortalDashboardModel(role: Role) {
   function handleCreateThesis(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!thesisDraft.title.trim() || !thesisDraft.authors.trim()) return
+    if (
+      !thesisDraft.title.trim() ||
+      !thesisDraft.authors.trim() ||
+      !thesisDraft.pdfUrl
+    ) {
+      return
+    }
 
     setTheses((current) => [
       {
@@ -696,6 +1157,9 @@ export function usePortalDashboardModel(role: Role) {
           .filter(Boolean)
           .slice(0, 3),
         pdfUrl: thesisDraft.pdfUrl,
+        fileName:
+          thesisDraft.fileName ||
+          `${thesisDraft.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`,
       },
       ...current,
     ])
@@ -708,7 +1172,9 @@ export function usePortalDashboardModel(role: Role) {
       adviser: "",
       abstract: "",
       pdfUrl: "",
+      fileName: "",
     })
+    setShowThesisUploadForm(false)
   }
 
   function handleCreateAnnouncement(event: FormEvent<HTMLFormElement>) {
@@ -791,6 +1257,8 @@ export function usePortalDashboardModel(role: Role) {
     setCurricula,
     yearSections,
     setYearSections,
+    classSchedules,
+    setClassSchedules,
     roleFilter,
     setRoleFilter,
     selectedUserType,
@@ -799,6 +1267,10 @@ export function usePortalDashboardModel(role: Role) {
     setSelectedAcademicSection,
     selectedClassYear,
     setSelectedClassYear,
+    selectedClassSection: activeClassSection,
+    setSelectedClassSection,
+    selectedGradeSection: activeGradeSection,
+    setSelectedGradeSection,
     selectedCurriculumId,
     setSelectedCurriculumId,
     curriculumFilter,
@@ -811,6 +1283,12 @@ export function usePortalDashboardModel(role: Role) {
     setShowAnnouncementForm,
     newSectionName,
     setNewSectionName,
+    studentDraft,
+    setStudentDraft,
+    editingStudentId,
+    setEditingStudentId,
+    scheduleDraft,
+    setScheduleDraft,
     newCurriculum,
     setNewCurriculum,
     thesisYearFilter,
@@ -833,9 +1311,17 @@ export function usePortalDashboardModel(role: Role) {
     setMyFacultyStatus,
     myFacultyNotes,
     setMyFacultyNotes,
+    profileDetails,
+    setProfileDetails,
+    profilePhotoUrl,
     profile,
     navigation,
     userStats,
+    allClassSections,
+    facultyClassSections,
+    facultyClassStudents,
+    facultyGradeRecords,
+    visibleSchedules,
     studentGrades,
     gradeAverage,
     filteredTheses,
@@ -852,13 +1338,22 @@ export function usePortalDashboardModel(role: Role) {
     downloadAttendees,
     downloadThesisDetails,
     updateGrade,
+    updateGradeRemarks,
+    releaseGradesForSection,
     updateTicketStatus,
     updateFacultyStatus,
     confirmAndToggleUserStatus,
     confirmAndDeleteUser,
     confirmAndDeleteThesis,
     undoTicketResolution,
+    handleProfilePhotoChange,
+    resetStudentDraft,
+    startEditStudent,
+    handleSaveStudent,
     handleAddClassSection,
+    handleCreateSchedule,
+    handleScheduleUpload,
+    handleGradeWorkbookUpload,
     handleAddCurriculum,
     handleAddUser,
     handleFeedbackSubmit,

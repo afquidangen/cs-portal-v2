@@ -1,6 +1,7 @@
 "use client"
 
-import { scheduleSeed } from "../../data/portal-data"
+import { Pencil, Plus, X } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -9,51 +10,149 @@ import type { PortalModuleProps } from "./types"
 
 export function ClassesModule({ model }: PortalModuleProps) {
   const {
+    classSchedules,
+    editingStudentId,
+    facultyClassSections,
+    facultyClassStudents,
     handleAddClassSection,
+    handleCreateSchedule,
+    handleSaveStudent,
+    handleScheduleUpload,
     newSectionName,
+    resetStudentDraft,
     role,
-    roster,
+    scheduleDraft,
+    selectedClassSection,
     selectedClassYear,
     setNewSectionName,
     setRoster,
+    setScheduleDraft,
+    setSelectedClassSection,
     setSelectedClassYear,
+    setStudentDraft,
+    startEditStudent,
+    studentDraft,
     yearSections,
   } = model
 
   if (role === "faculty") {
     return (
-      <Panel title="Manage Class" eyebrow="Checklist enrollment">
-        <div className="space-y-3">
-          {roster.map((student) => (
-            <label
-              key={student.id}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors"
-            >
-              <div>
-                <p className="font-medium text-foreground">{student.name}</p>
-                <p className="text-sm text-foreground/70">
-                  {student.id} - {student.section}
-                </p>
-              </div>
+      <div className="space-y-5">
+        <Panel title="Manage Class" eyebrow="Sections handled">
+          <div className="flex flex-wrap gap-2">
+            {facultyClassSections.map((section) => (
+              <Button
+                key={section}
+                type="button"
+                variant={selectedClassSection === section ? "default" : "outline"}
+                onClick={() => {
+                  setSelectedClassSection(section)
+                  setStudentDraft((current) => ({ ...current, section }))
+                }}
+                className="rounded-xl"
+              >
+                {section}
+              </Button>
+            ))}
+          </div>
 
-              <input
-                type="checkbox"
-                checked={student.enrolled}
-                onChange={(event) =>
-                  setRoster((current) =>
-                    current.map((item) =>
-                      item.id === student.id
-                        ? { ...item, enrolled: event.target.checked }
-                        : item
-                    )
-                  )
-                }
-                className="size-5 rounded-md border border-border bg-background accent-primary"
-              />
-            </label>
-          ))}
-        </div>
-      </Panel>
+          <form
+            onSubmit={handleSaveStudent}
+            className="mt-5 grid gap-3 lg:grid-cols-[1fr_1.3fr_auto_auto]"
+          >
+            <Input
+              value={studentDraft.id}
+              onChange={(event) =>
+                setStudentDraft((current) => ({
+                  ...current,
+                  id: event.target.value,
+                }))
+              }
+              placeholder="Student ID"
+              className="h-10 rounded-2xl"
+            />
+            <Input
+              value={studentDraft.name}
+              onChange={(event) =>
+                setStudentDraft((current) => ({
+                  ...current,
+                  name: event.target.value,
+                }))
+              }
+              placeholder="Student name"
+              className="h-10 rounded-2xl"
+            />
+            <Button type="submit" className="rounded-2xl">
+              {editingStudentId ? (
+                <Pencil className="size-4" />
+              ) : (
+                <Plus className="size-4" />
+              )}
+              {editingStudentId ? "Update" : "Add"}
+            </Button>
+            {editingStudentId ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => resetStudentDraft(selectedClassSection)}
+                className="rounded-2xl"
+              >
+                <X className="size-4" />
+                Cancel
+              </Button>
+            ) : null}
+          </form>
+        </Panel>
+
+        <Panel title={selectedClassSection} eyebrow="Students">
+          <div className="space-y-3">
+            {facultyClassStudents.map((student) => (
+              <label
+                key={student.id}
+                className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors"
+              >
+                <div>
+                  <p className="font-medium text-foreground">{student.name}</p>
+                  <p className="text-sm text-foreground/70">
+                    {student.id} - {student.section}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={(event) => {
+                      event.preventDefault()
+                      startEditStudent(student)
+                    }}
+                    className="rounded-2xl"
+                  >
+                    <Pencil className="size-4" />
+                    Edit
+                  </Button>
+
+                  <input
+                    type="checkbox"
+                    checked={student.enrolled}
+                    onChange={(event) =>
+                      setRoster((current) =>
+                        current.map((item) =>
+                          item.id === student.id
+                            ? { ...item, enrolled: event.target.checked }
+                            : item
+                        )
+                      )
+                    }
+                    className="size-5 rounded-md border border-border bg-background accent-primary"
+                  />
+                </div>
+              </label>
+            ))}
+          </div>
+        </Panel>
+      </div>
     )
   }
 
@@ -99,8 +198,89 @@ export function ClassesModule({ model }: PortalModuleProps) {
       </Panel>
 
       <Panel title="Class Schedule Upload" eyebrow="Manual or Excel .xlsx">
+        <form
+          onSubmit={handleCreateSchedule}
+          className="mb-4 grid gap-3 lg:grid-cols-6"
+        >
+          <Input
+            value={scheduleDraft.section}
+            onChange={(event) =>
+              setScheduleDraft((current) => ({
+                ...current,
+                section: event.target.value,
+              }))
+            }
+            placeholder="Section"
+            className="h-10 rounded-2xl"
+          />
+          <Input
+            value={scheduleDraft.subject}
+            onChange={(event) =>
+              setScheduleDraft((current) => ({
+                ...current,
+                subject: event.target.value,
+              }))
+            }
+            placeholder="Subject"
+            className="h-10 rounded-2xl"
+          />
+          <Input
+            value={scheduleDraft.instructor}
+            onChange={(event) =>
+              setScheduleDraft((current) => ({
+                ...current,
+                instructor: event.target.value,
+              }))
+            }
+            placeholder="Instructor"
+            className="h-10 rounded-2xl"
+          />
+          <Input
+            value={scheduleDraft.day}
+            onChange={(event) =>
+              setScheduleDraft((current) => ({
+                ...current,
+                day: event.target.value,
+              }))
+            }
+            placeholder="Day"
+            className="h-10 rounded-2xl"
+          />
+          <Input
+            value={scheduleDraft.time}
+            onChange={(event) =>
+              setScheduleDraft((current) => ({
+                ...current,
+                time: event.target.value,
+              }))
+            }
+            placeholder="Time"
+            className="h-10 rounded-2xl"
+          />
+          <Button type="submit" className="rounded-2xl">
+            <Plus className="size-4" />
+            Add
+          </Button>
+          <Input
+            value={scheduleDraft.room}
+            onChange={(event) =>
+              setScheduleDraft((current) => ({
+                ...current,
+                room: event.target.value,
+              }))
+            }
+            placeholder="Room"
+            className="h-10 rounded-2xl lg:col-span-5"
+          />
+        </form>
+
         <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-          <Input type="file" accept=".xlsx" className="h-10 rounded-2xl" />
+          <Input
+            type="file"
+            accept=".xlsx"
+            onChange={handleScheduleUpload}
+            className="h-10 rounded-2xl"
+          />
           <Button type="button" variant="outline" className="rounded-2xl">
             Upload Schedule
           </Button>
@@ -131,7 +311,7 @@ export function ClassesModule({ model }: PortalModuleProps) {
             </thead>
 
             <tbody className="divide-y divide-border bg-card">
-              {scheduleSeed.map((item) => (
+              {classSchedules.map((item) => (
                 <tr key={item.id} className="transition-colors hover:bg-muted/50">
                   <td className="px-4 py-3 font-medium text-foreground">
                     {item.section}

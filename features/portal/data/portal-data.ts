@@ -16,6 +16,11 @@ export type UserRecord = {
   firstName?: string
   middleName?: string
   lastName?: string
+  contactNumber?: string
+  sex?: string
+  birthday?: string
+  address?: string
+  photoUrl?: string
   studentType?: "Irregular" | "Regular" | "Overstayed" | "Transferee" | "Shifter"
   curriculum?: string
   advisoryClass?: string
@@ -44,11 +49,17 @@ export type GradeRecord = {
   id: string
   studentId: string
   student: string
+  section: string
   subject: string
   code: string
   units: number
+  midtermTransmuted?: number
   midterm: number
+  finalTransmuted?: number
   finalTerm: number
+  gradePercentage?: number
+  remarks?: string
+  released?: boolean
   updatedAt: string
 }
 
@@ -61,6 +72,20 @@ export type ThesisRecord = {
   adviser: string
   abstract: string
   tags: string[]
+  pdfUrl: string
+  fileName: string
+}
+
+export type ProfileDetails = {
+  photoUrl: string
+  firstName: string
+  middleName: string
+  lastName: string
+  email: string
+  contactNumber: string
+  sex: string
+  birthday: string
+  address: string
 }
 
 export type SeminarRecord = {
@@ -192,6 +217,14 @@ export const roleProfiles = {
   },
 } satisfies Record<Role, { name: string; title: string; email: string; id: string }>
 
+export const facultyHandledSections: Record<string, string[]> = {
+  "FAC-014": ["BSCS 3A", "BSCS 2B"],
+  "FAC-018": ["BSCS 1A", "BSCS 4A"],
+}
+
+export const sampleThesisPdfUrl =
+  "data:application/pdf;base64,JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvQ29udGVudHMgNCAwIFIgL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvRjEgNSAwIFIgPj4gPj4gPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCA1NSA+PgpzdHJlYW0KQlQKL0YxIDI0IFRmCjcyIDcyMCBUZAooU2FtcGxlIHRoZXNpcyBtYW51c2NyaXB0KSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA2NCAwMDAwMCBuIAowMDAwMDAwMTIxIDAwMDAwIG4gCjAwMDAwMDAyNzAgMDAwMDAgbiAKMDAwMDAwMDM3NiAwMDAwMCBuIAp0cmFpbGVyCjw8IC9Sb290IDEgMCBSIC9TaXplIDYgPj4Kc3RhcnR4cmVmCjQ0NgolJUVPRg=="
+
 export const usersSeed: UserRecord[] = [
   {
     id: "2024-001245",
@@ -201,6 +234,10 @@ export const usersSeed: UserRecord[] = [
     firstName: "Student",
     middleName: "Test",
     lastName: "One",
+    contactNumber: "0917 000 0001",
+    sex: "Female",
+    birthday: "2004-05-14",
+    address: "Candon City, Ilocos Sur",
     studentType: "Regular",
     curriculum: "Old Curriculum",
     course: "BSCS",
@@ -216,6 +253,10 @@ export const usersSeed: UserRecord[] = [
     firstName: "Student",
     middleName: "Test",
     lastName: "Two",
+    contactNumber: "0917 000 0002",
+    sex: "Male",
+    birthday: "2004-09-22",
+    address: "Sta. Lucia, Ilocos Sur",
     studentType: "Transferee",
     curriculum: "Secure Software Engineering Specialization",
     course: "BSCS",
@@ -231,6 +272,10 @@ export const usersSeed: UserRecord[] = [
     firstName: "Faculty",
     middleName: "Test",
     lastName: "One",
+    contactNumber: "0917 100 0014",
+    sex: "Female",
+    birthday: "1987-02-12",
+    address: "Candon City, Ilocos Sur",
     advisoryClass: "BSCS 3A",
     employmentType: "Regular",
     academicTitle: "MIT",
@@ -245,6 +290,10 @@ export const usersSeed: UserRecord[] = [
     firstName: "Faculty",
     middleName: "Test",
     lastName: "Two",
+    contactNumber: "0917 100 0018",
+    sex: "Male",
+    birthday: "1989-11-08",
+    address: "San Nicolas, Candon City",
     advisoryClass: "BSCS 2B",
     employmentType: "Part Time",
     academicTitle: "LPT",
@@ -256,6 +305,13 @@ export const usersSeed: UserRecord[] = [
     name: "Admin Test 1",
     email: "admin1@gmail.com",
     role: "admin",
+    firstName: "Admin",
+    middleName: "Test",
+    lastName: "One",
+    contactNumber: "0917 000 0000",
+    sex: "Female",
+    birthday: "1985-01-01",
+    address: "Candon City, Ilocos Sur",
     position: "Portal Administrator",
     status: "Active",
   },
@@ -264,6 +320,13 @@ export const usersSeed: UserRecord[] = [
     name: "Admin Test 2",
     email: "admin2@gmail.com",
     role: "admin",
+    firstName: "Admin",
+    middleName: "Test",
+    lastName: "Two",
+    contactNumber: "0917 000 0003",
+    sex: "Male",
+    birthday: "1986-03-17",
+    address: "Candon City, Ilocos Sur",
     position: "Assistant Portal Administrator",
     status: "Active",
   },
@@ -321,45 +384,103 @@ export const gradeSeed: GradeRecord[] = [
     id: "GR-001",
     studentId: "2024-001245",
     student: "Student Test 1",
+    section: "BSCS 3A",
     subject: "Web Systems and Technologies",
     code: "CS311",
     units: 3,
+    midtermTransmuted: 92,
     midterm: 1.5,
+    finalTransmuted: 96,
     finalTerm: 1.25,
+    gradePercentage: 94,
+    remarks: "Passed",
+    released: true,
     updatedAt: "May 25, 2026",
   },
   {
     id: "GR-002",
     studentId: "2024-001245",
     student: "Student Test 1",
+    section: "BSCS 3A",
     subject: "Database Systems",
     code: "CS312",
     units: 3,
+    midtermTransmuted: 89,
     midterm: 1.75,
+    finalTransmuted: 93,
     finalTerm: 1.5,
+    gradePercentage: 91,
+    remarks: "Passed",
+    released: true,
     updatedAt: "May 24, 2026",
   },
   {
     id: "GR-003",
     studentId: "2024-001245",
     student: "Student Test 1",
+    section: "BSCS 3A",
     subject: "Software Engineering",
     code: "CS313",
     units: 3,
+    midtermTransmuted: 96,
     midterm: 1.25,
+    finalTransmuted: 98,
     finalTerm: 1.25,
+    gradePercentage: 97,
+    remarks: "Passed",
+    released: true,
     updatedAt: "May 26, 2026",
   },
   {
     id: "GR-004",
     studentId: "2024-001284",
     student: "Student Test 2",
+    section: "BSCS 3A",
     subject: "Web Systems and Technologies",
     code: "CS311",
     units: 3,
+    midtermTransmuted: 87,
     midterm: 2,
+    finalTransmuted: 89,
     finalTerm: 1.75,
+    gradePercentage: 88,
+    remarks: "Passed",
+    released: true,
     updatedAt: "May 23, 2026",
+  },
+  {
+    id: "GR-005",
+    studentId: "2024-002145",
+    student: "Mara Dizon",
+    section: "BSCS 2B",
+    subject: "Operating Systems",
+    code: "CS304",
+    units: 3,
+    midtermTransmuted: 84,
+    midterm: 2.25,
+    finalTransmuted: 88,
+    finalTerm: 2,
+    gradePercentage: 86,
+    remarks: "Passed",
+    released: false,
+    updatedAt: "May 26, 2026",
+  },
+  {
+    id: "GR-006",
+    studentId: "2024-002146",
+    student: "Luis Navarro",
+    section: "BSCS 2B",
+    subject: "Operating Systems",
+    code: "CS304",
+    units: 3,
+    midtermTransmuted: 79,
+    midterm: 2.75,
+    finalTransmuted: 82,
+    finalTerm: 2.5,
+    gradePercentage: 80.5,
+    remarks: "Passed",
+    released: false,
+    updatedAt: "May 26, 2026",
   },
 ]
 
@@ -374,6 +495,8 @@ export const thesisSeed: ThesisRecord[] = [
     abstract:
       "A study on using intelligent automation to improve school service delivery, academic monitoring, and reporting.",
     tags: ["AI", "MERN", "Automation"],
+    pdfUrl: sampleThesisPdfUrl,
+    fileName: "ai-powered-campus-management-system.pdf",
   },
   {
     id: "TH-002",
@@ -385,6 +508,8 @@ export const thesisSeed: ThesisRecord[] = [
     abstract:
       "A mobile-first attendance platform that supports QR validation, instructor reports, and absence analytics.",
     tags: ["Mobile", "Attendance", "Analytics"],
+    pdfUrl: sampleThesisPdfUrl,
+    fileName: "mobile-attendance-monitoring-for-computing-studies.pdf",
   },
   {
     id: "TH-003",
@@ -396,6 +521,8 @@ export const thesisSeed: ThesisRecord[] = [
     abstract:
       "A searchable archive for approved thesis manuscripts with tagging, category filters, and secure file delivery.",
     tags: ["Library", "Search", "Archive"],
+    pdfUrl: sampleThesisPdfUrl,
+    fileName: "web-based-thesis-archive-with-metadata-search.pdf",
   },
 ]
 
@@ -507,7 +634,7 @@ export const scheduleSeed: ScheduleItem[] = [
     time: "8:00 AM - 10:00 AM",
     subject: "Web Systems and Technologies",
     room: "Lab 203",
-    instructor: "Maria Santos",
+    instructor: "Faculty Test 1",
     section: "BSCS 3A",
   },
   {
@@ -516,7 +643,7 @@ export const scheduleSeed: ScheduleItem[] = [
     time: "10:00 AM - 12:00 PM",
     subject: "Data Structures",
     room: "Room 301",
-    instructor: "Christian Galinato",
+    instructor: "Faculty Test 1",
     section: "BSCS 3A",
   },
   {
@@ -525,8 +652,8 @@ export const scheduleSeed: ScheduleItem[] = [
     time: "1:00 PM - 3:00 PM",
     subject: "Software Engineering",
     room: "Room 205",
-    instructor: "Kyla Cablay",
-    section: "BSCS 3A",
+    instructor: "Faculty Test 2",
+    section: "BSCS 1A",
   },
   {
     id: "SCH-004",
@@ -534,8 +661,17 @@ export const scheduleSeed: ScheduleItem[] = [
     time: "9:00 AM - 11:00 AM",
     subject: "Database Systems",
     room: "Lab 204",
-    instructor: "Hezron Gagarin",
-    section: "BSCS 3A",
+    instructor: "Faculty Test 1",
+    section: "BSCS 2B",
+  },
+  {
+    id: "SCH-005",
+    day: "Friday",
+    time: "1:00 PM - 3:00 PM",
+    subject: "Thesis Consultation",
+    room: "Room 402",
+    instructor: "Faculty Test 2",
+    section: "BSCS 4A",
   },
 ]
 
@@ -967,6 +1103,36 @@ export const classRosterSeed: ClassStudent[] = [
     id: "2024-001322",
     name: "Bea Castillo",
     section: "BSCS 3A",
+    enrolled: true,
+  },
+  {
+    id: "2024-002145",
+    name: "Mara Dizon",
+    section: "BSCS 2B",
+    enrolled: true,
+  },
+  {
+    id: "2024-002146",
+    name: "Luis Navarro",
+    section: "BSCS 2B",
+    enrolled: true,
+  },
+  {
+    id: "2024-000101",
+    name: "Aria Campos",
+    section: "BSCS 1A",
+    enrolled: true,
+  },
+  {
+    id: "2024-000102",
+    name: "Noah Reyes",
+    section: "BSCS 1A",
+    enrolled: true,
+  },
+  {
+    id: "2024-004101",
+    name: "Irene Mallari",
+    section: "BSCS 4A",
     enrolled: true,
   },
 ]

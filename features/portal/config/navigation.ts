@@ -7,10 +7,8 @@ import {
   ClipboardCheck,
   Database,
   FileArchive,
-  FileDown,
   FileSpreadsheet,
   GraduationCap,
-  Inbox,
   LayoutDashboard,
   Link as LinkIcon,
   Megaphone,
@@ -19,7 +17,6 @@ import {
   Presentation,
   UserCircle,
   Settings,
-  UserCheck,
   Users,
 } from "lucide-react"
 
@@ -45,11 +42,7 @@ export const roleNavigation: Record<Role, NavItem[]> = {
     { id: "classes", label: "Manage Class", icon: ClipboardCheck },
     { id: "schedule", label: "Class Schedule", icon: CalendarDays },
     { id: "grades", label: "Manage Grades", icon: FileSpreadsheet },
-    { id: "seminars", label: "My Events", icon: Presentation },
-    { id: "feedback", label: "Assigned Inbox", icon: Inbox },
-    { id: "availability", label: "My Availability", icon: UserCheck },
     { id: "instructors", label: "Instructor Info", icon: Network },
-    { id: "templates", label: "Templates", icon: FileDown },
   ],
   admin: [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
