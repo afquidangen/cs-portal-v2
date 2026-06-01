@@ -394,4 +394,21 @@
     background: var(--edu-topbar-highlight-bg);
     border-color: var(--edu-topbar-highlight-border);
   }
+
+  .edu-sidebar-shell[role="dialog"] label button[role="combobox"] {
+    background: rgb(255 255 255 / 0.05);
+    border-color: var(--sidebar-border);
+    color: white;
+  }
+  .edu-sidebar-shell[role="dialog"] label button[role="combobox"]:hover {
+    background: rgb(255 255 255 / 0.1);
+    border-color: var(--sidebar-ring);
+    color: white;
+  }
+  .edu-sidebar-shell[role="dialog"] label button[role="combobox"] span[data-placeholder] {
+    color: rgb(255 255 255 / 0.4);
+  }
+  .edu-sidebar-shell[role="dialog"] .text-muted-foreground {
+    color: rgb(255 255 255 / 0.6);
+  }
 }

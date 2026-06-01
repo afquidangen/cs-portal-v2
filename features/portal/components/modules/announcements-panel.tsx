@@ -1,59 +1,220 @@
 "use client"
 
-import { Plus } from "lucide-react"
+import { useState } from "react"
+import { Edit, Plus, Trash2, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
-import { Panel, StatusBadge } from "../shared/dashboard-ui"
+import type { Announcement } from "../../data/portal-data"
+import { Panel, Select, StatusBadge, Textarea } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
 export function AnnouncementsPanel({ model }: PortalModuleProps) {
-  const { announcements, role, setShowAnnouncementForm } = model
+  const {
+    announcements,
+    handleDeleteAnnouncement,
+    handleUpdateAnnouncement,
+    role,
+    setShowAnnouncementForm,
+  } = model
+
+  const filtered = role === "admin"
+    ? announcements
+    : announcements.filter((a) => {
+        if (role === "student") return a.audience === "All Users" || a.audience === "Students"
+        return a.audience === "All Users" || a.audience === "Faculty"
+      })
+
+  const [editingAnn, setEditingAnn] = useState<Announcement | null>(null)
+  const [deletingAnnId, setDeletingAnnId] = useState<string | null>(null)
 
   return (
-    <Panel
-      title="Announcements and CS Updates"
-      eyebrow="Department notices"
-      actions={
-        role === "admin" ? (
-          <Button
-            size="sm"
-            onClick={() => setShowAnnouncementForm((current) => !current)}
-            className="rounded-2xl"
-          >
-            <Plus className="size-4" />
-            Add Notice
-          </Button>
-        ) : null
-      }
-    >
-      <div className="space-y-3">
-        {announcements.map((announcement, index) => (
-          <article
-            key={announcement.id}
-            className={
-              index === 0
-                ? "rounded-2xl border border-border bg-muted p-5 shadow-sm transition-colors"
-                : "rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors"
-            }
-          >
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h4 className="font-semibold text-foreground">
-                  {announcement.title}
-                </h4>
-                <p className="mt-1 text-sm leading-6 text-foreground/80">
-                  {announcement.content}
+    <>
+      <Panel
+        title="Announcements and CS Updates"
+        eyebrow="Department notices"
+        actions={
+          role === "admin" ? (
+            <Button
+              size="sm"
+              onClick={() => setShowAnnouncementForm((current) => !current)}
+              className="rounded-2xl"
+            >
+              <Plus className="size-4" />
+              ADD ANNOUNCEMENT
+            </Button>
+          ) : null
+        }
+      >
+        <div className="space-y-3">
+          {filtered.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No announcements yet.
+            </p>
+          ) : (
+            filtered.map((announcement, index) => (
+              <div
+                key={announcement.id}
+                className={
+                  index === 0
+                    ? "rounded-2xl border border-border bg-muted p-5 shadow-sm transition-colors"
+                    : "rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors"
+                }
+              >
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-semibold text-foreground">
+                      {announcement.title}
+                    </h4>
+                    <p className="mt-1 text-sm leading-6 text-foreground/80">
+                      {announcement.content}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <StatusBadge value={announcement.priority} />
+                    {role === "admin" ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-xl"
+                          onClick={() => setEditingAnn(announcement)}
+                        >
+                          <Edit className="size-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-xl text-red-500 hover:text-red-600"
+                          onClick={() => setDeletingAnnId(announcement.id)}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-foreground/70">
+                  {announcement.date} &middot; {announcement.audience}
                 </p>
               </div>
-              <StatusBadge value={announcement.priority} />
-            </div>
-            <p className="mt-3 text-xs text-foreground/70">
-              {announcement.date} - {announcement.audience}
-            </p>
-          </article>
-        ))}
-      </div>
-    </Panel>
+            ))
+          )}
+        </div>
+      </Panel>
+
+      {/* ── Edit Dialog ── */}
+      <Dialog open={!!editingAnn} onOpenChange={(o) => { if (!o) setEditingAnn(null) }}>
+        <DialogContent className="edu-sidebar-shell max-w-xl rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+          {editingAnn ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (!editingAnn.title.trim() || !editingAnn.content.trim()) return
+                handleUpdateAnnouncement(editingAnn)
+                setEditingAnn(null)
+              }}
+            >
+              <DialogHeader>
+                <DialogTitle className="text-xl text-white">Edit Announcement</DialogTitle>
+                <DialogDescription className="pt-1 text-white/70">
+                  Update announcement details
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 py-4">
+                <Input
+                  value={editingAnn.title}
+                  onChange={(e) => setEditingAnn({ ...editingAnn, title: e.target.value })}
+                  placeholder="Announcement title"
+                  className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
+                />
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-white/80">Audience</label>
+                    <Select
+                      value={editingAnn.audience}
+                      onChange={(value) => setEditingAnn({ ...editingAnn, audience: value })}
+                      options={["All Users", "Students", "Faculty"]}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-white/80">Priority</label>
+                    <Select
+                      value={editingAnn.priority}
+                      onChange={(value) => setEditingAnn({ ...editingAnn, priority: value as Announcement["priority"] })}
+                      options={["High", "Medium", "Low"]}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-white/80">Content</label>
+                  <Textarea
+                    value={editingAnn.content}
+                    onChange={(value) => setEditingAnn({ ...editingAnn, content: value })}
+                    placeholder="Announcement details"
+                    rows={6}
+                  />
+                </div>
+              </div>
+
+              <DialogFooter className="gap-2">
+                <DialogClose asChild>
+                  <Button type="button" variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">
+                    <X className="mr-1.5 size-4" /> Cancel
+                  </Button>
+                </DialogClose>
+                <Button type="submit" className="rounded-xl border border-sky-400/30 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 hover:text-sky-200">
+                  <Edit className="mr-1.5 size-4" /> Save Changes
+                </Button>
+              </DialogFooter>
+            </form>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Delete Confirmation ── */}
+      <Dialog open={!!deletingAnnId} onOpenChange={(o) => { if (!o) setDeletingAnnId(null) }}>
+        <DialogContent className="edu-sidebar-shell max-w-sm rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-white">Delete Announcement</DialogTitle>
+            <DialogDescription className="pt-1 text-white/70">
+              Are you sure you want to delete this announcement? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-2 gap-2">
+            <DialogClose asChild>
+              <Button type="button" variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              type="button"
+              variant="ghost"
+              className="rounded-xl border border-red-400/30 bg-red-500/15 text-red-300 shadow-sm hover:bg-red-500/25 hover:text-red-200"
+              onClick={() => {
+                if (deletingAnnId) handleDeleteAnnouncement(deletingAnnId)
+                setDeletingAnnId(null)
+              }}
+            >
+              <Trash2 className="mr-1.5 size-4" /> Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

@@ -96,10 +96,57 @@ export function FeedbackModule({ model }: PortalModuleProps) {
       : tickets
 
   return (
-    <Panel
-      title={role === "admin" ? "Master Inbox" : "Assigned Faculty Inbox"}
-      eyebrow="Ticket status management"
-    >
+    <div className="space-y-5">
+      {role === "faculty" ? (
+        <Panel title="Submission Console" eyebrow="Feedback and complaints">
+          <form onSubmit={handleFeedbackSubmit} className="space-y-3">
+            <Select
+              value={feedbackDraft.category}
+              onChange={(value) =>
+                setFeedbackDraft((current) => ({
+                  ...current,
+                  category: value,
+                }))
+              }
+              options={["Academic", "Facilities", "Portal", "Faculty", "Other"]}
+              label="Category"
+            />
+
+            <Input
+              value={feedbackDraft.subject}
+              onChange={(event) =>
+                setFeedbackDraft((current) => ({
+                  ...current,
+                  subject: event.target.value,
+                }))
+              }
+              placeholder="Subject"
+              className="h-10 rounded-2xl"
+            />
+
+            <Textarea
+              value={feedbackDraft.description}
+              onChange={(value) =>
+                setFeedbackDraft((current) => ({
+                  ...current,
+                  description: value,
+                }))
+              }
+              placeholder="Describe the concern or suggestion"
+            />
+
+            <Button type="submit" className="w-full rounded-2xl">
+              <SendIcon />
+              Submit Ticket
+            </Button>
+          </form>
+        </Panel>
+      ) : null}
+
+      <Panel
+        title={role === "admin" ? "Master Inbox" : "Assigned Faculty Inbox"}
+        eyebrow="Ticket status management"
+      >
       <div className="space-y-3">
         {visibleTickets.map((ticket) => (
           <div
@@ -176,5 +223,6 @@ export function FeedbackModule({ model }: PortalModuleProps) {
         ) : null}
       </div>
     </Panel>
+    </div>
   )
 }

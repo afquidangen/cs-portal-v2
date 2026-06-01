@@ -20,11 +20,10 @@ import {
   ShieldCheck,
   Sparkles,
   Sun,
-  UserCircle,
   Users,
   X,
 } from "lucide-react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -38,16 +37,18 @@ import {
 } from "@/components/ui/card"
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { liveAnnouncements, newsItems, type NewsItem } from "@/lib/news-data"
+import { newsItems, type NewsItem } from "@/lib/news-data"
 import { cn } from "@/lib/utils"
 
-import type { Role } from "../data/portal-data"
+import type { Announcement, Role } from "../data/portal-data"
 import { usePortalDashboardModel } from "../hooks/use-portal-dashboard-model"
 import type { ModuleId } from "../types/navigation"
 import { AcademicModule } from "./modules/academic-module"
@@ -80,21 +81,47 @@ export function RoleDashboard({ role }: { role: Role }) {
   const [announcementIndex, setAnnouncementIndex] = useState(0)
   const [profileOpen, setProfileOpen] = useState(false)
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false)
+  const [isMediumScreen, setIsMediumScreen] = useState(
+    () => typeof window !== "undefined"
+      ? window.matchMedia("(min-width: 768px) and (max-width: 1023px)").matches
+      : false
+  )
+  const [logoutOpen, setLogoutOpen] = useState(false)
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null)
+  const [readAnnouncementIds, setReadAnnouncementIds] = useState<Set<string>>(new Set())
+  const [viewingAnnouncement, setViewingAnnouncement] = useState<Announcement | null>(null)
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px) and (max-width: 1023px)")
+    const handler = (e: MediaQueryListEvent) => setIsMediumScreen(e.matches)
+    mq.addEventListener("change", handler)
+    return () => mq.removeEventListener("change", handler)
+  }, [])
+
+  const effectivelyCollapsed = desktopSidebarCollapsed || isMediumScreen
   const [showNotifications, setShowNotifications] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
+
+  const visibleAnnouncements = useMemo(
+    () => model.announcements.filter((a) => {
+      if (role === "admin") return true
+      if (role === "student") return a.audience === "All Users" || a.audience === "Students"
+      return a.audience === "All Users" || a.audience === "Faculty"
+    }),
+    [model.announcements, role]
+  )
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode)
   }, [darkMode])
 
   useEffect(() => {
+    if (visibleAnnouncements.length < 2) return
     const interval = setInterval(() => {
-      setAnnouncementIndex((prev) => (prev + 1) % liveAnnouncements.length)
+      setAnnouncementIndex((prev) => (prev + 1) % visibleAnnouncements.length)
     }, 5000)
-
     return () => clearInterval(interval)
-  }, [])
+  }, [visibleAnnouncements.length])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -118,14 +145,14 @@ export function RoleDashboard({ role }: { role: Role }) {
       instructors: <InstructorsModule model={model} />,
       cso: <CsoModule />,
       schedule: <SchedulePanel model={model} />,
-      curriculum: <CurriculumModule />,
+      curriculum: <CurriculumModule model={model} />,
       "quick-links": <QuickLinksModule />,
       users: <UsersModule model={model} />,
       academic: <AcademicModule model={model} />,
       templates: <TemplatesModule model={model} />,
       classes: <ClassesModule model={model} />,
       profile: <ProfileModule model={model} />,
-      audit: <AuditModule />,
+      audit: <AuditModule model={model} />,
       about: <AboutModule />,
     }
 
@@ -161,10 +188,10 @@ export function RoleDashboard({ role }: { role: Role }) {
         : "Student Portal User"
 
   const navigationGroups = useMemo(() => {
-    const items = model.navigation.filter((item) => item.id !== "profile")
+    const items = model.navigation.filter((item: { id: string }) => item.id !== "profile")
 
-    const overview = items.filter((item) => ["overview"].includes(item.id))
-    const academics = items.filter((item) =>
+    const overview = items.filter((item: { id: string }) => ["overview"].includes(item.id))
+    const academics = items.filter((item: { id: string }) =>
       [
         "grades",
         "classes",
@@ -177,10 +204,10 @@ export function RoleDashboard({ role }: { role: Role }) {
         "thesis",
       ].includes(item.id)
     )
-    const management = items.filter((item) =>
+    const management = items.filter((item: { id: string }) =>
       ["announcements", "feedback", "templates", "users", "audit"].includes(item.id)
     )
-    const services = items.filter((item) => ["quick-links", "cso"].includes(item.id))
+    const services = items.filter((item: { id: string }) => ["quick-links", "cso"].includes(item.id))
 
     return [
       { label: "Overview", items: overview },
@@ -193,106 +220,6 @@ export function RoleDashboard({ role }: { role: Role }) {
       },
     ].filter((group) => group.items.length > 0)
   }, [model.navigation])
-
-  const quickAccessItems =
-    role === "admin"
-      ? [
-          {
-            label: "Manage Users",
-            description: "Access accounts, roles, and permissions",
-            icon: ShieldCheck,
-            tone: "edu-ring-glacier edu-bg-soft-glacier",
-            iconTone:
-              "border-sky-200 bg-sky-100 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-300",
-            moduleId: "users",
-          },
-          {
-            label: "Announcements",
-            description: "Publish updates and official notices",
-            icon: Bell,
-            tone: "edu-ring-lapis edu-bg-soft-lapis",
-            iconTone:
-              "border-indigo-200 bg-indigo-100 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300",
-            moduleId: "announcements",
-          },
-          {
-            label: "Curriculum",
-            description: "Review programs, subjects, and structures",
-            icon: BookOpen,
-            tone: "edu-ring-slate edu-bg-soft-slate",
-            iconTone:
-              "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-500/30 dark:bg-slate-500/15 dark:text-slate-300",
-            moduleId: "curriculum",
-          },
-          {
-            label: "Audit Logs",
-            description: "Monitor records and system activity",
-            icon: ClipboardList,
-            tone: "edu-ring-abyss edu-bg-soft-abyss",
-            iconTone:
-              "border-amber-200 bg-amber-100 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300",
-            moduleId: "audit",
-          },
-        ]
-      : role === "faculty"
-        ? [
-            {
-              label: "My Classes",
-              description: "View assigned classes and sections",
-              icon: GraduationCap,
-              tone: "edu-ring-glacier edu-bg-soft-glacier",
-              iconTone:
-                "border-sky-200 bg-sky-100 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-300",
-              moduleId: "classes",
-            },
-            {
-              label: "Grade Encoding",
-              description: "Submit and review student grades",
-              icon: BookOpen,
-              tone: "edu-ring-lapis edu-bg-soft-lapis",
-              iconTone:
-                "border-indigo-200 bg-indigo-100 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300",
-              moduleId: "grades",
-            },
-          ]
-        : [
-            {
-              label: "My Grades",
-              description: "Check academic performance and updates",
-              icon: GraduationCap,
-              tone: "edu-ring-glacier edu-bg-soft-glacier",
-              iconTone:
-                "border-sky-200 bg-sky-100 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-300",
-              moduleId: "grades",
-            },
-            {
-              label: "Curriculum",
-              description: "Browse year levels and subject plans",
-              icon: BookOpen,
-              tone: "edu-ring-lapis edu-bg-soft-lapis",
-              iconTone:
-                "border-indigo-200 bg-indigo-100 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300",
-              moduleId: "curriculum",
-            },
-            {
-              label: "Quick Links",
-              description: "Open essential university services",
-              icon: Layers3,
-              tone: "edu-ring-slate edu-bg-soft-slate",
-              iconTone:
-                "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-500/30 dark:bg-slate-500/15 dark:text-slate-300",
-              moduleId: "quick-links",
-            },
-            {
-              label: "My Profile",
-              description: "View and edit your personal information",
-              icon: UserCircle,
-              tone: "edu-ring-abyss edu-bg-soft-abyss",
-              iconTone:
-                "border-amber-200 bg-amber-100 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300",
-              moduleId: "profile",
-            },
-          ]
 
   const adminStatusCards = [
     {
@@ -345,7 +272,7 @@ export function RoleDashboard({ role }: { role: Role }) {
           className={cn(
             "edu-sidebar-shell fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col border-r border-sidebar-border text-sidebar-foreground transition-all duration-300 md:sticky md:top-0 md:h-screen md:translate-x-0",
             model.sidebarOpen ? "translate-x-0" : "-translate-x-full",
-            desktopSidebarCollapsed ? "w-[92px]" : "w-[300px]"
+            effectivelyCollapsed ? "w-[92px]" : "w-[300px]"
           )}
         >
           <div className="border-b border-sidebar-border px-4 py-4">
@@ -359,7 +286,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                   )}
                 </div>
 
-                {!desktopSidebarCollapsed ? (
+                {!effectivelyCollapsed ? (
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-white">
                       ComSite Portal
@@ -371,20 +298,22 @@ export function RoleDashboard({ role }: { role: Role }) {
                 ) : null}
               </div>
 
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="hidden rounded-xl text-white/80 hover:bg-white/10 hover:text-white md:inline-flex"
-                onClick={() => setDesktopSidebarCollapsed((prev) => !prev)}
-                aria-label="Toggle sidebar width"
-              >
-                {desktopSidebarCollapsed ? (
-                  <PanelLeftOpen className="size-4" />
-                ) : (
-                  <PanelLeftClose className="size-4" />
-                )}
-              </Button>
+              {!isMediumScreen ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="hidden rounded-xl text-white/80 hover:bg-white/10 hover:text-white lg:inline-flex"
+                    onClick={() => setDesktopSidebarCollapsed((prev) => !prev)}
+                    aria-label="Toggle sidebar width"
+                  >
+                    {desktopSidebarCollapsed ? (
+                      <PanelLeftOpen className="size-4" />
+                    ) : (
+                      <PanelLeftClose className="size-4" />
+                    )}
+                  </Button>
+                ) : null}
             </div>
 
             <button
@@ -392,14 +321,14 @@ export function RoleDashboard({ role }: { role: Role }) {
               onClick={() => setProfileOpen(true)}
               className={cn(
                 "edu-sidebar-profile mt-4 block w-full rounded-2xl text-left transition-all",
-                desktopSidebarCollapsed ? "p-2" : ""
+                effectivelyCollapsed ? "p-2" : ""
               )}
             >
               <Card className="border-0 bg-transparent text-sidebar-foreground shadow-none">
                 <CardContent
                   className={cn(
                     "flex items-center gap-3",
-                    desktopSidebarCollapsed ? "justify-center p-2" : "p-4"
+                    effectivelyCollapsed ? "justify-center p-2" : "p-4"
                   )}
                 >
                   <Avatar className="size-10 ring-1 ring-white/15">
@@ -412,7 +341,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                     </AvatarFallback>
                   </Avatar>
 
-                  {!desktopSidebarCollapsed ? (
+                  {!effectivelyCollapsed ? (
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-white">
                         {model.profile.name}
@@ -431,7 +360,7 @@ export function RoleDashboard({ role }: { role: Role }) {
             <nav className="space-y-5">
               {navigationGroups.map((group) => (
                 <div key={group.label}>
-                  {!desktopSidebarCollapsed ? (
+                  {!effectivelyCollapsed ? (
                     <div className="mb-2 px-2">
                       <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-white/60">
                         {group.label}
@@ -440,7 +369,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                   ) : null}
 
                   <div className="space-y-1.5">
-                    {group.items.map((item) => {
+                    {group.items.map((item: { id: string; label: string; icon: any }) => {
                       const Icon = item.icon
                       const active = item.id === model.activeModule
 
@@ -454,7 +383,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                           }}
                           className={cn(
                             "group edu-sidebar-button flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium transition-all duration-200 text-white",
-                            desktopSidebarCollapsed && "justify-center px-2",
+                            effectivelyCollapsed && "justify-center px-2",
                             active && "edu-sidebar-button-active text-white"
                           )}
                         >
@@ -464,7 +393,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                               active ? "text-white" : "text-white/80 group-hover:text-white"
                             )}
                           />
-                          {!desktopSidebarCollapsed ? (
+                          {!effectivelyCollapsed ? (
                             <span className="truncate text-white">{item.label}</span>
                           ) : null}
                         </button>
@@ -479,14 +408,14 @@ export function RoleDashboard({ role }: { role: Role }) {
           <div className="border-t border-sidebar-border p-3">
             <Button
               variant="ghost"
-              onClick={model.handleLogout}
+              onClick={() => setLogoutOpen(true)}
               className={cn(
                 "w-full rounded-2xl text-white hover:bg-white/10 hover:text-white",
-                desktopSidebarCollapsed ? "justify-center px-0" : "justify-start"
+                effectivelyCollapsed ? "justify-center px-0" : "justify-start"
               )}
             >
               <LogOut className="size-4 text-white" />
-              {!desktopSidebarCollapsed ? <span className="ml-2 text-white">Logout</span> : null}
+              {!effectivelyCollapsed ? <span className="ml-2 text-white">Logout</span> : null}
             </Button>
           </div>
         </aside>
@@ -518,33 +447,90 @@ export function RoleDashboard({ role }: { role: Role }) {
                     onClick={() => setShowNotifications((prev) => !prev)}
                   >
                     <Bell className="size-5" />
+                    {visibleAnnouncements.length > 0 ? (
+                      <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold leading-none text-primary-foreground shadow-sm">
+                        {visibleAnnouncements.length > 9 ? "9+" : visibleAnnouncements.length}
+                      </span>
+                    ) : null}
                   </Button>
 
                   {showNotifications ? (
-                    <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-border bg-popover text-popover-foreground shadow-xl">
-                      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-                        <Bell className="size-4" />
-                        <p className="text-sm font-semibold">Notifications</p>
+                    <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-border bg-white shadow-xl dark:bg-[#0f172a]">
+                      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Bell className="size-4 text-foreground" />
+                          <p className="text-sm font-semibold text-foreground">Notifications</p>
+                        </div>
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                          {visibleAnnouncements.length} new
+                        </span>
                       </div>
-                      <div className="max-h-64 space-y-1 overflow-y-auto p-2">
-                        {model.announcements.length === 0 ? (
-                          <p className="px-2 py-6 text-center text-sm text-muted-foreground">
-                            No notifications yet.
-                          </p>
+                      <div className="max-h-80 space-y-1 overflow-y-auto p-2">
+                        {visibleAnnouncements.length === 0 ? (
+                          <div className="flex flex-col items-center gap-2 px-2 py-10 text-center">
+                            <Bell className="size-8 text-muted-foreground/40" />
+                            <p className="text-sm font-medium text-muted-foreground">
+                              No notifications yet
+                            </p>
+                            <p className="text-xs text-muted-foreground/60">
+                              Announcements will appear here
+                            </p>
+                          </div>
                         ) : (
-                          model.announcements.slice(0, 5).map((ann) => (
-                            <div
-                              key={ann.id}
-                              className="rounded-xl px-3 py-2.5 transition-colors hover:bg-muted"
-                            >
-                              <p className="text-sm font-medium text-foreground">
-                                {ann.title}
-                              </p>
-                              <p className="mt-0.5 text-xs text-muted-foreground">
-                                {ann.date} &middot; {ann.priority}
-                              </p>
-                            </div>
-                          ))
+                          visibleAnnouncements.map((ann) => {
+                            const isRead = readAnnouncementIds.has(ann.id)
+                            return (
+                              <div
+                                key={ann.id}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => {
+                                  setReadAnnouncementIds((prev) => new Set(prev).add(ann.id))
+                                  setViewingAnnouncement(ann)
+                                  setShowNotifications(false)
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    setReadAnnouncementIds((prev) => new Set(prev).add(ann.id))
+                                    setViewingAnnouncement(ann)
+                                    setShowNotifications(false)
+                                  }
+                                }}
+                                className="group cursor-pointer rounded-xl border border-transparent px-3 py-3 transition-all hover:border-border hover:bg-muted/60"
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    {!isRead ? (
+                                      <span className="mt-1.5 size-2 shrink-0 rounded-full bg-blue-500" />
+                                    ) : null}
+                                    <p className={"text-sm truncate " + (isRead ? "font-medium text-foreground/80" : "font-semibold text-foreground")}>
+                                      {ann.title}
+                                    </p>
+                                  </div>
+                                  <span
+                                    className={
+                                      "mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none " +
+                                      (ann.priority === "High"
+                                        ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
+                                        : ann.priority === "Medium"
+                                          ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                                          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400")
+                                    }
+                                  >
+                                    {ann.priority}
+                                  </span>
+                                </div>
+                                <p className={"mt-1 line-clamp-2 text-xs leading-relaxed " + (isRead ? "text-muted-foreground/60" : "text-muted-foreground")}>
+                                  {ann.content}
+                                </p>
+                                <div className="mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground/70">
+                                  <span>{ann.date}</span>
+                                  <span className="size-1 rounded-full bg-muted-foreground/30" />
+                                  <span className="rounded bg-muted px-1.5 py-0.5">{ann.audience}</span>
+                                </div>
+                              </div>
+                            )
+                          })
                         )}
                       </div>
                     </div>
@@ -575,10 +561,24 @@ export function RoleDashboard({ role }: { role: Role }) {
                     roleLabel={roleLabel}
                     subtitle={subtitle}
                   />
-                  <LiveAnnouncementCard
-                    announcement={liveAnnouncements[announcementIndex]}
-                    index={announcementIndex}
-                  />
+                  {visibleAnnouncements.length > 0 ? (
+                    <LiveAnnouncementCard
+                      announcement={visibleAnnouncements[announcementIndex % visibleAnnouncements.length]}
+                      index={announcementIndex}
+                    />
+                  ) : (
+                    <LiveAnnouncementCard
+                      announcement={{
+                        id: "default",
+                        title: "No announcements yet",
+                        content: "Stay tuned for official university notices and updates.",
+                        date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+                        audience: "All Users",
+                        priority: "Low",
+                      }}
+                      index={0}
+                    />
+                  )}
                 </div>
 
                 {role === "student" ? (
@@ -675,59 +675,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                   </div>
                 ) : null}
 
-                {role === "admin" ? (
-                  <>
-                    <div className="pt-2 text-center">
-                      <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
-                        Quick access
-                      </p>
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                      {quickAccessItems.map((item) => {
-                        const Icon = item.icon
-
-                        return (
-                          <button
-                            key={item.label}
-                            type="button"
-                            onClick={() => model.selectModule(item.moduleId as ModuleId)}
-                            className="group text-left"
-                          >
-                            <Card
-                              className={cn(
-                                "overflow-hidden rounded-[28px] border bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md",
-                                item.tone
-                              )}
-                            >
-                              <CardContent className="p-5">
-                                <div className="flex items-start justify-between gap-4">
-                                  <div className="min-w-0">
-                                    <p className="text-base font-semibold tracking-tight text-foreground">
-                                      {item.label}
-                                    </p>
-                                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                      {item.description}
-                                    </p>
-                                  </div>
-
-                                  <div
-                                    className={cn(
-                                      "flex size-14 shrink-0 items-center justify-center rounded-2xl border shadow-sm backdrop-blur-sm transition-transform duration-200 group-hover:scale-105",
-                                      item.iconTone
-                                    )}
-                                  >
-                                    <Icon className="size-6" strokeWidth={2.2} />
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </>
-                ) : null}
+                {null}
 
                 {role === "admin" ? (
                 <Card className="relative overflow-hidden rounded-[32px] border border-border bg-card shadow-sm">
@@ -806,72 +754,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                 </Card>
                 ) : null}
 
-                {role !== "student" ? (
-                <Card className="overflow-hidden rounded-[32px] border border-border bg-card shadow-sm">
-                  <CardHeader className="pb-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <CardTitle className="text-xl font-semibold tracking-tight text-black dark:text-white">
-                          {role === "faculty"
-                            ? "Announcements and CS Updates"
-                            : "News & Announcements"}
-                        </CardTitle>
-                        <CardDescription className="mt-1 text-muted-foreground">
-                          Featured updates with highlighted headlines and full article view
-                        </CardDescription>
-                      </div>
-
-                      <Badge
-                        variant="outline"
-                        className="rounded-full border-border bg-muted text-muted-foreground"
-                      >
-                        Top stories
-                      </Badge>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent>
-                    <div className="grid gap-4 lg:grid-cols-3">
-                      {newsItems.map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => setSelectedNews(item)}
-                          className="group text-left"
-                        >
-<div className="relative h-full overflow-hidden rounded-[28px] border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
-                            <div className="relative p-5">
-                              <div className="mb-4 flex items-center justify-between gap-3">
-                                <Badge
-                                  variant="outline"
-                                  className="rounded-full border-border bg-background/85 text-muted-foreground"
-                                >
-                                  {item.category}
-                                </Badge>
-
-                                <div className="edu-glacier edu-ring-glacier flex size-10 items-center justify-center rounded-2xl border shadow-sm">
-                                  <FileText className="size-4" />
-                                </div>
-                              </div>
-
-<h3 className="line-clamp-3 text-lg font-semibold tracking-tight text-foreground">
-  {item.headline}
-</h3>
-
-<p className="mt-3 line-clamp-3 text-sm leading-7 text-muted-foreground">
-  {item.summary}
-</p>
-
-<div className="mt-5 inline-flex items-center text-sm font-medium text-foreground">                                Read full update
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-                ) : null}
+                {null}
               </div>
             ) : null}
 
@@ -925,7 +808,74 @@ export function RoleDashboard({ role }: { role: Role }) {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+        <DialogContent className="edu-sidebar-shell max-w-sm rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-white">Confirm Logout</DialogTitle>
+            <DialogDescription className="pt-1 text-white/70">
+              Are you sure you want to log out? You will need to sign in again.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-2 gap-2">
+            <DialogClose asChild>
+              <Button
+                variant="ghost"
+                className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 shadow-sm hover:bg-white/10 hover:text-white"
+              >
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              variant="ghost"
+              className="rounded-xl border border-red-400/30 bg-red-500/15 text-red-300 shadow-sm hover:bg-red-500/25 hover:text-red-200"
+              onClick={() => {
+                model.handleLogout()
+                setLogoutOpen(false)
+              }}
+            >
+              <LogOut className="mr-1.5 size-4" />
+              Logout
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} model={model} />
+
+      <Dialog open={!!viewingAnnouncement} onOpenChange={(open) => { if (!open) setViewingAnnouncement(null) }}>
+        <DialogContent className="max-w-lg rounded-[28px] border border-border bg-card shadow-2xl">
+          {viewingAnnouncement ? (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-2">
+                  <DialogTitle className="text-xl text-foreground">{viewingAnnouncement.title}</DialogTitle>
+                  <span
+                    className={
+                      "shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase leading-none " +
+                      (viewingAnnouncement.priority === "High"
+                        ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
+                        : viewingAnnouncement.priority === "Medium"
+                          ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400")
+                    }
+                  >
+                    {viewingAnnouncement.priority}
+                  </span>
+                </div>
+                <DialogDescription className="pt-1 text-foreground/70">
+                  Published on {viewingAnnouncement.date} &middot; For {viewingAnnouncement.audience}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="px-6 pb-6">
+                <p className="text-sm leading-7 text-foreground/85">
+                  {viewingAnnouncement.content}
+                </p>
+              </div>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <footer className="border-t border-border bg-background px-4 py-3 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-[1720px] flex-col items-center gap-2 text-xs text-muted-foreground sm:flex-row sm:justify-between">

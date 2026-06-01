@@ -219,11 +219,13 @@ export function Select({
   onChange,
   options,
   label,
+  className,
 }: {
   value: string
   onChange: (value: string) => void
   options: string[]
   label?: string
+  className?: string
 }) {
   return (
     <label className="grid gap-1.5 text-sm text-foreground/80">
@@ -232,7 +234,10 @@ export function Select({
       ) : null}
 
       <UiSelect value={value} onValueChange={onChange}>
-        <SelectTrigger className="h-11 rounded-2xl border border-border bg-background text-foreground shadow-sm transition-all duration-200 focus:ring-2 focus:ring-ring/20">
+        <SelectTrigger className={cn(
+          "h-11 rounded-2xl border bg-background text-foreground shadow-sm transition-all duration-200 focus:ring-2 focus:ring-ring/20",
+          className ?? "border-border"
+        )}>
           <SelectValue placeholder="Select option" />
         </SelectTrigger>
 

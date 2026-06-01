@@ -5,13 +5,14 @@ import { Bell, Radio } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import type { Announcement } from "../../data/portal-data"
 
 export function LiveAnnouncementCard({
   announcement,
   index,
   className,
 }: {
-  announcement: string
+  announcement: Announcement
   index: number
   className?: string
 }) {
@@ -36,7 +37,7 @@ export function LiveAnnouncementCard({
                 Live announcements
               </p>
               <p className="text-sm font-medium text-foreground">
-                Official university bulletin
+                {announcement.date}
               </p>
             </div>
           </div>
@@ -46,7 +47,7 @@ export function LiveAnnouncementCard({
             className="rounded-full border-border bg-background text-muted-foreground"
           >
             <Radio className="mr-1 size-3.5" />
-            Live feed
+            {announcement.audience}
           </Badge>
         </div>
 
@@ -55,12 +56,11 @@ export function LiveAnnouncementCard({
           className="animate-in fade-in-0 slide-in-from-bottom-2 duration-500"
         >
           <h3 className="text-lg font-semibold tracking-tight text-[#092C56] dark:text-white sm:text-xl">
-            {announcement}
+            {announcement.title}
           </h3>
 
           <p className="mt-3 text-sm leading-7 text-muted-foreground">
-            Stay updated with institutional notices, academic reminders, and
-            official campus-wide advisories.
+            {announcement.content}
           </p>
         </div>
       </CardContent>

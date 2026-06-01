@@ -81,7 +81,7 @@ function FacultyCard({
             <div className="flex size-9 items-center justify-center rounded-xl bg-muted text-xs font-semibold text-foreground">
               {member.name
                 .split(" ")
-                .map((p) => p[0])
+            .map((p: string) => p[0])
                 .join("")
                 .slice(0, 2)}
             </div>
@@ -305,7 +305,7 @@ export function FacultyAvailabilityPanel({ model }: PortalModuleProps) {
         <div className="flex size-10 items-center justify-center rounded-xl bg-muted text-sm font-semibold text-foreground">
           {profile.name
             .split(" ")
-            .map((p) => p[0])
+            .map((p: string) => p[0])
             .join("")
             .slice(0, 2)}
         </div>

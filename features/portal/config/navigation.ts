@@ -14,7 +14,6 @@ import {
   Megaphone,
   MessageSquareWarning,
   Network,
-  Presentation,
   UserCircle,
   Settings,
   Users,
@@ -44,6 +43,8 @@ export const roleNavigation: Record<Role, NavItem[]> = {
     { id: "grades", label: "Manage Grades", icon: FileSpreadsheet },
     { id: "availability", label: "My Status", icon: CheckCircle2 },
     { id: "instructors", label: "Instructor Info", icon: Network },
+    { id: "announcements", label: "Announcements", icon: Bell },
+    { id: "feedback", label: "Feedback Inbox", icon: MessageSquareWarning },
   ],
   admin: [
     { id: "overview", label: "Overview", icon: LayoutDashboard },

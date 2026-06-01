@@ -68,9 +68,26 @@ export const testAccounts: TestAccount[] = [
 ]
 
 export const testSessionStorageKey = "comsite-test-session"
+const customAccountsKey = "comsite-custom-accounts"
+
+function getCustomAccounts(): TestAccount[] {
+  if (typeof window === "undefined") return []
+  try {
+    return JSON.parse(window.localStorage.getItem(customAccountsKey) || "[]")
+  } catch {
+    return []
+  }
+}
 
 export function authenticateTestAccount(email: string, password: string) {
-  return testAccounts.find(
+  const match = testAccounts.find(
+    (account) =>
+      account.email.toLowerCase() === email.trim().toLowerCase() &&
+      account.password === password
+  )
+  if (match) return match
+
+  return getCustomAccounts().find(
     (account) =>
       account.email.toLowerCase() === email.trim().toLowerCase() &&
       account.password === password

@@ -23,6 +23,16 @@ export function useStoredState<T>(
     } finally {
       setReady(true)
     }
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === key && e.newValue) {
+        try {
+          setValue(JSON.parse(e.newValue) as T)
+        } catch { /* ignore */ }
+      }
+    }
+    window.addEventListener("storage", handleStorage)
+    return () => window.removeEventListener("storage", handleStorage)
   }, [key])
 
   useEffect(() => {

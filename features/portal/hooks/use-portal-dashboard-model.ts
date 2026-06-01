@@ -26,10 +26,13 @@ import {
   type Role,
   type ScheduleItem,
   type SeminarRecord,
+  type SemesterRecord,
+  type SubjectRecord,
   type ThesisRecord,
   type TicketStatus,
   type UserRecord,
   announcementsSeed,
+  auditLogsSeed,
   classRosterSeed,
   curriculumCatalogSeed,
   facultyHandledSections,
@@ -38,6 +41,8 @@ import {
   gradeSeed,
   roleProfiles,
   scheduleSeed,
+  semestersSeed,
+  subjectsSeed,
   seminarSeed,
   thesisSeed,
   usersSeed,
@@ -206,6 +211,14 @@ export function usePortalDashboardModel(role: Role) {
     "comsite-class-roster",
     classRosterSeed
   )
+  const [semesters, setSemesters] = useStoredState<SemesterRecord[]>(
+    "comsite-semesters",
+    semestersSeed
+  )
+  const [subjects, setSubjects] = useStoredState<SubjectRecord[]>(
+    "comsite-subjects",
+    subjectsSeed
+  )
   const [curricula, setCurricula] = useStoredState<CurriculumRecord[]>(
     "comsite-curricula",
     curriculumCatalogSeed
@@ -218,10 +231,12 @@ export function usePortalDashboardModel(role: Role) {
     "comsite-class-schedules",
     scheduleSeed
   )
+  const [auditLogs, setAuditLogs] = useStoredState(
+    "comsite-audit-logs",
+    auditLogsSeed
+  )
 
   const [roleFilter, setRoleFilter] = useState("All")
-  const [selectedUserType, setSelectedUserType] =
-    useState<"student" | "faculty">("student")
   const [selectedAcademicSection, setSelectedAcademicSection] =
     useState("Semesters")
   const [selectedClassYear, setSelectedClassYear] = useState("First Year")
@@ -229,7 +244,6 @@ export function usePortalDashboardModel(role: Role) {
   const [selectedGradeSection, setSelectedGradeSection] = useState("BSCS 3A")
   const [selectedCurriculumId, setSelectedCurriculumId] = useState("CURR-001")
   const [curriculumFilter, setCurriculumFilter] = useState("All")
-  const [showAddUserForm, setShowAddUserForm] = useState(false)
   const [showThesisUploadForm, setShowThesisUploadForm] = useState(false)
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false)
   const [newSectionName, setNewSectionName] = useState("")
@@ -247,6 +261,20 @@ export function usePortalDashboardModel(role: Role) {
     instructor: "",
     section: "BSCS 3A",
   })
+  const [showAddSemesterForm, setShowAddSemesterForm] = useState(false)
+  const [showAddSubjectForm, setShowAddSubjectForm] = useState(false)
+  const [newSemester, setNewSemester] = useState({
+    name: "",
+    schoolYear: "",
+    enrollment: "Open",
+    gradeSubmission: "",
+  })
+  const [newSubject, setNewSubject] = useState({
+    code: "",
+    title: "",
+    units: "3",
+    instructor: "",
+  })
   const [newCurriculum, setNewCurriculum] = useState({
     name: "",
     major: "",
@@ -258,7 +286,8 @@ export function usePortalDashboardModel(role: Role) {
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
-    role: "student" as "student" | "faculty",
+    password: "",
+    role: "student" as "student" | "faculty" | "admin",
     firstName: "",
     middleName: "",
     lastName: "",
@@ -516,7 +545,10 @@ export function usePortalDashboardModel(role: Role) {
 
   const filteredUsers = useMemo(() => {
     const search = query.toLowerCase()
+    const seen = new Set<string>()
     return users.filter((user) => {
+      if (seen.has(user.id)) return false
+      seen.add(user.id)
       const matchesSearch = [user.name, user.email, user.id, user.role]
         .join(" ")
         .toLowerCase()
@@ -722,6 +754,24 @@ export function usePortalDashboardModel(role: Role) {
     )
   }
 
+  function addAuditLog(action: string) {
+    const now = new Date()
+    const time = now.toLocaleDateString("en-US", {
+      month: "short", day: "numeric", year: "numeric",
+    }) + " " + now.toLocaleTimeString("en-US", {
+      hour: "numeric", minute: "2-digit", hour12: true,
+    })
+    setAuditLogs((current) => [
+      {
+        id: `LOG-${String(current.length + 1).padStart(3, "0")}`,
+        actor: profileName || profile.name,
+        action,
+        time,
+      },
+      ...current,
+    ])
+  }
+
   function handleAddUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!newUser.firstName.trim() || !newUser.lastName.trim() || !newUser.email.trim()) return
@@ -729,9 +779,10 @@ export function usePortalDashboardModel(role: Role) {
       .map((part) => part.trim())
       .filter(Boolean)
       .join(" ")
+    const accountId = `USR-${String(users.length + 1).padStart(3, "0")}`
     setUsers((current) => [
       {
-        id: `USR-${String(current.length + 1).padStart(3, "0")}`,
+        id: accountId,
         name: fullName,
         email: newUser.email.trim(),
         role: newUser.role,
@@ -760,10 +811,31 @@ export function usePortalDashboardModel(role: Role) {
       },
       ...current,
     ])
+    const customAccountsKey = "comsite-custom-accounts"
+    const existing = JSON.parse(
+      window.localStorage.getItem(customAccountsKey) || "[]"
+    ) as Array<{ email: string; password: string; role: string; name: string; title: string; id: string; route: string }>
+    const routeMap: Record<string, string> = { student: "/student", faculty: "/faculty", admin: "/admin" }
+    existing.push({
+      email: newUser.email.trim(),
+      password: newUser.password || "password123",
+      role: newUser.role,
+      name: fullName,
+      title: newUser.role === "student"
+        ? `BSCS ${newUser.year}${newUser.section} - ${newUser.studentType} Student`
+        : newUser.role === "faculty"
+          ? `Instructor - Computer Science`
+          : "System Administrator - CS Department",
+      id: accountId,
+      route: routeMap[newUser.role] || "/student",
+    })
+    window.localStorage.setItem(customAccountsKey, JSON.stringify(existing))
+
     setNewUser({
       name: "",
       email: "",
-      role: selectedUserType,
+      password: "",
+      role: "student",
       firstName: "",
       middleName: "",
       lastName: "",
@@ -775,7 +847,7 @@ export function usePortalDashboardModel(role: Role) {
       employmentType: "Regular",
       academicTitle: "MIT",
     })
-    setShowAddUserForm(false)
+    addAuditLog(`Created ${newUser.role} account "${fullName}" (${newUser.email})`)
   }
 
   function confirmAndToggleUserStatus(userId: string) {
@@ -783,6 +855,11 @@ export function usePortalDashboardModel(role: Role) {
       "Are you sure you want to edit this account status?"
     )
     if (!approved) return
+    toggleUserStatus(userId)
+  }
+
+  function toggleUserStatus(userId: string) {
+    const user = users.find((u) => u.id === userId)
     setUsers((current) =>
       current.map((item) =>
         item.id === userId
@@ -793,6 +870,10 @@ export function usePortalDashboardModel(role: Role) {
           : item
       )
     )
+    if (user) {
+      const newStatus = user.status === "Active" ? "Inactive" : "Active"
+      addAuditLog(`${newStatus === "Active" ? "Activated" : "Deactivated"} account "${user.name}"`)
+    }
   }
 
   function confirmAndDeleteUser(userId: string) {
@@ -800,7 +881,22 @@ export function usePortalDashboardModel(role: Role) {
       "Are you sure you want to delete this account?"
     )
     if (!approved) return
+    deleteUser(userId)
+  }
+
+  function deleteUser(userId: string) {
+    const user = users.find((u) => u.id === userId)
     setUsers((current) => current.filter((item) => item.id !== userId))
+    if (user) {
+      addAuditLog(`Deleted ${user.role} account "${user.name}"`)
+    }
+  }
+
+  function handleUpdateUser(updatedUser: UserRecord) {
+    setUsers((current) =>
+      current.map((item) => (item.id === updatedUser.id ? updatedUser : item))
+    )
+    addAuditLog(`Updated account "${updatedUser.name}"`)
   }
 
   function confirmAndDeleteThesis(thesisId: string) {
@@ -1055,6 +1151,179 @@ export function usePortalDashboardModel(role: Role) {
     }
   }
 
+  function handleAddSemester(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!newSemester.name.trim() || !newSemester.schoolYear.trim()) return
+    setSemesters((current) => [
+      {
+        id: `SEM-${String(current.length + 1).padStart(3, "0")}`,
+        name: newSemester.name.trim(),
+        schoolYear: newSemester.schoolYear.trim(),
+        enrollment: newSemester.enrollment,
+        gradeSubmission: newSemester.gradeSubmission.trim(),
+      },
+      ...current,
+    ])
+    setNewSemester({ name: "", schoolYear: "", enrollment: "Open", gradeSubmission: "" })
+    setShowAddSemesterForm(false)
+  }
+
+  function handleUpdateSemester(updated: SemesterRecord) {
+    setSemesters((current) =>
+      current.map((item) => (item.id === updated.id ? updated : item))
+    )
+  }
+
+  function handleDeleteSemester(id: string) {
+    setSemesters((current) => current.filter((item) => item.id !== id))
+  }
+
+  function handleAddSubject(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!newSubject.code.trim() || !newSubject.title.trim()) return
+    setSubjects((current) => [
+      {
+        code: newSubject.code.trim().toUpperCase(),
+        title: newSubject.title.trim(),
+        units: Number(newSubject.units) || 0,
+        instructor: newSubject.instructor.trim(),
+      },
+      ...current,
+    ])
+    setNewSubject({ code: "", title: "", units: "3", instructor: "" })
+    setShowAddSubjectForm(false)
+  }
+
+  function handleUpdateSubject(updated: SubjectRecord) {
+    setSubjects((current) =>
+      current.map((item) =>
+        item.code === updated.code ? updated : item
+      )
+    )
+  }
+
+  function handleDeleteSubject(code: string) {
+    setSubjects((current) => current.filter((item) => item.code !== code))
+  }
+
+  function handleDeleteCurriculum(id: string) {
+    setCurricula((current) => current.filter((item) => item.id !== id))
+  }
+
+  function handleUpdateCurriculum(updated: CurriculumRecord) {
+    setCurricula((current) =>
+      current.map((item) => (item.id === updated.id ? updated : item))
+    )
+  }
+
+  function handleAddTermToCurriculum(
+    curriculumId: string,
+    year: string,
+    semester: string
+  ) {
+    setCurricula((current) =>
+      current.map((curr) =>
+        curr.id === curriculumId
+          ? {
+              ...curr,
+              terms: [
+                ...curr.terms,
+                { year, semester, subjects: [] },
+              ],
+            }
+          : curr
+      )
+    )
+  }
+
+  function handleDeleteTermFromCurriculum(
+    curriculumId: string,
+    termIndex: number
+  ) {
+    setCurricula((current) =>
+      current.map((curr) =>
+        curr.id === curriculumId
+          ? {
+              ...curr,
+              terms: curr.terms.filter((_, i) => i !== termIndex),
+            }
+          : curr
+      )
+    )
+  }
+
+  function handleAddSubjectToTerm(
+    curriculumId: string,
+    termIndex: number,
+    subject: { code: string; name: string; lec: number; lab: number; total: number }
+  ) {
+    setCurricula((current) =>
+      current.map((curr) =>
+        curr.id === curriculumId
+          ? {
+              ...curr,
+              terms: curr.terms.map((term, i) =>
+                i === termIndex
+                  ? { ...term, subjects: [...term.subjects, subject] }
+                  : term
+              ),
+            }
+          : curr
+      )
+    )
+  }
+
+  function handleUpdateSubjectInTerm(
+    curriculumId: string,
+    termIndex: number,
+    subjectIndex: number,
+    subject: { code: string; name: string; lec: number; lab: number; total: number }
+  ) {
+    setCurricula((current) =>
+      current.map((curr) =>
+        curr.id === curriculumId
+          ? {
+              ...curr,
+              terms: curr.terms.map((term, i) =>
+                i === termIndex
+                  ? {
+                      ...term,
+                      subjects: term.subjects.map((s, j) =>
+                        j === subjectIndex ? subject : s
+                      ),
+                    }
+                  : term
+              ),
+            }
+          : curr
+      )
+    )
+  }
+
+  function handleDeleteSubjectFromTerm(
+    curriculumId: string,
+    termIndex: number,
+    subjectIndex: number
+  ) {
+    setCurricula((current) =>
+      current.map((curr) =>
+        curr.id === curriculumId
+          ? {
+              ...curr,
+              terms: curr.terms.map((term, i) =>
+                i === termIndex
+                  ? {
+                      ...term,
+                      subjects: term.subjects.filter((_, j) => j !== subjectIndex),
+                    }
+                  : term
+              ),
+            }
+          : curr
+      )
+    )
+  }
+
   function handleAddCurriculum(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!newCurriculum.name.trim() || !newCurriculum.major.trim()) return
@@ -1187,7 +1456,7 @@ export function usePortalDashboardModel(role: Role) {
         id: `ANN-${String(current.length + 1).padStart(3, "0")}`,
         title: announcementDraft.title.trim(),
         content: announcementDraft.content.trim(),
-        date: "May 26, 2026",
+        date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
         audience: announcementDraft.audience,
         priority: announcementDraft.priority,
       },
@@ -1199,6 +1468,17 @@ export function usePortalDashboardModel(role: Role) {
       audience: "All Users",
       priority: "Medium",
     })
+    setShowAnnouncementForm(false)
+  }
+
+  function handleUpdateAnnouncement(updated: Announcement) {
+    setAnnouncements((current) =>
+      current.map((item) => (item.id === updated.id ? updated : item))
+    )
+  }
+
+  function handleDeleteAnnouncement(id: string) {
+    setAnnouncements((current) => current.filter((item) => item.id !== id))
   }
 
   function handleEnlist(eventId: string) {
@@ -1256,6 +1536,10 @@ export function usePortalDashboardModel(role: Role) {
     setAnnouncements,
     roster,
     setRoster,
+    semesters,
+    setSemesters,
+    subjects,
+    setSubjects,
     curricula,
     setCurricula,
     yearSections,
@@ -1264,10 +1548,16 @@ export function usePortalDashboardModel(role: Role) {
     setClassSchedules,
     roleFilter,
     setRoleFilter,
-    selectedUserType,
-    setSelectedUserType,
     selectedAcademicSection,
     setSelectedAcademicSection,
+    showAddSemesterForm,
+    setShowAddSemesterForm,
+    showAddSubjectForm,
+    setShowAddSubjectForm,
+    newSemester,
+    setNewSemester,
+    newSubject,
+    setNewSubject,
     selectedClassYear,
     setSelectedClassYear,
     selectedClassSection: activeClassSection,
@@ -1278,8 +1568,6 @@ export function usePortalDashboardModel(role: Role) {
     setSelectedCurriculumId,
     curriculumFilter,
     setCurriculumFilter,
-    showAddUserForm,
-    setShowAddUserForm,
     showThesisUploadForm,
     setShowThesisUploadForm,
     showAnnouncementForm,
@@ -1331,6 +1619,7 @@ export function usePortalDashboardModel(role: Role) {
     filteredFaculty,
     filteredUsers,
     studentTickets,
+    auditLogs,
     selectedNav,
     currentTitle,
     selectModule,
@@ -1346,7 +1635,10 @@ export function usePortalDashboardModel(role: Role) {
     updateTicketStatus,
     updateFacultyStatus,
     confirmAndToggleUserStatus,
+    toggleUserStatus,
     confirmAndDeleteUser,
+    deleteUser,
+    handleUpdateUser,
     confirmAndDeleteThesis,
     undoTicketResolution,
     handleProfilePhotoChange,
@@ -1357,12 +1649,27 @@ export function usePortalDashboardModel(role: Role) {
     handleCreateSchedule,
     handleScheduleUpload,
     handleGradeWorkbookUpload,
+    handleAddSemester,
+    handleUpdateSemester,
+    handleDeleteSemester,
+    handleAddSubject,
+    handleUpdateSubject,
+    handleDeleteSubject,
+    handleDeleteCurriculum,
+    handleUpdateCurriculum,
+    handleAddTermToCurriculum,
+    handleDeleteTermFromCurriculum,
+    handleAddSubjectToTerm,
+    handleUpdateSubjectInTerm,
+    handleDeleteSubjectFromTerm,
     handleAddCurriculum,
     handleAddUser,
     handleFeedbackSubmit,
     handleCreateEvent,
     handleCreateThesis,
     handleCreateAnnouncement,
+    handleUpdateAnnouncement,
+    handleDeleteAnnouncement,
     handleEnlist,
     handleFacultySelfStatus,
   }
