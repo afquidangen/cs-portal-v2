@@ -3,9 +3,7 @@
 import {
   Bell,
   BookOpen,
-  ChevronRight,
   ClipboardList,
-  Command,
   FileText,
   GraduationCap,
   Info,
@@ -17,14 +15,13 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Phone,
-  Search,
   ShieldCheck,
   Sparkles,
   Sun,
   UserCircle,
   X,
 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -43,7 +40,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { liveAnnouncements, newsItems, type NewsItem } from "@/lib/news-data"
@@ -82,6 +78,8 @@ export function RoleDashboard({ role }: { role: Role }) {
   const [profileOpen, setProfileOpen] = useState(false)
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false)
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const notifRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode)
@@ -93,6 +91,16 @@ export function RoleDashboard({ role }: { role: Role }) {
     }, 5000)
 
     return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setShowNotifications(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
   function renderModule() {
@@ -494,41 +502,51 @@ export function RoleDashboard({ role }: { role: Role }) {
                   {model.sidebarOpen ? <X className="size-5" /> : <Menu className="size-5" />}
                 </Button>
 
-                <div className="edu-topbar-highlight hidden items-center gap-2 rounded-2xl border bg-card px-3 py-2 shadow-sm md:flex">
-                  <Search className="size-4 text-muted-foreground" />
-                  <Input
-                    readOnly
-                    value=""
-                    placeholder="Search modules, records, announcements..."
-                    className="h-auto border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
-                  />
-                  <div className="ml-2 inline-flex items-center gap-1 rounded-lg border border-border bg-muted px-2 py-1 text-[11px] text-muted-foreground">
-                    <Command className="size-3" />
-                    K
-                  </div>
-                </div>
-
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>Portal</span>
-                    <ChevronRight className="size-3" />
-                    <span className="truncate">{model.currentTitle}</span>
-                  </div>
-                  <p className="truncate text-sm font-semibold text-foreground sm:text-base">
-                    University Academic Portal & E-Grading System
-                  </p>
-                </div>
+                
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="rounded-xl border-border bg-background shadow-sm"
-                  aria-label="Notifications"
-                >
-                  <Bell className="size-5" />
-                </Button>
+                <div ref={notifRef} className="relative">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-xl border-border bg-background shadow-sm"
+                    aria-label="Notifications"
+                    onClick={() => setShowNotifications((prev) => !prev)}
+                  >
+                    <Bell className="size-5" />
+                  </Button>
+
+                  {showNotifications ? (
+                    <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-border bg-popover text-popover-foreground shadow-xl">
+                      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+                        <Bell className="size-4" />
+                        <p className="text-sm font-semibold">Notifications</p>
+                      </div>
+                      <div className="max-h-64 space-y-1 overflow-y-auto p-2">
+                        {model.announcements.length === 0 ? (
+                          <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+                            No notifications yet.
+                          </p>
+                        ) : (
+                          model.announcements.slice(0, 5).map((ann) => (
+                            <div
+                              key={ann.id}
+                              className="rounded-xl px-3 py-2.5 transition-colors hover:bg-muted"
+                            >
+                              <p className="text-sm font-medium text-foreground">
+                                {ann.title}
+                              </p>
+                              <p className="mt-0.5 text-xs text-muted-foreground">
+                                {ann.date} &middot; {ann.priority}
+                              </p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
 
                 <Button
                   variant="outline"
@@ -540,29 +558,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                   {darkMode ? <Sun className="size-5" /> : <Moon className="size-5" />}
                 </Button>
 
-                <button
-                  type="button"
-                  onClick={() => setProfileOpen(true)}
-                  className="hidden items-center gap-3 rounded-2xl border border-border bg-card px-3 py-2 shadow-sm transition hover:bg-accent/40 sm:flex"
-                >
-                  <Avatar className="size-8 ring-1 ring-border">
-                    <AvatarImage
-                      src={model.profilePhotoUrl || "/avatars/01.png"}
-                      alt={model.profile.name}
-                    />
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {getInitials(model.profile.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="text-left">
-                    <p className="max-w-[140px] truncate text-sm font-medium text-foreground">
-                      {model.profile.name}
-                    </p>
-                    <p className="max-w-[140px] truncate text-xs text-muted-foreground">
-                      {model.profile.title}
-                    </p>
-                  </div>
-                </button>
+                
               </div>
             </div>
           </header>
@@ -684,7 +680,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                   </>
                 ) : null}
 
-                {role !== "faculty" ? (
+                {role === "admin" ? (
                 <Card className="relative overflow-hidden rounded-[32px] border border-border bg-card shadow-sm">
                   <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.10),transparent_32%),radial-gradient(circle_at_right,hsl(var(--foreground)/0.04),transparent_26%)]" />
                   <CardHeader className="relative pb-5">
@@ -884,28 +880,20 @@ export function RoleDashboard({ role }: { role: Role }) {
 
       <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} model={model} />
 
-      <footer className="border-t border-border bg-background">
-        <div className="mx-auto flex max-w-[1720px] flex-col gap-4 px-4 py-6 text-sm sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-          <div>
-            <p className="font-medium text-foreground">
-              © 2026 ComSite Student Portal. All Rights Reserved.
-            </p>
-            <p className="text-muted-foreground">ISPSC Computing Studies Unit</p>
-          </div>
-
-          <div className="flex flex-col gap-1 text-muted-foreground md:items-end">
-            <p>San Nicolas, Candon City, Ilocos Sur</p>
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-              <span className="inline-flex items-center gap-2">
-                <Mail className="size-4" />
-                comsite@ispsc.edu.ph
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <Phone className="size-4" />
-                077 000 0000
-              </span>
-            </div>
-          </div>
+      <footer className="border-t border-border bg-background px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-[1720px] flex-col items-center gap-2 text-xs text-muted-foreground sm:flex-row sm:justify-between">
+          <span>&copy; 2026 ComSite Portal &mdash; ISPSC Computing Studies Unit</span>
+          <span className="inline-flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+            <span className="inline-flex items-center gap-1.5">
+              <Mail className="size-3.5" />
+              comsite@ispsc.edu.ph
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Phone className="size-3.5" />
+              077 000 0000
+            </span>
+            <span className="hidden sm:inline">San Nicolas, Candon City, Ilocos Sur</span>
+          </span>
         </div>
       </footer>
     </main>
