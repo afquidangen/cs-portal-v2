@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  BarChart3,
   Bell,
   BookOpen,
   ClipboardList,
@@ -11,6 +12,7 @@ import {
   LogOut,
   Mail,
   Menu,
+  MessageSquareWarning,
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
@@ -19,6 +21,7 @@ import {
   Sparkles,
   Sun,
   UserCircle,
+  Users,
   X,
 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -41,7 +44,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
 import { liveAnnouncements, newsItems, type NewsItem } from "@/lib/news-data"
 import { cn } from "@/lib/utils"
 
@@ -61,6 +63,7 @@ import { GradesModule } from "./modules/grades-module"
 import { GreetingCard } from "./modules/greeting-card"
 import { InstructorsModule } from "./modules/instructors-module"
 import { LiveAnnouncementCard } from "./modules/live-announcement-card"
+import { Metric } from "./shared/dashboard-ui"
 import { OverviewModule } from "./modules/overview-module"
 import { ProfileModule } from "./modules/profile-module"
 import { ProfileDialog } from "./modules/profile-dialog"
@@ -578,6 +581,52 @@ export function RoleDashboard({ role }: { role: Role }) {
                   />
                 </div>
 
+                {role === "student" ? (
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <Metric
+                      label="Current GWA"
+                      value={model.gradeAverage}
+                      icon={BarChart3}
+                      tone="emerald"
+                    />
+                    <Metric
+                      label="Enrolled Subjects"
+                      value={String(model.studentGrades.length)}
+                      icon={BookOpen}
+                      tone="sky"
+                    />
+                    <Metric
+                      label="Open Tickets"
+                      value={String(
+                        model.studentTickets.filter(
+                          (t: { status: string }) => t.status !== "Resolved"
+                        ).length
+                      )}
+                      icon={MessageSquareWarning}
+                      tone="amber"
+                    />
+                  </div>
+                ) : null}
+
+                {role === "faculty" ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Metric
+                      label="Handled Classes"
+                      value={String(model.facultyClassSections.length)}
+                      icon={ClipboardList}
+                      tone="sky"
+                    />
+                    <Metric
+                      label="Students Enrolled"
+                      value={String(
+                        model.facultyClassStudents.filter((s) => s.enrolled).length
+                      )}
+                      icon={Users}
+                      tone="emerald"
+                    />
+                  </div>
+                ) : null}
+
                 {/* --- STATUS OVERVIEW PLACED AT THE TOP OF QUICK ACCESS LINKS --- */}
                 {role === "admin" ? (
                   <div className="space-y-3 pt-2">
@@ -626,7 +675,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                   </div>
                 ) : null}
 
-                {role !== "faculty" ? (
+                {role === "admin" ? (
                   <>
                     <div className="pt-2 text-center">
                       <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
@@ -757,6 +806,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                 </Card>
                 ) : null}
 
+                {role !== "student" ? (
                 <Card className="overflow-hidden rounded-[32px] border border-border bg-card shadow-sm">
                   <CardHeader className="pb-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -821,6 +871,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                     </div>
                   </CardContent>
                 </Card>
+                ) : null}
               </div>
             ) : null}
 
@@ -832,11 +883,7 @@ export function RoleDashboard({ role }: { role: Role }) {
               </div>
             ) : null}
 
-            <Separator className="mb-6" />
-
-            <div className="min-h-[640px] rounded-[30px] border border-border bg-card p-4 shadow-sm sm:p-5 lg:p-7">
-              {renderModule()}
-            </div>
+            {renderModule()}
           </section>
         </div>
       </div>

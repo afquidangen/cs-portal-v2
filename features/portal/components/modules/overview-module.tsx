@@ -1,27 +1,15 @@
 "use client"
 
-import {
-  BarChart3,
-  BookOpen,
-  ClipboardList,
-  MessageSquareWarning,
-  Users,
-} from "lucide-react"
-
 import { calculateFinalGrade, gradeRemarks } from "../../lib/grades"
-import { Metric, Panel, StatusBadge } from "../shared/dashboard-ui"
+import { Panel, StatusBadge } from "../shared/dashboard-ui"
 import { AnnouncementsPanel } from "./announcements-panel"
 import { SchedulePanel } from "./schedule-panel"
 import type { PortalModuleProps } from "./types"
 
 export function OverviewModule({ model }: PortalModuleProps) {
   const {
-    facultyClassSections,
-    facultyClassStudents,
-    gradeAverage,
     role,
     studentGrades,
-    studentTickets,
   } = model
 
   if (role === "admin") {
@@ -29,53 +17,11 @@ export function OverviewModule({ model }: PortalModuleProps) {
   }
 
   if (role === "faculty") {
-    return (
-      <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          <Metric
-            label="Handled Classes"
-            value={String(facultyClassSections.length)}
-            icon={ClipboardList}
-            tone="sky"
-          />
-          <Metric
-            label="Students Enrolled"
-            value={String(
-              facultyClassStudents.filter((student) => student.enrolled).length
-            )}
-            icon={Users}
-            tone="emerald"
-          />
-        </div>
-      </div>
-    )
+    return <div className="hidden" />
   }
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3">
-        <Metric
-          label="Current GWA"
-          value={gradeAverage}
-          icon={BarChart3}
-          tone="emerald"
-        />
-        <Metric
-          label="Enrolled Subjects"
-          value={String(studentGrades.length)}
-          icon={BookOpen}
-          tone="sky"
-        />
-        <Metric
-          label="Open Tickets"
-          value={String(
-            studentTickets.filter((t) => t.status !== "Resolved").length
-          )}
-          icon={MessageSquareWarning}
-          tone="amber"
-        />
-      </div>
-
       <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
         <SchedulePanel model={model} />
 
