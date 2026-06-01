@@ -15,10 +15,10 @@ export function QuickLinksModule() {
             href={link.href}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center justify-between rounded-lg border border-slate-200 p-4 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50"
+            className="flex items-center justify-between rounded-2xl border border-border bg-card p-4 text-sm font-medium text-foreground shadow-sm transition hover:bg-muted"
           >
             {link.label}
-            <LinkIcon className="size-4" />
+            <LinkIcon className="size-4 text-foreground/80" />
           </a>
         ))}
       </div>

@@ -15,6 +15,7 @@ export type ModuleId =
   | "quick-links"
   | "users"
   | "academic"
+  | "profile"
   | "templates"
   | "classes"
   | "audit"

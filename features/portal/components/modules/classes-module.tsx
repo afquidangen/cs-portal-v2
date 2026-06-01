@@ -1,11 +1,24 @@
 "use client"
 
 import { scheduleSeed } from "../../data/portal-data"
-import { Panel } from "../shared/dashboard-ui"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+
+import { Panel, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
 export function ClassesModule({ model }: PortalModuleProps) {
-  const { role, roster, setRoster } = model
+  const {
+    handleAddClassSection,
+    newSectionName,
+    role,
+    roster,
+    selectedClassYear,
+    setNewSectionName,
+    setRoster,
+    setSelectedClassYear,
+    yearSections,
+  } = model
 
   if (role === "faculty") {
     return (
@@ -14,14 +27,15 @@ export function ClassesModule({ model }: PortalModuleProps) {
           {roster.map((student) => (
             <label
               key={student.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-4"
+              className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors"
             >
               <div>
-                <p className="font-medium text-slate-950">{student.name}</p>
-                <p className="text-sm text-slate-500">
+                <p className="font-medium text-foreground">{student.name}</p>
+                <p className="text-sm text-foreground/70">
                   {student.id} - {student.section}
                 </p>
               </div>
+
               <input
                 type="checkbox"
                 checked={student.enrolled}
@@ -34,7 +48,7 @@ export function ClassesModule({ model }: PortalModuleProps) {
                     )
                   )
                 }
-                className="size-5 rounded border-slate-300"
+                className="size-5 rounded-md border border-border bg-background accent-primary"
               />
             </label>
           ))}
@@ -43,38 +57,103 @@ export function ClassesModule({ model }: PortalModuleProps) {
     )
   }
 
+  const selectedYear = yearSections.find((item) => item.year === selectedClassYear)
+
   return (
-    <Panel title="Classes Management" eyebrow="Schedules and sections">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs uppercase text-slate-500">
-            <tr>
-              <th className="py-2 pr-4">Section</th>
-              <th className="py-2 pr-4">Subject</th>
-              <th className="py-2 pr-4">Instructor</th>
-              <th className="py-2 pr-4">Schedule</th>
-              <th className="py-2">Room</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {scheduleSeed.map((item) => (
-              <tr key={item.id}>
-                <td className="py-3 pr-4 font-medium text-slate-900">
-                  {item.section}
-                </td>
-                <td className="py-3 pr-4 text-slate-600">{item.subject}</td>
-                <td className="py-3 pr-4 text-slate-600">
-                  {item.instructor}
-                </td>
-                <td className="py-3 pr-4 text-slate-600">
-                  {item.day}, {item.time}
-                </td>
-                <td className="py-3 text-slate-600">{item.room}</td>
+    <div className="space-y-5">
+      <Panel title="Year Sections" eyebrow="Click a year to view sections">
+        <div className="flex flex-wrap gap-2">
+          {yearSections.map((item) => (
+            <Button
+              key={item.year}
+              type="button"
+              variant={selectedClassYear === item.year ? "default" : "outline"}
+              onClick={() => setSelectedClassYear(item.year)}
+              className="rounded-xl"
+            >
+              {item.year}
+            </Button>
+          ))}
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {selectedYear?.sections.map((section) => (
+            <StatusBadge key={section} value={section} />
+          ))}
+        </div>
+
+        <form
+          onSubmit={handleAddClassSection}
+          className="mt-4 flex max-w-md gap-2"
+        >
+          <Input
+            value={newSectionName}
+            onChange={(event) => setNewSectionName(event.target.value)}
+            placeholder="Add section, e.g. BSCS 1E"
+            className="h-10 rounded-2xl"
+          />
+          <Button type="submit" className="rounded-2xl">
+            Add
+          </Button>
+        </form>
+      </Panel>
+
+      <Panel title="Class Schedule Upload" eyebrow="Manual or Excel .xlsx">
+        <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+          <Input type="file" accept=".xlsx" className="h-10 rounded-2xl" />
+          <Button type="button" variant="outline" className="rounded-2xl">
+            Upload Schedule
+          </Button>
+        </div>
+      </Panel>
+
+      <Panel title="Encoded Schedules" eyebrow="Schedules and sections">
+        <div className="overflow-x-auto rounded-2xl border border-border">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead className="bg-muted text-foreground">
+              <tr className="border-b border-border">
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                  Section
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                  Subject
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                  Instructor
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                  Schedule
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                  Room
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Panel>
+            </thead>
+
+            <tbody className="divide-y divide-border bg-card">
+              {scheduleSeed.map((item) => (
+                <tr key={item.id} className="transition-colors hover:bg-muted/50">
+                  <td className="px-4 py-3 font-medium text-foreground">
+                    {item.section}
+                  </td>
+                  <td className="px-4 py-3 text-foreground/80">
+                    {item.subject}
+                  </td>
+                  <td className="px-4 py-3 text-foreground/80">
+                    {item.instructor}
+                  </td>
+                  <td className="px-4 py-3 text-foreground/80">
+                    {item.day}, {item.time}
+                  </td>
+                  <td className="px-4 py-3 text-foreground/80">
+                    {item.room}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+    </div>
   )
 }

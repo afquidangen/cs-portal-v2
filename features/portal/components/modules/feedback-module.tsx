@@ -1,6 +1,6 @@
 "use client"
 
-import { Check } from "lucide-react"
+import { Check, RotateCcw } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,6 +29,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
     setFeedbackDraft,
     studentTickets,
     tickets,
+    undoTicketResolution,
     updateTicketStatus,
   } = model
 
@@ -48,6 +49,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
               options={["Academic", "Facilities", "Portal", "Faculty", "Other"]}
               label="Category"
             />
+
             <Input
               value={feedbackDraft.subject}
               onChange={(event) =>
@@ -57,8 +59,9 @@ export function FeedbackModule({ model }: PortalModuleProps) {
                 }))
               }
               placeholder="Subject"
-              className="h-9 rounded-lg"
+              className="h-10 rounded-2xl"
             />
+
             <Textarea
               value={feedbackDraft.description}
               onChange={(value) =>
@@ -69,7 +72,8 @@ export function FeedbackModule({ model }: PortalModuleProps) {
               }
               placeholder="Describe the concern or suggestion"
             />
-            <label className="flex items-center gap-2 text-sm text-slate-600">
+
+            <label className="flex items-center gap-2 text-sm text-foreground/80">
               <input
                 type="checkbox"
                 checked={feedbackDraft.anonymous}
@@ -79,16 +83,18 @@ export function FeedbackModule({ model }: PortalModuleProps) {
                     anonymous: event.target.checked,
                   }))
                 }
-                className="size-4 rounded border-slate-300"
+                className="size-4 rounded border border-border bg-background accent-primary"
               />
               Submit anonymously
             </label>
-            <Button type="submit" className="w-full">
+
+            <Button type="submit" className="w-full rounded-2xl">
               <SendIcon />
               Submit Ticket
             </Button>
           </form>
         </Panel>
+
         <Panel title="Personal Ticket Tracker" eyebrow="Status updates">
           <TicketList
             tickets={studentTickets}
@@ -113,28 +119,32 @@ export function FeedbackModule({ model }: PortalModuleProps) {
         {visibleTickets.map((ticket) => (
           <div
             key={ticket.id}
-            className="rounded-lg border border-slate-200 p-4"
+            className="rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors"
           >
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h4 className="font-semibold text-slate-950">
+                  <h4 className="font-semibold text-foreground">
                     {ticket.subject}
                   </h4>
                   <StatusBadge value={ticket.status} />
                 </div>
-                <p className="mt-1 text-sm text-slate-500">
+
+                <p className="mt-1 text-sm text-foreground/70">
                   {ticket.id} - {ticket.studentName} - {ticket.submittedAt}
                 </p>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
+
+                <p className="mt-3 text-sm leading-6 text-foreground/80">
                   {ticket.description}
                 </p>
+
                 {ticket.resolution ? (
-                  <p className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">
+                  <p className="mt-3 rounded-2xl border border-border bg-muted p-3 text-sm text-foreground/80">
                     {ticket.resolution}
                   </p>
                 ) : null}
               </div>
+
               <div className="flex min-w-48 flex-col gap-2">
                 <Select
                   value={ticket.status}
@@ -143,9 +153,11 @@ export function FeedbackModule({ model }: PortalModuleProps) {
                   }
                   options={ticketStatusOptions}
                 />
+
                 <Button
                   size="sm"
                   variant="outline"
+                  className="rounded-2xl"
                   onClick={() =>
                     updateTicketStatus(
                       ticket.id,
@@ -157,10 +169,23 @@ export function FeedbackModule({ model }: PortalModuleProps) {
                   <Check className="size-4" />
                   Resolve
                 </Button>
+
+                {ticket.status === "Resolved" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-2xl"
+                    onClick={() => undoTicketResolution(ticket.id)}
+                  >
+                    <RotateCcw className="size-4" />
+                    Undo Resolve
+                  </Button>
+                ) : null}
               </div>
             </div>
           </div>
         ))}
+
         {visibleTickets.length === 0 ? (
           <EmptyState text="No tickets are assigned here." />
         ) : null}

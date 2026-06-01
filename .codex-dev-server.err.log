@@ -1,0 +1,885 @@
+⨯ ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  [90m28 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
+  [90m29 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m
+[31m[1m>[0m [90m30 |[0m [36mimport[0m { [33mProfileModule[0m } [36mfrom[0m [32m"./modules/profile-module"[0m
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m31 |[0m [36mimport[0m { [33mQuickLinksModule[0m } [36mfrom[0m [32m"./modules/quick-links-module"[0m
+  [90m32 |[0m [36mimport[0m { [33mSchedulePanel[0m } [36mfrom[0m [32m"./modules/schedule-panel"[0m
+  [90m33 |[0m [36mimport[0m { [33mSeminarsModule[0m } [36mfrom[0m [32m"./modules/seminars-module"[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  [90m28 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
+  [90m29 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m
+[31m[1m>[0m [90m30 |[0m [36mimport[0m { [33mProfileModule[0m } [36mfrom[0m [32m"./modules/profile-module"[0m
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m31 |[0m [36mimport[0m { [33mQuickLinksModule[0m } [36mfrom[0m [32m"./modules/quick-links-module"[0m
+  [90m32 |[0m [36mimport[0m { [33mSchedulePanel[0m } [36mfrom[0m [32m"./modules/schedule-panel"[0m
+  [90m33 |[0m [36mimport[0m { [33mSeminarsModule[0m } [36mfrom[0m [32m"./modules/seminars-module"[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  [90m28 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
+  [90m29 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m
+[31m[1m>[0m [90m30 |[0m [36mimport[0m { [33mProfileModule[0m } [36mfrom[0m [32m"./modules/profile-module"[0m
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m31 |[0m [36mimport[0m { [33mQuickLinksModule[0m } [36mfrom[0m [32m"./modules/quick-links-module"[0m
+  [90m32 |[0m [36mimport[0m { [33mSchedulePanel[0m } [36mfrom[0m [32m"./modules/schedule-panel"[0m
+  [90m33 |[0m [36mimport[0m { [33mSeminarsModule[0m } [36mfrom[0m [32m"./modules/seminars-module"[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  [90m28 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
+  [90m29 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m
+[31m[1m>[0m [90m30 |[0m [36mimport[0m { [33mProfileModule[0m } [36mfrom[0m [32m"./modules/profile-module"[0m
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m31 |[0m [36mimport[0m { [33mQuickLinksModule[0m } [36mfrom[0m [32m"./modules/quick-links-module"[0m
+  [90m32 |[0m [36mimport[0m { [33mSchedulePanel[0m } [36mfrom[0m [32m"./modules/schedule-panel"[0m
+  [90m33 |[0m [36mimport[0m { [33mSeminarsModule[0m } [36mfrom[0m [32m"./modules/seminars-module"[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  [90m28 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
+  [90m29 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m
+[31m[1m>[0m [90m30 |[0m [36mimport[0m { [33mProfileModule[0m } [36mfrom[0m [32m"./modules/profile-module"[0m
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m31 |[0m [36mimport[0m { [33mQuickLinksModule[0m } [36mfrom[0m [32m"./modules/quick-links-module"[0m
+  [90m32 |[0m [36mimport[0m { [33mSchedulePanel[0m } [36mfrom[0m [32m"./modules/schedule-panel"[0m
+  [90m33 |[0m [36mimport[0m { [33mSeminarsModule[0m } [36mfrom[0m [32m"./modules/seminars-module"[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  [90m28 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
+  [90m29 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m
+[31m[1m>[0m [90m30 |[0m [36mimport[0m { [33mProfileModule[0m } [36mfrom[0m [32m"./modules/profile-module"[0m
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m31 |[0m [36mimport[0m { [33mQuickLinksModule[0m } [36mfrom[0m [32m"./modules/quick-links-module"[0m
+  [90m32 |[0m [36mimport[0m { [33mSchedulePanel[0m } [36mfrom[0m [32m"./modules/schedule-panel"[0m
+  [90m33 |[0m [36mimport[0m { [33mSeminarsModule[0m } [36mfrom[0m [32m"./modules/seminars-module"[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  [90m28 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
+  [90m29 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m
+[31m[1m>[0m [90m30 |[0m [36mimport[0m { [33mProfileModule[0m } [36mfrom[0m [32m"./modules/profile-module"[0m
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m31 |[0m [36mimport[0m { [33mQuickLinksModule[0m } [36mfrom[0m [32m"./modules/quick-links-module"[0m
+  [90m32 |[0m [36mimport[0m { [33mSchedulePanel[0m } [36mfrom[0m [32m"./modules/schedule-panel"[0m
+  [90m33 |[0m [36mimport[0m { [33mSeminarsModule[0m } [36mfrom[0m [32m"./modules/seminars-module"[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  [90m28 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
+  [90m29 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m
+[31m[1m>[0m [90m30 |[0m [36mimport[0m { [33mProfileModule[0m } [36mfrom[0m [32m"./modules/profile-module"[0m
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m31 |[0m [36mimport[0m { [33mQuickLinksModule[0m } [36mfrom[0m [32m"./modules/quick-links-module"[0m
+  [90m32 |[0m [36mimport[0m { [33mSchedulePanel[0m } [36mfrom[0m [32m"./modules/schedule-panel"[0m
+  [90m33 |[0m [36mimport[0m { [33mSeminarsModule[0m } [36mfrom[0m [32m"./modules/seminars-module"[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  [90m28 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
+  [90m29 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m
+[31m[1m>[0m [90m30 |[0m [36mimport[0m { [33mProfileModule[0m } [36mfrom[0m [32m"./modules/profile-module"[0m
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m31 |[0m [36mimport[0m { [33mQuickLinksModule[0m } [36mfrom[0m [32m"./modules/quick-links-module"[0m
+  [90m32 |[0m [36mimport[0m { [33mSchedulePanel[0m } [36mfrom[0m [32m"./modules/schedule-panel"[0m
+  [90m33 |[0m [36mimport[0m { [33mSeminarsModule[0m } [36mfrom[0m [32m"./modules/seminars-module"[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  [90m28 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
+  [90m29 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m
+[31m[1m>[0m [90m30 |[0m [36mimport[0m { [33mProfileModule[0m } [36mfrom[0m [32m"./modules/profile-module"[0m
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m31 |[0m [36mimport[0m { [33mQuickLinksModule[0m } [36mfrom[0m [32m"./modules/quick-links-module"[0m
+  [90m32 |[0m [36mimport[0m { [33mSchedulePanel[0m } [36mfrom[0m [32m"./modules/schedule-panel"[0m
+  [90m33 |[0m [36mimport[0m { [33mSeminarsModule[0m } [36mfrom[0m [32m"./modules/seminars-module"[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  [90m28 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
+  [90m29 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m
+[31m[1m>[0m [90m30 |[0m [36mimport[0m { [33mProfileModule[0m } [36mfrom[0m [32m"./modules/profile-module"[0m
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m31 |[0m [36mimport[0m { [33mQuickLinksModule[0m } [36mfrom[0m [32m"./modules/quick-links-module"[0m
+  [90m32 |[0m [36mimport[0m { [33mSchedulePanel[0m } [36mfrom[0m [32m"./modules/schedule-panel"[0m
+  [90m33 |[0m [36mimport[0m { [33mSeminarsModule[0m } [36mfrom[0m [32m"./modules/seminars-module"[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  [90m28 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
+  [90m29 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m
+[31m[1m>[0m [90m30 |[0m [36mimport[0m { [33mProfileModule[0m } [36mfrom[0m [32m"./modules/profile-module"[0m
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m31 |[0m [36mimport[0m { [33mQuickLinksModule[0m } [36mfrom[0m [32m"./modules/quick-links-module"[0m
+  [90m32 |[0m [36mimport[0m { [33mSchedulePanel[0m } [36mfrom[0m [32m"./modules/schedule-panel"[0m
+  [90m33 |[0m [36mimport[0m { [33mSeminarsModule[0m } [36mfrom[0m [32m"./modules/seminars-module"[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[browser] ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  28 | import { InstructorsModule } from "./modules/instructors-module"
+  29 | import { OverviewModule } from "./modules/overview-module"
+> 30 | import { ProfileModule } from "./modules/profile-module"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { QuickLinksModule } from "./modules/quick-links-module"
+  32 | import { SchedulePanel } from "./modules/schedule-panel"
+  33 | import { SeminarsModule } from "./modules/seminars-module"
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found 
+[browser] ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  28 | import { InstructorsModule } from "./modules/instructors-module"
+  29 | import { OverviewModule } from "./modules/overview-module"
+> 30 | import { ProfileModule } from "./modules/profile-module"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { QuickLinksModule } from "./modules/quick-links-module"
+  32 | import { SchedulePanel } from "./modules/schedule-panel"
+  33 | import { SeminarsModule } from "./modules/seminars-module"
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found 
+[browser] ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  28 | import { InstructorsModule } from "./modules/instructors-module"
+  29 | import { OverviewModule } from "./modules/overview-module"
+> 30 | import { ProfileModule } from "./modules/profile-module"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { QuickLinksModule } from "./modules/quick-links-module"
+  32 | import { SchedulePanel } from "./modules/schedule-panel"
+  33 | import { SeminarsModule } from "./modules/seminars-module"
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found 
+[browser] ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  28 | import { InstructorsModule } from "./modules/instructors-module"
+  29 | import { OverviewModule } from "./modules/overview-module"
+> 30 | import { ProfileModule } from "./modules/profile-module"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { QuickLinksModule } from "./modules/quick-links-module"
+  32 | import { SchedulePanel } from "./modules/schedule-panel"
+  33 | import { SeminarsModule } from "./modules/seminars-module"
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found 
+[browser] ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  28 | import { InstructorsModule } from "./modules/instructors-module"
+  29 | import { OverviewModule } from "./modules/overview-module"
+> 30 | import { ProfileModule } from "./modules/profile-module"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { QuickLinksModule } from "./modules/quick-links-module"
+  32 | import { SchedulePanel } from "./modules/schedule-panel"
+  33 | import { SeminarsModule } from "./modules/seminars-module"
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found 
+[browser] Uncaught Error: ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  28 | import { InstructorsModule } from "./modules/instructors-module"
+  29 | import { OverviewModule } from "./modules/overview-module"
+> 30 | import { ProfileModule } from "./modules/profile-module"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { QuickLinksModule } from "./modules/quick-links-module"
+  32 | import { SchedulePanel } from "./modules/schedule-panel"
+  33 | import { SeminarsModule } from "./modules/seminars-module"
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (Error: ./features/portal/components/role-dashboard.tsx:30:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (Error: (./features/portal/components/role-dashboard.tsx:30:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+[browser] ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  28 | import { InstructorsModule } from "./modules/instructors-module"
+  29 | import { OverviewModule } from "./modules/overview-module"
+> 30 | import { ProfileModule } from "./modules/profile-module"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { QuickLinksModule } from "./modules/quick-links-module"
+  32 | import { SchedulePanel } from "./modules/schedule-panel"
+  33 | import { SeminarsModule } from "./modules/seminars-module"
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found 
+[browser] ./features/portal/components/role-dashboard.tsx:30:1
+Module not found: Can't resolve './modules/profile-module'
+  28 | import { InstructorsModule } from "./modules/instructors-module"
+  29 | import { OverviewModule } from "./modules/overview-module"
+> 30 | import { ProfileModule } from "./modules/profile-module"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  31 | import { QuickLinksModule } from "./modules/quick-links-module"
+  32 | import { SchedulePanel } from "./modules/schedule-panel"
+  33 | import { SeminarsModule } from "./modules/seminars-module"
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found 
+⨯ ./features/portal/components/role-dashboard.tsx:29:1
+Module not found: Can't resolve './modules/profile-module'
+  [90m27 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
+  [90m28 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m
+[31m[1m>[0m [90m29 |[0m [36mimport[0m { [33mProfileModule[0m } [36mfrom[0m [32m"./modules/profile-module"[0m
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m30 |[0m [36mimport[0m { [33mQuickLinksModule[0m } [36mfrom[0m [32m"./modules/quick-links-module"[0m
+  [90m31 |[0m [36mimport[0m { [33mSchedulePanel[0m } [36mfrom[0m [32m"./modules/schedule-panel"[0m
+  [90m32 |[0m [36mimport[0m { [33mSeminarsModule[0m } [36mfrom[0m [32m"./modules/seminars-module"[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./features/portal/components/role-dashboard.tsx:29:1
+Module not found: Can't resolve './modules/profile-module'
+  [90m27 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
+  [90m28 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m
+[31m[1m>[0m [90m29 |[0m [36mimport[0m { [33mProfileModule[0m } [36mfrom[0m [32m"./modules/profile-module"[0m
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m30 |[0m [36mimport[0m { [33mQuickLinksModule[0m } [36mfrom[0m [32m"./modules/quick-links-module"[0m
+  [90m31 |[0m [36mimport[0m { [33mSchedulePanel[0m } [36mfrom[0m [32m"./modules/schedule-panel"[0m
+  [90m32 |[0m [36mimport[0m { [33mSeminarsModule[0m } [36mfrom[0m [32m"./modules/seminars-module"[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./features/portal/components/role-dashboard.tsx:29:1
+Module not found: Can't resolve './modules/profile-module'
+  [90m27 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
+  [90m28 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m
+[31m[1m>[0m [90m29 |[0m [36mimport[0m { [33mProfileModule[0m } [36mfrom[0m [32m"./modules/profile-module"[0m
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m30 |[0m [36mimport[0m { [33mQuickLinksModule[0m } [36mfrom[0m [32m"./modules/quick-links-module"[0m
+  [90m31 |[0m [36mimport[0m { [33mSchedulePanel[0m } [36mfrom[0m [32m"./modules/schedule-panel"[0m
+  [90m32 |[0m [36mimport[0m { [33mSeminarsModule[0m } [36mfrom[0m [32m"./modules/seminars-module"[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./features/portal/components/role-dashboard.tsx:29:1
+Module not found: Can't resolve './modules/profile-module'
+  [90m27 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
+  [90m28 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m
+[31m[1m>[0m [90m29 |[0m [36mimport[0m { [33mProfileModule[0m } [36mfrom[0m [32m"./modules/profile-module"[0m
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m30 |[0m [36mimport[0m { [33mQuickLinksModule[0m } [36mfrom[0m [32m"./modules/quick-links-module"[0m
+  [90m31 |[0m [36mimport[0m { [33mSchedulePanel[0m } [36mfrom[0m [32m"./modules/schedule-panel"[0m
+  [90m32 |[0m [36mimport[0m { [33mSeminarsModule[0m } [36mfrom[0m [32m"./modules/seminars-module"[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[browser] ./features/portal/components/role-dashboard.tsx:29:1
+Module not found: Can't resolve './modules/profile-module'
+  27 | import { InstructorsModule } from "./modules/instructors-module"
+  28 | import { OverviewModule } from "./modules/overview-module"
+> 29 | import { ProfileModule } from "./modules/profile-module"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | import { QuickLinksModule } from "./modules/quick-links-module"
+  31 | import { SchedulePanel } from "./modules/schedule-panel"
+  32 | import { SeminarsModule } from "./modules/seminars-module"
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found 
+[browser] ./features/portal/components/role-dashboard.tsx:29:1
+Module not found: Can't resolve './modules/profile-module'
+  27 | import { InstructorsModule } from "./modules/instructors-module"
+  28 | import { OverviewModule } from "./modules/overview-module"
+> 29 | import { ProfileModule } from "./modules/profile-module"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | import { QuickLinksModule } from "./modules/quick-links-module"
+  31 | import { SchedulePanel } from "./modules/schedule-panel"
+  32 | import { SeminarsModule } from "./modules/seminars-module"
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found 
+[browser] ./features/portal/components/role-dashboard.tsx:29:1
+Module not found: Can't resolve './modules/profile-module'
+  27 | import { InstructorsModule } from "./modules/instructors-module"
+  28 | import { OverviewModule } from "./modules/overview-module"
+> 29 | import { ProfileModule } from "./modules/profile-module"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | import { QuickLinksModule } from "./modules/quick-links-module"
+  31 | import { SchedulePanel } from "./modules/schedule-panel"
+  32 | import { SeminarsModule } from "./modules/seminars-module"
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found 
+[browser] Uncaught Error: ./features/portal/components/role-dashboard.tsx:29:1
+Module not found: Can't resolve './modules/profile-module'
+  27 | import { InstructorsModule } from "./modules/instructors-module"
+  28 | import { OverviewModule } from "./modules/overview-module"
+> 29 | import { ProfileModule } from "./modules/profile-module"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | import { QuickLinksModule } from "./modules/quick-links-module"
+  31 | import { SchedulePanel } from "./modules/schedule-panel"
+  32 | import { SeminarsModule } from "./modules/seminars-module"
+
+
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (Error: ./features/portal/components/role-dashboard.tsx:29:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (Error: (./features/portal/components/role-dashboard.tsx:29:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+[browser] ./features/portal/components/role-dashboard.tsx:29:1
+Module not found: Can't resolve './modules/profile-module'
+  27 | import { InstructorsModule } from "./modules/instructors-module"
+  28 | import { OverviewModule } from "./modules/overview-module"
+> 29 | import { ProfileModule } from "./modules/profile-module"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | import { QuickLinksModule } from "./modules/quick-links-module"
+  31 | import { SchedulePanel } from "./modules/schedule-panel"
+  32 | import { SeminarsModule } from "./modules/seminars-module"
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found 
+[browser] ./features/portal/components/role-dashboard.tsx:29:1
+Module not found: Can't resolve './modules/profile-module'
+  27 | import { InstructorsModule } from "./modules/instructors-module"
+  28 | import { OverviewModule } from "./modules/overview-module"
+> 29 | import { ProfileModule } from "./modules/profile-module"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | import { QuickLinksModule } from "./modules/quick-links-module"
+  31 | import { SchedulePanel } from "./modules/schedule-panel"
+  32 | import { SeminarsModule } from "./modules/seminars-module"
+
+Import traces:
+  Client Component Browser:
+    ./features/portal/components/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Client Component Browser]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/portal/components/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Client Component SSR]
+    ./components/portal/role-dashboard.tsx [Server Component]
+    ./app/admin/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <RedirectBoundary>
+      <RedirectErrorBoundary router={{...}}>
+        <InnerLayoutRouter url="/" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+          <SegmentViewNode type="page" pagePath="page.tsx">
+            <SegmentTrieNode>
+            <Page>
+              <LoginPage>
+                <main className="min-h-scre...">
+                  <div className="mx-auto gr...">
+                    <section>
+                    <_c className="rounded-lg...">
+                      <div ref={null} className="border bg-...">
+                        <_c2>
+                        <_c8>
+                          <div ref={null} className="p-6 pt-0">
+                            <form onSubmit={function handleLogin} className="space-y-4">
+                              <div>
+                              <div>
+                              <div>
+                              <Button type="submit" className="h-10 w-full" disabled={false}>
+                                <button
+                                  data-slot="button"
+                                  data-variant="default"
+                                  data-size="default"
+                                  className={"group/button inline-flex shrink-0 items-center justify-center rounded-l..."}
+                                  type="submit"
+                                  disabled={false}
+-                                 fdprocessedid="t9uzri"
+                                >
++                                 Login
+                            <div className="mt-5 round...">
+                              <p>
+                              <div className="mt-3 grid ...">
+                                <button
+                                  type="button"
+                                  onClick={function onClick}
+                                  className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 tex..."
+-                                 fdprocessedid="djr8f"
+                                >
+                                <button
+                                  type="button"
+                                  onClick={function onClick}
+                                  className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 tex..."
+-                                 fdprocessedid="8pvmxn"
+                                >
+                                <button
+                                  type="button"
+                                  onClick={function onClick}
+                                  className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 tex..."
+-                                 fdprocessedid="uhm69"
+                                >
+                                <button
+                                  type="button"
+                                  onClick={function onClick}
+                                  className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 tex..."
+-                                 fdprocessedid="7qcx51"
+                                >
+                                <button
+                                  type="button"
+                                  onClick={function onClick}
+                                  className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 tex..."
+-                                 fdprocessedid="mnwjgs"
+                                >
+                                <button
+                                  type="button"
+                                  onClick={function onClick}
+                                  className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 tex..."
+-                                 fdprocessedid="twgbnj"
+                                >
+          ...
+        ...
+ 

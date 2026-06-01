@@ -5,7 +5,6 @@ import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-import type { Role } from "../../data/portal-data"
 import {
   Panel,
   SearchBox,
@@ -16,60 +15,212 @@ import type { PortalModuleProps } from "./types"
 
 export function UsersModule({ model }: PortalModuleProps) {
   const {
+    confirmAndDeleteUser,
+    confirmAndToggleUserStatus,
+    curricula,
     filteredUsers,
     handleAddUser,
     newUser,
     query,
     roleFilter,
+    selectedUserType,
     setNewUser,
     setQuery,
     setRoleFilter,
-    setUsers,
+    setSelectedUserType,
+    setShowAddUserForm,
+    showAddUserForm,
   } = model
+
+  const visibleUsers = filteredUsers.filter((user) => user.role !== "admin")
+
+  const curriculumOptions = Array.from(
+    new Set(curricula.map((curriculum) => curriculum.major))
+  )
 
   return (
     <div className="space-y-5">
-      <Panel title="Add Account" eyebrow="Role-based registration">
-        <form onSubmit={handleAddUser} className="grid gap-3 md:grid-cols-4">
-          <Input
-            value={newUser.name}
-            onChange={(event) =>
-              setNewUser((current) => ({
-                ...current,
-                name: event.target.value,
-              }))
-            }
-            placeholder="Full name"
-            className="h-9 rounded-lg"
-          />
-          <Input
-            value={newUser.email}
-            onChange={(event) =>
-              setNewUser((current) => ({
-                ...current,
-                email: event.target.value,
-              }))
-            }
-            placeholder="Email"
-            type="email"
-            className="h-9 rounded-lg"
-          />
-          <Select
-            value={newUser.role}
-            onChange={(value) =>
-              setNewUser((current) => ({
-                ...current,
-                role: value as Role,
-              }))
-            }
-            options={["student", "faculty", "admin"]}
-          />
-          <Button type="submit">
+      <Panel title="Account Sections" eyebrow="Student and faculty only">
+        <div className="flex flex-wrap gap-2">
+          {(["student", "faculty"] as const).map((roleName) => (
+            <Button
+              key={roleName}
+              type="button"
+              variant={selectedUserType === roleName ? "default" : "outline"}
+              onClick={() => {
+                setSelectedUserType(roleName)
+                setRoleFilter(roleName)
+                setNewUser((current) => ({ ...current, role: roleName }))
+                setShowAddUserForm(false)
+              }}
+              className="rounded-xl"
+            >
+              {roleName === "student" ? "Students" : "Faculty"}
+            </Button>
+          ))}
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowAddUserForm((current) => !current)}
+            className="rounded-xl"
+          >
             <Plus className="size-4" />
-            Add Account
+            Add {selectedUserType === "student" ? "Student" : "Faculty"}
           </Button>
-        </form>
+        </div>
+
+        {showAddUserForm ? (
+          <form onSubmit={handleAddUser} className="mt-4 grid gap-3 md:grid-cols-3">
+            <Input
+              value={newUser.firstName}
+              onChange={(event) =>
+                setNewUser((current) => ({
+                  ...current,
+                  firstName: event.target.value,
+                }))
+              }
+              placeholder="First name"
+              className="h-10 rounded-2xl"
+            />
+
+            <Input
+              value={newUser.middleName}
+              onChange={(event) =>
+                setNewUser((current) => ({
+                  ...current,
+                  middleName: event.target.value,
+                }))
+              }
+              placeholder="Middle name"
+              className="h-10 rounded-2xl"
+            />
+
+            <Input
+              value={newUser.lastName}
+              onChange={(event) =>
+                setNewUser((current) => ({
+                  ...current,
+                  lastName: event.target.value,
+                }))
+              }
+              placeholder="Last name"
+              className="h-10 rounded-2xl"
+            />
+
+            <Input
+              value={newUser.email}
+              onChange={(event) =>
+                setNewUser((current) => ({
+                  ...current,
+                  email: event.target.value,
+                }))
+              }
+              placeholder={
+                selectedUserType === "student"
+                  ? "student@gmail.com"
+                  : "faculty@ispsc.edu"
+              }
+              type="email"
+              className="h-10 rounded-2xl"
+            />
+
+            {selectedUserType === "student" ? (
+              <>
+                <Select
+                  value={newUser.year}
+                  onChange={(value) =>
+                    setNewUser((current) => ({ ...current, year: value }))
+                  }
+                  options={["1", "2", "3", "4"]}
+                />
+
+                <Input
+                  value={newUser.section}
+                  onChange={(event) =>
+                    setNewUser((current) => ({
+                      ...current,
+                      section: event.target.value,
+                    }))
+                  }
+                  placeholder="Section"
+                  className="h-10 rounded-2xl"
+                />
+
+                <Select
+                  value={newUser.studentType}
+                  onChange={(value) =>
+                    setNewUser((current) => ({
+                      ...current,
+                      studentType: value,
+                    }))
+                  }
+                  options={[
+                    "Regular",
+                    "Irregular",
+                    "Overstayed",
+                    "Transferee",
+                    "Shifter",
+                  ]}
+                />
+
+                <Select
+                  value={newUser.curriculum}
+                  onChange={(value) =>
+                    setNewUser((current) => ({
+                      ...current,
+                      curriculum: value,
+                    }))
+                  }
+                  options={curriculumOptions}
+                />
+              </>
+            ) : (
+              <>
+                <Input
+                  value={newUser.advisoryClass}
+                  onChange={(event) =>
+                    setNewUser((current) => ({
+                      ...current,
+                      advisoryClass: event.target.value,
+                    }))
+                  }
+                  placeholder="Advisory class"
+                  className="h-10 rounded-2xl"
+                />
+
+                <Select
+                  value={newUser.employmentType}
+                  onChange={(value) =>
+                    setNewUser((current) => ({
+                      ...current,
+                      employmentType: value,
+                    }))
+                  }
+                  options={["Regular", "Part Time"]}
+                />
+
+                <Select
+                  value={newUser.academicTitle}
+                  onChange={(value) =>
+                    setNewUser((current) => ({
+                      ...current,
+                      academicTitle: value,
+                    }))
+                  }
+                  options={["PhD", "MIT", "DIT", "LPT"]}
+                />
+              </>
+            )}
+
+            <Button type="submit" className="rounded-2xl">
+              <Plus className="size-4" />
+              Save Account
+            </Button>
+          </form>
+        ) : null}
       </Panel>
+
       <Panel
         title="List of Users"
         eyebrow="Search and sort by role"
@@ -83,57 +234,73 @@ export function UsersModule({ model }: PortalModuleProps) {
             <Select
               value={roleFilter}
               onChange={setRoleFilter}
-              options={["All", "student", "faculty", "admin"]}
+              options={["All", "student", "faculty"]}
             />
           </div>
         }
       >
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-2xl border border-border">
           <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="border-b border-slate-200 text-xs uppercase text-slate-500">
-              <tr>
-                <th className="py-2 pr-4">Name</th>
-                <th className="py-2 pr-4">Email</th>
-                <th className="py-2 pr-4">Role</th>
-                <th className="py-2 pr-4">Status</th>
-                <th className="py-2">Action</th>
+            <thead className="bg-muted text-foreground">
+              <tr className="border-b border-border">
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                  Name
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                  Email
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                  Role
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                  Details
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                  Action
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredUsers.map((user) => (
-                <tr key={user.id}>
-                  <td className="py-3 pr-4 font-medium text-slate-900">
+
+            <tbody className="divide-y divide-border bg-card">
+              {visibleUsers.map((user) => (
+                <tr key={user.id} className="transition-colors hover:bg-muted/50">
+                  <td className="px-4 py-3 font-medium text-foreground">
                     {user.name}
                   </td>
-                  <td className="py-3 pr-4 text-slate-600">{user.email}</td>
-                  <td className="py-3 pr-4 capitalize text-slate-600">
+                  <td className="px-4 py-3 text-foreground/80">{user.email}</td>
+                  <td className="px-4 py-3 capitalize text-foreground/80">
                     {user.role}
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="px-4 py-3 text-foreground/80">
+                    {user.role === "student"
+                      ? `${user.year ?? "-"}${user.section ?? ""} - ${user.studentType ?? "Regular"} - ${user.curriculum ?? "No curriculum"}`
+                      : `${user.academicTitle ?? "Title"} - ${user.employmentType ?? "Regular"} - ${user.advisoryClass ?? "No advisory"}`}
+                  </td>
+                  <td className="px-4 py-3">
                     <StatusBadge value={user.status} />
                   </td>
-                  <td className="py-3">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        setUsers((current) =>
-                          current.map((item) =>
-                            item.id === user.id
-                              ? {
-                                  ...item,
-                                  status:
-                                    item.status === "Active"
-                                      ? "Inactive"
-                                      : "Active",
-                                }
-                              : item
-                          )
-                        )
-                      }
-                    >
-                      Toggle
-                    </Button>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-xl"
+                        onClick={() => confirmAndToggleUserStatus(user.id)}
+                      >
+                        Toggle
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-xl"
+                        onClick={() => confirmAndDeleteUser(user.id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

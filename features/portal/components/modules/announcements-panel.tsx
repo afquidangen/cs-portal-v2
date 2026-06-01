@@ -8,7 +8,7 @@ import { Panel, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
 export function AnnouncementsPanel({ model }: PortalModuleProps) {
-  const { announcements, role, selectModule } = model
+  const { announcements, role, setShowAnnouncementForm } = model
 
   return (
     <Panel
@@ -16,7 +16,11 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
       eyebrow="Department notices"
       actions={
         role === "admin" ? (
-          <Button size="sm" onClick={() => selectModule("announcements")}>
+          <Button
+            size="sm"
+            onClick={() => setShowAnnouncementForm((current) => !current)}
+            className="rounded-2xl"
+          >
             <Plus className="size-4" />
             Add Notice
           </Button>
@@ -24,23 +28,27 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
       }
     >
       <div className="space-y-3">
-        {announcements.map((announcement) => (
+        {announcements.map((announcement, index) => (
           <article
             key={announcement.id}
-            className="rounded-lg border border-slate-200 p-4"
+            className={
+              index === 0
+                ? "rounded-2xl border border-border bg-muted p-5 shadow-sm transition-colors"
+                : "rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors"
+            }
           >
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h4 className="font-semibold text-slate-950">
+                <h4 className="font-semibold text-foreground">
                   {announcement.title}
                 </h4>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
+                <p className="mt-1 text-sm leading-6 text-foreground/80">
                   {announcement.content}
                 </p>
               </div>
               <StatusBadge value={announcement.priority} />
             </div>
-            <p className="mt-3 text-xs text-slate-500">
+            <p className="mt-3 text-xs text-foreground/70">
               {announcement.date} - {announcement.audience}
             </p>
           </article>

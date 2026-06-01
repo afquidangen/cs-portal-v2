@@ -1,24 +1,16 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import { Inter } from "next/font/google"
+import "./globals.css"
 
-export const metadata: Metadata = {
-  title: "CS Portal",
-  description: "Computer Science Department Student Portal",
-};
+const inter = Inter({ subsets: ["latin"] })
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html
-      lang="en"
-      className="h-full antialiased"
-    >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
-      </body>
+    <html lang="en">
+      <body className={inter.className}>{children}</body>
     </html>
-  );
+  )
 }

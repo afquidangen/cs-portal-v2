@@ -16,11 +16,14 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
     handleCreateAnnouncement,
     role,
     setAnnouncementDraft,
+    showAnnouncementForm,
   } = model
 
   return (
     <div className="space-y-5">
-      {role === "admin" ? (
+      <AnnouncementsPanel model={model} />
+
+      {role === "admin" && showAnnouncementForm ? (
         <Panel title="Create Announcement" eyebrow="CS updates">
           <form
             onSubmit={handleCreateAnnouncement}
@@ -35,8 +38,9 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
                 }))
               }
               placeholder="Title"
-              className="h-9 rounded-lg lg:col-span-2"
+              className="h-10 rounded-2xl lg:col-span-2"
             />
+
             <Select
               value={announcementDraft.audience}
               onChange={(value) =>
@@ -45,8 +49,9 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
                   audience: value,
                 }))
               }
-              options={["All Users", "Students", "Faculty", "BSCS 3rd Year"]}
+              options={["All Users", "Students", "Faculty"]}
             />
+
             <Select
               value={announcementDraft.priority}
               onChange={(value) =>
@@ -57,6 +62,7 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
               }
               options={["High", "Medium", "Low"]}
             />
+
             <div className="lg:col-span-4">
               <Textarea
                 value={announcementDraft.content}
@@ -69,14 +75,20 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
                 placeholder="Announcement details"
               />
             </div>
-            <Button type="submit">
+
+            <Input
+              type="file"
+              accept="image/*"
+              className="h-10 rounded-2xl lg:col-span-3"
+            />
+
+            <Button type="submit" className="rounded-2xl">
               <Plus className="size-4" />
               Publish
             </Button>
           </form>
         </Panel>
       ) : null}
-      <AnnouncementsPanel model={model} />
     </div>
   )
 }

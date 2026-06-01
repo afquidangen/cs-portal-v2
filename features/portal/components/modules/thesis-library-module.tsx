@@ -17,25 +17,30 @@ import type { PortalModuleProps } from "./types"
 
 export function ThesisLibraryModule({ model }: PortalModuleProps) {
   const {
+    confirmAndDeleteThesis,
     downloadThesisDetails,
     filteredTheses,
     handleCreateThesis,
     query,
     role,
     setQuery,
-    setTheses,
+    setShowThesisUploadForm,
     setThesisCategoryFilter,
     setThesisDraft,
     setThesisYearFilter,
+    showThesisUploadForm,
     theses,
     thesisCategoryFilter,
     thesisDraft,
     thesisYearFilter,
   } = model
+
+  
   const categories = [
     "All",
     ...Array.from(new Set(theses.map((thesis) => thesis.category))),
   ]
+
   const years = [
     "All",
     ...Array.from(new Set(theses.map((thesis) => String(thesis.year)))),
@@ -43,8 +48,8 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-5">
-      {role === "admin" ? (
-        <Panel title="Upload Thesis Record" eyebrow="Repository management">
+      {role === "admin" && showThesisUploadForm ? (
+        <Panel title="Upload Thesis PDF" eyebrow="Repository management">
           <form onSubmit={handleCreateThesis} className="grid gap-3 lg:grid-cols-2">
             <Input
               value={thesisDraft.title}
@@ -55,8 +60,9 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                 }))
               }
               placeholder="Thesis title"
-              className="h-9 rounded-lg"
+              className="h-10 rounded-2xl"
             />
+
             <Input
               value={thesisDraft.authors}
               onChange={(event) =>
@@ -66,8 +72,9 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                 }))
               }
               placeholder="Authors"
-              className="h-9 rounded-lg"
+              className="h-10 rounded-2xl"
             />
+
             <Input
               value={thesisDraft.category}
               onChange={(event) =>
@@ -77,8 +84,9 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                 }))
               }
               placeholder="Category"
-              className="h-9 rounded-lg"
+              className="h-10 rounded-2xl"
             />
+
             <Input
               value={thesisDraft.adviser}
               onChange={(event) =>
@@ -88,8 +96,9 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                 }))
               }
               placeholder="Adviser"
-              className="h-9 rounded-lg"
+              className="h-10 rounded-2xl"
             />
+
             <Input
               value={thesisDraft.year}
               onChange={(event) =>
@@ -99,19 +108,31 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                 }))
               }
               placeholder="Year"
-              className="h-9 rounded-lg"
+              className="h-10 rounded-2xl"
             />
+
             <div className="flex items-center gap-2">
-              <Input
-                type="file"
-                accept=".pdf"
-                className="h-9 rounded-lg"
-              />
-              <Button type="submit" size="sm">
+<Input
+  type="file"
+  accept="application/pdf,.pdf"
+  className="h-10 rounded-2xl"
+  onChange={(event) => {
+    const file = event.target.files?.[0]
+
+    if (!file) return
+
+    setThesisDraft((current) => ({
+      ...current,
+      pdfUrl: URL.createObjectURL(file),
+    }))
+  }}
+/>
+              <Button type="submit" size="sm" className="rounded-2xl">
                 <Plus className="size-4" />
                 Save
               </Button>
             </div>
+
             <div className="lg:col-span-2">
               <Textarea
                 value={thesisDraft.abstract}
@@ -133,11 +154,24 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
         eyebrow="Search and filter"
         actions={
           <div className="flex flex-col gap-2 sm:flex-row">
+            {role === "admin" ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setShowThesisUploadForm((current) => !current)}
+                className="rounded-2xl"
+              >
+                <Plus className="size-4" />
+                Upload Thesis
+              </Button>
+            ) : null}
+
             <Select
               value={thesisYearFilter}
               onChange={setThesisYearFilter}
               options={years}
             />
+
             <Select
               value={thesisCategoryFilter}
               onChange={setThesisCategoryFilter}
@@ -153,50 +187,63 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
             placeholder="Search title, author, adviser, or keyword"
           />
         </div>
+
         <div className="grid gap-4 lg:grid-cols-2">
           {filteredTheses.map((thesis) => (
             <article
               key={thesis.id}
-              className="rounded-lg border border-slate-200 p-4"
+              className="rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h4 className="font-semibold text-slate-950">
+                  <h4 className="font-semibold text-foreground">
                     {thesis.title}
                   </h4>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-foreground/70">
                     {thesis.authors} - {thesis.year}
                   </p>
                 </div>
                 <StatusBadge value={thesis.category} />
               </div>
-              <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">
+
+              <p className="mt-3 line-clamp-3 text-sm leading-6 text-foreground/80">
                 {thesis.abstract}
               </p>
+
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 {thesis.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600"
+                    className="rounded-xl border border-border bg-muted px-2.5 py-1 text-xs font-medium text-foreground/80"
                   >
                     {tag}
                   </span>
                 ))}
               </div>
-              <div className="mt-4 flex gap-2">
-                <Button size="sm" onClick={() => downloadThesisDetails(thesis)}>
-                  <Download className="size-4" />
-                  Download Details
-                </Button>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+<Button
+  asChild
+  size="sm"
+  className="rounded-2xl"
+>
+  <a
+    href={thesis.pdfUrl}
+    download={`${thesis.title}.pdf`}
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    <Download className="size-4" />
+    Download PDF
+  </a>
+</Button>
+
                 {role === "admin" ? (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() =>
-                      setTheses((current) =>
-                        current.filter((item) => item.id !== thesis.id)
-                      )
-                    }
+                    className="rounded-2xl"
+                    onClick={() => confirmAndDeleteThesis(thesis.id)}
                   >
                     Delete
                   </Button>
@@ -205,8 +252,11 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
             </article>
           ))}
         </div>
+
         {filteredTheses.length === 0 ? (
-          <EmptyState text="No thesis records match the current filters." />
+          <div className="mt-4">
+            <EmptyState text="No thesis records match the current filters." />
+          </div>
         ) : null}
       </Panel>
     </div>

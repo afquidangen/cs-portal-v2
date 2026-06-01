@@ -1,12 +1,24 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { type FormEvent, useMemo, useState } from "react"
+import {
+  type FormEvent,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react"
+
+import {
+  testAccounts,
+  testSessionStorageKey,
+} from "@/features/auth/data/test-accounts"
 
 import { initialModule, roleNavigation } from "../config/navigation"
 import {
   type Announcement,
   type AvailabilityStatus,
+  type CurriculumRecord,
   type Role,
   type SeminarRecord,
   type ThesisRecord,
@@ -14,6 +26,7 @@ import {
   type UserRecord,
   announcementsSeed,
   classRosterSeed,
+  curriculumCatalogSeed,
   facultySeed,
   feedbackSeed,
   gradeSeed,
@@ -21,11 +34,54 @@ import {
   seminarSeed,
   thesisSeed,
   usersSeed,
+  yearSectionsSeed,
 } from "../data/portal-data"
 import { csvEscape, downloadFile } from "../lib/downloads"
 import { calculateFinalGrade } from "../lib/grades"
 import type { ModuleId } from "../types/navigation"
 import { useStoredState } from "./use-stored-state"
+
+type TestSessionProfile = {
+  name: string
+  title: string
+  email: string
+  id: string
+  role: Role
+}
+
+function subscribeToTestSession(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange)
+  return () => window.removeEventListener("storage", onStoreChange)
+}
+
+function getTestSessionSnapshot() {
+  return window.localStorage.getItem(testSessionStorageKey)
+}
+
+function getServerTestSessionSnapshot() {
+  return null
+}
+
+function parseTestSession(value: string | null) {
+  if (!value) return null
+
+  try {
+    const parsedSession = JSON.parse(value) as Partial<TestSessionProfile>
+    if (
+      !parsedSession.name ||
+      !parsedSession.title ||
+      !parsedSession.email ||
+      !parsedSession.id ||
+      !parsedSession.role
+    ) {
+      return null
+    }
+
+    return parsedSession as TestSessionProfile
+  } catch {
+    return null
+  }
+}
 
 export function usePortalDashboardModel(role: Role) {
   const router = useRouter()
@@ -57,15 +113,49 @@ export function usePortalDashboardModel(role: Role) {
     "comsite-class-roster",
     classRosterSeed
   )
+  const [curricula, setCurricula] = useStoredState<CurriculumRecord[]>(
+    "comsite-curricula",
+    curriculumCatalogSeed
+  )
+  const [yearSections, setYearSections] = useStoredState(
+    "comsite-year-sections",
+    yearSectionsSeed
+  )
 
   const [roleFilter, setRoleFilter] = useState("All")
+  const [selectedUserType, setSelectedUserType] =
+    useState<"student" | "faculty">("student")
+  const [selectedAcademicSection, setSelectedAcademicSection] =
+    useState("Semesters")
+  const [selectedClassYear, setSelectedClassYear] = useState("First Year")
+  const [selectedCurriculumId, setSelectedCurriculumId] = useState("CURR-001")
+  const [curriculumFilter, setCurriculumFilter] = useState("All")
+  const [showAddUserForm, setShowAddUserForm] = useState(false)
+  const [showThesisUploadForm, setShowThesisUploadForm] = useState(false)
+  const [showAnnouncementForm, setShowAnnouncementForm] = useState(false)
+  const [newSectionName, setNewSectionName] = useState("")
+  const [newCurriculum, setNewCurriculum] = useState({
+    name: "",
+    major: "",
+    totalUnits: "0",
+  })
   const [thesisYearFilter, setThesisYearFilter] = useState("All")
   const [thesisCategoryFilter, setThesisCategoryFilter] = useState("All")
   const [uploadName, setUploadName] = useState("No file selected")
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
-    role: "student" as Role,
+    role: "student" as "student" | "faculty",
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    studentType: "Regular",
+    curriculum: "Old Curriculum",
+    year: "1",
+    section: "A",
+    advisoryClass: "BSCS 3A",
+    employmentType: "Regular",
+    academicTitle: "MIT",
   })
   const [feedbackDraft, setFeedbackDraft] = useState({
     category: "Academic",
@@ -87,6 +177,7 @@ export function usePortalDashboardModel(role: Role) {
     category: "Software Engineering",
     adviser: "",
     abstract: "",
+    pdfUrl: "",
   })
   const [announcementDraft, setAnnouncementDraft] = useState({
     title: "",
@@ -99,8 +190,88 @@ export function usePortalDashboardModel(role: Role) {
   const [myFacultyNotes, setMyFacultyNotes] = useState(
     "Available for consultation."
   )
+  const sessionSnapshot = useSyncExternalStore(
+    subscribeToTestSession,
+    getTestSessionSnapshot,
+    getServerTestSessionSnapshot
+  )
+  const sessionProfile = useMemo(
+    () => parseTestSession(sessionSnapshot),
+    [sessionSnapshot]
+  )
 
-  const profile = roleProfiles[role]
+  useEffect(() => {
+    const storedSession = window.localStorage.getItem(testSessionStorageKey)
+    if (!storedSession) {
+      router.replace("/")
+      return
+    }
+
+    try {
+      const parsedSession = JSON.parse(storedSession) as {
+        name?: string
+        title?: string
+        email?: string
+        id?: string
+        role?: Role
+      }
+      if (
+        parsedSession.role !== role ||
+        !parsedSession.name ||
+        !parsedSession.title ||
+        !parsedSession.email ||
+        !parsedSession.id
+      ) {
+        router.replace("/")
+        return
+      }
+    } catch {
+      window.localStorage.removeItem(testSessionStorageKey)
+      router.replace("/")
+    }
+  }, [role, router])
+
+  useEffect(() => {
+    setUsers((current) => {
+      const missingAccounts = testAccounts.filter(
+        (account) =>
+          !current.some(
+            (user) => user.email.toLowerCase() === account.email.toLowerCase()
+          )
+      )
+
+      if (!missingAccounts.length) return current
+
+      const migratedUsers: UserRecord[] = missingAccounts.map((account) => ({
+        id: account.id,
+        name: account.name,
+        email: account.email,
+        role: account.role,
+        course: account.role === "student" ? "BSCS" : undefined,
+        year: account.role === "student" ? 3 : undefined,
+        section: account.role === "student" ? "A" : undefined,
+        position:
+          account.role === "admin"
+            ? account.title.replace(" - CS Department", "")
+            : account.role === "faculty"
+              ? account.title.split(" - ")[0]
+              : undefined,
+        status: "Active",
+      }))
+
+      return [...migratedUsers, ...current]
+    })
+  }, [setUsers])
+
+  useEffect(() => {
+    setCurricula((current) => {
+      const seededIds = new Set(curriculumCatalogSeed.map((item) => item.id))
+      const customCurricula = current.filter((item) => !seededIds.has(item.id))
+      return [...curriculumCatalogSeed, ...customCurricula]
+    })
+  }, [setCurricula])
+
+  const profile = sessionProfile ?? roleProfiles[role]
   const navigation = roleNavigation[role]
 
   const userStats = useMemo(
@@ -143,8 +314,7 @@ export function usePortalDashboardModel(role: Role) {
       const matchesYear =
         thesisYearFilter === "All" || String(thesis.year) === thesisYearFilter
       const matchesCategory =
-        thesisCategoryFilter === "All" ||
-        thesis.category === thesisCategoryFilter
+        thesisCategoryFilter === "All" || thesis.category === thesisCategoryFilter
       return matchesSearch && matchesYear && matchesCategory
     })
   }, [query, theses, thesisCategoryFilter, thesisYearFilter])
@@ -187,6 +357,7 @@ export function usePortalDashboardModel(role: Role) {
   }
 
   function handleLogout() {
+    window.localStorage.removeItem(testSessionStorageKey)
     router.push("/")
   }
 
@@ -243,7 +414,7 @@ export function usePortalDashboardModel(role: Role) {
 
   function downloadThesisDetails(thesis: ThesisRecord) {
     downloadFile(
-      `${thesis.id}-details.txt`,
+      `${thesis.id}-manuscript.pdf`,
       [
         thesis.title,
         `Authors: ${thesis.authors}`,
@@ -253,7 +424,7 @@ export function usePortalDashboardModel(role: Role) {
         "",
         thesis.abstract,
       ].join("\n"),
-      "text/plain"
+      "application/pdf"
     )
   }
 
@@ -314,22 +485,136 @@ export function usePortalDashboardModel(role: Role) {
 
   function handleAddUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!newUser.name.trim() || !newUser.email.trim()) return
+    if (!newUser.firstName.trim() || !newUser.lastName.trim() || !newUser.email.trim()) return
+    const fullName = [newUser.firstName, newUser.middleName, newUser.lastName]
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .join(" ")
     setUsers((current) => [
       {
         id: `USR-${String(current.length + 1).padStart(3, "0")}`,
-        name: newUser.name.trim(),
+        name: fullName,
         email: newUser.email.trim(),
         role: newUser.role,
+        firstName: newUser.firstName.trim(),
+        middleName: newUser.middleName.trim(),
+        lastName: newUser.lastName.trim(),
+        studentType:
+          newUser.role === "student"
+            ? (newUser.studentType as UserRecord["studentType"])
+            : undefined,
+        curriculum:
+          newUser.role === "student" ? newUser.curriculum : undefined,
         course: newUser.role === "student" ? "BSCS" : undefined,
-        year: newUser.role === "student" ? 1 : undefined,
-        section: newUser.role === "student" ? "A" : undefined,
+        year: newUser.role === "student" ? Number(newUser.year) : undefined,
+        section: newUser.role === "student" ? newUser.section : undefined,
+        advisoryClass:
+          newUser.role === "faculty" ? newUser.advisoryClass : undefined,
+        employmentType:
+          newUser.role === "faculty"
+            ? (newUser.employmentType as UserRecord["employmentType"])
+            : undefined,
+        academicTitle:
+          newUser.role === "faculty" ? newUser.academicTitle : undefined,
         position: newUser.role === "faculty" ? "Instructor" : undefined,
         status: "Active",
       },
       ...current,
     ])
-    setNewUser({ name: "", email: "", role: "student" })
+    setNewUser({
+      name: "",
+      email: "",
+      role: selectedUserType,
+      firstName: "",
+      middleName: "",
+      lastName: "",
+      studentType: "Regular",
+      curriculum: "Old Curriculum",
+      year: "1",
+      section: "A",
+      advisoryClass: "BSCS 3A",
+      employmentType: "Regular",
+      academicTitle: "MIT",
+    })
+    setShowAddUserForm(false)
+  }
+
+  function confirmAndToggleUserStatus(userId: string) {
+    const approved = window.confirm(
+      "Are you sure you want to edit this account status?"
+    )
+    if (!approved) return
+    setUsers((current) =>
+      current.map((item) =>
+        item.id === userId
+          ? {
+              ...item,
+              status: item.status === "Active" ? "Inactive" : "Active",
+            }
+          : item
+      )
+    )
+  }
+
+  function confirmAndDeleteUser(userId: string) {
+    const approved = window.confirm(
+      "Are you sure you want to delete this account?"
+    )
+    if (!approved) return
+    setUsers((current) => current.filter((item) => item.id !== userId))
+  }
+
+  function confirmAndDeleteThesis(thesisId: string) {
+    const approved = window.confirm(
+      "Are you sure you want to delete this thesis record?"
+    )
+    if (!approved) return
+    setTheses((current) => current.filter((item) => item.id !== thesisId))
+  }
+
+  function undoTicketResolution(ticketId: string) {
+    setTickets((current) =>
+      current.map((ticket) =>
+        ticket.id === ticketId
+          ? { ...ticket, status: "In Progress", resolution: undefined }
+          : ticket
+      )
+    )
+  }
+
+  function handleAddClassSection(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!newSectionName.trim()) return
+    setYearSections((current) =>
+      current.map((year) =>
+        year.year === selectedClassYear
+          ? {
+              ...year,
+              sections: Array.from(
+                new Set([...year.sections, newSectionName.trim()])
+              ),
+            }
+          : year
+      )
+    )
+    setNewSectionName("")
+  }
+
+  function handleAddCurriculum(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!newCurriculum.name.trim() || !newCurriculum.major.trim()) return
+    setCurricula((current) => [
+      {
+        id: `CURR-${String(current.length + 1).padStart(3, "0")}`,
+        name: newCurriculum.name.trim(),
+        major: newCurriculum.major.trim(),
+        totalUnits: Number(newCurriculum.totalUnits) || 0,
+        status: "Active",
+        terms: [],
+      },
+      ...current,
+    ])
+    setNewCurriculum({ name: "", major: "", totalUnits: "0" })
   }
 
   function handleFeedbackSubmit(event: FormEvent<HTMLFormElement>) {
@@ -392,7 +677,9 @@ export function usePortalDashboardModel(role: Role) {
 
   function handleCreateThesis(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
     if (!thesisDraft.title.trim() || !thesisDraft.authors.trim()) return
+
     setTheses((current) => [
       {
         id: `TH-${String(current.length + 1).padStart(3, "0")}`,
@@ -408,9 +695,11 @@ export function usePortalDashboardModel(role: Role) {
           .split(" ")
           .filter(Boolean)
           .slice(0, 3),
+        pdfUrl: thesisDraft.pdfUrl,
       },
       ...current,
     ])
+
     setThesisDraft({
       title: "",
       authors: "",
@@ -418,6 +707,7 @@ export function usePortalDashboardModel(role: Role) {
       category: "Software Engineering",
       adviser: "",
       abstract: "",
+      pdfUrl: "",
     })
   }
 
@@ -497,8 +787,32 @@ export function usePortalDashboardModel(role: Role) {
     setAnnouncements,
     roster,
     setRoster,
+    curricula,
+    setCurricula,
+    yearSections,
+    setYearSections,
     roleFilter,
     setRoleFilter,
+    selectedUserType,
+    setSelectedUserType,
+    selectedAcademicSection,
+    setSelectedAcademicSection,
+    selectedClassYear,
+    setSelectedClassYear,
+    selectedCurriculumId,
+    setSelectedCurriculumId,
+    curriculumFilter,
+    setCurriculumFilter,
+    showAddUserForm,
+    setShowAddUserForm,
+    showThesisUploadForm,
+    setShowThesisUploadForm,
+    showAnnouncementForm,
+    setShowAnnouncementForm,
+    newSectionName,
+    setNewSectionName,
+    newCurriculum,
+    setNewCurriculum,
     thesisYearFilter,
     setThesisYearFilter,
     thesisCategoryFilter,
@@ -540,6 +854,12 @@ export function usePortalDashboardModel(role: Role) {
     updateGrade,
     updateTicketStatus,
     updateFacultyStatus,
+    confirmAndToggleUserStatus,
+    confirmAndDeleteUser,
+    confirmAndDeleteThesis,
+    undoTicketResolution,
+    handleAddClassSection,
+    handleAddCurriculum,
     handleAddUser,
     handleFeedbackSubmit,
     handleCreateEvent,

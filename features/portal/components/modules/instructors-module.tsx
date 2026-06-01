@@ -15,25 +15,26 @@ export function InstructorsModule({ model }: PortalModuleProps) {
           {faculty.map((member) => (
             <article
               key={member.id}
-              className="rounded-lg border border-slate-200 p-4"
+              className="rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors"
             >
               <div className="flex items-start gap-3">
-                <div className="flex size-11 items-center justify-center rounded-lg bg-slate-100 text-sm font-semibold text-slate-700">
+                <div className="flex size-11 items-center justify-center rounded-2xl bg-muted text-sm font-semibold text-foreground">
                   {member.name
                     .split(" ")
                     .map((part) => part[0])
                     .join("")
                     .slice(0, 2)}
                 </div>
+
                 <div>
-                  <h4 className="font-semibold text-slate-950">
+                  <h4 className="font-semibold text-foreground">
                     {member.name}
                   </h4>
-                  <p className="text-sm text-slate-500">{member.position}</p>
-                  <p className="mt-2 text-sm text-slate-600">
+                  <p className="text-sm text-foreground/70">{member.position}</p>
+                  <p className="mt-2 text-sm text-foreground/80">
                     {member.education}
                   </p>
-                  <p className="mt-1 text-sm text-slate-600">
+                  <p className="mt-1 text-sm text-foreground/80">
                     {member.email}
                   </p>
                 </div>
@@ -42,6 +43,7 @@ export function InstructorsModule({ model }: PortalModuleProps) {
           ))}
         </div>
       </Panel>
+
       <Panel title="Department Organizational Chart" eyebrow="Structure">
         <div className="grid gap-3 md:grid-cols-4">
           {[
@@ -52,11 +54,11 @@ export function InstructorsModule({ model }: PortalModuleProps) {
           ].map(([title, description]) => (
             <div
               key={title}
-              className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+              className="rounded-2xl border border-border bg-muted p-4 shadow-sm transition-colors"
             >
-              <Building2 className="mb-3 size-5 text-slate-600" />
-              <h4 className="font-semibold text-slate-950">{title}</h4>
-              <p className="mt-1 text-sm text-slate-500">{description}</p>
+              <Building2 className="mb-3 size-5 text-foreground/80" />
+              <h4 className="font-semibold text-foreground">{title}</h4>
+              <p className="mt-1 text-sm text-foreground/70">{description}</p>
             </div>
           ))}
         </div>

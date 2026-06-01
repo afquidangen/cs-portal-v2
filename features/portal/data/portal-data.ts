@@ -13,6 +13,14 @@ export type UserRecord = {
   name: string
   email: string
   role: Role
+  firstName?: string
+  middleName?: string
+  lastName?: string
+  studentType?: "Irregular" | "Regular" | "Overstayed" | "Transferee" | "Shifter"
+  curriculum?: string
+  advisoryClass?: string
+  employmentType?: "Part Time" | "Regular"
+  academicTitle?: string
   course?: string
   year?: number
   section?: string
@@ -107,6 +115,33 @@ export type CurriculumTerm = {
   subjects: string[]
 }
 
+export type CurriculumRecord = {
+  id: string
+  name: string
+  major: string
+  status: "Active" | "Archived"
+  totalUnits: number
+  terms: {
+    year: string
+    semester: string
+    subjects: {
+      code: string
+      name: string
+      lec: number
+      lab: number
+      total: number
+    }[]
+  }[]
+}
+
+const curriculumSubject = (
+  code: string,
+  name: string,
+  lec: number,
+  lab: number,
+  total: number
+) => ({ code, name, lec, lab, total })
+
 export type ClassStudent = {
   id: string
   name: string
@@ -138,21 +173,21 @@ export const ticketStatusOptions: TicketStatus[] = [
 
 export const roleProfiles = {
   student: {
-    name: "Juan Dela Cruz",
+    name: "Student Test 1",
     title: "BSCS 3A - Regular Student",
-    email: "juan@student.edu",
+    email: "student1@gmail.com",
     id: "2024-001245",
   },
   faculty: {
-    name: "Maria Santos",
+    name: "Faculty Test 1",
     title: "Assistant Professor - Computer Science",
-    email: "maria@faculty.edu",
+    email: "faculty1@gmail.com",
     id: "FAC-014",
   },
   admin: {
-    name: "Alyssa Admin",
+    name: "Admin Test 1",
     title: "System Administrator - CS Department",
-    email: "admin@portal.edu",
+    email: "admin1@gmail.com",
     id: "ADM-001",
   },
 } satisfies Record<Role, { name: string; title: string; email: string; id: string }>
@@ -160,9 +195,14 @@ export const roleProfiles = {
 export const usersSeed: UserRecord[] = [
   {
     id: "2024-001245",
-    name: "Juan Dela Cruz",
-    email: "juan@student.edu",
+    name: "Student Test 1",
+    email: "student1@gmail.com",
     role: "student",
+    firstName: "Student",
+    middleName: "Test",
+    lastName: "One",
+    studentType: "Regular",
+    curriculum: "Old Curriculum",
     course: "BSCS",
     year: 3,
     section: "A",
@@ -170,9 +210,14 @@ export const usersSeed: UserRecord[] = [
   },
   {
     id: "2024-001284",
-    name: "Kyla Mendoza",
-    email: "kyla@student.edu",
+    name: "Student Test 2",
+    email: "student2@gmail.com",
     role: "student",
+    firstName: "Student",
+    middleName: "Test",
+    lastName: "Two",
+    studentType: "Transferee",
+    curriculum: "Secure Software Engineering Specialization",
     course: "BSCS",
     year: 3,
     section: "A",
@@ -180,26 +225,46 @@ export const usersSeed: UserRecord[] = [
   },
   {
     id: "FAC-014",
-    name: "Maria Santos",
-    email: "maria@faculty.edu",
+    name: "Faculty Test 1",
+    email: "faculty1@gmail.com",
     role: "faculty",
+    firstName: "Faculty",
+    middleName: "Test",
+    lastName: "One",
+    advisoryClass: "BSCS 3A",
+    employmentType: "Regular",
+    academicTitle: "MIT",
     position: "Assistant Professor",
     status: "Active",
   },
   {
     id: "FAC-018",
-    name: "Christian Galinato",
-    email: "christian@faculty.edu",
+    name: "Faculty Test 2",
+    email: "faculty2@gmail.com",
     role: "faculty",
+    firstName: "Faculty",
+    middleName: "Test",
+    lastName: "Two",
+    advisoryClass: "BSCS 2B",
+    employmentType: "Part Time",
+    academicTitle: "LPT",
     position: "Instructor I",
     status: "Active",
   },
   {
     id: "ADM-001",
-    name: "Alyssa Admin",
-    email: "admin@portal.edu",
+    name: "Admin Test 1",
+    email: "admin1@gmail.com",
     role: "admin",
     position: "Portal Administrator",
+    status: "Active",
+  },
+  {
+    id: "ADM-002",
+    name: "Admin Test 2",
+    email: "admin2@gmail.com",
+    role: "admin",
+    position: "Assistant Portal Administrator",
     status: "Active",
   },
 ]
@@ -207,10 +272,10 @@ export const usersSeed: UserRecord[] = [
 export const facultySeed: FacultyRecord[] = [
   {
     id: "FAC-014",
-    name: "Maria Santos",
+    name: "Faculty Test 1",
     position: "Assistant Professor",
     role: "Program Chair Support",
-    email: "maria@faculty.edu",
+    email: "faculty1@gmail.com",
     education: "MS Computer Science",
     status: "Available",
     notes: "Available for capstone consultation in Room 402.",
@@ -218,10 +283,10 @@ export const facultySeed: FacultyRecord[] = [
   },
   {
     id: "FAC-018",
-    name: "Christian Galinato",
+    name: "Faculty Test 2",
     position: "Instructor I",
     role: "Software Engineering Coordinator",
-    email: "christian@faculty.edu",
+    email: "faculty2@gmail.com",
     education: "MS Information Technology",
     status: "In Class",
     notes: "Teaching BSCS 3A until 3:00 PM.",
@@ -255,7 +320,7 @@ export const gradeSeed: GradeRecord[] = [
   {
     id: "GR-001",
     studentId: "2024-001245",
-    student: "Juan Dela Cruz",
+    student: "Student Test 1",
     subject: "Web Systems and Technologies",
     code: "CS311",
     units: 3,
@@ -266,7 +331,7 @@ export const gradeSeed: GradeRecord[] = [
   {
     id: "GR-002",
     studentId: "2024-001245",
-    student: "Juan Dela Cruz",
+    student: "Student Test 1",
     subject: "Database Systems",
     code: "CS312",
     units: 3,
@@ -277,7 +342,7 @@ export const gradeSeed: GradeRecord[] = [
   {
     id: "GR-003",
     studentId: "2024-001245",
-    student: "Juan Dela Cruz",
+    student: "Student Test 1",
     subject: "Software Engineering",
     code: "CS313",
     units: 3,
@@ -288,7 +353,7 @@ export const gradeSeed: GradeRecord[] = [
   {
     id: "GR-004",
     studentId: "2024-001284",
-    student: "Kyla Mendoza",
+    student: "Student Test 2",
     subject: "Web Systems and Technologies",
     code: "CS311",
     units: 3,
@@ -380,7 +445,7 @@ export const feedbackSeed: FeedbackTicket[] = [
   {
     id: "FB-1001",
     studentId: "2024-001245",
-    studentName: "Juan Dela Cruz",
+    studentName: "Student Test 1",
     category: "Facilities",
     subject: "Laboratory air-conditioning schedule",
     description:
@@ -498,16 +563,397 @@ export const curriculumSeed: CurriculumTerm[] = [
   },
 ]
 
+export const curriculumCatalogSeed: CurriculumRecord[] = [
+  {
+    id: "CURR-001",
+    name: "Old Curriculum",
+    major: "CMO No. 25 Series 2015",
+    status: "Active",
+    totalUnits: 166,
+    terms: [
+      {
+        year: "First Year",
+        semester: "First Semester",
+        subjects: [
+          curriculumSubject("CS 101", "Introduction to Computing", 3, 0, 3),
+          curriculumSubject("CS 102", "Fundamentals of Programming", 2, 1, 3),
+          curriculumSubject("Gen Ed 103", "Mathematics in the Modern World", 3, 0, 3),
+          curriculumSubject("Gen Ed 104", "Understanding the Self", 3, 0, 3),
+          curriculumSubject("GE Elec 1", "People and the Earth's Ecosystems", 3, 0, 3),
+          curriculumSubject("Gen Ed 110", "The Entrepreneurial Mind", 3, 0, 3),
+          curriculumSubject("PATHFit 1", "Movement Competency Training or MCT", 2, 0, 2),
+          curriculumSubject("NSTP 1", "CWTS/ROTC 1", 3, 0, 3),
+        ],
+      },
+      {
+        year: "First Year",
+        semester: "Second Semester",
+        subjects: [
+          curriculumSubject("CS 104", "Discrete Structures 1", 3, 0, 3),
+          curriculumSubject("CS 103", "Intermediate Programming", 2, 1, 3),
+          curriculumSubject("CS 105", "Fundamentals of Human Computer Interaction", 3, 0, 3),
+          curriculumSubject("Gen Ed 101", "Purposive Communication", 3, 0, 3),
+          curriculumSubject("PATHFit 2", "Exercise-based Fitness Activities", 2, 0, 2),
+          curriculumSubject("GE Elec 2", "Philippine Popular Culture", 3, 0, 3),
+          curriculumSubject("NSTP 2", "CWTS/ROTC 2", 3, 0, 3),
+        ],
+      },
+      {
+        year: "Second Year",
+        semester: "First Semester",
+        subjects: [
+          curriculumSubject("CS 201", "Data Structures and Algorithms", 2, 1, 3),
+          curriculumSubject("CS 202", "Discrete Structures 2", 3, 0, 3),
+          curriculumSubject("Gen Ed 107", "The Contemporary World", 3, 0, 3),
+          curriculumSubject("Gen Ed 108", "Art Appreciation", 3, 0, 3),
+          curriculumSubject("PATHFit 3", "Dances", 2, 0, 2),
+          curriculumSubject("CS 203", "Social Issues and Professional Practices", 3, 0, 3),
+          curriculumSubject("CS 204", "Parallel and Distributed Computing", 3, 0, 3),
+          curriculumSubject("CS 205", "Object-Oriented Programming", 2, 1, 3),
+        ],
+      },
+      {
+        year: "Second Year",
+        semester: "Second Semester",
+        subjects: [
+          curriculumSubject("CS 206", "System Fundamentals", 3, 0, 3),
+          curriculumSubject("Gen Ed 106", "Ethics", 3, 0, 3),
+          curriculumSubject("CS 207", "Information Management", 2, 1, 3),
+          curriculumSubject("CS 208", "Architecture and Organization", 2, 1, 3),
+          curriculumSubject("Gen Ed 105", "Science, Technology and Society", 3, 0, 3),
+          curriculumSubject("CS 209", "Applications Development and Emerging Technologies", 2, 1, 3),
+          curriculumSubject("Math", "Differential and Integral Calculus", 3, 0, 3),
+          curriculumSubject("PATHFit 4", "Sports", 2, 0, 2),
+        ],
+      },
+      {
+        year: "Third Year",
+        semester: "First Semester",
+        subjects: [
+          curriculumSubject("CS 301", "Programming Languages", 2, 1, 3),
+          curriculumSubject("CS 302", "Automata Theory and Formal Languages", 3, 0, 3),
+          curriculumSubject("CS 303", "Networks and Communications", 2, 1, 3),
+          curriculumSubject("CS 304", "Operating Systems", 2, 1, 3),
+          curriculumSubject("CS 305", "Software Engineering 1", 2, 1, 3),
+          curriculumSubject("CS 306", "Computational Science", 3, 0, 3),
+          curriculumSubject("CS 307", "Quantitative Methods", 3, 0, 3),
+          curriculumSubject("Elective 1", "Communicating Effectively", 3, 0, 3),
+        ],
+      },
+      {
+        year: "Third Year",
+        semester: "Second Semester",
+        subjects: [
+          curriculumSubject("CS 308", "Software Engineering 2: Implementation and Management", 2, 1, 3),
+          curriculumSubject("CS 309", "Algorithm and Complexity", 3, 0, 3),
+          curriculumSubject("CS 310", "Intelligent System", 2, 1, 3),
+          curriculumSubject("Gen Ed 102", "Readings in Philippine History", 3, 0, 3),
+          curriculumSubject("CS 311", "Graphics and Visual Arts Computing", 2, 1, 3),
+          curriculumSubject("CS 312", "Research Methodology", 3, 0, 3),
+          curriculumSubject("CS 313", "Web Development", 2, 1, 3),
+          curriculumSubject("Elective 2", "Creative Writing", 3, 0, 3),
+        ],
+      },
+      {
+        year: "Third Year",
+        semester: "Mid Year",
+        subjects: [
+          curriculumSubject("CS 314", "OJT/Practicum (200 hours)", 3, 0, 3),
+        ],
+      },
+      {
+        year: "Fourth Year",
+        semester: "First Semester",
+        subjects: [
+          curriculumSubject("CS 401", "Seminars and Tours", 1, 0, 1),
+          curriculumSubject("CS 404", "Project Study 1", 3, 0, 3),
+          curriculumSubject("CS 402", "Multimedia System", 2, 11, 13),
+          curriculumSubject("Rizal", "Rizal's Life and Works", 3, 0, 3),
+        ],
+      },
+      {
+        year: "Fourth Year",
+        semester: "Second Semester",
+        subjects: [
+          curriculumSubject("CS 403", "Information Assurance and Security", 2, 1, 3),
+          curriculumSubject("CS 405", "Project Study 2", 3, 0, 3),
+        ],
+      },
+    ],
+  },
+  {
+    id: "CURR-002",
+    name: "New Curriculum",
+    major: "Embedded Systems and AI Specialization",
+    status: "Active",
+    totalUnits: 168,
+    terms: [
+      {
+        year: "First Year",
+        semester: "First Semester",
+        subjects: [
+          curriculumSubject("Gen Ed 101", "Understanding The Self", 3, 0, 3),
+          curriculumSubject("Gen Ed 102", "Mathematics in the Modern World", 3, 0, 3),
+          curriculumSubject("GE Elec 101", "People and Earth's Ecosystem", 3, 0, 3),
+          curriculumSubject("Gen Ed 103", "The Entrepreneurial Mind", 3, 0, 3),
+          curriculumSubject("PATHFit 1", "Movement Competency Training or MCT", 2, 0, 2),
+          curriculumSubject("NSTP 1", "CWTS 1 / ROTC 1", 3, 0, 3),
+          curriculumSubject("CC101", "Introduction to Computing", 2, 1, 3),
+          curriculumSubject("CC102", "Fundamentals of Programming", 2, 1, 3),
+        ],
+      },
+      {
+        year: "First Year",
+        semester: "Second Semester",
+        subjects: [
+          curriculumSubject("Gen Ed 104", "Art Appreciation", 3, 0, 3),
+          curriculumSubject("PATHFit 2", "Exercise-based Fitness Activities", 2, 0, 2),
+          curriculumSubject("NSTP 2", "CWTS 2 / ROTC 2", 3, 0, 3),
+          curriculumSubject("CC103", "Intermediate Programming", 2, 1, 3),
+          curriculumSubject("CC104", "Data Structures and Algorithms", 2, 1, 3),
+          curriculumSubject("CC105", "Information Management", 2, 1, 3),
+          curriculumSubject("CS 101", "Fundamentals of HCI and Office Application", 2, 1, 3),
+          curriculumSubject("CS 102", "Discrete Structures", 3, 0, 3),
+          curriculumSubject("CS 103", "Object-Oriented Programming", 2, 1, 3),
+        ],
+      },
+      {
+        year: "Second Year",
+        semester: "First Semester",
+        subjects: [
+          curriculumSubject("Gen Ed 105", "Science, Technology, and Society", 3, 0, 3),
+          curriculumSubject("Math 1", "Calculus 1", 3, 0, 3),
+          curriculumSubject("Gen Ed 106", "Probability and Statistics", 3, 0, 3),
+          curriculumSubject("PATHFit 3", "Choice of Dances", 2, 0, 2),
+          curriculumSubject("CS 104", "Programming Languages", 2, 1, 3),
+          curriculumSubject("CS 105", "Data Communication and Networks 1", 2, 1, 3),
+          curriculumSubject("CS 106", "Web Development 1", 2, 1, 3),
+          curriculumSubject("CC 106", "Applications Development and Emerging Technologies", 2, 1, 3),
+          curriculumSubject("CS 107", "Systems Analysis and Design", 2, 1, 3),
+        ],
+      },
+      {
+        year: "Second Year",
+        semester: "Second Semester",
+        subjects: [
+          curriculumSubject("Gen Ed 107", "Purposive Communication", 3, 0, 3),
+          curriculumSubject("Gen Ed 108", "Readings in Philippine History", 3, 0, 3),
+          curriculumSubject("PATHFit 4", "Sports", 2, 0, 2),
+          curriculumSubject("CS 108", "Web Development 2", 2, 1, 3),
+          curriculumSubject("CS 109", "Intelligent and Embedded Systems", 2, 1, 3),
+          curriculumSubject("CS 110", "Software Engineering and Software Testing", 2, 1, 3),
+          curriculumSubject("CS 111", "Parallel and Distributed Computing", 2, 1, 3),
+          curriculumSubject("CS 112", "Multimedia Systems and Animation", 2, 1, 3),
+          curriculumSubject("CS Elective 1", "Advanced Embedded Systems", 2, 1, 3),
+        ],
+      },
+      {
+        year: "Third Year",
+        semester: "First Semester",
+        subjects: [
+          curriculumSubject("GE Elec 102", "Philippine Popular Culture", 3, 0, 3),
+          curriculumSubject("GE Elec 103", "Reading Visual Art", 3, 0, 3),
+          curriculumSubject("Math 2", "Calculus 2", 3, 0, 3),
+          curriculumSubject("CS 113", "Data Communications and Networks 2", 2, 1, 3),
+          curriculumSubject("CS 114", "Graphics and Visual Arts Computing", 2, 1, 3),
+          curriculumSubject("CS 115", "Automata Theory and Formal Languages", 3, 0, 3),
+          curriculumSubject("CS 116", "Algorithm and Complexity", 3, 0, 3),
+          curriculumSubject("CS Elective 2", "Wireless Sensor Networks", 2, 1, 3),
+        ],
+      },
+      {
+        year: "Third Year",
+        semester: "Second Semester",
+        subjects: [
+          curriculumSubject("Gen Ed 109", "Contemporary World", 3, 0, 3),
+          curriculumSubject("Gen Ed 110", "Ethics", 3, 0, 3),
+          curriculumSubject("Gen Ed 111", "Gender and Society", 3, 0, 3),
+          curriculumSubject("GE Elec 104", "Communicating Effectively", 3, 0, 3),
+          curriculumSubject("CS 117", "Quantitative Methods - Advanced Statistics", 2, 0, 3),
+          curriculumSubject("CS 118", "Operating Systems and Architecture Organization", 2, 1, 3),
+          curriculumSubject("Thesis 1", "Thesis Study 1", 1, 0, 3),
+          curriculumSubject("CS Elective 3", "Edge Computing and AI", 2, 1, 3),
+        ],
+      },
+      {
+        year: "Third Year",
+        semester: "Mid Year",
+        subjects: [
+          curriculumSubject("OJT", "Industry Immersion (280 hours)", 1, 0, 3),
+        ],
+      },
+      {
+        year: "Fourth Year",
+        semester: "First Semester",
+        subjects: [
+          curriculumSubject("Thesis 2", "Thesis Study 2", 1, 0, 3),
+          curriculumSubject("CS 119", "Seminars and Tours", 1, 0, 1),
+        ],
+      },
+      {
+        year: "Fourth Year",
+        semester: "Second Semester",
+        subjects: [
+          curriculumSubject("CS 120", "Technopreneurship", 3, 0, 3),
+          curriculumSubject("CS 121", "Social and Professional Practice", 3, 0, 3),
+          curriculumSubject("CS 122", "Computational Science", 3, 0, 3),
+          curriculumSubject("Rizal", "Rizal's Life and Works", 3, 0, 3),
+        ],
+      },
+    ],
+  },
+  {
+    id: "CURR-003",
+    name: "New Curriculum",
+    major: "Secure Software Engineering Specialization",
+    status: "Active",
+    totalUnits: 168,
+    terms: [
+      {
+        year: "First Year",
+        semester: "First Semester",
+        subjects: [
+          curriculumSubject("Gen Ed 101", "Understanding The Self", 3, 0, 3),
+          curriculumSubject("Gen Ed 102", "Mathematics in the Modern World", 3, 0, 3),
+          curriculumSubject("GE Elec 101", "People and Earth's Ecosystem", 3, 0, 3),
+          curriculumSubject("Gen Ed 103", "The Entrepreneurial Mind", 3, 0, 3),
+          curriculumSubject("PATHFit 1", "Movement Competency Training or MCT", 2, 0, 2),
+          curriculumSubject("NSTP 1", "CWTS 1 / ROTC 1", 3, 0, 3),
+          curriculumSubject("CC101", "Introduction to Computing", 2, 1, 3),
+          curriculumSubject("CC102", "Fundamentals of Programming", 2, 1, 3),
+        ],
+      },
+      {
+        year: "First Year",
+        semester: "Second Semester",
+        subjects: [
+          curriculumSubject("Gen Ed 104", "Art Appreciation", 3, 0, 3),
+          curriculumSubject("PATHFit 2", "Exercise-based Fitness Activities", 2, 0, 2),
+          curriculumSubject("NSTP 2", "CWTS 2 / ROTC 2", 3, 0, 3),
+          curriculumSubject("CC103", "Intermediate Programming", 2, 1, 3),
+          curriculumSubject("CC104", "Data Structures and Algorithms", 2, 1, 3),
+          curriculumSubject("CC105", "Information Management", 2, 1, 3),
+          curriculumSubject("CS 101", "Fundamentals of HCI and Office Application", 2, 1, 3),
+          curriculumSubject("CS 102", "Discrete Structures", 3, 0, 3),
+          curriculumSubject("CS 103", "Object-Oriented Programming", 2, 1, 3),
+        ],
+      },
+      {
+        year: "Second Year",
+        semester: "First Semester",
+        subjects: [
+          curriculumSubject("Gen Ed 105", "Science, Technology, and Society", 3, 0, 3),
+          curriculumSubject("Math 1", "Calculus 1", 3, 0, 3),
+          curriculumSubject("Gen Ed 106", "Probability and Statistics", 3, 0, 3),
+          curriculumSubject("PATHFit 3", "Choice of Dances", 2, 0, 2),
+          curriculumSubject("CS 104", "Programming Languages", 2, 1, 3),
+          curriculumSubject("CS 105", "Data Communication and Networks 1", 2, 1, 3),
+          curriculumSubject("CS 106", "Web Development 1", 2, 1, 3),
+          curriculumSubject("CC 106", "Applications Development and Emerging Technologies", 2, 1, 3),
+          curriculumSubject("CS 107", "Systems Analysis and Design", 2, 1, 3),
+        ],
+      },
+      {
+        year: "Second Year",
+        semester: "Second Semester",
+        subjects: [
+          curriculumSubject("Gen Ed 107", "Purposive Communication", 3, 0, 3),
+          curriculumSubject("Gen Ed 108", "Readings in Philippine History", 3, 0, 3),
+          curriculumSubject("PATHFit 4", "Sports", 2, 0, 2),
+          curriculumSubject("CS 108", "Web Development 2", 2, 1, 3),
+          curriculumSubject("CS 109", "Intelligent and Embedded Systems", 2, 1, 3),
+          curriculumSubject("CS 110", "Software Engineering and Software Testing", 2, 1, 3),
+          curriculumSubject("CS 111", "Parallel and Distributed Computing", 2, 1, 3),
+          curriculumSubject("CS 112", "Multimedia Systems and Animation", 2, 1, 3),
+          curriculumSubject("CS Elective 1", "Principles of Blockchain", 2, 1, 3),
+        ],
+      },
+      {
+        year: "Third Year",
+        semester: "First Semester",
+        subjects: [
+          curriculumSubject("GE Elec 102", "Philippine Popular Culture", 3, 0, 3),
+          curriculumSubject("GE Elec 103", "Reading Visual Art", 3, 0, 3),
+          curriculumSubject("Math 2", "Calculus 2", 3, 0, 3),
+          curriculumSubject("CS 113", "Data Communications and Networks 2", 2, 1, 3),
+          curriculumSubject("CS 114", "Graphics and Visual Arts Computing", 2, 1, 3),
+          curriculumSubject("CS 115", "Automata Theory and Formal Languages", 3, 0, 3),
+          curriculumSubject("CS 116", "Algorithm and Complexity", 3, 0, 3),
+          curriculumSubject("CS Elective 2", "Continuous Integration/Continuous Deployment (CI/CD)", 2, 1, 3),
+        ],
+      },
+      {
+        year: "Third Year",
+        semester: "Second Semester",
+        subjects: [
+          curriculumSubject("Gen Ed 109", "Contemporary World", 3, 0, 3),
+          curriculumSubject("Gen Ed 110", "Ethics", 3, 0, 3),
+          curriculumSubject("Gen Ed 111", "Gender and Society", 3, 0, 3),
+          curriculumSubject("GE Elec 104", "Communicating Effectively", 3, 0, 3),
+          curriculumSubject("CS 117", "Quantitative Methods - Advanced Statistics", 2, 0, 3),
+          curriculumSubject("CS 118", "Operating Systems and Architecture Organization", 2, 1, 3),
+          curriculumSubject("Thesis 1", "Thesis Study 1", 1, 0, 3),
+          curriculumSubject("CS Elective 3", "Secure Software Development (Web3)", 2, 1, 3),
+        ],
+      },
+      {
+        year: "Third Year",
+        semester: "Mid Year",
+        subjects: [
+          curriculumSubject("OJT", "Industry Immersion (280 hours)", 1, 0, 3),
+        ],
+      },
+      {
+        year: "Fourth Year",
+        semester: "First Semester",
+        subjects: [
+          curriculumSubject("Thesis 2", "Thesis Study 2", 1, 0, 3),
+          curriculumSubject("CS 119", "Seminars and Tours", 1, 0, 1),
+        ],
+      },
+      {
+        year: "Fourth Year",
+        semester: "Second Semester",
+        subjects: [
+          curriculumSubject("CS 120", "Technopreneurship", 3, 0, 3),
+          curriculumSubject("CS 121", "Social and Professional Practice", 3, 0, 3),
+          curriculumSubject("CS 122", "Computational Science", 3, 0, 3),
+          curriculumSubject("Rizal", "Rizal's Life and Works", 3, 0, 3),
+        ],
+      },
+    ],
+  },
+]
+
+export const yearSectionsSeed = [
+  {
+    year: "First Year",
+    sections: ["BSCS 1A", "BSCS 1B", "BSCS 1C", "BSCS 1D"],
+  },
+  {
+    year: "Second Year",
+    sections: ["BSCS 2A", "BSCS 2B", "BSCS 2C", "BSCS 2D"],
+  },
+  {
+    year: "Third Year",
+    sections: ["BSCS 3A", "BSCS 3B", "BSCS 3C"],
+  },
+  {
+    year: "Fourth Year",
+    sections: ["BSCS 4A", "BSCS 4B", "BSCS 4C"],
+  },
+]
+
 export const classRosterSeed: ClassStudent[] = [
   {
     id: "2024-001245",
-    name: "Juan Dela Cruz",
+    name: "Student Test 1",
     section: "BSCS 3A",
     enrolled: true,
   },
   {
     id: "2024-001284",
-    name: "Kyla Mendoza",
+    name: "Student Test 2",
     section: "BSCS 3A",
     enrolled: true,
   },
@@ -607,19 +1053,19 @@ export const subjectsSeed = [
 export const auditLogsSeed = [
   {
     id: "LOG-001",
-    actor: "Maria Santos",
+    actor: "Faculty Test 1",
     action: "Uploaded final grade for CS311",
     time: "May 26, 2026 10:32 AM",
   },
   {
     id: "LOG-002",
-    actor: "Alyssa Admin",
+    actor: "Admin Test 1",
     action: "Updated seminar slot capacity",
     time: "May 26, 2026 9:12 AM",
   },
   {
     id: "LOG-003",
-    actor: "Juan Dela Cruz",
+    actor: "Student Test 1",
     action: "Submitted feedback ticket FB-1001",
     time: "May 25, 2026 3:48 PM",
   },

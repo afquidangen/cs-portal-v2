@@ -3,6 +3,13 @@
 import { Mail, Search, type LucideIcon } from "lucide-react"
 import type { ReactNode } from "react"
 
+import {
+  Select as UiSelect,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
@@ -13,8 +20,8 @@ export function StatusBadge({ value }: { value: string }) {
   return (
     <span
       className={cn(
-        "inline-flex min-h-6 items-center rounded-md border px-2 py-0.5 text-xs font-medium",
-        statusColor[value] ?? "border-slate-200 bg-slate-50 text-slate-700"
+        "inline-flex min-h-6 items-center rounded-full border px-2.5 py-0.5 text-xs font-medium tracking-[0.01em] transition-colors shadow-sm",
+        statusColor[value] ?? "border-border bg-muted text-foreground"
       )}
     >
       {value}
@@ -38,24 +45,24 @@ export function Panel({
   return (
     <section
       className={cn(
-        "rounded-lg border border-slate-200 bg-white shadow-sm",
+        "overflow-hidden rounded-[28px] border border-border bg-card text-card-foreground shadow-sm transition-all duration-200",
         className
       )}
     >
-      <div className="flex flex-col gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+      <div className="edu-bg-soft-glacier flex flex-col gap-3 border-b border-border bg-muted/20 px-5 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
+        <div className="min-w-0">
           {eyebrow ? (
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               {eyebrow}
             </p>
           ) : null}
-          <h3 className="mt-1 text-base font-semibold text-slate-950">
+          <h3 className="mt-1 truncate text-base font-semibold tracking-tight text-foreground sm:text-lg">
             {title}
           </h3>
         </div>
-        {actions}
+        {actions ? <div className="shrink-0">{actions}</div> : null}
       </div>
-      <div className="p-5">{children}</div>
+      <div className="p-5 lg:p-6">{children}</div>
     </section>
   )
 }
@@ -71,28 +78,82 @@ export function Metric({
   icon: LucideIcon
   tone?: "slate" | "emerald" | "amber" | "rose" | "sky"
 }) {
-  const colors = {
-    slate: "bg-slate-100 text-slate-700",
-    emerald: "bg-emerald-100 text-emerald-700",
-    amber: "bg-amber-100 text-amber-700",
-    rose: "bg-rose-100 text-rose-700",
-    sky: "bg-sky-100 text-sky-700",
+  const tones = {
+    slate: {
+      shell:
+        "border-slate-300 bg-slate-200/70 dark:border-slate-500/20 dark:bg-slate-500/12",
+      icon: "border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-500/30 dark:bg-slate-500/15 dark:text-slate-300",
+      glow: "bg-[rgb(148_163_184_/_0.18)] dark:bg-[rgb(148_163_184_/_0.10)]",
+      label: "text-black dark:text-white",
+      value: "text-black dark:text-white",
+    },
+    emerald: {
+      shell:
+        "border-emerald-300 bg-emerald-200/70 dark:border-emerald-500/20 dark:bg-emerald-500/12",
+      icon: "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300",
+      glow: "bg-[rgb(16_185_129_/_0.18)] dark:bg-[rgb(16_185_129_/_0.10)]",
+      label: "text-black dark:text-white",
+      value: "text-black dark:text-white",
+    },
+    amber: {
+      shell:
+        "border-amber-300 bg-amber-200/70 dark:border-amber-500/20 dark:bg-amber-500/12",
+      icon: "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300",
+      glow: "bg-[rgb(245_158_11_/_0.18)] dark:bg-[rgb(245_158_11_/_0.10)]",
+      label: "text-black dark:text-white",
+      value: "text-black dark:text-white",
+    },
+    rose: {
+      shell:
+        "border-rose-300 bg-rose-200/70 dark:border-rose-500/20 dark:bg-rose-500/12",
+      icon: "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300",
+      glow: "bg-[rgb(244_63_94_/_0.18)] dark:bg-[rgb(244_63_94_/_0.10)]",
+      label: "text-black dark:text-white",
+      value: "text-black dark:text-white",
+    },
+    sky: {
+      shell:
+        "border-sky-300 bg-sky-200/70 dark:border-sky-500/20 dark:bg-sky-500/12",
+      icon: "border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-300",
+      glow: "bg-[rgb(14_165_233_/_0.18)] dark:bg-[rgb(14_165_233_/_0.10)]",
+      label: "text-black dark:text-white",
+      value: "text-black dark:text-white",
+    },
   }
 
+  const current = tones[tone]
+
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm text-slate-500">{label}</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-950">{value}</p>
+    <div
+      className={cn(
+        "group relative overflow-hidden rounded-[26px] border p-5 shadow-md ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:ring-white/5",
+        current.shell
+      )}
+    >
+      <div
+        className={cn(
+          "pointer-events-none absolute -right-8 -top-8 size-24 rounded-full blur-2xl opacity-70 transition-opacity duration-200 group-hover:opacity-100",
+          current.glow
+        )}
+      />
+
+      <div className="relative flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className={cn("text-xs font-medium uppercase tracking-[0.18em]", current.label)}>
+            {label}
+          </p>
+          <p className={cn("mt-3 truncate text-2xl font-semibold tracking-tight lg:text-3xl", current.value)}>
+            {value}
+          </p>
         </div>
+
         <span
           className={cn(
-            "flex size-10 items-center justify-center rounded-lg",
-            colors[tone]
+            "flex size-12 shrink-0 items-center justify-center rounded-2xl border shadow-sm",
+            current.icon
           )}
         >
-          <Icon className="size-5" />
+          <Icon className="size-5" strokeWidth={2.1} />
         </span>
       </div>
     </div>
@@ -110,12 +171,12 @@ export function SearchBox({
 }) {
   return (
     <div className="relative w-full sm:max-w-sm">
-      <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+      <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="h-9 rounded-lg pl-9"
+        className="edu-topbar-highlight h-11 rounded-2xl border bg-background pl-10 text-foreground shadow-sm transition-all duration-200 placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/20"
       />
     </div>
   )
@@ -123,8 +184,10 @@ export function SearchBox({
 
 export function EmptyState({ text }: { text: string }) {
   return (
-    <div className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
-      {text}
+    <div className="edu-bg-soft-glacier rounded-[26px] border border-dashed border-border bg-muted/30 px-6 py-12 text-center shadow-sm">
+      <p className="mx-auto max-w-md text-sm leading-7 text-muted-foreground">
+        {text}
+      </p>
     </div>
   )
 }
@@ -146,7 +209,7 @@ export function Textarea({
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
       rows={rows}
-      className="w-full resize-none rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+      className="w-full resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
     />
   )
 }
@@ -163,19 +226,28 @@ export function Select({
   label?: string
 }) {
   return (
-    <label className="grid gap-1 text-sm text-slate-600">
-      {label ? <span>{label}</span> : null}
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
-      >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
+    <label className="grid gap-1.5 text-sm text-foreground/80">
+      {label ? (
+        <span className="text-sm font-medium text-foreground">{label}</span>
+      ) : null}
+
+      <UiSelect value={value} onValueChange={onChange}>
+        <SelectTrigger className="h-11 rounded-2xl border border-border bg-background text-foreground shadow-sm transition-all duration-200 focus:ring-2 focus:ring-ring/20">
+          <SelectValue placeholder="Select option" />
+        </SelectTrigger>
+
+        <SelectContent className="rounded-2xl border border-border bg-popover text-popover-foreground shadow-lg">
+          {options.map((option) => (
+            <SelectItem
+              key={option}
+              value={option}
+              className="rounded-xl text-foreground focus:bg-muted focus:text-foreground"
+            >
+              {option}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </UiSelect>
     </label>
   )
 }
@@ -191,24 +263,42 @@ export function TicketList({
 
   return (
     <div className="space-y-3">
-      {tickets.map((ticket) => (
-        <article key={ticket.id} className="rounded-lg border border-slate-200 p-4">
+      {tickets.map((ticket, index) => (
+        <article
+          key={ticket.id}
+          className={cn(
+            "rounded-[26px] border bg-card p-5 text-card-foreground shadow-sm transition-all duration-200 hover:shadow-md",
+            index % 4 === 0 && "edu-ring-glacier edu-bg-soft-glacier",
+            index % 4 === 1 && "edu-ring-lapis edu-bg-soft-lapis",
+            index % 4 === 2 && "edu-ring-slate edu-bg-soft-slate",
+            index % 4 === 3 && "edu-ring-abyss edu-bg-soft-abyss"
+          )}
+        >
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <h4 className="font-semibold text-slate-950">{ticket.subject}</h4>
-              <p className="mt-1 text-sm text-slate-500">
-                {ticket.category} - {ticket.submittedAt}
+            <div className="min-w-0">
+              <h4 className="truncate text-base font-semibold tracking-tight text-foreground">
+                {ticket.subject}
+              </h4>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {ticket.category} · {ticket.submittedAt}
               </p>
             </div>
             <StatusBadge value={ticket.status} />
           </div>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
+
+          <p className="mt-4 text-sm leading-7 text-foreground/85">
             {ticket.description}
           </p>
+
           {ticket.resolution ? (
-            <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
-              {ticket.resolution}
-            </p>
+            <div className="mt-4 rounded-2xl border border-border bg-background/70 p-4">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                Resolution
+              </p>
+              <p className="mt-2 text-sm leading-7 text-foreground/85">
+                {ticket.resolution}
+              </p>
+            </div>
           ) : null}
         </article>
       ))}

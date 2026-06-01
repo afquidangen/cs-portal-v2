@@ -1,8 +1,8 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useState, type FormEvent } from "react"
-import { GraduationCap, Lock, Mail, ShieldCheck, UserCheck } from "lucide-react"
+import { useEffect, useState, type FormEvent } from "react"
+import { GraduationCap, Lock, Mail } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -16,29 +16,11 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-const demoAccounts = [
-  {
-    label: "Student",
-    email: "juan@student.edu",
-    helper: "Student services, grades, thesis library, events",
-    icon: GraduationCap,
-    route: "/student",
-  },
-  {
-    label: "Faculty",
-    email: "maria@faculty.edu",
-    helper: "Class lists, grade encoding, status updates",
-    icon: UserCheck,
-    route: "/faculty",
-  },
-  {
-    label: "Admin",
-    email: "admin@portal.edu",
-    helper: "Users, records, announcements, reports",
-    icon: ShieldCheck,
-    route: "/admin",
-  },
-]
+import {
+  authenticateTestAccount,
+  testAccounts,
+  testSessionStorageKey,
+} from "../data/test-accounts"
 
 export function LoginPage() {
   const [email, setEmail] = useState("")
@@ -47,85 +29,64 @@ export function LoginPage() {
   const [message, setMessage] = useState("")
   const router = useRouter()
 
-  function resolveRoute(value: string) {
-    const match = demoAccounts.find((account) =>
-      value.toLowerCase().includes(account.label.toLowerCase())
-    )
-    return match?.route
-  }
+  useEffect(() => {
+    document.documentElement.classList.remove("dark")
+  }, [])
 
   function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setMessage("")
 
-    const route = resolveRoute(email)
-    if (!route) {
-      setMessage("Use a student, faculty, or admin email to enter the portal.")
-      return
-    }
-
-    if (password.length < 4) {
-      setMessage("Enter at least 4 characters for the demo password.")
+    const account = authenticateTestAccount(email, password)
+    if (!account) {
+      setMessage("Use one of the listed test accounts and its matching password.")
       return
     }
 
     setLoading(true)
+    window.localStorage.setItem(
+      testSessionStorageKey,
+      JSON.stringify({
+        email: account.email,
+        role: account.role,
+        name: account.name,
+        title: account.title,
+        id: account.id,
+      })
+    )
     window.setTimeout(() => {
-      router.push(route)
+      router.push(account.route)
     }, 450)
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f8fb] px-4 py-8 text-slate-950">
+    <main className="min-h-screen bg-[#f0f5f4] px-4 py-8 text-slate-950">
       <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-center gap-8 lg:grid-cols-[1fr_420px]">
         <section className="space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm">
-            <GraduationCap className="size-4 text-sky-700" />
+          <div className="inline-flex items-center gap-2 rounded-lg border border-[#a9cbe0] bg-white px-3 py-2 text-sm font-medium text-[#225688] shadow-sm">
+            <GraduationCap className="size-4" />
             ComSite Academic Portal
           </div>
           <div className="max-w-2xl">
-            <h1 className="text-4xl font-semibold tracking-normal text-slate-950 md:text-5xl">
-              One working portal for students, faculty, and administrators.
+            <h1 className="text-4xl font-semibold tracking-normal text-[#092c56] md:text-5xl">
+              Code Innovation, Connect Education, Conquer Excellence.
             </h1>
-            <p className="mt-4 text-base leading-7 text-slate-600">
+            <p className="mt-4 text-base leading-7 text-[#225688]">
               Access grade updates, thesis records, announcements, feedback
               tickets, seminar enlistment, teacher availability, and department
-              reports from the correct role workspace.
+              reports from the correct role workspace. MongoDB Atlas with Google
+              Cloud is planned for the backend; this build uses local test
+              accounts only.
             </p>
-          </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            {demoAccounts.map((account) => {
-              const Icon = account.icon
-              return (
-                <button
-                  key={account.email}
-                  type="button"
-                  onClick={() => {
-                    setEmail(account.email)
-                    setPassword("demo1234")
-                    setMessage("")
-                  }}
-                  className="rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-sky-300 hover:bg-sky-50"
-                >
-                  <Icon className="mb-3 size-5 text-sky-700" />
-                  <p className="font-semibold text-slate-950">
-                    {account.label}
-                  </p>
-                  <p className="mt-1 text-sm leading-5 text-slate-500">
-                    {account.helper}
-                  </p>
-                </button>
-              )
-            })}
           </div>
         </section>
 
-        <Card className="rounded-lg border-slate-200 shadow-sm">
+        <Card className="rounded-lg border-[#a9cbe0] shadow-sm">
           <CardHeader>
-            <CardTitle className="text-2xl">Sign In</CardTitle>
+            <CardTitle className="text-2xl text-[#092c56]">Sign In</CardTitle>
             <CardDescription>
-              Pick a demo role or type an email containing student, faculty, or
-              admin.
+              Use the temporary test credentials while database integration is
+              pending.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -139,7 +100,7 @@ export function LoginPage() {
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder="student@school.edu"
+                    placeholder="student1@gmail.com"
                     className="h-10 rounded-lg pl-9"
                     required
                   />
@@ -155,7 +116,7 @@ export function LoginPage() {
                     type="password"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    placeholder="demo1234"
+                    placeholder="Enter test password"
                     className="h-10 rounded-lg pl-9"
                     required
                   />
@@ -169,10 +130,10 @@ export function LoginPage() {
                 </label>
                 <button
                   type="button"
-                  className="font-medium text-sky-700 hover:text-sky-800"
+                  className="font-medium text-[#225688] hover:text-[#092c56]"
                   onClick={() =>
                     setMessage(
-                      "Demo reset flow noted. Full email reset API is part of the backend sprint."
+                      "Password reset will be added with the MongoDB-backed auth flow."
                     )
                   }
                 >
@@ -190,6 +151,31 @@ export function LoginPage() {
                 {loading ? "Signing in..." : "Login"}
               </Button>
             </form>
+
+            <div className="mt-5 rounded-lg border border-[#a9cbe0] bg-[#f0f5f4] p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#668ca9]">
+                Test Accounts
+              </p>
+              <div className="mt-3 grid gap-2 text-sm">
+                {testAccounts.map((account) => (
+                  <button
+                    key={account.email}
+                    type="button"
+                    onClick={() => {
+                      setEmail(account.email)
+                      setPassword(account.password)
+                      setMessage("")
+                    }}
+                    className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-left text-slate-700 transition hover:bg-[#a9cbe0]/30 hover:text-[#092c56]"
+                  >
+                    <span>{account.email}</span>
+                    <span className="text-xs capitalize text-[#668ca9]">
+                      {account.role}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
