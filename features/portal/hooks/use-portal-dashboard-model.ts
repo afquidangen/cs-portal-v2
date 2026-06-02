@@ -716,6 +716,7 @@ export function usePortalDashboardModel(role: Role) {
         grade.section === section ? { ...grade, released: true } : grade
       )
     )
+    addAuditLog(`Released grades for ${section}`)
   }
 
   function updateTicketStatus(
@@ -726,14 +727,12 @@ export function usePortalDashboardModel(role: Role) {
     setTickets((current) =>
       current.map((ticket) =>
         ticket.id === ticketId
-          ? {
-              ...ticket,
-              status,
-              resolution: resolution ?? ticket.resolution,
-            }
+          ? { ...ticket, status, resolution: resolution ?? ticket.resolution }
           : ticket
       )
     )
+    const ticket = tickets.find((t) => t.id === ticketId)
+    if (ticket) addAuditLog(`Updated ticket "${ticket.subject}" to ${status}`)
   }
 
   function updateFacultyStatus(
@@ -744,14 +743,12 @@ export function usePortalDashboardModel(role: Role) {
     setFaculty((current) =>
       current.map((member) =>
         member.id === facultyId
-          ? {
-              ...member,
-              status,
-              notes: notes ?? member.notes,
-            }
+          ? { ...member, status, notes: notes ?? member.notes }
           : member
       )
     )
+    const member = faculty.find((f) => f.id === facultyId)
+    if (member) addAuditLog(`Updated faculty status for "${member.name}" to ${status}`)
   }
 
   function addAuditLog(action: string) {
@@ -1008,6 +1005,7 @@ export function usePortalDashboardModel(role: Role) {
       )
     )
     setNewSectionName("")
+    addAuditLog(`Added class section "${newSectionName.trim()}" for ${selectedClassYear}`)
   }
 
   function handleCreateSchedule(event: FormEvent<HTMLFormElement>) {
@@ -1035,6 +1033,7 @@ export function usePortalDashboardModel(role: Role) {
       instructor: "",
       section: activeClassSection,
     })
+    addAuditLog(`Created schedule for "${scheduleDraft.subject}" (${scheduleDraft.section})`)
   }
 
   async function handleScheduleUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -1056,6 +1055,7 @@ export function usePortalDashboardModel(role: Role) {
         ...current,
       ])
       setUploadName(file.name)
+      addAuditLog(`Uploaded schedule workbook "${file.name}"`)
     } catch (error) {
       window.alert(
         error instanceof Error
@@ -1071,10 +1071,13 @@ export function usePortalDashboardModel(role: Role) {
     setClassSchedules((current) =>
       current.map((item) => (item.id === updated.id ? updated : item))
     )
+    addAuditLog(`Updated schedule for "${updated.subject}"`)
   }
 
   function handleDeleteSchedule(id: string) {
+    const item = classSchedules.find((s) => s.id === id)
     setClassSchedules((current) => current.filter((item) => item.id !== id))
+    if (item) addAuditLog(`Deleted schedule for "${item.subject}" (${item.section})`)
   }
 
   async function handleGradeWorkbookUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -1150,6 +1153,7 @@ export function usePortalDashboardModel(role: Role) {
 
       setSelectedGradeSection(importedRows[0]?.section || activeGradeSection)
       setUploadName(file.name)
+      addAuditLog(`Uploaded grade workbook "${file.name}" (${importedRows.length} students)`)
     } catch (error) {
       window.alert(
         error instanceof Error
@@ -1176,16 +1180,20 @@ export function usePortalDashboardModel(role: Role) {
     ])
     setNewSemester({ name: "", schoolYear: "", enrollment: "Open", gradeSubmission: "" })
     setShowAddSemesterForm(false)
+    addAuditLog(`Created semester "${newSemester.name}" (${newSemester.schoolYear})`)
   }
 
   function handleUpdateSemester(updated: SemesterRecord) {
     setSemesters((current) =>
       current.map((item) => (item.id === updated.id ? updated : item))
     )
+    addAuditLog(`Updated semester "${updated.name}"`)
   }
 
   function handleDeleteSemester(id: string) {
+    const item = semesters.find((s) => s.id === id)
     setSemesters((current) => current.filter((item) => item.id !== id))
+    if (item) addAuditLog(`Deleted semester "${item.name}" (${item.schoolYear})`)
   }
 
   function handleAddSubject(event: FormEvent<HTMLFormElement>) {
@@ -1202,6 +1210,7 @@ export function usePortalDashboardModel(role: Role) {
     ])
     setNewSubject({ code: "", title: "", units: "3", instructor: "" })
     setShowAddSubjectForm(false)
+    addAuditLog(`Created subject "${newSubject.code} - ${newSubject.title}"`)
   }
 
   function handleUpdateSubject(updated: SubjectRecord) {
@@ -1210,20 +1219,26 @@ export function usePortalDashboardModel(role: Role) {
         item.code === updated.code ? updated : item
       )
     )
+    addAuditLog(`Updated subject "${updated.code}"`)
   }
 
   function handleDeleteSubject(code: string) {
+    const item = subjects.find((s) => s.code === code)
     setSubjects((current) => current.filter((item) => item.code !== code))
+    if (item) addAuditLog(`Deleted subject "${item.code} - ${item.title}"`)
   }
 
   function handleDeleteCurriculum(id: string) {
+    const item = curricula.find((c) => c.id === id)
     setCurricula((current) => current.filter((item) => item.id !== id))
+    if (item) addAuditLog(`Deleted curriculum "${item.name}" (${item.major})`)
   }
 
   function handleUpdateCurriculum(updated: CurriculumRecord) {
     setCurricula((current) =>
       current.map((item) => (item.id === updated.id ? updated : item))
     )
+    addAuditLog(`Updated curriculum "${updated.name}"`)
   }
 
   function handleAddTermToCurriculum(
@@ -1349,6 +1364,7 @@ export function usePortalDashboardModel(role: Role) {
       ...current,
     ])
     setNewCurriculum({ name: "", major: "", totalUnits: "0" })
+    addAuditLog(`Created curriculum "${newCurriculum.name}" (${newCurriculum.major})`)
   }
 
   function handleFeedbackSubmit(event: FormEvent<HTMLFormElement>) {
@@ -1380,6 +1396,7 @@ export function usePortalDashboardModel(role: Role) {
       description: "",
       anonymous: false,
     })
+    addAuditLog(`Submitted feedback ticket "${feedbackDraft.subject}"`)
   }
 
   function handleCreateEvent(event: FormEvent<HTMLFormElement>) {
@@ -1407,6 +1424,7 @@ export function usePortalDashboardModel(role: Role) {
       location: "",
       capacity: "30",
     })
+    addAuditLog(`Created event "${eventDraft.title}"`)
   }
 
   function handleCreateThesis(event: FormEvent<HTMLFormElement>) {
@@ -1454,6 +1472,7 @@ export function usePortalDashboardModel(role: Role) {
       fileName: "",
     })
     setShowThesisUploadForm(false)
+    addAuditLog(`Created thesis record "${thesisDraft.title}"`)
   }
 
   function handleCreateAnnouncement(event: FormEvent<HTMLFormElement>) {
@@ -1479,16 +1498,20 @@ export function usePortalDashboardModel(role: Role) {
       priority: "Medium",
     })
     setShowAnnouncementForm(false)
+    addAuditLog(`Created announcement "${announcementDraft.title}"`)
   }
 
   function handleUpdateAnnouncement(updated: Announcement) {
     setAnnouncements((current) =>
       current.map((item) => (item.id === updated.id ? updated : item))
     )
+    addAuditLog(`Updated announcement "${updated.title}"`)
   }
 
   function handleDeleteAnnouncement(id: string) {
+    const item = announcements.find((a) => a.id === id)
     setAnnouncements((current) => current.filter((item) => item.id !== id))
+    if (item) addAuditLog(`Deleted announcement "${item.title}"`)
   }
 
   function handleEnlist(eventId: string) {

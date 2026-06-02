@@ -181,6 +181,7 @@ export type CsoReport = {
   date: string
   summary: string
   total?: string
+  image?: string
 }
 
 export const availabilityOptions: AvailabilityStatus[] = [
@@ -1345,7 +1346,8 @@ export const csoReportsSeed: CsoReport[] = [
     type: "Event",
     date: "May 18, 2026",
     summary:
-      "Orientation for incoming computing students and organization volunteers.",
+      "Orientation for incoming computing students and organization volunteers. The event featured an overview of the organization's goals, committee introductions, and a Q&A session.",
+    image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='250' viewBox='0 0 400 250'%3E%3Crect width='400' height='250' fill='%231e3a5f'/%3E%3Ctext x='200' y='125' font-family='Arial' font-size='20' fill='white' text-anchor='middle' dominant-baseline='middle'%3ECodeSprint Orientation%3C/text%3E%3Ctext x='200' y='155' font-family='Arial' font-size='14' fill='%23aaccff' text-anchor='middle'%3EMay 18, 2026%3C/text%3E%3C/svg%3E",
   },
   {
     id: "CSSO-002",
@@ -1362,7 +1364,26 @@ export const csoReportsSeed: CsoReport[] = [
     type: "Accomplishment",
     date: "April 29, 2026",
     summary:
-      "Completed four tutorial sessions covering programming fundamentals and database design.",
+      "Completed four tutorial sessions covering programming fundamentals and database design. Attendance averaged 25 students per session with positive feedback from participants.",
+    image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='250' viewBox='0 0 400 250'%3E%3Crect width='400' height='250' fill='%232d5a27'/%3E%3Ctext x='200' y='125' font-family='Arial' font-size='20' fill='white' text-anchor='middle' dominant-baseline='middle'%3EPeer Tutorial Program%3C/text%3E%3Ctext x='200' y='155' font-family='Arial' font-size='14' fill='%23aaffaa' text-anchor='middle'%3EApril 29, 2026%3C/text%3E%3C/svg%3E",
+  },
+  {
+    id: "CSSO-004",
+    title: "General Assembly 2026",
+    type: "Event",
+    date: "June 10, 2026",
+    summary:
+      "General assembly for all CSSO members to discuss the upcoming events, budget allocation, and new officer elections.",
+    image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='250' viewBox='0 0 400 250'%3E%3Crect width='400' height='250' fill='%235a2d27'/%3E%3Ctext x='200' y='125' font-family='Arial' font-size='20' fill='white' text-anchor='middle' dominant-baseline='middle'%3EGeneral Assembly%3C/text%3E%3Ctext x='200' y='155' font-family='Arial' font-size='14' fill='%23ffaaaa' text-anchor='middle'%3EJune 10, 2026%3C/text%3E%3C/svg%3E",
+  },
+  {
+    id: "CSSO-005",
+    title: "May Financial Summary",
+    type: "Financial",
+    date: "June 1, 2026",
+    summary:
+      "Breakdown of May expenses including event permits, printing of materials, and refreshments for general assembly.",
+    total: "PHP 8,230 spent",
   },
 ]
 

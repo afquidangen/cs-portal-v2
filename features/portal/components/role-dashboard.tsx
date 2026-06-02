@@ -143,7 +143,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       seminars: <SeminarsModule model={model} />,
       availability: <AvailabilityModule model={model} />,
       instructors: <InstructorsModule model={model} />,
-      cso: <CsoModule />,
+      cso: <CsoModule role={role} />,
       schedule: <SchedulePanel model={model} />,
       curriculum: <CurriculumModule model={model} />,
       "quick-links": <QuickLinksModule />,
