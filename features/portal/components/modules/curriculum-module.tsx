@@ -40,6 +40,8 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
 
   const enrolledCurriculum = curricula.find(
     (c) => c.name === studentCurriculumName
+  ) ?? curricula.find(
+    (c) => c.major === studentCurriculumName
   )
 
   const allTerms = enrolledCurriculum?.terms ?? []

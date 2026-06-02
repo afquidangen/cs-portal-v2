@@ -69,7 +69,7 @@ export function UsersModule({ model }: PortalModuleProps) {
   )
 
   const curriculumOptions = Array.from(
-    new Set(curricula.map((c) => c.major))
+    new Set(curricula.map((c) => c.name))
   )
 
   const stats = useMemo(() => {
@@ -352,6 +352,20 @@ export function UsersModule({ model }: PortalModuleProps) {
                     setNewUser((current) => ({ ...current, role: value as "student" | "faculty" | "admin" }))
                   }}
                   options={["student", "faculty", "admin"]}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">ID Number</label>
+                <Input
+                  value={newUser.idNumber}
+                  onChange={(e) =>
+                    setNewUser((current) => ({
+                      ...current,
+                      idNumber: e.target.value,
+                    }))
+                  }
+                  placeholder="IS-00-00000"
                 />
               </div>
 
@@ -660,14 +674,12 @@ export function UsersModule({ model }: PortalModuleProps) {
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-sm font-medium text-foreground">Curriculum</label>
-                      <Input
-                        value={editUser.curriculum ?? ""}
-                        onChange={(e) =>
-                          setEditUser({
-                            ...editUser,
-                            curriculum: e.target.value,
-                          })
+                      <Select
+                        value={editUser.curriculum ?? "Old Curriculum"}
+                        onChange={(value) =>
+                          setEditUser({ ...editUser, curriculum: value })
                         }
+                        options={curriculumOptions}
                       />
                     </div>
                   </>

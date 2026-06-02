@@ -1,6 +1,7 @@
 "use client"
 
 import { Binary, Braces, Cpu, Orbit } from "lucide-react"
+import { useEffect, useState } from "react"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -17,10 +18,14 @@ export function GreetingCard({
   className?: string
 }) {
   const firstName = name.split(" ")[0] || name
-  const hour = new Date().getHours()
+  const [timeGreeting, setTimeGreeting] = useState("Hello")
 
-  const timeGreeting =
-    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening"
+  useEffect(() => {
+    const hour = new Date().getHours()
+    setTimeGreeting(
+      hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening"
+    )
+  }, [])
 
   return (
     <Card

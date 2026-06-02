@@ -23,11 +23,13 @@ import type { PortalModuleProps } from "./types"
 function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
   const {
     editingStudentId, facultyClassSections, facultyClassStudents,
-    handleSaveStudent, resetStudentDraft,
+    handleDeleteRosterStudent, handleToggleEnrolled, handleSaveStudent, resetStudentDraft,
     selectedClassSection, setSelectedClassSection,
     setStudentDraft, startEditStudent, studentDraft,
-    setRoster,
+    setRoster, setUsers,
   } = model
+
+  const [facultyDeleteId, setFacultyDeleteId] = useState<string | null>(null)
 
   return (
     <div className="space-y-5">
@@ -89,11 +91,14 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
                   <Button type="button" size="sm" variant="outline" className="rounded-xl" onClick={() => startEditStudent(student)}>
                     <Pencil className="size-3.5" /> Edit
                   </Button>
+                  <Button type="button" size="sm" variant="outline" className="rounded-xl" onClick={() => setFacultyDeleteId(student.id)}>
+                    <Trash2 className="size-3.5" />
+                  </Button>
                   <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-border px-3 py-1.5 text-sm text-foreground/70 transition hover:bg-muted">
                     <input
                       type="checkbox"
                       checked={student.enrolled}
-                      onChange={(e) => setRoster((current) => current.map((item) => item.id === student.id ? { ...item, enrolled: e.target.checked } : item))}
+                      onChange={(e) => handleToggleEnrolled(student.id, e.target.checked)}
                       className="size-4 rounded border-border accent-primary"
                     />
                     Enrolled
@@ -103,6 +108,27 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
             ))}
           </div>
         )}
+
+        <Dialog open={!!facultyDeleteId} onOpenChange={(o) => { if (!o) setFacultyDeleteId(null) }}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Remove Student</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">Remove this student from the roster? This will also remove their grade records.</p>
+            <DialogFooter className="mt-2 gap-2">
+              <Button variant="ghost" onClick={() => setFacultyDeleteId(null)}>Cancel</Button>
+              <Button variant="destructive" onClick={() => {
+                if (facultyDeleteId) {
+                  handleDeleteRosterStudent(facultyDeleteId)
+                  setUsers((current) => current.filter((u) => u.id !== facultyDeleteId))
+                }
+                setFacultyDeleteId(null)
+              }}>
+                <Trash2 className="mr-1.5 size-4" /> Remove
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </Panel>
     </div>
   )
@@ -114,10 +140,10 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
 function AdminView({ model }: { model: PortalModuleProps["model"] }) {
   const {
     classSchedules, handleAddClassSection, handleCreateSchedule,
-    handleUpdateSchedule, handleDeleteSchedule,
-    handleScheduleUpload, newSectionName, scheduleDraft,
-    selectedClassYear, setNewSectionName, setScheduleDraft,
-    setSelectedClassYear, setRoster, yearSections, roster,
+    handleUpdateSchedule, handleDeleteSchedule, handleDeleteRosterStudent,
+    handleSaveStudent, handleToggleEnrolled, handleScheduleUpload,
+    newSectionName, scheduleDraft, selectedClassYear, setNewSectionName,
+    setScheduleDraft,     setSelectedClassYear, setRoster, setUsers, users, yearSections, roster,
   } = model
 
   const [adminTab, setAdminTab] = useState("Sections")
@@ -125,6 +151,9 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
   const [deleteScheduleId, setDeleteScheduleId] = useState<string | null>(null)
   const [scheduleFilterYear, setScheduleFilterYear] = useState(yearSections[0]?.year ?? "")
   const [scheduleFilterSection, setScheduleFilterSection] = useState(yearSections[0]?.sections[0] ?? "")
+  const [rosterDraft, setRosterDraft] = useState({ id: "", name: "", section: "" })
+  const [editingRosterId, setEditingRosterId] = useState<string | null>(null)
+  const [deleteRosterId, setDeleteRosterId] = useState<string | null>(null)
 
   const selectedYear = yearSections.find((y) => y.year === selectedClassYear)
 
@@ -206,7 +235,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
         </Panel>
       ) : null}
 
-      {/* ── Student Roster ── */}
+        {/* ── Student Roster ── */}
       {adminTab === "Roster" ? (
         <Panel
           title="Student Roster"
@@ -236,8 +265,8 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
               <p className="text-sm text-muted-foreground">No students enrolled in this year level.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-2xl border border-border">
-              <table className="w-full min-w-[600px] text-left text-sm">
+            <div className="overflow-x-auto border border-border">
+              <table className="w-full min-w-[700px] text-left text-sm">
                 <thead className="bg-muted text-foreground">
                   <tr className="border-b border-border">
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">ID</th>
@@ -245,6 +274,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Section</th>
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Status</th>
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Enrolled</th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border bg-card">
@@ -260,9 +290,22 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                         <input
                           type="checkbox"
                           checked={student.enrolled}
-                          onChange={(e) => setRoster((current) => current.map((item) => item.id === student.id ? { ...item, enrolled: e.target.checked } : item))}
+                          onChange={(e) => handleToggleEnrolled(student.id, e.target.checked)}
                           className="size-4 rounded border-border accent-primary"
                         />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1.5">
+                          <Button size="sm" variant="outline" className="rounded-md" onClick={() => {
+                            setEditingRosterId(student.id)
+                            setRosterDraft({ id: student.id, name: student.name, section: student.section })
+                          }}>
+                            <Pencil className="size-3.5" />
+                          </Button>
+                          <Button size="sm" variant="outline" className="rounded-md" onClick={() => setDeleteRosterId(student.id)}>
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -270,6 +313,75 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
               </table>
             </div>
           )}
+
+          {/* Edit roster student dialog */}
+          <Dialog open={!!editingRosterId} onOpenChange={(o) => { if (!o) { setEditingRosterId(null); setRosterDraft({ id: "", name: "", section: selectedYear?.sections[0] ?? "" }) } }}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Edit Student</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Student ID</label>
+                  <Input value={rosterDraft.id} onChange={(e) => setRosterDraft((c) => ({ ...c, id: e.target.value }))} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Full name</label>
+                  <Input value={rosterDraft.name} onChange={(e) => setRosterDraft((c) => ({ ...c, name: e.target.value }))} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Section</label>
+                  <select
+                    value={rosterDraft.section}
+                    onChange={(e) => setRosterDraft((c) => ({ ...c, section: e.target.value }))}
+                    className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+                  >
+                    {yearSections.flatMap((y) => y.sections).map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <DialogFooter className="mt-2 gap-2">
+                <Button variant="ghost" onClick={() => { setEditingRosterId(null); setRosterDraft({ id: "", name: "", section: selectedYear?.sections[0] ?? "" }) }}>Cancel</Button>
+                <Button onClick={() => {
+                  if (!editingRosterId) return
+                  setRoster((current) => current.map((s) =>
+                    s.id === editingRosterId ? { ...s, id: rosterDraft.id, name: rosterDraft.name, section: rosterDraft.section, enrolled: s.enrolled } : s
+                  ))
+                  setUsers((current) => current.map((u) =>
+                    u.id === editingRosterId ? { ...u, id: rosterDraft.id, name: rosterDraft.name, section: rosterDraft.section } : u
+                  ))
+                  setEditingRosterId(null)
+                  setRosterDraft({ id: "", name: "", section: selectedYear?.sections[0] ?? "" })
+                }}>
+                  <Pencil className="mr-1.5 size-4" /> Save
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Delete roster student confirmation */}
+          <Dialog open={!!deleteRosterId} onOpenChange={(o) => { if (!o) setDeleteRosterId(null) }}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Remove Student</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-muted-foreground">Remove this student from the roster? This will also remove their grade records.</p>
+              <DialogFooter className="mt-2 gap-2">
+                <Button variant="ghost" onClick={() => setDeleteRosterId(null)}>Cancel</Button>
+                <Button variant="destructive" onClick={() => {
+                  if (deleteRosterId) {
+                    handleDeleteRosterStudent(deleteRosterId)
+                    setUsers((current) => current.filter((u) => u.id !== deleteRosterId))
+                  }
+                  setDeleteRosterId(null)
+                }}>
+                  <Trash2 className="mr-1.5 size-4" /> Remove
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </Panel>
       ) : null}
 

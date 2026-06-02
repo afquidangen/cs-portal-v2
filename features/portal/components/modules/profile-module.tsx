@@ -15,7 +15,7 @@ export function ProfileModule({ model }: PortalModuleProps) {
     profile,
     profileDetails,
     role,
-    setProfileDetails,
+    handleSaveProfile,
   } = model
 
   const [draft, setDraft] = useState(profileDetails)
@@ -42,7 +42,7 @@ export function ProfileModule({ model }: PortalModuleProps) {
   }
 
   function handleSave() {
-    setProfileDetails(draft)
+    handleSaveProfile(draft)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }

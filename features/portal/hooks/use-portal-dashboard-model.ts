@@ -288,6 +288,7 @@ export function usePortalDashboardModel(role: Role) {
     email: "",
     password: "",
     role: "student" as "student" | "faculty" | "admin",
+    idNumber: "",
     firstName: "",
     middleName: "",
     lastName: "",
@@ -413,6 +414,24 @@ export function usePortalDashboardModel(role: Role) {
       return [...curriculumCatalogSeed, ...customCurricula]
     })
   }, [setCurricula])
+
+  useEffect(() => {
+    setRoster((current) => {
+      const rosterIds = new Set(current.map((s) => s.id))
+      const missing = users.filter(
+        (u) => u.role === "student" && u.section && !rosterIds.has(u.id)
+      )
+      if (missing.length === 0) return current
+      const newEntries = missing.map((u) => {
+        const rawSection = u.section ?? ""
+        const rosterSection = rawSection.startsWith("BSCS")
+          ? rawSection
+          : `BSCS ${u.year ?? ""}${rawSection}`
+        return { id: u.id, name: u.name, section: rosterSection, enrolled: u.status === "Active" }
+      })
+      return [...newEntries, ...current]
+    })
+  }, [users, setRoster])
 
   const rawProfile = sessionProfile ?? roleProfiles[role]
   const profileUser = users.find((user) => user.id === rawProfile.id)
@@ -776,7 +795,7 @@ export function usePortalDashboardModel(role: Role) {
       .map((part) => part.trim())
       .filter(Boolean)
       .join(" ")
-    const accountId = `USR-${String(users.length + 1).padStart(3, "0")}`
+    const accountId = newUser.idNumber.trim() || `USR-${String(users.length + 1).padStart(3, "0")}`
     setUsers((current) => [
       {
         id: accountId,
@@ -833,6 +852,7 @@ export function usePortalDashboardModel(role: Role) {
       email: "",
       password: "",
       role: "student",
+      idNumber: "",
       firstName: "",
       middleName: "",
       lastName: "",
@@ -844,6 +864,17 @@ export function usePortalDashboardModel(role: Role) {
       employmentType: "Regular",
       academicTitle: "MIT",
     })
+    if (newUser.role === "student") {
+      const rosterSection = newUser.section.startsWith("BSCS")
+        ? newUser.section
+        : `BSCS ${newUser.year}${newUser.section}`
+      setRoster((current) => {
+        const exists = current.some((s) => s.id === accountId)
+        if (exists) return current
+        return [{ id: accountId, name: fullName, section: rosterSection, enrolled: true }, ...current]
+      })
+    }
+
     addAuditLog(`Created ${newUser.role} account "${fullName}" (${newUser.email})`)
   }
 
@@ -867,6 +898,13 @@ export function usePortalDashboardModel(role: Role) {
           : item
       )
     )
+    setRoster((current) =>
+      current.map((item) =>
+        item.id === userId
+          ? { ...item, enrolled: !item.enrolled }
+          : item
+      )
+    )
     if (user) {
       const newStatus = user.status === "Active" ? "Inactive" : "Active"
       addAuditLog(`${newStatus === "Active" ? "Activated" : "Deactivated"} account "${user.name}"`)
@@ -884,6 +922,10 @@ export function usePortalDashboardModel(role: Role) {
   function deleteUser(userId: string) {
     const user = users.find((u) => u.id === userId)
     setUsers((current) => current.filter((item) => item.id !== userId))
+    setRoster((current) => current.filter((item) => item.id !== userId))
+    setGrades((current) =>
+      current.filter((grade) => grade.studentId !== userId)
+    )
     if (user) {
       addAuditLog(`Deleted ${user.role} account "${user.name}"`)
     }
@@ -893,6 +935,30 @@ export function usePortalDashboardModel(role: Role) {
     setUsers((current) =>
       current.map((item) => (item.id === updatedUser.id ? updatedUser : item))
     )
+    if (updatedUser.role === "student") {
+      const rawSection = updatedUser.section ?? ""
+      const rosterSection = rawSection.startsWith("BSCS")
+        ? rawSection
+        : `BSCS ${updatedUser.year}${rawSection}`
+      setRoster((current) => {
+        const exists = current.some((item) => item.id === updatedUser.id)
+        if (!exists) {
+          return [{ id: updatedUser.id, name: updatedUser.name, section: rosterSection, enrolled: updatedUser.status === "Active" }, ...current]
+        }
+        return current.map((item) =>
+          item.id === updatedUser.id
+            ? { ...item, name: updatedUser.name, section: rosterSection }
+            : item
+        )
+      })
+      setGrades((current) =>
+        current.map((grade) =>
+          grade.studentId === updatedUser.id
+            ? { ...grade, student: updatedUser.name, section: rosterSection }
+            : grade
+        )
+      )
+    }
     addAuditLog(`Updated account "${updatedUser.name}"`)
   }
 
@@ -926,6 +992,30 @@ export function usePortalDashboardModel(role: Role) {
       }))
     }
     reader.readAsDataURL(file)
+  }
+
+  function handleSaveProfile(draft: ProfileDetails) {
+    setProfileDetails(draft)
+    const fullName = getProfileFullName(draft)
+    setUsers((current) =>
+      current.map((user) =>
+        user.id === rawProfile.id
+          ? {
+              ...user,
+              name: fullName || user.name,
+              firstName: draft.firstName,
+              middleName: draft.middleName,
+              lastName: draft.lastName,
+              email: draft.email,
+              contactNumber: draft.contactNumber,
+              sex: draft.sex,
+              birthday: draft.birthday,
+              address: draft.address,
+              photoUrl: draft.photoUrl,
+            }
+          : user
+      )
+    )
   }
 
   function resetStudentDraft(section = activeClassSection) {
@@ -973,6 +1063,30 @@ export function usePortalDashboardModel(role: Role) {
       ]
     })
 
+    setUsers((current) => {
+      const exists = current.some((u) => u.id === studentDraft.id.trim())
+      if (exists) {
+        return current.map((u) =>
+          u.id === studentDraft.id.trim()
+            ? { ...u, name: studentDraft.name.trim(), section: studentDraft.section }
+            : u
+        )
+      }
+      return [
+        {
+          id: studentDraft.id.trim(),
+          name: studentDraft.name.trim(),
+          email: "",
+          role: "student",
+          firstName: studentDraft.name.trim().split(" ")[0] ?? "",
+          lastName: studentDraft.name.trim().split(" ").slice(1).join(" ") ?? "",
+          section: studentDraft.section,
+          status: "Active",
+        },
+        ...current,
+      ]
+    })
+
     setGrades((current) =>
       current.map((grade) =>
         grade.studentId === editingStudentId
@@ -987,6 +1101,28 @@ export function usePortalDashboardModel(role: Role) {
     )
 
     resetStudentDraft(studentDraft.section)
+  }
+
+  function handleDeleteRosterStudent(studentId: string) {
+    const student = roster.find((s) => s.id === studentId)
+    setRoster((current) => current.filter((s) => s.id !== studentId))
+    setGrades((current) => current.filter((g) => g.studentId !== studentId))
+    if (student) addAuditLog(`Removed student "${student.name}" from roster`)
+  }
+
+  function handleToggleEnrolled(studentId: string, enrolled: boolean) {
+    setRoster((current) =>
+      current.map((item) =>
+        item.id === studentId ? { ...item, enrolled } : item
+      )
+    )
+    setUsers((current) =>
+      current.map((item) =>
+        item.id === studentId
+          ? { ...item, status: enrolled ? "Active" : "Inactive" }
+          : item
+      )
+    )
   }
 
   function handleAddClassSection(event: FormEvent<HTMLFormElement>) {
@@ -1674,10 +1810,13 @@ export function usePortalDashboardModel(role: Role) {
     handleUpdateUser,
     confirmAndDeleteThesis,
     undoTicketResolution,
+    handleSaveProfile,
     handleProfilePhotoChange,
     resetStudentDraft,
     startEditStudent,
     handleSaveStudent,
+    handleDeleteRosterStudent,
+    handleToggleEnrolled,
     handleAddClassSection,
     handleCreateSchedule,
     handleUpdateSchedule,
