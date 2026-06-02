@@ -67,7 +67,7 @@ import { LiveAnnouncementCard } from "./modules/live-announcement-card"
 import { Metric } from "./shared/dashboard-ui"
 import { OverviewModule } from "./modules/overview-module"
 import { ProfileModule } from "./modules/profile-module"
-import { ProfileDialog } from "./modules/profile-dialog"
+
 import { QuickLinksModule } from "./modules/quick-links-module"
 import { SchedulePanel } from "./modules/schedule-panel"
 import { SeminarsModule } from "./modules/seminars-module"
@@ -79,7 +79,6 @@ export function RoleDashboard({ role }: { role: Role }) {
   const model = usePortalDashboardModel(role)
   const [darkMode, setDarkMode] = useState(false)
   const [announcementIndex, setAnnouncementIndex] = useState(0)
-  const [profileOpen, setProfileOpen] = useState(false)
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false)
   const [isMediumScreen, setIsMediumScreen] = useState(
     () => typeof window !== "undefined"
@@ -195,9 +194,9 @@ export function RoleDashboard({ role }: { role: Role }) {
         : "Student Portal User"
 
   const navigationGroups = useMemo(() => {
-    const items = model.navigation.filter((item: { id: string }) => item.id !== "profile")
+    const items = model.navigation
 
-    const overview = items.filter((item: { id: string }) => ["overview"].includes(item.id))
+    const overview = items.filter((item: { id: string }) => ["overview", "profile"].includes(item.id))
     const academics = items.filter((item: { id: string }) =>
       [
         "grades",
@@ -327,7 +326,10 @@ export function RoleDashboard({ role }: { role: Role }) {
 
             <button
               type="button"
-              onClick={() => setProfileOpen(true)}
+              onClick={() => {
+                model.selectModule("profile")
+                model.setSidebarOpen(false)
+              }}
               className={cn(
                 "edu-sidebar-profile mt-4 block w-full rounded-2xl text-left transition-all",
                 effectivelyCollapsed ? "p-2" : ""
@@ -470,10 +472,10 @@ export function RoleDashboard({ role }: { role: Role }) {
 
                   {showNotifications ? (
                     <div
-                      className="fixed z-50 w-80 rounded-2xl border border-border bg-white text-[#0c1c2e] shadow-2xl dark:border-[#1d3858] dark:bg-[#0f1b2b] dark:text-[#f5f8f8]"
+                      className="fixed z-50 w-80 border border-border bg-white text-foreground shadow-lg dark:bg-neutral-950"
                       style={{ top: notifPosition.top, right: notifPosition.right }}
                     >
-                      <div className="flex items-center justify-between border-b border-border px-4 py-3 dark:border-[#1d3858]">
+                      <div className="flex items-center justify-between border-b border-border px-4 py-3">
                         <div className="flex items-center gap-2">
                           <Bell className="size-4" />
                           <p className="text-sm font-semibold">Notifications</p>
@@ -490,7 +492,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                                   new Set(visibleAnnouncements.map((a) => a.id))
                                 )
                               }
-                              className="rounded-md px-2 py-0.5 text-[11px] font-medium text-[#225688] transition-colors hover:bg-[#eef4f6] dark:text-[#a9cbe0] dark:hover:bg-[#143252]"
+                              className="rounded-md px-2 py-0.5 text-[11px] font-medium text-primary transition-colors hover:bg-muted"
                             >
                               Mark all read
                             </button>
@@ -500,11 +502,11 @@ export function RoleDashboard({ role }: { role: Role }) {
                       <div className="max-h-80 space-y-1 overflow-y-auto p-2">
                         {visibleAnnouncements.length === 0 ? (
                           <div className="flex flex-col items-center gap-2 px-2 py-10 text-center">
-                            <Bell className="size-8 text-black/20 dark:text-white/20" />
-                            <p className="text-sm font-medium text-black/60 dark:text-white/60">
+                            <Bell className="size-8 text-muted-foreground/40" />
+                            <p className="text-sm font-medium text-muted-foreground">
                               No notifications yet
                             </p>
-                            <p className="text-xs text-black/40 dark:text-white/40">
+                            <p className="text-xs text-muted-foreground/60">
                               Announcements will appear here
                             </p>
                           </div>
@@ -528,14 +530,14 @@ export function RoleDashboard({ role }: { role: Role }) {
                                     setShowNotifications(false)
                                   }
                                 }}
-                                className="group cursor-pointer rounded-xl border border-transparent px-3 py-3 transition-all hover:border-[#d8e4eb] hover:bg-[#eef4f6] dark:hover:border-[#1d3858] dark:hover:bg-[#143252]"
+                                className="group cursor-pointer border border-transparent px-3 py-3 transition-all hover:border-border hover:bg-muted"
                               >
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex items-center gap-2 min-w-0">
                                     {!isRead ? (
-                                      <span className="mt-1.5 size-2 shrink-0 rounded-full bg-[#225688]" />
+                                      <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" />
                                     ) : null}
-                                    <p className={"text-sm truncate " + (isRead ? "font-medium text-black/60 dark:text-white/60" : "font-semibold text-black dark:text-white")}>
+                                    <p className={"text-sm truncate " + (isRead ? "font-medium text-muted-foreground" : "font-semibold text-foreground")}>
                                       {ann.title}
                                     </p>
                                   </div>
@@ -543,22 +545,22 @@ export function RoleDashboard({ role }: { role: Role }) {
                                     className={
                                       "mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none " +
                                       (ann.priority === "High"
-                                        ? "bg-red-100 text-red-700"
+                                        ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                                         : ann.priority === "Medium"
-                                          ? "bg-amber-100 text-amber-700"
-                                          : "bg-[#f2f7f8] text-[#5f7285] dark:bg-[#0f2034] dark:text-[#9fb4c5]")
+                                          ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                          : "bg-muted text-muted-foreground")
                                     }
                                   >
                                     {ann.priority}
                                   </span>
                                 </div>
-                                <p className={"mt-1 line-clamp-2 text-xs leading-relaxed " + (isRead ? "text-black/50 dark:text-white/50" : "text-black/70 dark:text-white/80")}>
+                                <p className={"mt-1 line-clamp-2 text-xs leading-relaxed " + (isRead ? "text-muted-foreground/70" : "text-foreground/80")}>
                                   {ann.content}
                                 </p>
-                                <div className="mt-1.5 flex items-center gap-2 text-[11px] text-black/50 dark:text-white/50">
+                                <div className="mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground/70">
                                   <span>{ann.date}</span>
-                                  <span className="size-1 rounded-full bg-black/20 dark:bg-white/20" />
-                                  <span className="rounded bg-[#f2f7f8] px-1.5 py-0.5 text-[#5f7285] dark:bg-[#0f2034] dark:text-[#9fb4c5]">{ann.audience}</span>
+                                  <span className="size-1 rounded-full bg-muted-foreground/30" />
+                                  <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">{ann.audience}</span>
                                 </div>
                               </div>
                             )
@@ -853,8 +855,6 @@ export function RoleDashboard({ role }: { role: Role }) {
         </DialogContent>
       </Dialog>
 
-      <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} model={model} />
-
       <Dialog open={!!viewingAnnouncement} onOpenChange={(open) => { if (!open) setViewingAnnouncement(null) }}>
         <DialogContent className="max-w-lg">
           {viewingAnnouncement ? (
@@ -866,9 +866,9 @@ export function RoleDashboard({ role }: { role: Role }) {
                     className={
                       "shrink-0 px-2 py-0.5 text-[11px] font-semibold uppercase leading-none " +
                       (viewingAnnouncement.priority === "High"
-                        ? "bg-red-100 text-red-700"
+                        ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                         : viewingAnnouncement.priority === "Medium"
-                          ? "bg-amber-100 text-amber-700"
+                          ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                           : "bg-muted text-muted-foreground")
                     }
                   >

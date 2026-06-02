@@ -55,14 +55,14 @@ export function ProfileModule({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
-        <Panel title={roleLabel + " Profile"} eyebrow="Account details">
+      <div className="grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="border border-border bg-muted/30 p-6">
           <div className="flex flex-col items-center text-center">
-            <div className="flex size-28 items-center justify-center rounded-2xl border border-dashed border-border bg-muted text-foreground/60">
+            <div className="flex size-28 items-center justify-center border border-dashed border-border bg-muted text-muted-foreground">
               {draft.photoUrl ? (
                 <div
                   aria-label={profile.name}
-                  className="size-full rounded-2xl bg-cover bg-center"
+                  className="size-full bg-cover bg-center"
                   style={{
                     backgroundImage: `url(${draft.photoUrl})`,
                   }}
@@ -72,7 +72,7 @@ export function ProfileModule({ model }: PortalModuleProps) {
               )}
             </div>
 
-            <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-muted">
+            <label className="mt-4 inline-flex cursor-pointer items-center gap-2 border border-border bg-muted/50 px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted">
               <Camera className="size-4" />
               Upload Photo
               <input
@@ -86,16 +86,27 @@ export function ProfileModule({ model }: PortalModuleProps) {
             <h4 className="mt-4 text-lg font-semibold text-foreground">
               {profile.name}
             </h4>
-            <p className="mt-1 text-sm text-foreground/70">{profile.title}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {profile.title}
+            </p>
 
             <div className="mt-3">
               <StatusBadge value={roleLabel} />
             </div>
           </div>
-        </Panel>
+        </div>
 
-        <Panel title="Personal Information" eyebrow="Editable profile fields">
-          <div className="grid gap-3 md:grid-cols-2">
+        <div className="border border-border bg-muted/30 p-4 sm:p-6">
+          <div className="mb-5">
+            <h3 className="text-lg font-semibold text-foreground">
+              Personal Information
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Editable profile details
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
             <Input
               placeholder="First name"
               value={draft.firstName}
@@ -105,7 +116,6 @@ export function ProfileModule({ model }: PortalModuleProps) {
                   firstName: event.target.value,
                 }))
               }
-              className="h-10 rounded-2xl"
             />
             <Input
               placeholder="Middle name"
@@ -116,7 +126,6 @@ export function ProfileModule({ model }: PortalModuleProps) {
                   middleName: event.target.value,
                 }))
               }
-              className="h-10 rounded-2xl"
             />
             <Input
               placeholder="Last name"
@@ -127,7 +136,6 @@ export function ProfileModule({ model }: PortalModuleProps) {
                   lastName: event.target.value,
                 }))
               }
-              className="h-10 rounded-2xl"
             />
             <Input
               placeholder="Email"
@@ -138,7 +146,6 @@ export function ProfileModule({ model }: PortalModuleProps) {
                   email: event.target.value,
                 }))
               }
-              className="h-10 rounded-2xl"
             />
             <Input
               placeholder="Contact number"
@@ -149,9 +156,7 @@ export function ProfileModule({ model }: PortalModuleProps) {
                   contactNumber: event.target.value,
                 }))
               }
-              className="h-10 rounded-2xl"
             />
-
             <Select
               value={draft.sex}
               onChange={(value) =>
@@ -162,7 +167,6 @@ export function ProfileModule({ model }: PortalModuleProps) {
               }
               options={["Female", "Male", "Prefer not to say"]}
             />
-
             <Input
               type="date"
               value={draft.birthday}
@@ -172,7 +176,6 @@ export function ProfileModule({ model }: PortalModuleProps) {
                   birthday: event.target.value,
                 }))
               }
-              className="h-10 rounded-2xl"
             />
             <Input
               placeholder="Address"
@@ -183,36 +186,36 @@ export function ProfileModule({ model }: PortalModuleProps) {
                   address: event.target.value,
                 }))
               }
-              className="h-10 rounded-2xl md:col-span-2"
+              className="sm:col-span-2"
             />
           </div>
-        </Panel>
+        </div>
       </div>
 
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-end">
         {saved ? (
           <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
             Profile saved successfully
           </span>
         ) : null}
-        {hasChanges ? (
+        <div className="flex gap-2">
+          {hasChanges ? (
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+            >
+              <Undo2 className="mr-1.5 size-4" />
+              Reset
+            </Button>
+          ) : null}
           <Button
-            variant="outline"
-            onClick={handleCancel}
-            className="rounded-2xl border-border"
+            onClick={handleSave}
+            disabled={!hasChanges}
           >
-            <Undo2 className="mr-1.5 size-4" />
-            Reset
+            <Save className="mr-1.5 size-4" />
+            Save Changes
           </Button>
-        ) : null}
-        <Button
-          onClick={handleSave}
-          disabled={!hasChanges}
-          className="rounded-2xl"
-        >
-          <Save className="mr-1.5 size-4" />
-          Save Changes
-        </Button>
+        </div>
       </div>
     </div>
   )
