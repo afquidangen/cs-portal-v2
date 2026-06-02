@@ -5,7 +5,6 @@ import {
   Bell,
   BookOpen,
   ClipboardList,
-  FileText,
   GraduationCap,
   Info,
   Layers3,
@@ -23,6 +22,7 @@ import {
   Users,
   X,
 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -45,7 +45,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { newsItems, type NewsItem } from "@/lib/news-data"
+import type { NewsItem } from "@/lib/news-data"
 import { cn } from "@/lib/utils"
 
 import type { Announcement, Role } from "../data/portal-data"
@@ -378,7 +378,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                   ) : null}
 
                   <div className="space-y-1.5">
-                    {group.items.map((item: { id: string; label: string; icon: any }) => {
+                    {group.items.map((item: { id: string; label: string; icon: LucideIcon }) => {
                       const Icon = item.icon
                       const active = item.id === model.activeModule
 
@@ -788,20 +788,20 @@ export function RoleDashboard({ role }: { role: Role }) {
       </div>
 
       <Dialog open={!!selectedNews} onOpenChange={(open) => !open && setSelectedNews(null)}>
-        <DialogContent className="max-w-2xl rounded-[28px] border border-border bg-card">
+        <DialogContent className="max-w-2xl">
           {selectedNews ? (
             <>
               <DialogHeader>
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <Badge
                     variant="outline"
-                    className="rounded-full border-border bg-muted text-muted-foreground"
+                    className="border-border bg-muted text-muted-foreground"
                   >
                     {selectedNews.category}
                   </Badge>
                   <Badge
                     variant="outline"
-                    className="rounded-full border-border bg-background text-muted-foreground"
+                    className="border-border bg-background text-muted-foreground"
                   >
                     University bulletin
                   </Badge>
@@ -814,7 +814,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="mt-2 rounded-[24px] border border-border bg-gradient-to-br from-background to-muted/40 p-5">
+              <div className="mt-2 border border-border bg-muted/30 p-5">
                 <p className="text-sm leading-8 text-foreground/90">
                   {selectedNews.content}
                 </p>
@@ -825,26 +825,22 @@ export function RoleDashboard({ role }: { role: Role }) {
       </Dialog>
 
       <Dialog open={logoutOpen} onOpenChange={setLogoutOpen}>
-        <DialogContent className="edu-sidebar-shell max-w-sm rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Confirm Logout</DialogTitle>
-            <DialogDescription className="pt-1 text-white/70">
+            <DialogTitle className="text-xl text-foreground">Confirm Logout</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">
               Are you sure you want to log out? You will need to sign in again.
             </DialogDescription>
           </DialogHeader>
 
           <DialogFooter className="mt-2 gap-2">
             <DialogClose asChild>
-              <Button
-                variant="ghost"
-                className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 shadow-sm hover:bg-white/10 hover:text-white"
-              >
+              <Button variant="ghost">
                 Cancel
               </Button>
             </DialogClose>
             <Button
-              variant="ghost"
-              className="rounded-xl border border-red-400/30 bg-red-500/15 text-red-300 shadow-sm hover:bg-red-500/25 hover:text-red-200"
+              variant="destructive"
               onClick={() => {
                 model.handleLogout()
                 setLogoutOpen(false)
@@ -860,7 +856,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} model={model} />
 
       <Dialog open={!!viewingAnnouncement} onOpenChange={(open) => { if (!open) setViewingAnnouncement(null) }}>
-        <DialogContent className="max-w-lg rounded-[28px] border border-border bg-card shadow-2xl">
+        <DialogContent className="max-w-lg">
           {viewingAnnouncement ? (
             <>
               <DialogHeader>
@@ -868,7 +864,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                   <DialogTitle className="text-xl text-foreground">{viewingAnnouncement.title}</DialogTitle>
                   <span
                     className={
-                      "shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase leading-none " +
+                      "shrink-0 px-2 py-0.5 text-[11px] font-semibold uppercase leading-none " +
                       (viewingAnnouncement.priority === "High"
                         ? "bg-red-100 text-red-700"
                         : viewingAnnouncement.priority === "Medium"
@@ -879,11 +875,11 @@ export function RoleDashboard({ role }: { role: Role }) {
                     {viewingAnnouncement.priority}
                   </span>
                 </div>
-                <DialogDescription className="pt-1 text-foreground/70">
+                <DialogDescription className="pt-1 text-muted-foreground">
                   Published on {viewingAnnouncement.date} &middot; For {viewingAnnouncement.audience}
                 </DialogDescription>
               </DialogHeader>
-              <div className="px-6 pb-6">
+              <div>
                 <p className="text-sm leading-7 text-foreground/85">
                   {viewingAnnouncement.content}
                 </p>

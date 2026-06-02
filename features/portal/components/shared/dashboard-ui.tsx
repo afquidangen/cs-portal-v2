@@ -215,18 +215,18 @@ export function Select({
 
       <UiSelect value={value} onValueChange={onChange}>
         <SelectTrigger className={cn(
-          "h-11 rounded-2xl border bg-background text-foreground shadow-sm transition-all duration-200 focus:ring-2 focus:ring-ring/20",
+          "h-11 rounded-md border bg-white text-foreground transition-all duration-200 focus:ring-2 focus:ring-ring/20 dark:bg-neutral-950",
           className ?? "border-border"
         )}>
           <SelectValue placeholder="Select option" />
         </SelectTrigger>
 
-        <SelectContent className="rounded-2xl border border-border bg-popover text-popover-foreground shadow-lg">
+        <SelectContent className="border border-border bg-white text-foreground dark:bg-neutral-950">
           {options.map((option) => (
             <SelectItem
               key={option}
               value={option}
-              className="rounded-xl text-foreground focus:bg-muted focus:text-foreground"
+              className="text-foreground focus:bg-muted focus:text-foreground"
             >
               {option}
             </SelectItem>

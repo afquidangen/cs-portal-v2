@@ -333,18 +333,18 @@ export function UsersModule({ model }: PortalModuleProps) {
       <Dialog open={addOpen} onOpenChange={(o) => {
         if (!o) setAddOpen(false)
       }}>
-        <DialogContent className="edu-sidebar-shell max-w-lg rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-lg">
           <form onSubmit={handleAddSubmit}>
             <DialogHeader>
-              <DialogTitle className="text-xl text-white">Add Account</DialogTitle>
-              <DialogDescription className="pt-1 text-white/70">
+              <DialogTitle className="text-xl text-foreground">Add Account</DialogTitle>
+              <DialogDescription className="pt-1 text-muted-foreground">
                 Create a new user account
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
+            <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-white/80">Role</label>
+                <label className="text-sm font-medium text-foreground">Role</label>
                 <Select
                   value={addRole}
                   onChange={(value) => {
@@ -357,7 +357,7 @@ export function UsersModule({ model }: PortalModuleProps) {
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">First name *</label>
+                  <label className="text-sm font-medium text-foreground">First name *</label>
                   <Input
                     value={newUser.firstName}
                     onChange={(e) =>
@@ -367,12 +367,11 @@ export function UsersModule({ model }: PortalModuleProps) {
                       }))
                     }
                     placeholder="Juan"
-                    className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                     required
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Middle name</label>
+                  <label className="text-sm font-medium text-foreground">Middle name</label>
                   <Input
                     value={newUser.middleName}
                     onChange={(e) =>
@@ -382,11 +381,10 @@ export function UsersModule({ model }: PortalModuleProps) {
                       }))
                     }
                     placeholder="Santos"
-                    className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Last name *</label>
+                  <label className="text-sm font-medium text-foreground">Last name *</label>
                   <Input
                     value={newUser.lastName}
                     onChange={(e) =>
@@ -396,14 +394,13 @@ export function UsersModule({ model }: PortalModuleProps) {
                       }))
                     }
                     placeholder="Dela Cruz"
-                    className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-white/80">Email *</label>
+                <label className="text-sm font-medium text-foreground">Email *</label>
                 <Input
                   value={newUser.email}
                   onChange={(e) =>
@@ -420,13 +417,12 @@ export function UsersModule({ model }: PortalModuleProps) {
                         : "admin@ispsc.edu"
                   }
                   type="email"
-                  className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                   required
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-white/80">Password *</label>
+                <label className="text-sm font-medium text-foreground">Password *</label>
                 <Input
                   value={newUser.password}
                   onChange={(e) =>
@@ -437,7 +433,6 @@ export function UsersModule({ model }: PortalModuleProps) {
                   }
                   placeholder="Enter password"
                   type="text"
-                  className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                   required
                 />
               </div>
@@ -445,7 +440,7 @@ export function UsersModule({ model }: PortalModuleProps) {
               {addRole === "student" ? (
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-white/80">Year</label>
+                    <label className="text-sm font-medium text-foreground">Year</label>
                     <Select
                       value={newUser.year}
                       onChange={(value) =>
@@ -455,7 +450,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-white/80">Section</label>
+                    <label className="text-sm font-medium text-foreground">Section</label>
                     <Input
                       value={newUser.section}
                       onChange={(e) =>
@@ -465,11 +460,10 @@ export function UsersModule({ model }: PortalModuleProps) {
                         }))
                       }
                       placeholder="BSCS 3A"
-                      className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-white/80">Student type</label>
+                    <label className="text-sm font-medium text-foreground">Student type</label>
                     <Select
                       value={newUser.studentType}
                       onChange={(value) =>
@@ -488,7 +482,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-white/80">Curriculum</label>
+                    <label className="text-sm font-medium text-foreground">Curriculum</label>
                     <Select
                       value={newUser.curriculum}
                       onChange={(value) =>
@@ -506,7 +500,7 @@ export function UsersModule({ model }: PortalModuleProps) {
               {addRole === "faculty" ? (
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-white/80">Advisory class</label>
+                    <label className="text-sm font-medium text-foreground">Advisory class</label>
                     <Input
                       value={newUser.advisoryClass}
                       onChange={(e) =>
@@ -516,11 +510,10 @@ export function UsersModule({ model }: PortalModuleProps) {
                         }))
                       }
                       placeholder="BSCS 3A"
-                      className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-white/80">Employment type</label>
+                    <label className="text-sm font-medium text-foreground">Employment type</label>
                     <Select
                       value={newUser.employmentType}
                       onChange={(value) =>
@@ -533,7 +526,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-white/80">Academic title</label>
+                    <label className="text-sm font-medium text-foreground">Academic title</label>
                     <Select
                       value={newUser.academicTitle}
                       onChange={(value) =>
@@ -551,15 +544,11 @@ export function UsersModule({ model }: PortalModuleProps) {
 
             <DialogFooter className="gap-2">
               <DialogClose asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
-                >
+                <Button type="button" variant="ghost">
                   Cancel
                 </Button>
               </DialogClose>
-              <Button type="submit" className="rounded-xl border border-sky-400/30 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 hover:text-sky-200">
+              <Button type="submit">
                 <Plus className="mr-1.5 size-4" /> Save Account
               </Button>
             </DialogFooter>
@@ -569,10 +558,10 @@ export function UsersModule({ model }: PortalModuleProps) {
 
       {/* ── Edit Dialog ── */}
       <Dialog open={!!editUser} onOpenChange={(o) => !o && setEditUser(null)}>
-        <DialogContent className="edu-sidebar-shell max-w-lg rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Edit User</DialogTitle>
-            <DialogDescription className="pt-1 text-white/70">
+            <DialogTitle className="text-xl text-foreground">Edit User</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">
               Update account details for {editUser?.name}
             </DialogDescription>
           </DialogHeader>
@@ -581,47 +570,43 @@ export function UsersModule({ model }: PortalModuleProps) {
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">First name</label>
+                  <label className="text-sm font-medium text-foreground">First name</label>
                   <Input
                     value={editUser.firstName ?? ""}
                     onChange={(e) =>
                       setEditUser({ ...editUser, firstName: e.target.value })
                     }
-                    className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Middle name</label>
+                  <label className="text-sm font-medium text-foreground">Middle name</label>
                   <Input
                     value={editUser.middleName ?? ""}
                     onChange={(e) =>
                       setEditUser({ ...editUser, middleName: e.target.value })
                     }
-                    className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Last name</label>
+                  <label className="text-sm font-medium text-foreground">Last name</label>
                   <Input
                     value={editUser.lastName ?? ""}
                     onChange={(e) =>
                       setEditUser({ ...editUser, lastName: e.target.value })
                     }
-                    className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Email</label>
+                  <label className="text-sm font-medium text-foreground">Email</label>
                   <Input
                     value={editUser.email}
                     onChange={(e) =>
                       setEditUser({ ...editUser, email: e.target.value })
                     }
-                    className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Status</label>
+                  <label className="text-sm font-medium text-foreground">Status</label>
                   <Select
                     value={editUser.status}
                     onChange={(value) =>
@@ -636,7 +621,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                 {editUser.role === "student" ? (
                   <>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-white/80">Year</label>
+                      <label className="text-sm font-medium text-foreground">Year</label>
                       <Select
                         value={String(editUser.year ?? "1")}
                         onChange={(value) =>
@@ -646,17 +631,16 @@ export function UsersModule({ model }: PortalModuleProps) {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-white/80">Section</label>
+                      <label className="text-sm font-medium text-foreground">Section</label>
                       <Input
                         value={editUser.section ?? ""}
                         onChange={(e) =>
                           setEditUser({ ...editUser, section: e.target.value })
                         }
-                        className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-white/80">Student type</label>
+                      <label className="text-sm font-medium text-foreground">Student type</label>
                       <Select
                         value={editUser.studentType ?? "Regular"}
                         onChange={(value) =>
@@ -675,7 +659,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-white/80">Curriculum</label>
+                      <label className="text-sm font-medium text-foreground">Curriculum</label>
                       <Input
                         value={editUser.curriculum ?? ""}
                         onChange={(e) =>
@@ -684,14 +668,13 @@ export function UsersModule({ model }: PortalModuleProps) {
                             curriculum: e.target.value,
                           })
                         }
-                        className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                       />
                     </div>
                   </>
                 ) : editUser.role === "faculty" ? (
                   <>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-white/80">Academic title</label>
+                      <label className="text-sm font-medium text-foreground">Academic title</label>
                       <Select
                         value={editUser.academicTitle ?? "MIT"}
                         onChange={(value) =>
@@ -701,7 +684,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-white/80">Employment type</label>
+                      <label className="text-sm font-medium text-foreground">Employment type</label>
                       <Select
                         value={editUser.employmentType ?? "Regular"}
                         onChange={(value) =>
@@ -714,7 +697,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-white/80">Advisory class</label>
+                      <label className="text-sm font-medium text-foreground">Advisory class</label>
                       <Input
                         value={editUser.advisoryClass ?? ""}
                         onChange={(e) =>
@@ -723,7 +706,6 @@ export function UsersModule({ model }: PortalModuleProps) {
                             advisoryClass: e.target.value,
                           })
                         }
-                        className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                       />
                     </div>
                   </>
@@ -734,18 +716,11 @@ export function UsersModule({ model }: PortalModuleProps) {
 
           <DialogFooter className="mt-2 gap-2">
             <DialogClose asChild>
-              <Button
-                variant="ghost"
-                className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
-              >
+              <Button variant="ghost">
                 Cancel
               </Button>
             </DialogClose>
-            <Button
-              variant="ghost"
-              className="rounded-xl border border-sky-400/30 bg-sky-500/15 text-sky-300 shadow-sm hover:bg-sky-500/25 hover:text-sky-200"
-              onClick={handleEditSave}
-            >
+            <Button onClick={handleEditSave}>
               Save Changes
             </Button>
           </DialogFooter>
@@ -756,26 +731,22 @@ export function UsersModule({ model }: PortalModuleProps) {
         open={!!deleteUserId}
         onOpenChange={(o) => !o && setDeleteUserId(null)}
       >
-        <DialogContent className="edu-sidebar-shell max-w-sm rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Delete Account</DialogTitle>
-            <DialogDescription className="pt-1 text-white/70">
+            <DialogTitle className="text-xl text-foreground">Delete Account</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">
               This action cannot be undone. The account will be permanently removed.
             </DialogDescription>
           </DialogHeader>
 
           <DialogFooter className="mt-2 gap-2">
             <DialogClose asChild>
-              <Button
-                variant="ghost"
-                className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
-              >
+              <Button variant="ghost">
                 Cancel
               </Button>
             </DialogClose>
             <Button
-              variant="ghost"
-              className="rounded-xl border border-red-400/30 bg-red-500/15 text-red-300 shadow-sm hover:bg-red-500/25 hover:text-red-200"
+              variant="destructive"
               onClick={handleDeleteConfirm}
             >
               <Trash2 className="mr-1.5 size-4" />
@@ -789,10 +760,10 @@ export function UsersModule({ model }: PortalModuleProps) {
         open={!!toggleUserId}
         onOpenChange={(o) => !o && setToggleUserId(null)}
       >
-        <DialogContent className="edu-sidebar-shell max-w-sm rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Confirm Status Change</DialogTitle>
-            <DialogDescription className="pt-1 text-white/70">
+            <DialogTitle className="text-xl text-foreground">Confirm Status Change</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">
               {(() => {
                 const user = users.find((u) => u.id === toggleUserId)
                 if (!user) return ""
@@ -805,16 +776,12 @@ export function UsersModule({ model }: PortalModuleProps) {
 
           <DialogFooter className="mt-2 gap-2">
             <DialogClose asChild>
-              <Button
-                variant="ghost"
-                className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
-              >
+              <Button variant="ghost">
                 Cancel
               </Button>
             </DialogClose>
             <Button
-              variant="ghost"
-              className="rounded-xl border border-amber-400/30 bg-amber-500/15 text-amber-300 shadow-sm hover:bg-amber-500/25 hover:text-amber-200"
+              variant={users.find((u) => u.id === toggleUserId)?.status === "Active" ? "destructive" : "default"}
               onClick={handleToggleConfirm}
             >
               {users.find((u) => u.id === toggleUserId)?.status === "Active" ? (

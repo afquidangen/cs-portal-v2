@@ -55,7 +55,7 @@ export function AuditModule({ model }: PortalModuleProps) {
         <div className="mb-4 flex items-center gap-2">
           <Filter className="size-4 text-muted-foreground" />
           <Select value={actorFilter} onValueChange={setActorFilter}>
-            <SelectTrigger className="h-8 w-44 rounded-xl text-xs">
+            <SelectTrigger className="h-8 w-44 text-xs">
               <SelectValue placeholder="Filter by actor" />
             </SelectTrigger>
             <SelectContent>

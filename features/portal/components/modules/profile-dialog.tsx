@@ -63,20 +63,20 @@ export function ProfileDialog({
       if (!o) setDraft(profileDetails)
       onOpenChange(o)
     }}>
-      <DialogContent className="edu-sidebar-shell w-full max-w-5xl border border-sidebar-border bg-sidebar p-0 text-sidebar-foreground shadow-2xl">
-        <div className="border-b border-sidebar-border px-8 py-5">
+      <DialogContent className="w-full max-w-5xl p-0">
+        <div className="border-b border-border px-6 py-4 sm:px-8 sm:py-5">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-white">
+            <DialogTitle className="text-xl font-semibold text-foreground">
               User Profile
             </DialogTitle>
           </DialogHeader>
         </div>
 
-        <div className="px-8 py-8">
-          <div className="mx-auto grid w-full max-w-4xl items-start gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
-            <div className="border border-sidebar-border bg-white/5 p-6 shadow-sm">
+        <div className="px-4 py-6 sm:px-8 sm:py-8">
+          <div className="mx-auto grid w-full max-w-4xl items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+            <div className="border border-border bg-muted/30 p-6">
               <div className="flex flex-col items-center text-center">
-                <div className="flex size-28 items-center justify-center border border-dashed border-sidebar-border bg-white/5 text-white/60">
+                <div className="flex size-28 items-center justify-center border border-dashed border-border bg-muted text-muted-foreground">
                   {draft.photoUrl ? (
                     <div
                       aria-label={profile.name}
@@ -90,7 +90,7 @@ export function ProfileDialog({
                   )}
                 </div>
 
-                <label className="mt-4 inline-flex cursor-pointer items-center gap-2 border border-sidebar-border bg-white/5 px-4 py-2 text-sm font-medium text-sidebar-foreground transition hover:bg-white/10">
+                <label className="mt-4 inline-flex cursor-pointer items-center gap-2 border border-border bg-muted/50 px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted">
                   <Camera className="size-4" />
                   Upload Photo
                   <input
@@ -101,10 +101,10 @@ export function ProfileDialog({
                   />
                 </label>
 
-                <h4 className="mt-4 text-lg font-semibold text-white">
+                <h4 className="mt-4 text-lg font-semibold text-foreground">
                   {profile.name}
                 </h4>
-                <p className="mt-1 text-sm text-white/70">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {profile.title}
                 </p>
 
@@ -114,17 +114,17 @@ export function ProfileDialog({
               </div>
             </div>
 
-            <div className="border border-sidebar-border bg-white/5 p-6 shadow-sm">
+            <div className="border border-border bg-muted/30 p-4 sm:p-6">
               <div className="mb-5">
-                <h3 className="text-lg font-semibold text-white">
+                <h3 className="text-lg font-semibold text-foreground">
                   Personal Information
                 </h3>
-                <p className="mt-1 text-sm text-white/70">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Editable profile details
                 </p>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <Input
                   placeholder="First name"
                   value={draft.firstName}
@@ -134,7 +134,6 @@ export function ProfileDialog({
                       firstName: event.target.value,
                     }))
                   }
-                  className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                 />
                 <Input
                   placeholder="Middle name"
@@ -145,7 +144,6 @@ export function ProfileDialog({
                       middleName: event.target.value,
                     }))
                   }
-                  className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                 />
                 <Input
                   placeholder="Last name"
@@ -156,7 +154,6 @@ export function ProfileDialog({
                       lastName: event.target.value,
                     }))
                   }
-                  className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                 />
                 <Input
                   placeholder="Email"
@@ -167,7 +164,6 @@ export function ProfileDialog({
                       email: event.target.value,
                     }))
                   }
-                  className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                 />
                 <Input
                   placeholder="Contact number"
@@ -178,7 +174,6 @@ export function ProfileDialog({
                       contactNumber: event.target.value,
                     }))
                   }
-                  className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                 />
                 <Select
                   value={draft.sex}
@@ -199,7 +194,6 @@ export function ProfileDialog({
                       birthday: event.target.value,
                     }))
                   }
-                  className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                 />
                 <Input
                   placeholder="Address"
@@ -210,32 +204,28 @@ export function ProfileDialog({
                       address: event.target.value,
                     }))
                   }
-                  className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40 md:col-span-2"
+                  className="sm:col-span-2"
                 />
               </div>
             </div>
           </div>
         </div>
 
-        <DialogFooter className="border-t border-sidebar-border px-8 py-4">
+        <DialogFooter className="flex-col gap-2 border-t border-border px-4 py-4 sm:flex-row sm:px-8">
           {saved ? (
-            <span className="mr-3 text-sm font-medium text-emerald-400">
+            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
               Profile saved successfully
             </span>
           ) : null}
           <DialogClose asChild>
-            <Button
-              variant="ghost"
-              onClick={() => setDraft(profileDetails)}
-              className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
-            >
+            <Button variant="ghost" className="w-full sm:w-auto">
               Cancel
             </Button>
           </DialogClose>
           <Button
             onClick={handleSave}
             disabled={!hasChanges}
-            className="rounded-xl border border-sky-400/30 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 hover:text-sky-200 disabled:opacity-40 disabled:pointer-events-none"
+            className="w-full sm:w-auto"
           >
             <Save className="mr-1.5 size-4" />
             Save Changes

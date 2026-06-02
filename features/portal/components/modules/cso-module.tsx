@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { Eye, ImageIcon, Pencil, Plus, Trash2, X } from "lucide-react"
 import { useState } from "react"
 
@@ -15,7 +16,7 @@ import {
 
 import type { CsoReport, Role } from "../../data/portal-data"
 import { csoReportsSeed } from "../../data/portal-data"
-import { Panel, StatusBadge } from "../shared/dashboard-ui"
+import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 
 export function CsoModule({ role }: { role: Role }) {
   const [reports, setReports] = useState<CsoReport[]>(csoReportsSeed)
@@ -123,20 +124,19 @@ export function CsoModule({ role }: { role: Role }) {
       ) : null}
 
       <Dialog open={!!deletingReport} onOpenChange={(open) => { if (!open) setDeletingReport(null) }}>
-        <DialogContent className="max-w-sm rounded-[28px] border border-border bg-card">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-xl text-foreground">Delete Report</DialogTitle>
-            <p className="pt-1 text-sm text-foreground/70">
+            <p className="pt-1 text-sm text-muted-foreground">
               Are you sure you want to delete &ldquo;{deletingReport?.title}&rdquo;? This action cannot be undone.
             </p>
           </DialogHeader>
           <DialogFooter className="mt-2 gap-2">
             <DialogClose asChild>
-              <Button variant="outline" className="rounded-xl">Cancel</Button>
+              <Button variant="ghost">Cancel</Button>
             </DialogClose>
             <Button
               variant="destructive"
-              className="rounded-xl"
               onClick={() => deletingReport && handleDelete(deletingReport.id)}
             >
               <Trash2 className="size-4" />
@@ -147,7 +147,7 @@ export function CsoModule({ role }: { role: Role }) {
       </Dialog>
 
       <Dialog open={!!viewingReport} onOpenChange={(open) => { if (!open) setViewingReport(null) }}>
-        <DialogContent className="max-w-2xl rounded-[28px] border border-border bg-card">
+        <DialogContent className="max-w-2xl">
           {viewingReport ? (
             <>
               <DialogHeader>
@@ -157,16 +157,19 @@ export function CsoModule({ role }: { role: Role }) {
                 <DialogTitle className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
                   {viewingReport.title}
                 </DialogTitle>
-                <p className="text-sm text-foreground/60">{viewingReport.date}</p>
+                <p className="text-sm text-muted-foreground">{viewingReport.date}</p>
               </DialogHeader>
 
-              <div className="space-y-4 px-6 pb-6">
+              <div className="space-y-4">
                 {viewingReport.image ? (
-                  <div className="overflow-hidden rounded-2xl border border-border">
-                    <img
+                  <div className="overflow-hidden border border-border">
+                    <Image
                       src={viewingReport.image}
                       alt={viewingReport.title}
+                      width={800}
+                      height={450}
                       className="w-full object-cover"
+                      unoptimized
                     />
                   </div>
                 ) : null}
@@ -230,10 +233,13 @@ function ReportGrid({
             >
               {report.image ? (
                 <div className="mb-3 overflow-hidden rounded-xl border border-border">
-                  <img
+                  <Image
                     src={report.image}
                     alt={report.title}
+                    width={400}
+                    height={144}
                     className="h-36 w-full object-cover"
+                    unoptimized
                   />
                 </div>
               ) : null}
@@ -339,36 +345,31 @@ function ReportFormDialog({
 
   return (
     <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-lg rounded-[28px] border border-border bg-card">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl text-foreground">
             {report ? "Edit Report" : "Add Report"}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 px-6 pb-6">
+        <div className="space-y-4">
           <div className="grid gap-1.5">
             <label className="text-sm font-medium text-foreground">Title</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="flex h-10 w-full rounded-2xl border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
+              className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
               placeholder="Report title"
             />
           </div>
 
           <div className="grid gap-1.5">
             <label className="text-sm font-medium text-foreground">Type</label>
-            <select
+            <Select
               value={type}
-              onChange={(e) => setType(e.target.value as CsoReport["type"])}
-              className="flex h-10 w-full rounded-2xl border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
-            >
-              <option value="Event">Event</option>
-              <option value="Accomplishment">Accomplishment</option>
-              <option value="Financial">Financial</option>
-              <option value="Record">Record</option>
-            </select>
+              onChange={(v) => setType(v as CsoReport["type"])}
+              options={["Event", "Accomplishment", "Financial", "Record"]}
+            />
           </div>
 
           <div className="grid gap-1.5">
@@ -376,7 +377,7 @@ function ReportFormDialog({
             <input
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="flex h-10 w-full rounded-2xl border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
+              className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
               placeholder="e.g. June 10, 2026"
             />
           </div>
@@ -387,7 +388,7 @@ function ReportFormDialog({
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
               rows={4}
-              className="w-full resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
+              className="w-full resize-none border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
               placeholder="Report summary"
             />
           </div>
@@ -399,7 +400,7 @@ function ReportFormDialog({
             <input
               value={total}
               onChange={(e) => setTotal(e.target.value)}
-              className="flex h-10 w-full rounded-2xl border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
+              className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
               placeholder="e.g. PHP 12,450 balance"
             />
           </div>
@@ -410,19 +411,22 @@ function ReportFormDialog({
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
-              className="flex h-10 w-full rounded-2xl border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
+              className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
             />
             {image ? (
-              <div className="relative mt-2 overflow-hidden rounded-xl border border-border">
-                <img
+              <div className="relative mt-2 overflow-hidden border border-border">
+                <Image
                   src={image}
                   alt="Preview"
+                  width={400}
+                  height={128}
                   className="h-32 w-full object-cover"
+                  unoptimized
                 />
                 <button
                   type="button"
                   onClick={() => setImage("")}
-                  className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+                  className="absolute right-2 top-2 flex size-6 items-center justify-center bg-black/60 text-white transition-colors hover:bg-black/80"
                 >
                   <X className="size-3" />
                 </button>
@@ -431,12 +435,11 @@ function ReportFormDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 px-6 pb-6">
-          <Button variant="outline" className="rounded-xl" onClick={onClose}>
+        <DialogFooter className="gap-2">
+          <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button
-            className="rounded-xl"
             onClick={handleSubmit}
             disabled={!title || !date || !summary}
           >

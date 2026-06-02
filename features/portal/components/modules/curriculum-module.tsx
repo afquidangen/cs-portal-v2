@@ -630,28 +630,28 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
 
       {/* Edit Curriculum */}
       <Dialog open={!!editCurr} onOpenChange={(o) => !o && setEditCurr(null)}>
-        <DialogContent className="edu-sidebar-shell max-w-lg rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Edit Curriculum</DialogTitle>
-            <DialogDescription className="pt-1 text-white/70">Update curriculum details</DialogDescription>
+            <DialogTitle className="text-xl text-foreground">Edit Curriculum</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">Update curriculum details</DialogDescription>
           </DialogHeader>
           {editCurr ? (
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Name</label>
-                  <Input value={editCurr.name} onChange={(e) => setEditCurr({ ...editCurr, name: e.target.value })} className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white" />
+                  <label className="text-sm font-medium text-foreground">Name</label>
+                  <Input value={editCurr.name} onChange={(e) => setEditCurr({ ...editCurr, name: e.target.value })} />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Major</label>
-                  <Input value={editCurr.major} onChange={(e) => setEditCurr({ ...editCurr, major: e.target.value })} className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white" />
+                  <label className="text-sm font-medium text-foreground">Major</label>
+                  <Input value={editCurr.major} onChange={(e) => setEditCurr({ ...editCurr, major: e.target.value })} />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Total units</label>
-                  <Input value={String(editCurr.totalUnits)} onChange={(e) => setEditCurr({ ...editCurr, totalUnits: Number(e.target.value) || 0 })} className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white" />
+                  <label className="text-sm font-medium text-foreground">Total units</label>
+                  <Input value={String(editCurr.totalUnits)} onChange={(e) => setEditCurr({ ...editCurr, totalUnits: Number(e.target.value) || 0 })} />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Status</label>
+                  <label className="text-sm font-medium text-foreground">Status</label>
                   <Select value={editCurr.status} onChange={(v) => setEditCurr({ ...editCurr, status: v as "Active" | "Archived" })} options={["Active", "Archived"]} />
                 </div>
               </div>
@@ -659,9 +659,9 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
           ) : null}
           <DialogFooter className="mt-2 gap-2">
             <DialogClose asChild>
-              <Button variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">Cancel</Button>
+              <Button variant="ghost">Cancel</Button>
             </DialogClose>
-            <Button variant="ghost" className="rounded-xl border border-sky-400/30 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 hover:text-sky-200" onClick={() => { if (editCurr) handleUpdateCurriculum(editCurr); setEditCurr(null) }}>
+            <Button onClick={() => { if (editCurr) handleUpdateCurriculum(editCurr); setEditCurr(null) }}>
               Save Changes
             </Button>
           </DialogFooter>
@@ -670,16 +670,16 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
 
       {/* Delete Curriculum */}
       <Dialog open={!!deleteCurrId} onOpenChange={(o) => !o && setDeleteCurrId(null)}>
-        <DialogContent className="edu-sidebar-shell max-w-sm rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Delete Curriculum</DialogTitle>
-            <DialogDescription className="pt-1 text-white/70">This action cannot be undone.</DialogDescription>
+            <DialogTitle className="text-xl text-foreground">Delete Curriculum</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">This action cannot be undone.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-2 gap-2">
             <DialogClose asChild>
-              <Button variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">Cancel</Button>
+              <Button variant="ghost">Cancel</Button>
             </DialogClose>
-            <Button variant="ghost" className="rounded-xl border border-red-400/30 bg-red-500/15 text-red-300 hover:bg-red-500/25 hover:text-red-200" onClick={() => { if (deleteCurrId) handleDeleteCurriculum(deleteCurrId); setDeleteCurrId(null) }}>
+            <Button variant="destructive" onClick={() => { if (deleteCurrId) handleDeleteCurriculum(deleteCurrId); setDeleteCurrId(null) }}>
               <Trash2 className="mr-1.5 size-4" /> Delete
             </Button>
           </DialogFooter>
@@ -688,26 +688,26 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
 
       {/* Add Term */}
       <Dialog open={!!addTermCurrId} onOpenChange={(o) => !o && setAddTermCurrId(null)}>
-        <DialogContent className="edu-sidebar-shell max-w-md rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Add Term</DialogTitle>
-            <DialogDescription className="pt-1 text-white/70">Add a new term to the curriculum</DialogDescription>
+            <DialogTitle className="text-xl text-foreground">Add Term</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">Add a new term to the curriculum</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80">Year level</label>
+              <label className="text-sm font-medium text-foreground">Year level</label>
               <Select value={newTermYear} onChange={setNewTermYear} options={["First Year", "Second Year", "Third Year", "Fourth Year", "Fifth Year"]} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80">Semester</label>
+              <label className="text-sm font-medium text-foreground">Semester</label>
               <Select value={newTermSemester} onChange={setNewTermSemester} options={["First Semester", "Second Semester", "Summer Term"]} />
             </div>
           </div>
           <DialogFooter className="mt-2 gap-2">
             <DialogClose asChild>
-              <Button variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">Cancel</Button>
+              <Button variant="ghost">Cancel</Button>
             </DialogClose>
-            <Button variant="ghost" className="rounded-xl border border-sky-400/30 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 hover:text-sky-200" onClick={() => {
+            <Button onClick={() => {
               if (addTermCurrId) {
                 handleAddTermToCurriculum(addTermCurrId, newTermYear, newTermSemester)
                 setAddTermCurrId(null)
@@ -721,16 +721,16 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
 
       {/* Delete Term */}
       <Dialog open={!!deleteTermKey} onOpenChange={(o) => !o && setDeleteTermKey(null)}>
-        <DialogContent className="edu-sidebar-shell max-w-sm rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Delete Term</DialogTitle>
-            <DialogDescription className="pt-1 text-white/70">This will remove the term and all its subjects.</DialogDescription>
+            <DialogTitle className="text-xl text-foreground">Delete Term</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">This will remove the term and all its subjects.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-2 gap-2">
             <DialogClose asChild>
-              <Button variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">Cancel</Button>
+              <Button variant="ghost">Cancel</Button>
             </DialogClose>
-            <Button variant="ghost" className="rounded-xl border border-red-400/30 bg-red-500/15 text-red-300 hover:bg-red-500/25 hover:text-red-200" onClick={() => {
+            <Button variant="destructive" onClick={() => {
               if (deleteTermKey) {
                 handleDeleteTermFromCurriculum(deleteTermKey.currId, deleteTermKey.index)
                 setDeleteTermKey(null)
@@ -744,40 +744,40 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
 
       {/* Add Subject to Term */}
       <Dialog open={!!addSubjectKey} onOpenChange={(o) => !o && setAddSubjectKey(null)}>
-        <DialogContent className="edu-sidebar-shell max-w-md rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Add Subject</DialogTitle>
-            <DialogDescription className="pt-1 text-white/70">Add a subject to this term</DialogDescription>
+            <DialogTitle className="text-xl text-foreground">Add Subject</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">Add a subject to this term</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-white/80">Code *</label>
-                <Input value={newSubjCode} onChange={(e) => setNewSubjCode(e.target.value)} placeholder="CS311" className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40" />
+                <label className="text-sm font-medium text-foreground">Code *</label>
+                <Input value={newSubjCode} onChange={(e) => setNewSubjCode(e.target.value)} placeholder="CS311" />
               </div>
               <div className="space-y-1.5 col-span-2">
-                <label className="text-sm font-medium text-white/80">Name *</label>
-                <Input value={newSubjName} onChange={(e) => setNewSubjName(e.target.value)} placeholder="Web Systems and Technologies" className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40" />
+                <label className="text-sm font-medium text-foreground">Name *</label>
+                <Input value={newSubjName} onChange={(e) => setNewSubjName(e.target.value)} placeholder="Web Systems and Technologies" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-white/80">Lec</label>
+                <label className="text-sm font-medium text-foreground">Lec</label>
                 <Select value={newSubjLec} onChange={setNewSubjLec} options={["0", "1", "2", "3", "4", "5"]} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-white/80">Lab</label>
+                <label className="text-sm font-medium text-foreground">Lab</label>
                 <Select value={newSubjLab} onChange={setNewSubjLab} options={["0", "1", "2", "3", "4", "5"]} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-white/80">Total units</label>
-                <Input value={newSubjTotal} onChange={(e) => setNewSubjTotal(e.target.value)} className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white" />
+                <label className="text-sm font-medium text-foreground">Total units</label>
+                <Input value={newSubjTotal} onChange={(e) => setNewSubjTotal(e.target.value)} />
               </div>
             </div>
           </div>
           <DialogFooter className="mt-2 gap-2">
             <DialogClose asChild>
-              <Button variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">Cancel</Button>
+              <Button variant="ghost">Cancel</Button>
             </DialogClose>
-            <Button variant="ghost" className="rounded-xl border border-sky-400/30 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 hover:text-sky-200" onClick={() => {
+            <Button onClick={() => {
               if (addSubjectKey && newSubjCode.trim() && newSubjName.trim()) {
                 handleAddSubjectToTerm(addSubjectKey.currId, addSubjectKey.termIndex, {
                   code: newSubjCode.trim().toUpperCase(),
@@ -797,42 +797,42 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
 
       {/* Edit Subject in Term */}
       <Dialog open={!!editSubjectKey} onOpenChange={(o) => !o && setEditSubjectKey(null)}>
-        <DialogContent className="edu-sidebar-shell max-w-md rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Edit Subject</DialogTitle>
-            <DialogDescription className="pt-1 text-white/70">Update subject details</DialogDescription>
+            <DialogTitle className="text-xl text-foreground">Edit Subject</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">Update subject details</DialogDescription>
           </DialogHeader>
           {editSubjectKey ? (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Code</label>
-                  <Input value={editSubjectKey.code} onChange={(e) => setEditSubjectKey({ ...editSubjectKey, code: e.target.value })} className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white" />
+                  <label className="text-sm font-medium text-foreground">Code</label>
+                  <Input value={editSubjectKey.code} onChange={(e) => setEditSubjectKey({ ...editSubjectKey, code: e.target.value })} />
                 </div>
                 <div className="space-y-1.5 col-span-2">
-                  <label className="text-sm font-medium text-white/80">Name</label>
-                  <Input value={editSubjectKey.name} onChange={(e) => setEditSubjectKey({ ...editSubjectKey, name: e.target.value })} className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white" />
+                  <label className="text-sm font-medium text-foreground">Name</label>
+                  <Input value={editSubjectKey.name} onChange={(e) => setEditSubjectKey({ ...editSubjectKey, name: e.target.value })} />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Lec</label>
+                  <label className="text-sm font-medium text-foreground">Lec</label>
                   <Select value={editSubjectKey.lec} onChange={(v) => setEditSubjectKey({ ...editSubjectKey, lec: v })} options={["0", "1", "2", "3", "4", "5"]} />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Lab</label>
+                  <label className="text-sm font-medium text-foreground">Lab</label>
                   <Select value={editSubjectKey.lab} onChange={(v) => setEditSubjectKey({ ...editSubjectKey, lab: v })} options={["0", "1", "2", "3", "4", "5"]} />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Total units</label>
-                  <Input value={editSubjectKey.total} onChange={(e) => setEditSubjectKey({ ...editSubjectKey, total: e.target.value })} className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white" />
+                  <label className="text-sm font-medium text-foreground">Total units</label>
+                  <Input value={editSubjectKey.total} onChange={(e) => setEditSubjectKey({ ...editSubjectKey, total: e.target.value })} />
                 </div>
               </div>
             </div>
           ) : null}
           <DialogFooter className="mt-2 gap-2">
             <DialogClose asChild>
-              <Button variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">Cancel</Button>
+              <Button variant="ghost">Cancel</Button>
             </DialogClose>
-            <Button variant="ghost" className="rounded-xl border border-sky-400/30 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 hover:text-sky-200" onClick={() => {
+            <Button onClick={() => {
               if (editSubjectKey) {
                 handleUpdateSubjectInTerm(editSubjectKey.currId, editSubjectKey.termIndex, editSubjectKey.subjectIndex, {
                   code: editSubjectKey.code.trim().toUpperCase(),
@@ -852,16 +852,16 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
 
       {/* Delete Subject from Term */}
       <Dialog open={!!deleteSubjectKey} onOpenChange={(o) => !o && setDeleteSubjectKey(null)}>
-        <DialogContent className="edu-sidebar-shell max-w-sm rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Delete Subject</DialogTitle>
-            <DialogDescription className="pt-1 text-white/70">Remove this subject from the term.</DialogDescription>
+            <DialogTitle className="text-xl text-foreground">Delete Subject</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">Remove this subject from the term.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-2 gap-2">
             <DialogClose asChild>
-              <Button variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">Cancel</Button>
+              <Button variant="ghost">Cancel</Button>
             </DialogClose>
-            <Button variant="ghost" className="rounded-xl border border-red-400/30 bg-red-500/15 text-red-300 hover:bg-red-500/25 hover:text-red-200" onClick={() => {
+            <Button variant="destructive" onClick={() => {
               if (deleteSubjectKey) {
                 handleDeleteSubjectFromTerm(deleteSubjectKey.currId, deleteSubjectKey.termIndex, deleteSubjectKey.subjectIndex)
                 setDeleteSubjectKey(null)

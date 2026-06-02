@@ -8,12 +8,13 @@ import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
 
 import type { ScheduleItem } from "../../data/portal-data"
-import { Panel, StatusBadge } from "../shared/dashboard-ui"
+import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
 /* ──────────────────────────────────────────────
@@ -338,15 +339,11 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                     </button>
                   ))}
                 </div>
-                <select
+                <Select
                   value={scheduleFilterSection}
-                  onChange={(e) => setScheduleFilterSection(e.target.value)}
-                  className="h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring/20"
-                >
-                  {scheduleYear?.sections.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
+                  onChange={setScheduleFilterSection}
+                  options={scheduleYear?.sections ?? []}
+                />
               </div>
             }
           >
@@ -395,7 +392,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
           </Panel>
 
           <Dialog open={!!editingSchedule} onOpenChange={(open) => { if (!open) setEditingSchedule(null) }}>
-            <DialogContent className="max-w-lg rounded-[28px] border border-border bg-card shadow-2xl">
+            <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Edit Schedule</DialogTitle>
               </DialogHeader>
@@ -410,31 +407,31 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                 >
                   <div className="space-y-1 sm:col-span-2">
                     <label className="text-xs font-medium text-foreground/70">Section</label>
-                    <Input value={editingSchedule.section} onChange={(e) => setEditingSchedule((c) => ({ ...c!, section: e.target.value }))} className="h-10 rounded-2xl" />
+                    <Input value={editingSchedule.section} onChange={(e) => setEditingSchedule((c) => ({ ...c!, section: e.target.value }))} />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-foreground/70">Subject</label>
-                    <Input value={editingSchedule.subject} onChange={(e) => setEditingSchedule((c) => ({ ...c!, subject: e.target.value }))} className="h-10 rounded-2xl" />
+                    <Input value={editingSchedule.subject} onChange={(e) => setEditingSchedule((c) => ({ ...c!, subject: e.target.value }))} />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-foreground/70">Instructor</label>
-                    <Input value={editingSchedule.instructor} onChange={(e) => setEditingSchedule((c) => ({ ...c!, instructor: e.target.value }))} className="h-10 rounded-2xl" />
+                    <Input value={editingSchedule.instructor} onChange={(e) => setEditingSchedule((c) => ({ ...c!, instructor: e.target.value }))} />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-foreground/70">Day</label>
-                    <Input value={editingSchedule.day} onChange={(e) => setEditingSchedule((c) => ({ ...c!, day: e.target.value }))} className="h-10 rounded-2xl" />
+                    <Input value={editingSchedule.day} onChange={(e) => setEditingSchedule((c) => ({ ...c!, day: e.target.value }))} />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-foreground/70">Time</label>
-                    <Input value={editingSchedule.time} onChange={(e) => setEditingSchedule((c) => ({ ...c!, time: e.target.value }))} className="h-10 rounded-2xl" />
+                    <Input value={editingSchedule.time} onChange={(e) => setEditingSchedule((c) => ({ ...c!, time: e.target.value }))} />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-foreground/70">Room</label>
-                    <Input value={editingSchedule.room} onChange={(e) => setEditingSchedule((c) => ({ ...c!, room: e.target.value }))} className="h-10 rounded-2xl" />
+                    <Input value={editingSchedule.room} onChange={(e) => setEditingSchedule((c) => ({ ...c!, room: e.target.value }))} />
                   </div>
                   <div className="flex items-end gap-2 sm:col-span-2">
-                    <Button type="submit" className="rounded-2xl"><Pencil className="size-4" /> Update Schedule</Button>
-                    <Button type="button" variant="outline" className="rounded-2xl" onClick={() => setEditingSchedule(null)}>Cancel</Button>
+                    <Button type="submit"><Pencil className="size-4" /> Update Schedule</Button>
+                    <Button type="button" variant="outline" onClick={() => setEditingSchedule(null)}>Cancel</Button>
                   </div>
                 </form>
               ) : null}
@@ -442,17 +439,15 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
           </Dialog>
 
           <Dialog open={!!deleteScheduleId} onOpenChange={(open) => { if (!open) setDeleteScheduleId(null) }}>
-            <DialogContent className="max-w-sm rounded-[28px] border border-border bg-card shadow-2xl">
+            <DialogContent className="max-w-sm">
               <DialogHeader>
                 <DialogTitle>Delete Schedule</DialogTitle>
               </DialogHeader>
-              <p className="text-sm text-foreground/70">Are you sure you want to delete this schedule entry? This action cannot be undone.</p>
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" className="rounded-2xl" onClick={() => setDeleteScheduleId(null)}>Cancel</Button>
+              <p className="text-sm text-muted-foreground">Are you sure you want to delete this schedule entry? This action cannot be undone.</p>
+              <DialogFooter className="mt-2 gap-2">
+                <Button variant="ghost" onClick={() => setDeleteScheduleId(null)}>Cancel</Button>
                 <Button
-                  type="button"
                   variant="destructive"
-                  className="rounded-2xl"
                   onClick={() => {
                     if (deleteScheduleId) handleDeleteSchedule(deleteScheduleId)
                     setDeleteScheduleId(null)
@@ -460,7 +455,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                 >
                   <Trash2 className="size-4" /> Delete
                 </Button>
-              </div>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </>

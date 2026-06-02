@@ -180,37 +180,35 @@ export function AcademicModule({ model }: PortalModuleProps) {
 
       {/* Add Semester */}
       <Dialog open={addSemesterOpen} onOpenChange={setAddSemesterOpen}>
-        <DialogContent className="edu-sidebar-shell max-w-lg rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-lg">
           <form onSubmit={submitSemester}>
             <DialogHeader>
-              <DialogTitle className="text-xl text-white">Add Semester</DialogTitle>
-              <DialogDescription className="pt-1 text-white/70">Create a new semester entry</DialogDescription>
+              <DialogTitle className="text-xl text-foreground">Add Semester</DialogTitle>
+              <DialogDescription className="pt-1 text-muted-foreground">Create a new semester entry</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Name *</label>
-                  <Select value={newSemester.name} onChange={(v) => setNewSemester((s) => ({ ...s, name: v }))} options={["1st Semester", "2nd Semester", "Summer Term"]} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">School year *</label>
-                  <Input value={newSemester.schoolYear} onChange={(e) => setNewSemester((s) => ({ ...s, schoolYear: e.target.value }))} placeholder="2025-2026" className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40" required />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Enrollment</label>
-                  <Select value={newSemester.enrollment} onChange={(v) => setNewSemester((s) => ({ ...s, enrollment: v }))} options={["Open", "Upcoming", "Closed"]} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Grade submission</label>
-                  <Input value={newSemester.gradeSubmission} onChange={(e) => setNewSemester((s) => ({ ...s, gradeSubmission: e.target.value }))} placeholder="May 20 - June 5, 2026" className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40" />
-                </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Name *</label>
+                <Select value={newSemester.name} onChange={(v) => setNewSemester((s) => ({ ...s, name: v }))} options={["1st Semester", "2nd Semester", "Summer Term"]} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">School year *</label>
+                <Input value={newSemester.schoolYear} onChange={(e) => setNewSemester((s) => ({ ...s, schoolYear: e.target.value }))} placeholder="2025-2026" required />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Enrollment</label>
+                <Select value={newSemester.enrollment} onChange={(v) => setNewSemester((s) => ({ ...s, enrollment: v }))} options={["Open", "Upcoming", "Closed"]} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Grade submission</label>
+                <Input value={newSemester.gradeSubmission} onChange={(e) => setNewSemester((s) => ({ ...s, gradeSubmission: e.target.value }))} placeholder="May 20 - June 5, 2026" />
               </div>
             </div>
             <DialogFooter className="gap-2">
               <DialogClose asChild>
-                <Button type="button" variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">Cancel</Button>
+                <Button type="button" variant="ghost">Cancel</Button>
               </DialogClose>
-              <Button type="submit" className="rounded-xl border border-sky-400/30 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 hover:text-sky-200">
+              <Button type="submit">
                 <Plus className="mr-1.5 size-4" /> Save Semester
               </Button>
             </DialogFooter>
@@ -220,38 +218,36 @@ export function AcademicModule({ model }: PortalModuleProps) {
 
       {/* Edit Semester */}
       <Dialog open={!!editSemester} onOpenChange={(o) => !o && setEditSemester(null)}>
-        <DialogContent className="edu-sidebar-shell max-w-lg rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Edit Semester</DialogTitle>
-            <DialogDescription className="pt-1 text-white/70">Update semester details</DialogDescription>
+            <DialogTitle className="text-xl text-foreground">Edit Semester</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">Update semester details</DialogDescription>
           </DialogHeader>
           {editSemester ? (
-            <div className="space-y-4 py-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Name</label>
-                  <Select value={editSemester.name} onChange={(v) => setEditSemester({ ...editSemester, name: v })} options={["1st Semester", "2nd Semester", "Summer Term"]} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">School year</label>
-                  <Input value={editSemester.schoolYear} onChange={(e) => setEditSemester({ ...editSemester, schoolYear: e.target.value })} className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Enrollment</label>
-                  <Select value={editSemester.enrollment} onChange={(v) => setEditSemester({ ...editSemester, enrollment: v })} options={["Open", "Upcoming", "Closed"]} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Grade submission</label>
-                  <Input value={editSemester.gradeSubmission} onChange={(e) => setEditSemester({ ...editSemester, gradeSubmission: e.target.value })} className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white" />
-                </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Name</label>
+                <Select value={editSemester.name} onChange={(v) => setEditSemester({ ...editSemester, name: v })} options={["1st Semester", "2nd Semester", "Summer Term"]} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">School year</label>
+                <Input value={editSemester.schoolYear} onChange={(e) => setEditSemester({ ...editSemester, schoolYear: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Enrollment</label>
+                <Select value={editSemester.enrollment} onChange={(v) => setEditSemester({ ...editSemester, enrollment: v })} options={["Open", "Upcoming", "Closed"]} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Grade submission</label>
+                <Input value={editSemester.gradeSubmission} onChange={(e) => setEditSemester({ ...editSemester, gradeSubmission: e.target.value })} />
               </div>
             </div>
           ) : null}
           <DialogFooter className="gap-2">
             <DialogClose asChild>
-              <Button variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">Cancel</Button>
+              <Button variant="ghost">Cancel</Button>
             </DialogClose>
-            <Button variant="ghost" className="rounded-xl border border-sky-400/30 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 hover:text-sky-200" onClick={() => { if (editSemester) handleUpdateSemester(editSemester); setEditSemester(null) }}>
+            <Button onClick={() => { if (editSemester) handleUpdateSemester(editSemester); setEditSemester(null) }}>
               Save Changes
             </Button>
           </DialogFooter>
@@ -260,16 +256,16 @@ export function AcademicModule({ model }: PortalModuleProps) {
 
       {/* Delete Semester */}
       <Dialog open={!!deleteSemesterId} onOpenChange={(o) => !o && setDeleteSemesterId(null)}>
-        <DialogContent className="edu-sidebar-shell max-w-sm rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Delete Semester</DialogTitle>
-            <DialogDescription className="pt-1 text-white/70">This action cannot be undone.</DialogDescription>
+            <DialogTitle className="text-xl text-foreground">Delete Semester</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">This action cannot be undone.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-2 gap-2">
             <DialogClose asChild>
-              <Button variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">Cancel</Button>
+              <Button variant="ghost">Cancel</Button>
             </DialogClose>
-            <Button variant="ghost" className="rounded-xl border border-red-400/30 bg-red-500/15 text-red-300 hover:bg-red-500/25 hover:text-red-200" onClick={() => { if (deleteSemesterId) handleDeleteSemester(deleteSemesterId); setDeleteSemesterId(null) }}>
+            <Button variant="destructive" onClick={() => { if (deleteSemesterId) handleDeleteSemester(deleteSemesterId); setDeleteSemesterId(null) }}>
               <Trash2 className="mr-1.5 size-4" /> Delete
             </Button>
           </DialogFooter>
@@ -278,37 +274,35 @@ export function AcademicModule({ model }: PortalModuleProps) {
 
       {/* Add Subject */}
       <Dialog open={addSubjectOpen} onOpenChange={setAddSubjectOpen}>
-        <DialogContent className="edu-sidebar-shell max-w-lg rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-lg">
           <form onSubmit={submitSubject}>
             <DialogHeader>
-              <DialogTitle className="text-xl text-white">Add Subject</DialogTitle>
-              <DialogDescription className="pt-1 text-white/70">Create a new subject entry</DialogDescription>
+              <DialogTitle className="text-xl text-foreground">Add Subject</DialogTitle>
+              <DialogDescription className="pt-1 text-muted-foreground">Create a new subject entry</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Code *</label>
-                  <Input value={newSubject.code} onChange={(e) => setNewSubject((s) => ({ ...s, code: e.target.value }))} placeholder="CS311" className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40" required />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Title *</label>
-                  <Input value={newSubject.title} onChange={(e) => setNewSubject((s) => ({ ...s, title: e.target.value }))} placeholder="Web Systems" className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40" required />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Units</label>
-                  <Select value={newSubject.units} onChange={(v) => setNewSubject((s) => ({ ...s, units: v }))} options={["1", "2", "3", "4", "5", "6"]} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Instructor</label>
-                  <Input value={newSubject.instructor} onChange={(e) => setNewSubject((s) => ({ ...s, instructor: e.target.value }))} placeholder="Maria Santos" className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40" />
-                </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Code *</label>
+                <Input value={newSubject.code} onChange={(e) => setNewSubject((s) => ({ ...s, code: e.target.value }))} placeholder="CS311" required />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Title *</label>
+                <Input value={newSubject.title} onChange={(e) => setNewSubject((s) => ({ ...s, title: e.target.value }))} placeholder="Web Systems" required />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Units</label>
+                <Select value={newSubject.units} onChange={(v) => setNewSubject((s) => ({ ...s, units: v }))} options={["1", "2", "3", "4", "5", "6"]} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Instructor</label>
+                <Input value={newSubject.instructor} onChange={(e) => setNewSubject((s) => ({ ...s, instructor: e.target.value }))} placeholder="Maria Santos" />
               </div>
             </div>
             <DialogFooter className="gap-2">
               <DialogClose asChild>
-                <Button type="button" variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">Cancel</Button>
+                <Button type="button" variant="ghost">Cancel</Button>
               </DialogClose>
-              <Button type="submit" className="rounded-xl border border-sky-400/30 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 hover:text-sky-200">
+              <Button type="submit">
                 <Plus className="mr-1.5 size-4" /> Save Subject
               </Button>
             </DialogFooter>
@@ -318,38 +312,36 @@ export function AcademicModule({ model }: PortalModuleProps) {
 
       {/* Edit Subject */}
       <Dialog open={!!editSubject} onOpenChange={(o) => !o && setEditSubject(null)}>
-        <DialogContent className="edu-sidebar-shell max-w-lg rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Edit Subject</DialogTitle>
-            <DialogDescription className="pt-1 text-white/70">Update subject details</DialogDescription>
+            <DialogTitle className="text-xl text-foreground">Edit Subject</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">Update subject details</DialogDescription>
           </DialogHeader>
           {editSubject ? (
-            <div className="space-y-4 py-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Code</label>
-                  <Input value={editSubject.code} onChange={(e) => setEditSubject({ ...editSubject, code: e.target.value })} className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Title</label>
-                  <Input value={editSubject.title} onChange={(e) => setEditSubject({ ...editSubject, title: e.target.value })} className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Units</label>
-                  <Select value={editSubject.units} onChange={(v) => setEditSubject({ ...editSubject, units: v })} options={["1", "2", "3", "4", "5", "6"]} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Instructor</label>
-                  <Input value={editSubject.instructor} onChange={(e) => setEditSubject({ ...editSubject, instructor: e.target.value })} className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white" />
-                </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Code</label>
+                <Input value={editSubject.code} onChange={(e) => setEditSubject({ ...editSubject, code: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Title</label>
+                <Input value={editSubject.title} onChange={(e) => setEditSubject({ ...editSubject, title: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Units</label>
+                <Select value={editSubject.units} onChange={(v) => setEditSubject({ ...editSubject, units: v })} options={["1", "2", "3", "4", "5", "6"]} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Instructor</label>
+                <Input value={editSubject.instructor} onChange={(e) => setEditSubject({ ...editSubject, instructor: e.target.value })} />
               </div>
             </div>
           ) : null}
           <DialogFooter className="gap-2">
             <DialogClose asChild>
-              <Button variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">Cancel</Button>
+              <Button variant="ghost">Cancel</Button>
             </DialogClose>
-            <Button variant="ghost" className="rounded-xl border border-sky-400/30 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 hover:text-sky-200" onClick={() => { if (editSubject) { handleUpdateSubject({ code: editSubject.code, title: editSubject.title, units: Number(editSubject.units) || 0, instructor: editSubject.instructor }); } setEditSubject(null) }}>
+            <Button onClick={() => { if (editSubject) { handleUpdateSubject({ code: editSubject.code, title: editSubject.title, units: Number(editSubject.units) || 0, instructor: editSubject.instructor }); } setEditSubject(null) }}>
               Save Changes
             </Button>
           </DialogFooter>
@@ -358,16 +350,16 @@ export function AcademicModule({ model }: PortalModuleProps) {
 
       {/* Delete Subject */}
       <Dialog open={!!deleteSubjectCode} onOpenChange={(o) => !o && setDeleteSubjectCode(null)}>
-        <DialogContent className="edu-sidebar-shell max-w-sm rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Delete Subject</DialogTitle>
-            <DialogDescription className="pt-1 text-white/70">This action cannot be undone.</DialogDescription>
+            <DialogTitle className="text-xl text-foreground">Delete Subject</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">This action cannot be undone.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-2 gap-2">
             <DialogClose asChild>
-              <Button variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">Cancel</Button>
+              <Button variant="ghost">Cancel</Button>
             </DialogClose>
-            <Button variant="ghost" className="rounded-xl border border-red-400/30 bg-red-500/15 text-red-300 hover:bg-red-500/25 hover:text-red-200" onClick={() => { if (deleteSubjectCode) handleDeleteSubject(deleteSubjectCode); setDeleteSubjectCode(null) }}>
+            <Button variant="destructive" onClick={() => { if (deleteSubjectCode) handleDeleteSubject(deleteSubjectCode); setDeleteSubjectCode(null) }}>
               <Trash2 className="mr-1.5 size-4" /> Delete
             </Button>
           </DialogFooter>

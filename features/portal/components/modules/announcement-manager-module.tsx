@@ -33,16 +33,16 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
       <AnnouncementsPanel model={model} />
 
       <Dialog open={showAnnouncementForm} onOpenChange={setShowAnnouncementForm}>
-        <DialogContent className="edu-sidebar-shell max-w-xl rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-xl">
           <form onSubmit={handleCreateAnnouncement}>
             <DialogHeader>
-              <DialogTitle className="text-xl text-white">Create Announcement</DialogTitle>
-              <DialogDescription className="pt-1 text-white/70">
+              <DialogTitle className="text-xl text-foreground">Create Announcement</DialogTitle>
+              <DialogDescription className="pt-1 text-muted-foreground">
                 Publish a new announcement visible to all users
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
+            <div className="space-y-4">
               <Input
                 value={announcementDraft.title}
                 onChange={(event) =>
@@ -52,12 +52,11 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
                   }))
                 }
                 placeholder="Announcement title"
-                className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
               />
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Audience</label>
+                  <label className="text-sm font-medium text-foreground">Audience</label>
                   <Select
                     value={announcementDraft.audience}
                     onChange={(value) =>
@@ -70,7 +69,7 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Priority</label>
+                  <label className="text-sm font-medium text-foreground">Priority</label>
                   <Select
                     value={announcementDraft.priority}
                     onChange={(value) =>
@@ -85,7 +84,7 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-white/80">Content</label>
+                <label className="text-sm font-medium text-foreground">Content</label>
                 <Textarea
                   value={announcementDraft.content}
                   onChange={(value) =>
@@ -102,15 +101,11 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
 
             <DialogFooter className="gap-2">
               <DialogClose asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
-                >
+                <Button type="button" variant="ghost">
                   <X className="mr-1.5 size-4" /> Cancel
                 </Button>
               </DialogClose>
-              <Button type="submit" className="rounded-xl border border-sky-400/30 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 hover:text-sky-200">
+              <Button type="submit">
                 <Plus className="mr-1.5 size-4" /> Publish
               </Button>
             </DialogFooter>

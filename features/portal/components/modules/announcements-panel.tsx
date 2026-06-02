@@ -115,7 +115,7 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
 
       {/* ── Edit Dialog ── */}
       <Dialog open={!!editingAnn} onOpenChange={(o) => { if (!o) setEditingAnn(null) }}>
-        <DialogContent className="edu-sidebar-shell max-w-xl rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-xl">
           {editingAnn ? (
             <form
               onSubmit={(e) => {
@@ -126,23 +126,22 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
               }}
             >
               <DialogHeader>
-                <DialogTitle className="text-xl text-white">Edit Announcement</DialogTitle>
-                <DialogDescription className="pt-1 text-white/70">
+                <DialogTitle className="text-xl text-foreground">Edit Announcement</DialogTitle>
+                <DialogDescription className="pt-1 text-muted-foreground">
                   Update announcement details
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-4 py-4">
+              <div className="space-y-4">
                 <Input
                   value={editingAnn.title}
                   onChange={(e) => setEditingAnn({ ...editingAnn, title: e.target.value })}
                   placeholder="Announcement title"
-                  className="h-10 rounded-2xl border-sidebar-border bg-white/5 text-white placeholder:text-white/40"
                 />
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-white/80">Audience</label>
+                    <label className="text-sm font-medium text-foreground">Audience</label>
                     <Select
                       value={editingAnn.audience}
                       onChange={(value) => setEditingAnn({ ...editingAnn, audience: value })}
@@ -150,7 +149,7 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-white/80">Priority</label>
+                    <label className="text-sm font-medium text-foreground">Priority</label>
                     <Select
                       value={editingAnn.priority}
                       onChange={(value) => setEditingAnn({ ...editingAnn, priority: value as Announcement["priority"] })}
@@ -160,7 +159,7 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/80">Content</label>
+                  <label className="text-sm font-medium text-foreground">Content</label>
                   <Textarea
                     value={editingAnn.content}
                     onChange={(value) => setEditingAnn({ ...editingAnn, content: value })}
@@ -172,11 +171,11 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
 
               <DialogFooter className="gap-2">
                 <DialogClose asChild>
-                  <Button type="button" variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">
+                  <Button type="button" variant="ghost">
                     <X className="mr-1.5 size-4" /> Cancel
                   </Button>
                 </DialogClose>
-                <Button type="submit" className="rounded-xl border border-sky-400/30 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 hover:text-sky-200">
+                <Button type="submit">
                   <Edit className="mr-1.5 size-4" /> Save Changes
                 </Button>
               </DialogFooter>
@@ -187,24 +186,23 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
 
       {/* ── Delete Confirmation ── */}
       <Dialog open={!!deletingAnnId} onOpenChange={(o) => { if (!o) setDeletingAnnId(null) }}>
-        <DialogContent className="edu-sidebar-shell max-w-sm rounded-[28px] border border-sidebar-border text-sidebar-foreground shadow-2xl">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Delete Announcement</DialogTitle>
-            <DialogDescription className="pt-1 text-white/70">
+            <DialogTitle className="text-xl text-foreground">Delete Announcement</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">
               Are you sure you want to delete this announcement? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
 
           <DialogFooter className="mt-2 gap-2">
             <DialogClose asChild>
-              <Button type="button" variant="ghost" className="rounded-xl border border-sidebar-border bg-white/5 text-white/80 hover:bg-white/10 hover:text-white">
+              <Button type="button" variant="ghost">
                 Cancel
               </Button>
             </DialogClose>
             <Button
               type="button"
-              variant="ghost"
-              className="rounded-xl border border-red-400/30 bg-red-500/15 text-red-300 shadow-sm hover:bg-red-500/25 hover:text-red-200"
+              variant="destructive"
               onClick={() => {
                 if (deletingAnnId) handleDeleteAnnouncement(deletingAnnId)
                 setDeletingAnnId(null)
