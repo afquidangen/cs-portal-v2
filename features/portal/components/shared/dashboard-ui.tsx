@@ -67,6 +67,29 @@ export function Panel({
   )
 }
 
+const eduMetricTones = {
+  abyss: {
+    shell: "border-[var(--edu-border-abyss)] bg-[var(--edu-shell-abyss-bg)]",
+    icon: "edu-abyss edu-ring-abyss",
+    glow: "bg-[rgb(9_44_86_/_0.18)] dark:bg-[rgb(9_44_86_/_0.10)]",
+  },
+  lapis: {
+    shell: "border-[var(--edu-border-lapis)] bg-[var(--edu-shell-lapis-bg)]",
+    icon: "edu-lapis edu-ring-lapis",
+    glow: "bg-[rgb(34_86_136_/_0.18)] dark:bg-[rgb(34_86_136_/_0.10)]",
+  },
+  slate: {
+    shell: "border-[var(--edu-border-slate)] bg-[var(--edu-shell-slate-bg)]",
+    icon: "edu-slate edu-ring-slate",
+    glow: "bg-[rgb(102_140_169_/_0.18)] dark:bg-[rgb(102_140_169_/_0.10)]",
+  },
+  glacier: {
+    shell: "border-[var(--edu-border-glacier)] bg-[var(--edu-shell-glacier-bg)]",
+    icon: "edu-glacier edu-ring-glacier",
+    glow: "bg-[rgb(169_203_224_/_0.24)] dark:bg-[rgb(169_203_224_/_0.18)]",
+  },
+}
+
 export function Metric({
   label,
   value,
@@ -76,73 +99,30 @@ export function Metric({
   label: string
   value: string
   icon: LucideIcon
-  tone?: "slate" | "emerald" | "amber" | "rose" | "sky"
+  tone?: keyof typeof eduMetricTones
 }) {
-  const tones = {
-    slate: {
-      shell:
-        "border-slate-300 bg-slate-200/70 dark:border-slate-500/20 dark:bg-slate-500/12",
-      icon: "border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-500/30 dark:bg-slate-500/15 dark:text-slate-300",
-      glow: "bg-[rgb(148_163_184_/_0.18)] dark:bg-[rgb(148_163_184_/_0.10)]",
-      label: "text-foreground",
-      value: "text-foreground",
-    },
-    emerald: {
-      shell:
-        "border-emerald-300 bg-emerald-200/70 dark:border-emerald-500/20 dark:bg-emerald-500/12",
-      icon: "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300",
-      glow: "bg-[rgb(16_185_129_/_0.18)] dark:bg-[rgb(16_185_129_/_0.10)]",
-      label: "text-foreground",
-      value: "text-foreground",
-    },
-    amber: {
-      shell:
-        "border-amber-300 bg-amber-200/70 dark:border-amber-500/20 dark:bg-amber-500/12",
-      icon: "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300",
-      glow: "bg-[rgb(245_158_11_/_0.18)] dark:bg-[rgb(245_158_11_/_0.10)]",
-      label: "text-foreground",
-      value: "text-foreground",
-    },
-    rose: {
-      shell:
-        "border-rose-300 bg-rose-200/70 dark:border-rose-500/20 dark:bg-rose-500/12",
-      icon: "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300",
-      glow: "bg-[rgb(244_63_94_/_0.18)] dark:bg-[rgb(244_63_94_/_0.10)]",
-      label: "text-foreground",
-      value: "text-foreground",
-    },
-    sky: {
-      shell:
-        "border-sky-300 bg-sky-200/70 dark:border-sky-500/20 dark:bg-sky-500/12",
-      icon: "border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-300",
-      glow: "bg-[rgb(14_165_233_/_0.18)] dark:bg-[rgb(14_165_233_/_0.10)]",
-      label: "text-foreground",
-      value: "text-foreground",
-    },
-  }
-
-  const current = tones[tone]
+  const current = eduMetricTones[tone] ?? eduMetricTones.slate
 
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-[26px] border p-5 shadow-md ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:ring-white/5",
+        "group relative overflow-hidden rounded-[26px] border bg-card p-5 shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:ring-white/5",
         current.shell
       )}
     >
       <div
         className={cn(
-          "pointer-events-none absolute -right-8 -top-8 size-24 rounded-full blur-2xl opacity-70 transition-opacity duration-200 group-hover:opacity-100",
+          "pointer-events-none absolute -right-8 -top-8 size-24 rounded-full blur-2xl opacity-60 transition-opacity duration-200 group-hover:opacity-100",
           current.glow
         )}
       />
 
       <div className="relative flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className={cn("text-xs font-medium uppercase tracking-[0.18em]", current.label)}>
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-foreground">
             {label}
           </p>
-          <p className={cn("mt-3 truncate text-2xl font-semibold tracking-tight lg:text-3xl", current.value)}>
+          <p className="mt-3 truncate text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">
             {value}
           </p>
         </div>

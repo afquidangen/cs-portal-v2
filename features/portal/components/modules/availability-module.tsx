@@ -42,25 +42,25 @@ function StatusSummary({ faculty }: { faculty: PortalModuleProps["model"]["facul
         label="Available"
         value={String(counts.Available)}
         icon={CheckCircle2}
-        tone="emerald"
+        tone="abyss"
       />
       <Metric
         label="In Class"
         value={String(counts["In Class"])}
         icon={Clock}
-        tone="amber"
+        tone="slate"
       />
       <Metric
         label="Consultation"
         value={String(counts["Consultation Only"])}
         icon={Users}
-        tone="sky"
+        tone="lapis"
       />
       <Metric
         label="Out of Office"
         value={String(counts["Out of Office"])}
         icon={DoorOpen}
-        tone="rose"
+        tone="glacier"
       />
     </div>
   )
