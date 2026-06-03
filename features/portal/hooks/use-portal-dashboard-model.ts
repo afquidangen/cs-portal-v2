@@ -11,7 +11,6 @@ import {
 } from "react"
 
 import {
-  testAccounts,
   testSessionStorageKey,
 } from "@/features/auth/data/test-accounts"
 
@@ -289,6 +288,7 @@ export function usePortalDashboardModel(role: Role) {
     password: "",
     role: "student" as "student" | "faculty" | "admin",
     idNumber: "",
+    sex: "Male",
     firstName: "",
     middleName: "",
     lastName: "",
@@ -374,46 +374,6 @@ export function usePortalDashboardModel(role: Role) {
       router.replace("/")
     }
   }, [role, router])
-
-  useEffect(() => {
-    setUsers((current) => {
-      const missingAccounts = testAccounts.filter(
-        (account) =>
-          !current.some(
-            (user) => user.email.toLowerCase() === account.email.toLowerCase()
-          )
-      )
-
-      if (!missingAccounts.length) return current
-
-      const migratedUsers: UserRecord[] = missingAccounts.map((account) => ({
-        id: account.id,
-        name: account.name,
-        email: account.email,
-        role: account.role,
-        course: account.role === "student" ? "BSCS" : undefined,
-        year: account.role === "student" ? 3 : undefined,
-        section: account.role === "student" ? "A" : undefined,
-        position:
-          account.role === "admin"
-            ? account.title.replace(" - CS Department", "")
-            : account.role === "faculty"
-              ? account.title.split(" - ")[0]
-              : undefined,
-        status: "Active",
-      }))
-
-      return [...migratedUsers, ...current]
-    })
-  }, [setUsers])
-
-  useEffect(() => {
-    setCurricula((current) => {
-      const seededIds = new Set(curriculumCatalogSeed.map((item) => item.id))
-      const customCurricula = current.filter((item) => !seededIds.has(item.id))
-      return [...curriculumCatalogSeed, ...customCurricula]
-    })
-  }, [setCurricula])
 
   useEffect(() => {
     setRoster((current) => {
@@ -802,6 +762,7 @@ export function usePortalDashboardModel(role: Role) {
         name: fullName,
         email: newUser.email.trim(),
         role: newUser.role,
+        sex: newUser.sex,
         firstName: newUser.firstName.trim(),
         middleName: newUser.middleName.trim(),
         lastName: newUser.lastName.trim(),
@@ -853,6 +814,7 @@ export function usePortalDashboardModel(role: Role) {
       password: "",
       role: "student",
       idNumber: "",
+      sex: "Male",
       firstName: "",
       middleName: "",
       lastName: "",
@@ -888,6 +850,7 @@ export function usePortalDashboardModel(role: Role) {
 
   function toggleUserStatus(userId: string) {
     const user = users.find((u) => u.id === userId)
+    const wasActive = user?.status === "Active"
     setUsers((current) =>
       current.map((item) =>
         item.id === userId
@@ -905,8 +868,32 @@ export function usePortalDashboardModel(role: Role) {
           : item
       )
     )
+    const customAccountsKey = "comsite-custom-accounts"
+    try {
+      const existing = JSON.parse(window.localStorage.getItem(customAccountsKey) || "[]") as Array<Record<string, string>>
+      if (wasActive) {
+        const filtered = existing.filter((a) => a.id !== userId)
+        window.localStorage.setItem(customAccountsKey, JSON.stringify(filtered))
+      } else if (user) {
+        const routeMap: Record<string, string> = { student: "/student", faculty: "/faculty", admin: "/admin" }
+        existing.push({
+          email: user.email,
+          password: "password123",
+          role: user.role,
+          name: user.name,
+          title: user.role === "student"
+            ? `BSCS ${user.year ?? ""}${user.section ?? ""} - ${user.studentType ?? "Regular"} Student`
+            : user.role === "faculty"
+              ? `Instructor - Computer Science`
+              : "System Administrator - CS Department",
+          id: user.id,
+          route: routeMap[user.role] || "/student",
+        })
+        window.localStorage.setItem(customAccountsKey, JSON.stringify(existing))
+      }
+    } catch { /* ignore */ }
     if (user) {
-      const newStatus = user.status === "Active" ? "Inactive" : "Active"
+      const newStatus = wasActive ? "Inactive" : "Active"
       addAuditLog(`${newStatus === "Active" ? "Activated" : "Deactivated"} account "${user.name}"`)
     }
   }
@@ -926,6 +913,12 @@ export function usePortalDashboardModel(role: Role) {
     setGrades((current) =>
       current.filter((grade) => grade.studentId !== userId)
     )
+    const customAccountsKey = "comsite-custom-accounts"
+    try {
+      const existing = JSON.parse(window.localStorage.getItem(customAccountsKey) || "[]") as Array<Record<string, string>>
+      const filtered = existing.filter((a) => a.id !== userId)
+      window.localStorage.setItem(customAccountsKey, JSON.stringify(filtered))
+    } catch { /* ignore */ }
     if (user) {
       addAuditLog(`Deleted ${user.role} account "${user.name}"`)
     }
@@ -959,6 +952,32 @@ export function usePortalDashboardModel(role: Role) {
         )
       )
     }
+    const customAccountsKey = "comsite-custom-accounts"
+    try {
+      const existing = JSON.parse(window.localStorage.getItem(customAccountsKey) || "[]") as Array<Record<string, string>>
+      const idx = existing.findIndex((a) => a.id === updatedUser.id)
+      if (idx !== -1) {
+        existing[idx].email = updatedUser.email
+        existing[idx].name = updatedUser.name
+        existing[idx].role = updatedUser.role
+      } else {
+        const routeMap: Record<string, string> = { student: "/student", faculty: "/faculty", admin: "/admin" }
+        existing.push({
+          email: updatedUser.email,
+          password: "password123",
+          role: updatedUser.role,
+          name: updatedUser.name,
+          title: updatedUser.role === "student"
+            ? `BSCS ${updatedUser.year ?? ""}${updatedUser.section ?? ""} - ${updatedUser.studentType ?? "Regular"} Student`
+            : updatedUser.role === "faculty"
+              ? `Instructor - Computer Science`
+              : "System Administrator - CS Department",
+          id: updatedUser.id,
+          route: routeMap[updatedUser.role] || "/student",
+        })
+      }
+      window.localStorage.setItem(customAccountsKey, JSON.stringify(existing))
+    } catch { /* ignore */ }
     addAuditLog(`Updated account "${updatedUser.name}"`)
   }
 

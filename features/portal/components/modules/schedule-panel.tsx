@@ -1,11 +1,10 @@
 "use client"
 
-import { scheduleSeed } from "../../data/portal-data"
 import { Panel } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
-export function SchedulePanel({ model }: Partial<PortalModuleProps> = {}) {
-  const schedules = model?.visibleSchedules ?? scheduleSeed
+export function SchedulePanel({ model }: PortalModuleProps) {
+  const schedules = model.visibleSchedules
 
   return (
     <Panel title="Weekly Schedule" eyebrow="Classes">

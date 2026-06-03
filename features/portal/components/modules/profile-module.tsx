@@ -6,7 +6,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
+import { Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 import type { ProfileDetails } from "../../data/portal-data"
 

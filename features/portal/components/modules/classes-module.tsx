@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -26,7 +27,7 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
     handleDeleteRosterStudent, handleToggleEnrolled, handleSaveStudent, resetStudentDraft,
     selectedClassSection, setSelectedClassSection,
     setStudentDraft, startEditStudent, studentDraft,
-    setRoster, setUsers,
+    setUsers,
   } = model
 
   const [facultyDeleteId, setFacultyDeleteId] = useState<string | null>(null)
@@ -56,11 +57,11 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
       <Panel title="Student Management" eyebrow={`${selectedClassSection} \u2022 ${facultyClassStudents.length} students`}>
         <form onSubmit={handleSaveStudent} className="mb-5 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-muted/30 p-4">
           <div className="min-w-0 flex-1">
-            <label className="mb-1 block text-xs font-medium text-foreground/70">Student ID</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">Student ID</label>
             <Input value={studentDraft.id} onChange={(e) => setStudentDraft((c) => ({ ...c, id: e.target.value }))} placeholder="2024-001245" className="h-10 rounded-2xl" />
           </div>
           <div className="min-w-0 flex-[1.5]">
-            <label className="mb-1 block text-xs font-medium text-foreground/70">Full name</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">Full name</label>
             <Input value={studentDraft.name} onChange={(e) => setStudentDraft((c) => ({ ...c, name: e.target.value }))} placeholder="Juan Dela Cruz" className="h-10 rounded-2xl" />
           </div>
           <Button type="submit" className="rounded-2xl">
@@ -110,7 +111,7 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
         )}
 
         <Dialog open={!!facultyDeleteId} onOpenChange={(o) => { if (!o) setFacultyDeleteId(null) }}>
-          <DialogContent className="max-w-sm">
+          <DialogContent className="w-[95vw] sm:max-w-sm">
             <DialogHeader>
               <DialogTitle>Remove Student</DialogTitle>
             </DialogHeader>
@@ -141,9 +142,10 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
   const {
     classSchedules, handleAddClassSection, handleCreateSchedule,
     handleUpdateSchedule, handleDeleteSchedule, handleDeleteRosterStudent,
-    handleSaveStudent, handleToggleEnrolled, handleScheduleUpload,
+    handleToggleEnrolled, handleScheduleUpload,
     newSectionName, scheduleDraft, selectedClassYear, setNewSectionName,
-    setScheduleDraft,     setSelectedClassYear, setRoster, setUsers, users, yearSections, roster,
+    setScheduleDraft, setSelectedClassYear, setRoster, setUsers, users, yearSections, roster,
+    subjects,
   } = model
 
   const [adminTab, setAdminTab] = useState("Sections")
@@ -154,6 +156,24 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
   const [rosterDraft, setRosterDraft] = useState({ id: "", name: "", section: "" })
   const [editingRosterId, setEditingRosterId] = useState<string | null>(null)
   const [deleteRosterId, setDeleteRosterId] = useState<string | null>(null)
+  const [addScheduleOpen, setAddScheduleOpen] = useState(false)
+
+  const sectionOptions = useMemo(() => yearSections.flatMap((y) => y.sections), [yearSections])
+  const subjectOptions = useMemo(() => subjects.map((s) => s.code), [subjects])
+  const instructorOptions = useMemo(() => users.filter((u) => u.role === "faculty").map((u) => u.name), [users])
+  const dayOptions = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+  const timeOptions = [
+    "7:00 AM - 8:00 AM", "7:30 AM - 9:00 AM", "8:00 AM - 9:00 AM", "8:00 AM - 10:00 AM",
+    "9:00 AM - 10:00 AM", "9:00 AM - 11:00 AM", "10:00 AM - 11:00 AM", "10:00 AM - 12:00 PM",
+    "11:00 AM - 12:00 PM", "11:00 AM - 1:00 PM", "1:00 PM - 2:00 PM", "1:00 PM - 3:00 PM",
+    "2:00 PM - 3:00 PM", "2:00 PM - 4:00 PM", "3:00 PM - 4:00 PM", "3:00 PM - 5:00 PM",
+    "4:00 PM - 5:00 PM", "4:00 PM - 6:00 PM",
+  ]
+  const roomOptions = useMemo(() => {
+    const defaults = ["Room 101", "Room 102", "Room 103", "Room 201", "Room 202", "Room 203", "Room 204", "Room 205", "Room 301", "Room 302", "Room 303", "Room 401", "Room 402", "Lab 201", "Lab 202", "Lab 203", "Lab 204", "CS Lab 1", "CS Lab 2", "Auditorium", "Multimedia Room"]
+    const existing = new Set(classSchedules.map((s) => s.room).filter(Boolean))
+    return [...new Set([...defaults, ...existing])]
+  }, [classSchedules])
 
   const selectedYear = yearSections.find((y) => y.year === selectedClassYear)
 
@@ -265,44 +285,43 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
               <p className="text-sm text-muted-foreground">No students enrolled in this year level.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto border border-border">
-              <table className="w-full min-w-[700px] text-left text-sm">
-                <thead className="bg-muted text-foreground">
+            <div className="overflow-x-auto rounded-2xl border border-border">
+              <table className="w-full text-left text-sm">
+                <thead className="sticky top-0 z-10 bg-muted text-foreground">
                   <tr className="border-b border-border">
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">ID</th>
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Name</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Section</th>
+                    <th className="hidden sm:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Section</th>
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Status</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Enrolled</th>
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border bg-card">
                   {sectionRoster.map((student) => (
                     <tr key={student.id} className="transition-colors hover:bg-muted/50">
-                      <td className="px-4 py-3 font-medium text-foreground">{student.id}</td>
-                      <td className="px-4 py-3 text-foreground/80">{student.name}</td>
-                      <td className="px-4 py-3 text-foreground/80">{student.section}</td>
+                      <td className="max-w-[120px] truncate px-4 py-3 font-medium text-foreground">{student.id}</td>
+                      <td className="max-w-[200px] truncate px-4 py-3 text-foreground/80">{student.name}</td>
+                      <td className="hidden sm:table-cell px-4 py-3 text-foreground/80">{student.section}</td>
                       <td className="px-4 py-3">
-                        <StatusBadge value={student.enrolled ? "Active" : "Inactive"} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="checkbox"
-                          checked={student.enrolled}
-                          onChange={(e) => handleToggleEnrolled(student.id, e.target.checked)}
-                          className="size-4 rounded border-border accent-primary"
-                        />
+                        <label className="flex cursor-pointer items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={student.enrolled}
+                            onChange={(e) => handleToggleEnrolled(student.id, e.target.checked)}
+                            className="size-4 rounded border-border accent-primary"
+                          />
+                          <StatusBadge value={student.enrolled ? "Active" : "Inactive"} />
+                        </label>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1.5">
-                          <Button size="sm" variant="outline" className="rounded-md" onClick={() => {
+                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => {
                             setEditingRosterId(student.id)
                             setRosterDraft({ id: student.id, name: student.name, section: student.section })
                           }}>
                             <Pencil className="size-3.5" />
                           </Button>
-                          <Button size="sm" variant="outline" className="rounded-md" onClick={() => setDeleteRosterId(student.id)}>
+                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDeleteRosterId(student.id)}>
                             <Trash2 className="size-3.5" />
                           </Button>
                         </div>
@@ -316,7 +335,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
 
           {/* Edit roster student dialog */}
           <Dialog open={!!editingRosterId} onOpenChange={(o) => { if (!o) { setEditingRosterId(null); setRosterDraft({ id: "", name: "", section: selectedYear?.sections[0] ?? "" }) } }}>
-            <DialogContent className="max-w-sm">
+            <DialogContent className="w-[95vw] sm:max-w-sm">
               <DialogHeader>
                 <DialogTitle>Edit Student</DialogTitle>
               </DialogHeader>
@@ -331,15 +350,11 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-foreground">Section</label>
-                  <select
+                  <Select
                     value={rosterDraft.section}
-                    onChange={(e) => setRosterDraft((c) => ({ ...c, section: e.target.value }))}
-                    className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
-                  >
-                    {yearSections.flatMap((y) => y.sections).map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
+                    onChange={(value) => setRosterDraft((c) => ({ ...c, section: value }))}
+                    options={yearSections.flatMap((y) => y.sections)}
+                  />
                 </div>
               </div>
               <DialogFooter className="mt-2 gap-2">
@@ -363,7 +378,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
 
           {/* Delete roster student confirmation */}
           <Dialog open={!!deleteRosterId} onOpenChange={(o) => { if (!o) setDeleteRosterId(null) }}>
-            <DialogContent className="max-w-sm">
+            <DialogContent className="w-[95vw] sm:max-w-sm">
               <DialogHeader>
                 <DialogTitle>Remove Student</DialogTitle>
               </DialogHeader>
@@ -388,44 +403,20 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
       {/* ── Schedules ── */}
       {adminTab === "Schedules" ? (
         <>
-          <Panel title="Add Schedule Entry" eyebrow="Manual entry">
-            <form onSubmit={handleCreateSchedule} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-              <div className="space-y-1 sm:col-span-2 lg:col-span-1">
-                <label className="text-xs font-medium text-foreground/70">Section</label>
-                <Input value={scheduleDraft.section} onChange={(e) => setScheduleDraft((c) => ({ ...c, section: e.target.value }))} placeholder="BSCS 3A" className="h-10 rounded-2xl" />
-              </div>
-              <div className="space-y-1 lg:col-span-1">
-                <label className="text-xs font-medium text-foreground/70">Subject</label>
-                <Input value={scheduleDraft.subject} onChange={(e) => setScheduleDraft((c) => ({ ...c, subject: e.target.value }))} placeholder="CS311" className="h-10 rounded-2xl" />
-              </div>
-              <div className="space-y-1 lg:col-span-1">
-                <label className="text-xs font-medium text-foreground/70">Instructor</label>
-                <Input value={scheduleDraft.instructor} onChange={(e) => setScheduleDraft((c) => ({ ...c, instructor: e.target.value }))} placeholder="Maria Santos" className="h-10 rounded-2xl" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-foreground/70">Day</label>
-                <Input value={scheduleDraft.day} onChange={(e) => setScheduleDraft((c) => ({ ...c, day: e.target.value }))} placeholder="Mon/Wed" className="h-10 rounded-2xl" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-foreground/70">Time</label>
-                <Input value={scheduleDraft.time} onChange={(e) => setScheduleDraft((c) => ({ ...c, time: e.target.value }))} placeholder="8:00-9:30" className="h-10 rounded-2xl" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-foreground/70">Room</label>
-                <Input value={scheduleDraft.room} onChange={(e) => setScheduleDraft((c) => ({ ...c, room: e.target.value }))} placeholder="Room 201" className="h-10 rounded-2xl" />
-              </div>
-              <div className="flex items-end sm:col-span-2 lg:col-span-6">
-                <Button type="submit" className="rounded-2xl"><Plus className="size-4" /> Add Schedule</Button>
-              </div>
-            </form>
-          </Panel>
-
-          <Panel title="Bulk Upload" eyebrow="Import from Excel .xlsx">
-            <div className="flex flex-wrap gap-3">
-              <Input type="file" accept=".xlsx" onChange={handleScheduleUpload} className="h-10 max-w-sm rounded-2xl" />
-              <Button type="button" variant="outline" className="rounded-2xl">Upload File</Button>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold tracking-tight text-foreground">Class Schedules</h3>
+              <p className="text-sm text-muted-foreground">Manage and organize class schedules</p>
             </div>
-          </Panel>
+            <Button onClick={() => setAddScheduleOpen(true)} className="rounded-2xl">
+              <Plus className="size-4" /> Add Schedule Entry
+            </Button>
+          </div>
+
+          <Input id="schedule-upload" type="file" accept=".xlsx" onChange={handleScheduleUpload} className="hidden" />
+          <Button variant="outline" className="rounded-2xl" onClick={() => document.getElementById("schedule-upload")?.click()}>
+            Upload File
+          </Button>
 
           <Panel
             title={`All Schedules (${filteredSchedules.length})`}
@@ -466,25 +457,25 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
               </div>
             ) : (
               <div className="overflow-x-auto rounded-2xl border border-border">
-                <table className="w-full min-w-[800px] text-left text-sm">
-                  <thead className="bg-muted text-foreground">
+                <table className="w-full text-left text-sm">
+                  <thead className="sticky top-0 z-10 bg-muted text-foreground">
                     <tr className="border-b border-border">
                       <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Section</th>
                       <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Subject</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Instructor</th>
+                      <th className="hidden lg:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Instructor</th>
                       <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Schedule</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Room</th>
+                      <th className="hidden sm:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Room</th>
                       <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border bg-card">
                     {filteredSchedules.map((item) => (
                       <tr key={item.id} className="transition-colors hover:bg-muted/50">
-                        <td className="px-4 py-3 font-medium text-foreground">{item.section}</td>
-                        <td className="px-4 py-3 text-foreground/80">{item.subject}</td>
-                        <td className="px-4 py-3 text-foreground/80">{item.instructor}</td>
-                        <td className="px-4 py-3 text-foreground/80">{item.day}, {item.time}</td>
-                        <td className="px-4 py-3 text-foreground/80">{item.room}</td>
+                        <td className="max-w-[120px] truncate px-4 py-3 font-medium text-foreground">{item.section}</td>
+                        <td className="max-w-[160px] truncate px-4 py-3 text-foreground/80">{item.subject}</td>
+                        <td className="hidden lg:table-cell max-w-[160px] truncate px-4 py-3 text-foreground/80">{item.instructor}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-foreground/80">{item.day}, {item.time}</td>
+                        <td className="hidden sm:table-cell px-4 py-3 text-foreground/80">{item.room}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
                             <Button type="button" size="sm" variant="ghost" className="rounded-xl" onClick={() => setEditingSchedule(item)}>
@@ -503,8 +494,80 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
             )}
           </Panel>
 
+          {/* ── Add Schedule Dialog ── */}
+          <Dialog open={addScheduleOpen} onOpenChange={(o) => {
+            if (o) setScheduleDraft({ day: "", time: "", subject: "", room: "", instructor: "", section: selectedYear?.sections[0] ?? "" })
+            if (!o) setAddScheduleOpen(false)
+          }}>
+            <DialogContent className="w-[95vw] sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="text-xl text-foreground">Add Schedule Entry</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={(e) => {
+                e.preventDefault()
+                handleCreateSchedule(e)
+                setAddScheduleOpen(false)
+              }} className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Select
+                    label="Section"
+                    value={scheduleDraft.section}
+                    onChange={(value) => setScheduleDraft((c) => ({ ...c, section: value }))}
+                    options={sectionOptions}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Select
+                    label="Subject"
+                    value={scheduleDraft.subject}
+                    onChange={(value) => setScheduleDraft((c) => ({ ...c, subject: value }))}
+                    options={subjectOptions}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Select
+                    label="Instructor"
+                    value={scheduleDraft.instructor}
+                    onChange={(value) => setScheduleDraft((c) => ({ ...c, instructor: value }))}
+                    options={instructorOptions}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Select
+                    label="Day"
+                    value={scheduleDraft.day}
+                    onChange={(value) => setScheduleDraft((c) => ({ ...c, day: value }))}
+                    options={dayOptions}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Select
+                    label="Time"
+                    value={scheduleDraft.time}
+                    onChange={(value) => setScheduleDraft((c) => ({ ...c, time: value }))}
+                    options={timeOptions}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Select
+                    label="Room"
+                    value={scheduleDraft.room}
+                    onChange={(value) => setScheduleDraft((c) => ({ ...c, room: value }))}
+                    options={roomOptions}
+                  />
+                </div>
+                <DialogFooter className="mt-2 gap-2 sm:col-span-2">
+                  <DialogClose asChild>
+                    <Button type="button" variant="ghost">Cancel</Button>
+                  </DialogClose>
+                  <Button type="submit"><Plus className="size-4" /> Add Schedule</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+
           <Dialog open={!!editingSchedule} onOpenChange={(open) => { if (!open) setEditingSchedule(null) }}>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="w-[95vw] sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Edit Schedule</DialogTitle>
               </DialogHeader>
@@ -515,31 +578,55 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                     handleUpdateSchedule(editingSchedule)
                     setEditingSchedule(null)
                   }}
-                  className="grid gap-3 sm:grid-cols-2"
+                  className="grid gap-4 sm:grid-cols-2"
                 >
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="text-xs font-medium text-foreground/70">Section</label>
-                    <Input value={editingSchedule.section} onChange={(e) => setEditingSchedule((c) => ({ ...c!, section: e.target.value }))} />
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Select
+                      label="Section"
+                      value={editingSchedule.section}
+                      onChange={(value) => setEditingSchedule((c) => ({ ...c!, section: value }))}
+                      options={sectionOptions}
+                    />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground/70">Subject</label>
-                    <Input value={editingSchedule.subject} onChange={(e) => setEditingSchedule((c) => ({ ...c!, subject: e.target.value }))} />
+                  <div className="space-y-1.5">
+                    <Select
+                      label="Subject"
+                      value={editingSchedule.subject}
+                      onChange={(value) => setEditingSchedule((c) => ({ ...c!, subject: value }))}
+                      options={subjectOptions}
+                    />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground/70">Instructor</label>
-                    <Input value={editingSchedule.instructor} onChange={(e) => setEditingSchedule((c) => ({ ...c!, instructor: e.target.value }))} />
+                  <div className="space-y-1.5">
+                    <Select
+                      label="Instructor"
+                      value={editingSchedule.instructor}
+                      onChange={(value) => setEditingSchedule((c) => ({ ...c!, instructor: value }))}
+                      options={instructorOptions}
+                    />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground/70">Day</label>
-                    <Input value={editingSchedule.day} onChange={(e) => setEditingSchedule((c) => ({ ...c!, day: e.target.value }))} />
+                  <div className="space-y-1.5">
+                    <Select
+                      label="Day"
+                      value={editingSchedule.day}
+                      onChange={(value) => setEditingSchedule((c) => ({ ...c!, day: value }))}
+                      options={dayOptions}
+                    />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground/70">Time</label>
-                    <Input value={editingSchedule.time} onChange={(e) => setEditingSchedule((c) => ({ ...c!, time: e.target.value }))} />
+                  <div className="space-y-1.5">
+                    <Select
+                      label="Time"
+                      value={editingSchedule.time}
+                      onChange={(value) => setEditingSchedule((c) => ({ ...c!, time: value }))}
+                      options={timeOptions}
+                    />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground/70">Room</label>
-                    <Input value={editingSchedule.room} onChange={(e) => setEditingSchedule((c) => ({ ...c!, room: e.target.value }))} />
+                  <div className="space-y-1.5">
+                    <Select
+                      label="Room"
+                      value={editingSchedule.room}
+                      onChange={(value) => setEditingSchedule((c) => ({ ...c!, room: value }))}
+                      options={roomOptions}
+                    />
                   </div>
                   <div className="flex items-end gap-2 sm:col-span-2">
                     <Button type="submit"><Pencil className="size-4" /> Update Schedule</Button>
@@ -551,7 +638,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
           </Dialog>
 
           <Dialog open={!!deleteScheduleId} onOpenChange={(open) => { if (!open) setDeleteScheduleId(null) }}>
-            <DialogContent className="max-w-sm">
+            <DialogContent className="w-[95vw] sm:max-w-sm">
               <DialogHeader>
                 <DialogTitle>Delete Schedule</DialogTitle>
               </DialogHeader>

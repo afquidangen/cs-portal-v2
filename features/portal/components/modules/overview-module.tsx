@@ -12,12 +12,8 @@ export function OverviewModule({ model }: PortalModuleProps) {
     studentGrades,
   } = model
 
-  if (role === "admin") {
-    return <div className="hidden" />
-  }
-
-  if (role === "faculty") {
-    return <div className="hidden" />
+  if (role === "admin" || role === "faculty") {
+    return null
   }
 
   return (

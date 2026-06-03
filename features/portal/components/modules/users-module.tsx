@@ -54,7 +54,7 @@ export function UsersModule({ model }: PortalModuleProps) {
     users,
   } = model
 
-  const [editUser, setEditUser] = useState<UserRecord | null>(null)
+  const [editUser, setEditUser] = useState<(UserRecord & { password?: string }) | null>(null)
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null)
   const [toggleUserId, setToggleUserId] = useState<string | null>(null)
   const [page, setPage] = useState(1)
@@ -98,6 +98,32 @@ export function UsersModule({ model }: PortalModuleProps) {
       .filter(Boolean)
       .join(" ")
     handleUpdateUser({ ...editUser, name: fullName || editUser.name })
+    if (editUser.password) {
+      try {
+        const key = "comsite-custom-accounts"
+        const existing = JSON.parse(window.localStorage.getItem(key) || "[]") as Array<Record<string, string>>
+        const idx = existing.findIndex((a) => a.id === editUser.id)
+        if (idx !== -1) {
+          existing[idx].password = editUser.password
+        } else {
+          const routeMap: Record<string, string> = { student: "/student", faculty: "/faculty", admin: "/admin" }
+          existing.push({
+            email: editUser.email,
+            password: editUser.password,
+            role: editUser.role,
+            name: fullName || editUser.name,
+            title: editUser.role === "student"
+              ? `BSCS ${editUser.year ?? ""}${editUser.section ?? ""} - ${editUser.studentType ?? "Regular"} Student`
+              : editUser.role === "faculty"
+                ? `Instructor - Computer Science`
+                : "System Administrator - CS Department",
+            id: editUser.id,
+            route: routeMap[editUser.role] || "/student",
+          })
+        }
+        window.localStorage.setItem(key, JSON.stringify(existing))
+      } catch { /* ignore */ }
+    }
     setEditUser(null)
   }
 
@@ -191,20 +217,61 @@ export function UsersModule({ model }: PortalModuleProps) {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-2xl border border-border">
-              <table className="w-full min-w-[820px] text-left text-sm">
+            {/* Mobile card view */}
+            <div className="grid gap-3 md:hidden">
+              {paginatedUsers.map((user) => (
+                <div key={user.id} className="rounded-2xl border border-border bg-card p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar className="size-10 shrink-0 ring-1 ring-border">
+                        <AvatarFallback className="bg-muted text-xs text-foreground">
+                          {getInitials(user.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-foreground">{user.name}</p>
+                        <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                        <p className="truncate text-xs text-muted-foreground">{user.id}</p>
+                      </div>
+                    </div>
+                    <StatusBadge value={user.status} />
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="capitalize rounded-md bg-muted px-2 py-0.5">{user.role}</span>
+                    {user.role === "student"
+                      ? `${user.year ?? "-"}${user.section ?? ""} \u00B7 ${user.studentType ?? "Regular"}`
+                      : user.academicTitle ? `${user.academicTitle} \u00B7 ${user.employmentType ?? "Regular"}` : null}
+                  </div>
+                  <div className="mt-3 flex gap-1.5">
+                    <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setEditUser(user)} title="Edit user">
+                      <Edit className="size-3.5" />
+                    </Button>
+                    <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setToggleUserId(user.id)} title={user.status === "Active" ? "Deactivate" : "Activate"}>
+                      {user.status === "Active" ? <UserX className="size-3.5" /> : <UserCheck className="size-3.5" />}
+                    </Button>
+                    <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDeleteUserId(user.id)} title="Delete user">
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table view */}
+            <div className="hidden md:block overflow-x-auto rounded-2xl border border-border">
+              <table className="w-full text-left text-sm">
                 <thead className="bg-muted text-foreground">
                   <tr className="border-b border-border">
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
                       Account
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                    <th className="hidden lg:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
                       Email
                     </th>
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
                       Role
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                    <th className="hidden xl:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
                       Details
                     </th>
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
@@ -239,13 +306,13 @@ export function UsersModule({ model }: PortalModuleProps) {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-foreground/80">
+                      <td className="hidden lg:table-cell px-4 py-3 text-foreground/80">
                         {user.email}
                       </td>
                       <td className="px-4 py-3 capitalize text-foreground/80">
                         {user.role}
                       </td>
-                      <td className="max-w-[200px] truncate px-4 py-3 text-foreground/80">
+                      <td className="hidden xl:table-cell max-w-[200px] truncate px-4 py-3 text-foreground/80">
                         {user.role === "student"
                           ? `${user.year ?? "-"}${user.section ?? ""} \u00B7 ${user.studentType ?? "Regular"} \u00B7 ${user.curriculum ?? "N/A"}`
                           : `${user.academicTitle ?? "N/A"} \u00B7 ${user.employmentType ?? "Regular"} \u00B7 ${user.advisoryClass ?? "No advisory"}`}
@@ -333,7 +400,7 @@ export function UsersModule({ model }: PortalModuleProps) {
       <Dialog open={addOpen} onOpenChange={(o) => {
         if (!o) setAddOpen(false)
       }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="w-[95vw] sm:max-w-lg">
           <form onSubmit={handleAddSubmit}>
             <DialogHeader>
               <DialogTitle className="text-xl text-foreground">Add Account</DialogTitle>
@@ -366,6 +433,17 @@ export function UsersModule({ model }: PortalModuleProps) {
                     }))
                   }
                   placeholder="IS-00-00000"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Sex</label>
+                <Select
+                  value={newUser.sex}
+                  onChange={(value) =>
+                    setNewUser((current) => ({ ...current, sex: value }))
+                  }
+                  options={["Male", "Female"]}
                 />
               </div>
 
@@ -572,7 +650,7 @@ export function UsersModule({ model }: PortalModuleProps) {
 
       {/* ── Edit Dialog ── */}
       <Dialog open={!!editUser} onOpenChange={(o) => !o && setEditUser(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="w-[95vw] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-xl text-foreground">Edit User</DialogTitle>
             <DialogDescription className="pt-1 text-muted-foreground">
@@ -583,6 +661,48 @@ export function UsersModule({ model }: PortalModuleProps) {
           {editUser ? (
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Role</label>
+                  <Select
+                    value={editUser.role}
+                    onChange={(value) =>
+                      setEditUser({ ...editUser, role: value as "student" | "faculty" | "admin" })
+                    }
+                    options={["student", "faculty", "admin"]}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Sex</label>
+                  <Select
+                    value={editUser.sex ?? "Male"}
+                    onChange={(value) =>
+                      setEditUser({ ...editUser, sex: value })
+                    }
+                    options={["Male", "Female"]}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">ID Number</label>
+                  <Input
+                    value={editUser.id}
+                    onChange={(e) =>
+                      setEditUser({ ...editUser, id: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Status</label>
+                  <Select
+                    value={editUser.status}
+                    onChange={(value) =>
+                      setEditUser({
+                        ...editUser,
+                        status: value as "Active" | "Inactive",
+                      })
+                    }
+                    options={["Active", "Inactive"]}
+                  />
+                </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-foreground">First name</label>
                   <Input
@@ -620,16 +740,44 @@ export function UsersModule({ model }: PortalModuleProps) {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Status</label>
-                  <Select
-                    value={editUser.status}
-                    onChange={(value) =>
-                      setEditUser({
-                        ...editUser,
-                        status: value as "Active" | "Inactive",
-                      })
+                  <label className="text-sm font-medium text-foreground">Contact Number</label>
+                  <Input
+                    value={editUser.contactNumber ?? ""}
+                    onChange={(e) =>
+                      setEditUser({ ...editUser, contactNumber: e.target.value })
                     }
-                    options={["Active", "Inactive"]}
+                    placeholder="0917 000 0000"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Birthday</label>
+                  <Input
+                    type="date"
+                    value={editUser.birthday ?? ""}
+                    onChange={(e) =>
+                      setEditUser({ ...editUser, birthday: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-sm font-medium text-foreground">Address</label>
+                  <Input
+                    value={editUser.address ?? ""}
+                    onChange={(e) =>
+                      setEditUser({ ...editUser, address: e.target.value })
+                    }
+                    placeholder="City, Province"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Password</label>
+                  <Input
+                    value={editUser.password ?? ""}
+                    onChange={(e) =>
+                      setEditUser({ ...editUser, password: e.target.value })
+                    }
+                    placeholder="Leave blank to keep current"
+                    type="text"
                   />
                 </div>
                 {editUser.role === "student" ? (
@@ -743,7 +891,7 @@ export function UsersModule({ model }: PortalModuleProps) {
         open={!!deleteUserId}
         onOpenChange={(o) => !o && setDeleteUserId(null)}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent className="w-[95vw] sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-xl text-foreground">Delete Account</DialogTitle>
             <DialogDescription className="pt-1 text-muted-foreground">
@@ -772,7 +920,7 @@ export function UsersModule({ model }: PortalModuleProps) {
         open={!!toggleUserId}
         onOpenChange={(o) => !o && setToggleUserId(null)}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent className="w-[95vw] sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-xl text-foreground">Confirm Status Change</DialogTitle>
             <DialogDescription className="pt-1 text-muted-foreground">

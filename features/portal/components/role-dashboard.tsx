@@ -230,25 +230,25 @@ export function RoleDashboard({ role }: { role: Role }) {
   const adminStatusCards = [
     {
       label: "Students",
-      value: "2",
+      value: String(model.userStats.students),
       icon: GraduationCap,
       tone: "edu-abyss" as const,
     },
     {
       label: "Faculty",
-      value: "2",
+      value: String(model.userStats.faculty),
       icon: Layers3,
       tone: "edu-lapis" as const,
     },
     {
       label: "Thesis Records",
-      value: "3",
+      value: String(model.theses.length),
       icon: BookOpen,
       tone: "edu-slate" as const,
     },
     {
       label: "Open Tickets",
-      value: "2",
+      value: String(model.tickets.filter((t: { status: string }) => t.status !== "Resolved").length),
       icon: Bell,
       tone: "edu-glacier" as const,
     },
@@ -280,7 +280,7 @@ export function RoleDashboard({ role }: { role: Role }) {
           className={cn(
             "edu-sidebar-shell fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col border-r border-sidebar-border text-sidebar-foreground transition-all duration-300 md:sticky md:top-0 md:h-screen md:translate-x-0",
             model.sidebarOpen ? "translate-x-0" : "-translate-x-full",
-            effectivelyCollapsed ? "w-[92px]" : "w-[300px]"
+            effectivelyCollapsed ? "w-[92px]" : "w-[300px] max-w-[85vw]"
           )}
         >
           <div className="border-b border-sidebar-border px-4 py-4">
@@ -472,7 +472,7 @@ export function RoleDashboard({ role }: { role: Role }) {
 
                   {showNotifications ? (
                     <div
-                      className="fixed z-50 w-80 border border-border bg-white text-foreground shadow-lg dark:bg-neutral-950"
+                      className="fixed z-50 w-80 max-w-[calc(100vw-1rem)] border border-border bg-white text-foreground shadow-lg dark:bg-neutral-950"
                       style={{ top: notifPosition.top, right: notifPosition.right }}
                     >
                       <div className="flex items-center justify-between border-b border-border px-4 py-3">

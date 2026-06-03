@@ -31,7 +31,16 @@ export function LoginPage() {
 
   useEffect(() => {
     document.documentElement.classList.remove("dark")
-  }, [])
+    const existing = window.localStorage.getItem(testSessionStorageKey)
+    if (existing) {
+      try {
+        const session = JSON.parse(existing) as { role?: string; route?: string }
+        if (session.role && session.route) {
+          router.replace(session.route)
+        }
+      } catch { }
+    }
+  }, [router])
 
   function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -54,9 +63,7 @@ export function LoginPage() {
         id: account.id,
       })
     )
-    window.setTimeout(() => {
-      router.push(account.route)
-    }, 450)
+    router.push(account.route)
   }
 
   return (
