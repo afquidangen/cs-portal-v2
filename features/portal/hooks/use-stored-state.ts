@@ -35,11 +35,14 @@ function safeStringify(value: unknown): string {
 
 export function useStoredState<T>(
   key: string,
-  initialValue: T
+  initialValue: T,
+  isValid?: (data: T) => boolean
 ): [T, Dispatch<SetStateAction<T>>] {
-  const [value, setValue] = useState<T>(() =>
-    readFromStorage(key, initialValue)
-  )
+  const [value, setValue] = useState<T>(() => {
+    const stored = readFromStorage(key, initialValue)
+    if (isValid && !isValid(stored)) return initialValue
+    return stored
+  })
 
   const serializedRef = useRef(safeStringify(value))
   const pendingKeyRef = useRef(key)
@@ -50,7 +53,7 @@ export function useStoredState<T>(
       const stored = readFromStorage(key, initialValue)
       const serialized = safeStringify(stored)
       serializedRef.current = serialized
-      setValue(stored)
+      setValue(isValid && !isValid(stored) ? initialValue : stored)
     }
   }, [key, initialValue])
 
@@ -60,7 +63,7 @@ export function useStoredState<T>(
       const serialized = safeStringify(current)
       if (serialized !== serializedRef.current) {
         serializedRef.current = serialized
-        setValue(current)
+        setValue(isValid && !isValid(current) ? initialValue : current)
       }
     })
     return unsub
@@ -73,7 +76,8 @@ export function useStoredState<T>(
           if (e.newValue !== serializedRef.current) {
             serializedRef.current = e.newValue
             try {
-              setValue(JSON.parse(e.newValue) as T)
+              const parsed = JSON.parse(e.newValue) as T
+              setValue(isValid && !isValid(parsed) ? initialValue : parsed)
             } catch { }
           }
         } else {
@@ -94,7 +98,7 @@ export function useStoredState<T>(
         const serialized = safeStringify(current)
         if (serialized !== serializedRef.current) {
           serializedRef.current = serialized
-          setValue(current)
+          setValue(isValid && !isValid(current) ? initialValue : current)
         }
       }
     }
@@ -108,7 +112,7 @@ export function useStoredState<T>(
       const serialized = safeStringify(current)
       if (serialized !== serializedRef.current) {
         serializedRef.current = serialized
-        setValue(current)
+        setValue(isValid && !isValid(current) ? initialValue : current)
       }
     })
     return stop

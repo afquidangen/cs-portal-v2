@@ -70,6 +70,7 @@ import { ProfileModule } from "./modules/profile-module"
 
 import { QuickLinksModule } from "./modules/quick-links-module"
 import { SchedulePanel } from "./modules/schedule-panel"
+import { MyClassesModule } from "./modules/my-classes-module"
 import { SeminarsModule } from "./modules/seminars-module"
 import { TemplatesModule } from "./modules/templates-module"
 import { ThesisLibraryModule } from "./modules/thesis-library-module"
@@ -182,7 +183,7 @@ export function RoleDashboard({ role }: { role: Role }) {
   function renderModule() {
     const moduleMap: Record<string, React.ReactNode> = {
       overview: <OverviewModule model={model} />,
-      grades: <GradesModule model={model} />,
+      "my-classes": <MyClassesModule model={model} />,
       thesis: <ThesisLibraryModule model={model} />,
       announcements: <AnnouncementManagerModule model={model} />,
       feedback: <FeedbackModule model={model} />,
@@ -190,13 +191,14 @@ export function RoleDashboard({ role }: { role: Role }) {
       availability: <AvailabilityModule model={model} />,
       instructors: <InstructorsModule model={model} />,
       cso: <CsoModule model={model} />,
+      classes: <ClassesModule model={model} />,
+      grades: <GradesModule model={model} />,
       schedule: <SchedulePanel model={model} />,
       curriculum: <CurriculumModule model={model} />,
       "quick-links": <QuickLinksModule />,
       users: <UsersModule model={model} />,
       academic: <AcademicModule model={model} />,
       templates: <TemplatesModule model={model} />,
-      classes: <ClassesModule model={model} />,
       profile: <ProfileModule model={model} />,
       audit: <AuditModule model={model} />,
       about: <AboutModule />,
@@ -240,6 +242,7 @@ export function RoleDashboard({ role }: { role: Role }) {
     const academics = items.filter((item: { id: string }) =>
       [
         "grades",
+        "my-classes",
         "classes",
         "curriculum",
         "academic",

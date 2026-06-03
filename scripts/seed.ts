@@ -104,7 +104,13 @@ async function seed() {
       await model.deleteMany({})
     }
 
-    await model.insertMany(items)
+    if (name === "users") {
+      for (const item of items) {
+        await model.create(item)
+      }
+    } else {
+      await model.insertMany(items)
+    }
     total += items.length
     console.log(`[Seed] Seeded ${name} with ${items.length} documents.`)
   }

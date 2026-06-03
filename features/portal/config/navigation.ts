@@ -4,7 +4,6 @@ import {
   BookOpen,
   CalendarDays,
   CheckCircle2,
-  ClipboardCheck,
   Database,
   FileArchive,
   FileSpreadsheet,
@@ -17,6 +16,7 @@ import {
   UserCircle,
   Settings,
   Users,
+  Calendar,
 } from "lucide-react"
 
 import type { Role } from "../data/portal-data"
@@ -25,6 +25,7 @@ import type { ModuleId, NavItem } from "../types/navigation"
 export const roleNavigation: Record<Role, NavItem[]> = {
   student: [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
+    { id: "my-classes", label: "My Classes", icon: Calendar },
     { id: "grades", label: "Grades & Report", icon: FileSpreadsheet },
     { id: "thesis", label: "Thesis Library", icon: BookOpen },
     { id: "announcements", label: "Announcements", icon: Bell },
@@ -38,9 +39,7 @@ export const roleNavigation: Record<Role, NavItem[]> = {
   ],
   faculty: [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
-    { id: "classes", label: "Manage Class", icon: ClipboardCheck },
     { id: "schedule", label: "Class Schedule", icon: CalendarDays },
-    { id: "grades", label: "Manage Grades", icon: FileSpreadsheet },
     { id: "availability", label: "My Status", icon: CheckCircle2 },
     { id: "instructors", label: "Instructor Info", icon: Network },
     { id: "announcements", label: "Announcements", icon: Bell },

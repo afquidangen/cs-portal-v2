@@ -15,8 +15,8 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    if (!body.id || !body.name) {
-      return badRequest("Semester id and name are required.")
+    if (!body.id || !body.semester) {
+      return badRequest("Semester id and semester are required.")
     }
     const semester = await semestersRepository.create(body)
     return success(semester, 201)

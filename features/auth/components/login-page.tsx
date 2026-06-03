@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-import { testAccounts, testSessionStorageKey } from "../data/test-accounts"
+
 
 export function LoginPage() {
   const [email, setEmail] = useState("")
@@ -27,16 +27,7 @@ export function LoginPage() {
 
   useEffect(() => {
     document.documentElement.classList.remove("dark")
-    const existing = window.localStorage.getItem(testSessionStorageKey)
-    if (existing) {
-      try {
-        const session = JSON.parse(existing) as { role?: string; route?: string }
-        if (session.role && session.route) {
-          router.replace(session.route)
-        }
-      } catch { }
-    }
-  }, [router])
+  }, [])
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -59,16 +50,6 @@ export function LoginPage() {
       }
 
       const { account } = json
-      window.localStorage.setItem(
-        testSessionStorageKey,
-        JSON.stringify({
-          email: account.email,
-          role: account.role,
-          name: account.name,
-          title: account.title,
-          id: account.id,
-        })
-      )
       router.push(account.route)
     } catch {
       setMessage("Unable to connect. Please try again.")
@@ -112,8 +93,7 @@ export function LoginPage() {
           <CardHeader>
             <CardTitle className="text-2xl text-foreground">Sign In</CardTitle>
             <CardDescription>
-              Use the temporary test credentials while database integration is
-              pending.
+              Sign in with your registered account credentials.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -127,7 +107,7 @@ export function LoginPage() {
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder="student1@gmail.com"
+                    placeholder="you@ispsc.edu.ph"
                     className="h-10 rounded-xl pl-9"
                     required
                   />
@@ -178,31 +158,6 @@ export function LoginPage() {
                 {loading ? "Signing in..." : "Login"}
               </Button>
             </form>
-
-            <div className="mt-5 rounded-xl border border-border bg-muted/50 p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Test Accounts
-              </p>
-              <div className="mt-3 grid gap-2 text-sm">
-                {testAccounts.map((account) => (
-                  <button
-                    key={account.email}
-                    type="button"
-                    onClick={() => {
-                      setEmail(account.email)
-                      setPassword(account.password)
-                      setMessage("")
-                    }}
-                    className="flex items-center justify-between gap-3 rounded-xl bg-card px-3 py-2.5 text-left text-foreground/80 shadow-sm transition hover:bg-accent hover:text-accent-foreground"
-                  >
-                    <span className="font-medium">{account.email}</span>
-                    <span className="rounded-lg bg-muted px-2 py-0.5 text-xs font-medium capitalize text-muted-foreground">
-                      {account.role}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

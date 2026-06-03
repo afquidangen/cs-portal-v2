@@ -24,8 +24,7 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const student = await rosterRepository.update({ id }, { $set: body })
-    if (!student) return notFound("Roster entry")
+    const student = await rosterRepository.upsert({ id }, body)
     return success(student)
   } catch (err) {
     return error(err instanceof Error ? err.message : "Unable to update roster entry.")
@@ -38,8 +37,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const deleted = await rosterRepository.delete({ id })
-    if (!deleted) return notFound("Roster entry")
+    await rosterRepository.delete({ id })
     return success({ deleted: true })
   } catch (err) {
     return error(err instanceof Error ? err.message : "Unable to delete roster entry.")

@@ -222,7 +222,7 @@ export function Select({
         </SelectTrigger>
 
         <SelectContent className="border border-border bg-white text-foreground dark:bg-neutral-950">
-          {options.map((option) => (
+          {[...new Set(options)].map((option) => (
             <SelectItem
               key={option}
               value={option}

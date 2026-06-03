@@ -2,23 +2,25 @@ import mongoose, { Schema, type Document, type Model } from "mongoose"
 
 export interface ISemester extends Document {
   id: string
-  name: string
-  schoolYear: string
-  enrollment: string
-  gradeSubmission: string
+  semester: "First Semester" | "Midyear" | "Second Semester"
+  schoolYearStart: number
+  schoolYearEnd: number
+  status: "Active" | "Inactive"
+}
+
+if (mongoose.models.Semester) {
+  delete mongoose.models.Semester
 }
 
 const SemesterSchema = new Schema<ISemester>(
   {
     id: { type: String, required: true, unique: true },
-    name: { type: String, required: true },
-    schoolYear: String,
-    enrollment: String,
-    gradeSubmission: String,
+    semester: { type: String, enum: ["First Semester", "Midyear", "Second Semester"], required: true },
+    schoolYearStart: { type: Number, required: true },
+    schoolYearEnd: { type: Number, required: true },
+    status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
   },
   { timestamps: true }
 )
 
-export const SemesterModel =
-  (mongoose.models.Semester as Model<ISemester> | undefined) ??
-  mongoose.model<ISemester>("Semester", SemesterSchema)
+export const SemesterModel: Model<ISemester> = mongoose.model<ISemester>("Semester", SemesterSchema)

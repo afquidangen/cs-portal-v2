@@ -7,20 +7,19 @@ import {
   useEffect,
   useMemo,
   useState,
-  useSyncExternalStore,
 } from "react"
 
-import {
-  testSessionStorageKey,
-} from "@/features/auth/data/test-accounts"
-
 import { initialModule, roleNavigation } from "../config/navigation"
+import type { AuditLogRecord } from "@/lib/types/audit-log"
+import type { YearSectionRecord } from "@/lib/types/year-section"
 import {
   type Announcement,
   type AvailabilityStatus,
   type ClassStudent,
   type CsoReport,
   type CurriculumRecord,
+  type FacultyRecord,
+  type FeedbackTicket,
   type GradeRecord,
   type ProfileDetails,
   type Role,
@@ -31,67 +30,26 @@ import {
   type ThesisRecord,
   type TicketStatus,
   type UserRecord,
-  announcementsSeed,
-  auditLogsSeed,
-  classRosterSeed,
-  csoReportsSeed,
-  curriculumCatalogSeed,
-  facultyHandledSections,
-  facultySeed,
-  feedbackSeed,
-  gradeSeed,
-  roleProfiles,
-  scheduleSeed,
-  semestersSeed,
-  subjectsSeed,
-  seminarSeed,
-  thesisSeed,
-  usersSeed,
-  yearSectionsSeed,
 } from "../data/portal-data"
 import { csvEscape, downloadFile } from "../lib/downloads"
 import { calculateFinalGrade, transmutedToEquivalent } from "../lib/grades"
 import { parseGradeWorkbook, parseScheduleWorkbook } from "../lib/xlsx"
 import type { ModuleId } from "../types/navigation"
-import { useStoredState } from "./use-stored-state"
 
-type TestSessionProfile = {
+type SessionUser = {
   name: string
-  title: string
   email: string
   id: string
   role: Role
+  title: string
 }
 
-function subscribeToTestSession(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange)
-  return () => window.removeEventListener("storage", onStoreChange)
-}
-
-function getTestSessionSnapshot() {
-  return window.localStorage.getItem(testSessionStorageKey)
-}
-
-function getServerTestSessionSnapshot() {
-  return null
-}
-
-function parseTestSession(value: string | null) {
-  if (!value) return null
-
+async function fetchSession(): Promise<SessionUser | null> {
   try {
-    const parsedSession = JSON.parse(value) as Partial<TestSessionProfile>
-    if (
-      !parsedSession.name ||
-      !parsedSession.title ||
-      !parsedSession.email ||
-      !parsedSession.id ||
-      !parsedSession.role
-    ) {
-      return null
-    }
-
-    return parsedSession as TestSessionProfile
+    const res = await fetch("/api/auth/me")
+    if (!res.ok) return null
+    const json = await res.json()
+    return json.account ?? null
   } catch {
     return null
   }
@@ -107,25 +65,6 @@ function splitProfileName(name: string) {
     firstName: parts[0] ?? "",
     middleName: parts.length > 2 ? parts.slice(1, -1).join(" ") : "",
     lastName: parts.length > 1 ? parts[parts.length - 1] : "",
-  }
-}
-
-function createProfileDetails(
-  profile: TestSessionProfile | typeof roleProfiles[Role],
-  user?: UserRecord
-): ProfileDetails {
-  const nameParts = splitProfileName(profile.name)
-
-  return {
-    photoUrl: user?.photoUrl ?? "",
-    firstName: user?.firstName ?? nameParts.firstName,
-    middleName: user?.middleName ?? nameParts.middleName,
-    lastName: user?.lastName ?? nameParts.lastName,
-    email: user?.email ?? profile.email,
-    contactNumber: user?.contactNumber ?? "0917 000 0000",
-    sex: user?.sex ?? "Female",
-    birthday: user?.birthday ?? "",
-    address: user?.address ?? "Candon City, Ilocos Sur",
   }
 }
 
@@ -191,68 +130,32 @@ export function usePortalDashboardModel(role: Role) {
   const [query, setQuery] = useState("")
 
   async function syncApi(method: string, url: string, body?: unknown) {
-    try {
-      await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: body ? JSON.stringify(body) : undefined,
-      })
-    } catch {
-      // Silently fail — local state is already updated
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    })
+    if (!res.ok) {
+      const text = await res.text().catch(() => "")
+      throw new Error(`Failed to sync ${url} (${res.status}): ${text}`)
     }
   }
 
-  const [users, setUsers] = useStoredState<UserRecord[]>(
-    "comsite-users",
-    usersSeed
-  )
-  const [faculty, setFaculty] = useStoredState("comsite-faculty", facultySeed)
-  const [grades, setGrades] = useStoredState("comsite-grades", gradeSeed)
-  const [theses, setTheses] = useStoredState("comsite-theses", thesisSeed)
-  const [seminars, setSeminars] = useStoredState(
-    "comsite-seminars",
-    seminarSeed
-  )
-  const [tickets, setTickets] = useStoredState(
-    "comsite-feedback",
-    feedbackSeed
-  )
-  const [announcements, setAnnouncements] = useStoredState(
-    "comsite-announcements",
-    announcementsSeed
-  )
-  const [roster, setRoster] = useStoredState(
-    "comsite-class-roster",
-    classRosterSeed
-  )
-  const [semesters, setSemesters] = useStoredState<SemesterRecord[]>(
-    "comsite-semesters",
-    semestersSeed
-  )
-  const [subjects, setSubjects] = useStoredState<SubjectRecord[]>(
-    "comsite-subjects",
-    subjectsSeed
-  )
-  const [curricula, setCurricula] = useStoredState<CurriculumRecord[]>(
-    "comsite-curricula",
-    curriculumCatalogSeed
-  )
-  const [yearSections, setYearSections] = useStoredState(
-    "comsite-year-sections",
-    yearSectionsSeed
-  )
-  const [classSchedules, setClassSchedules] = useStoredState<ScheduleItem[]>(
-    "comsite-class-schedules",
-    scheduleSeed
-  )
-  const [auditLogs, setAuditLogs] = useStoredState(
-    "comsite-audit-logs",
-    auditLogsSeed
-  )
-  const [csoReports, setCsoReports] = useStoredState(
-    "comsite-cso-reports",
-    csoReportsSeed
-  )
+  const [users, setUsers] = useState<UserRecord[]>([])
+  const [faculty, setFaculty] = useState<FacultyRecord[]>([])
+  const [grades, setGrades] = useState<GradeRecord[]>([])
+  const [theses, setTheses] = useState<ThesisRecord[]>([])
+  const [seminars, setSeminars] = useState<SeminarRecord[]>([])
+  const [tickets, setTickets] = useState<FeedbackTicket[]>([])
+  const [announcements, setAnnouncements] = useState<Announcement[]>([])
+  const [roster, setRoster] = useState<ClassStudent[]>([])
+  const [semesters, setSemesters] = useState<SemesterRecord[]>([])
+  const [subjects, setSubjects] = useState<SubjectRecord[]>([])
+  const [curricula, setCurricula] = useState<CurriculumRecord[]>([])
+  const [yearSections, setYearSections] = useState<YearSectionRecord[]>([])
+  const [classSchedules, setClassSchedules] = useState<ScheduleItem[]>([])
+  const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([])
+  const [csoReports, setCsoReports] = useState<CsoReport[]>([])
 
   const [roleFilter, setRoleFilter] = useState("All")
   const [selectedAcademicSection, setSelectedAcademicSection] =
@@ -260,6 +163,7 @@ export function usePortalDashboardModel(role: Role) {
   const [selectedClassYear, setSelectedClassYear] = useState("First Year")
   const [selectedClassSection, setSelectedClassSection] = useState("BSCS 3A")
   const [selectedGradeSection, setSelectedGradeSection] = useState("BSCS 3A")
+  const [selectedScheduleEntry, setSelectedScheduleEntry] = useState<ScheduleItem | null>(null)
   const [selectedCurriculumId, setSelectedCurriculumId] = useState("CURR-001")
   const [curriculumFilter, setCurriculumFilter] = useState("All")
   const [showThesisUploadForm, setShowThesisUploadForm] = useState(false)
@@ -272,6 +176,7 @@ export function usePortalDashboardModel(role: Role) {
   })
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null)
   const [scheduleDraft, setScheduleDraft] = useState({
+    semesterId: semesters.find((s) => s.status === "Active")?.id ?? "",
     day: "",
     time: "",
     subject: "",
@@ -281,17 +186,37 @@ export function usePortalDashboardModel(role: Role) {
   })
   const [showAddSemesterForm, setShowAddSemesterForm] = useState(false)
   const [showAddSubjectForm, setShowAddSubjectForm] = useState(false)
-  const [newSemester, setNewSemester] = useState({
-    name: "",
-    schoolYear: "",
-    enrollment: "Open",
-    gradeSubmission: "",
+  const [newSemester, setNewSemester] = useState<{
+    semester: "First Semester" | "Midyear" | "Second Semester"
+    schoolYearStart: number
+    schoolYearEnd: number
+    status: "Active" | "Inactive"
+  }>({
+    semester: "First Semester",
+    schoolYearStart: new Date().getFullYear(),
+    schoolYearEnd: new Date().getFullYear() + 1,
+    status: "Active",
   })
-  const [newSubject, setNewSubject] = useState({
+  const [newSubject, setNewSubject] = useState<{
+    curriculumId: string
+    yearLevel: string
+    semester: string
+    code: string
+    name: string
+    type: "Lecture" | "Lecture with Lab"
+    lectureUnits: number
+    labUnits: number
+    totalUnits: number
+  }>({
+    curriculumId: curricula[0]?.id ?? "",
+    yearLevel: "1st Year",
+    semester: "First Semester",
     code: "",
-    title: "",
-    units: "3",
-    instructor: "",
+    name: "",
+    type: "Lecture",
+    lectureUnits: 3,
+    labUnits: 0,
+    totalUnits: 3,
   })
   const [newCurriculum, setNewCurriculum] = useState({
     name: "",
@@ -353,45 +278,18 @@ export function usePortalDashboardModel(role: Role) {
   const [myFacultyNotes, setMyFacultyNotes] = useState(
     "Available for consultation."
   )
-  const sessionSnapshot = useSyncExternalStore(
-    subscribeToTestSession,
-    getTestSessionSnapshot,
-    getServerTestSessionSnapshot
-  )
-  const sessionProfile = useMemo(
-    () => parseTestSession(sessionSnapshot),
-    [sessionSnapshot]
-  )
+  const [authenticatedUser, setAuthenticatedUser] = useState<SessionUser | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
 
   useEffect(() => {
-    const storedSession = window.localStorage.getItem(testSessionStorageKey)
-    if (!storedSession) {
-      router.replace("/")
-      return
-    }
-
-    try {
-      const parsedSession = JSON.parse(storedSession) as {
-        name?: string
-        title?: string
-        email?: string
-        id?: string
-        role?: Role
-      }
-      if (
-        parsedSession.role !== role ||
-        !parsedSession.name ||
-        !parsedSession.title ||
-        !parsedSession.email ||
-        !parsedSession.id
-      ) {
+    fetchSession().then((user) => {
+      if (!user || user.role !== role) {
         router.replace("/")
         return
       }
-    } catch {
-      window.localStorage.removeItem(testSessionStorageKey)
-      router.replace("/")
-    }
+      setAuthenticatedUser(user)
+      setAuthLoading(false)
+    })
   }, [role, router])
 
   useEffect(() => {
@@ -412,19 +310,33 @@ export function usePortalDashboardModel(role: Role) {
     })
   }, [users, setRoster])
 
-  const rawProfile = sessionProfile ?? roleProfiles[role]
-  const profileUser = users.find((user) => user.id === rawProfile.id)
-  const [profileDetails, setProfileDetails] = useStoredState<ProfileDetails>(
-    `comsite-profile-details-${rawProfile.id}`,
-    createProfileDetails(rawProfile, profileUser)
-  )
+  const [profileDetails, setProfileDetails] = useState<ProfileDetails>({
+    photoUrl: "", firstName: "", middleName: "", lastName: "",
+    email: "", contactNumber: "", sex: "", birthday: "", address: "",
+  })
   const profileName = getProfileFullName(profileDetails)
-  const profile = {
-    ...rawProfile,
-    name: profileName || rawProfile.name,
-    email: profileDetails.email || rawProfile.email,
-    title: role === "faculty" ? "Faculty Member" : rawProfile.title,
-  }
+  const profile = authenticatedUser ?? {
+    name: "", email: "", id: "", role, title: "",
+  } as SessionUser
+
+  const profileUser = users.find((user) => user.id === profile.id)
+  useEffect(() => {
+    if (!authenticatedUser) return
+    setProfileDetails((prev) => {
+      const nameParts = splitProfileName(authenticatedUser.name)
+      return {
+        photoUrl: profileUser?.photoUrl ?? "",
+        firstName: profileUser?.firstName ?? nameParts.firstName,
+        middleName: profileUser?.middleName ?? nameParts.middleName,
+        lastName: profileUser?.lastName ?? nameParts.lastName,
+        email: profileUser?.email ?? authenticatedUser.email,
+        contactNumber: profileUser?.contactNumber ?? "",
+        sex: profileUser?.sex ?? "",
+        birthday: profileUser?.birthday ?? "",
+        address: profileUser?.address ?? "",
+      }
+    })
+  }, [authenticatedUser, profileUser])
   const profileAdvisoryClass = profileUser?.advisoryClass
   const profilePhotoUrl = profileDetails.photoUrl
   const navigation = roleNavigation[role]
@@ -444,14 +356,13 @@ export function usePortalDashboardModel(role: Role) {
   )
 
   const facultyClassSections = useMemo(() => {
-    const configured = facultyHandledSections[profile.id] ?? []
     const advisory = profileAdvisoryClass ? [profileAdvisoryClass] : []
     const scheduleSections = classSchedules
       .filter((item) => item.instructor === profile.name)
       .map((item) => item.section)
 
     return Array.from(
-      new Set([...configured, ...advisory, ...scheduleSections])
+      new Set([...advisory, ...scheduleSections])
     ).filter(Boolean)
   }, [classSchedules, profile.id, profile.name, profileAdvisoryClass])
 
@@ -485,17 +396,43 @@ export function usePortalDashboardModel(role: Role) {
     [activeGradeSection, facultyClassSections, grades]
   )
 
+  const profileSection = profileUser?.section ?? ""
   const visibleSchedules = useMemo(() => {
-    if (role !== "faculty") return classSchedules
-    return classSchedules.filter((item) =>
-      facultyClassSections.includes(item.section)
-    )
-  }, [classSchedules, facultyClassSections, role])
+    if (role === "faculty") {
+      return classSchedules.filter((item) =>
+        item.instructor === profile.name
+      )
+    }
+    if (role === "student" && profileSection) {
+      return classSchedules.filter((item) => item.section.includes(profileSection))
+    }
+    return classSchedules
+  }, [classSchedules, facultyClassSections, role, profileSection])
+
+  const selectedScheduleStudents = useMemo(
+    () =>
+      selectedScheduleEntry
+        ? roster.filter((s) => s.section === selectedScheduleEntry.section && s.enrolled)
+        : [],
+    [selectedScheduleEntry, roster]
+  )
+
+  const selectedScheduleGrades = useMemo(
+    () =>
+      selectedScheduleEntry
+        ? grades.filter(
+            (g) =>
+              g.section === selectedScheduleEntry.section &&
+              g.subject === selectedScheduleEntry.subject
+          )
+        : [],
+    [selectedScheduleEntry, grades]
+  )
 
   const studentGrades = useMemo(
     () =>
       grades.filter(
-        (grade) => grade.studentId === profile.id && grade.released !== false
+        (grade) => grade.studentId === profile.id && grade.released === true
       ),
     [grades, profile.id]
   )
@@ -509,6 +446,11 @@ export function usePortalDashboardModel(role: Role) {
       ) / studentGrades.length
     return average.toFixed(2)
   }, [studentGrades])
+
+  const allStudentGrades = useMemo(
+    () => grades.filter((grade) => grade.studentId === profile.id),
+    [grades, profile.id]
+  )
 
   const filteredTheses = useMemo(() => {
     const search = query.toLowerCase()
@@ -571,8 +513,8 @@ export function usePortalDashboardModel(role: Role) {
     setSidebarOpen(false)
   }
 
-  function handleLogout() {
-    window.localStorage.removeItem(testSessionStorageKey)
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" })
     router.push("/")
   }
 
@@ -656,43 +598,37 @@ export function usePortalDashboardModel(role: Role) {
 
   function updateGrade(
     id: string,
-    field: "midterm" | "finalTerm" | "midtermTransmuted" | "finalTransmuted",
+    field: "midterm" | "finalTerm",
     value: string
   ) {
     const numericValue = Number(value)
+    const equiv = Number.isNaN(numericValue) ? 0 : numericValue
+    const percentage = equiv
+
     setGrades((current) =>
       current.map((grade) => {
         if (grade.id !== id) return grade
 
-        const safeValue = Number.isNaN(numericValue) ? 0 : numericValue
         const nextGrade = {
           ...grade,
-          [field]: safeValue,
+          [field]: equiv,
+          ...(field === "midterm" ? { midtermTransmuted: percentage } : {}),
+          ...(field === "finalTerm" ? { finalTransmuted: percentage } : {}),
           updatedAt: "June 1, 2026",
         }
 
-        if (field === "midtermTransmuted") {
-          nextGrade.midterm = transmutedToEquivalent(safeValue)
-        }
-
-        if (field === "finalTransmuted") {
-          nextGrade.finalTerm = transmutedToEquivalent(safeValue)
-        }
-
+        const mt = field === "midterm" ? percentage : nextGrade.midtermTransmuted
+        const ft = field === "finalTerm" ? percentage : nextGrade.finalTransmuted
         nextGrade.gradePercentage =
-          nextGrade.midtermTransmuted !== undefined &&
-          nextGrade.finalTransmuted !== undefined
-            ? Number(
-                (
-                  (nextGrade.midtermTransmuted + nextGrade.finalTransmuted) /
-                  2
-                ).toFixed(2)
-              )
+          mt !== undefined && ft !== undefined
+            ? Number((((mt as number) + (ft as number)) / 2).toFixed(2))
             : nextGrade.gradePercentage
 
         return nextGrade
       })
     )
+
+    void syncApi("PUT", `/api/portal/grades/${id}`, { [field]: equiv })
   }
 
   function updateGradeRemarks(id: string, remarks: string) {
@@ -704,18 +640,47 @@ export function usePortalDashboardModel(role: Role) {
     void syncApi("PUT", `/api/portal/grades/${id}`, { remarks })
   }
 
-  function releaseGradesForSection(section: string) {
+  function releaseGradesForSection(section: string, subject?: string) {
+    const label = subject ? `${section} - ${subject}` : section
     const approved = window.confirm(
-      `Release grades for ${section} to students?`
+      `Release grades for ${label} to students?`
     )
     if (!approved) return
 
     setGrades((current) =>
       current.map((grade) =>
-        grade.section === section ? { ...grade, released: true } : grade
+        grade.section === section && (!subject || grade.subject === subject)
+          ? { ...grade, released: true }
+          : grade
       )
     )
-    addAuditLog(`Released grades for ${section}`)
+    void syncApi("POST", "/api/portal/grades/release", { section, subject })
+    addAuditLog(`Released grades for ${label}`)
+  }
+
+  function handleCreateGrade(studentId: string, studentName: string) {
+    if (!selectedScheduleEntry) return
+    const exists = grades.some(
+      (g) => g.studentId === studentId && g.subject === selectedScheduleEntry.subject
+    )
+    if (exists) return
+
+    const newId = `GRD-${Date.now()}`
+    const newGrade: GradeRecord = {
+      id: newId,
+      studentId,
+      student: studentName,
+      section: selectedScheduleEntry.section,
+      subject: selectedScheduleEntry.subject,
+      code: selectedScheduleEntry.subject,
+      units: 3,
+      midterm: 0,
+      finalTerm: 0,
+      released: false,
+      updatedAt: "June 1, 2026",
+    }
+    setGrades((current) => [newGrade, ...current])
+    void syncApi("POST", "/api/portal/grades", newGrade)
   }
 
   function updateTicketStatus(
@@ -857,6 +822,7 @@ export function usePortalDashboardModel(role: Role) {
         if (exists) return current
         return [{ id: accountId, name: fullName, section: rosterSection, enrolled: true }, ...current]
       })
+      void syncApi("POST", "/api/portal/roster", { id: accountId, name: fullName, section: rosterSection, enrolled: true })
     }
 
     addAuditLog(`Created ${newUser.role} account "${fullName}" (${newUser.email})`)
@@ -1043,7 +1009,7 @@ export function usePortalDashboardModel(role: Role) {
     const fullName = getProfileFullName(draft)
     setUsers((current) =>
       current.map((user) =>
-        user.id === rawProfile.id
+        user.id === profile.id
           ? {
               ...user,
               name: fullName || user.name,
@@ -1060,7 +1026,7 @@ export function usePortalDashboardModel(role: Role) {
           : user
       )
     )
-    void syncApi("PUT", `/api/portal/users/${rawProfile.id}`, {
+    void syncApi("PUT", `/api/portal/users/${profile.id}`, {
       firstName: draft.firstName,
       middleName: draft.middleName,
       lastName: draft.lastName,
@@ -1205,8 +1171,9 @@ export function usePortalDashboardModel(role: Role) {
     event.preventDefault()
     if (!scheduleDraft.section.trim() || !scheduleDraft.subject.trim()) return
 
-    const newItem = {
+    const newItem: ScheduleItem = {
       id: `SCH-${String(classSchedules.length + 1).padStart(3, "0")}`,
+      semesterId: scheduleDraft.semesterId,
       day: scheduleDraft.day.trim() || "TBA",
       time: scheduleDraft.time.trim() || "TBA",
       subject: scheduleDraft.subject.trim(),
@@ -1218,6 +1185,7 @@ export function usePortalDashboardModel(role: Role) {
     void syncApi("POST", "/api/portal/schedules", newItem)
 
     setScheduleDraft({
+      semesterId: scheduleDraft.semesterId,
       day: "",
       time: "",
       subject: "",
@@ -1239,9 +1207,12 @@ export function usePortalDashboardModel(role: Role) {
         return
       }
 
+      const activeSemesterId = semesters.find((s) => s.status === "Active")?.id ?? ""
+
       setClassSchedules((current) => [
         ...importedRows.map((row, index) => ({
           id: `SCH-UP-${Date.now()}-${index}`,
+          semesterId: activeSemesterId,
           ...row,
         })),
         ...current,
@@ -1361,21 +1332,23 @@ export function usePortalDashboardModel(role: Role) {
 
   function handleAddSemester(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!newSemester.name.trim() || !newSemester.schoolYear.trim()) return
-    setSemesters((current) => [
-      {
-        id: `SEM-${String(current.length + 1).padStart(3, "0")}`,
-        name: newSemester.name.trim(),
-        schoolYear: newSemester.schoolYear.trim(),
-        enrollment: newSemester.enrollment,
-        gradeSubmission: newSemester.gradeSubmission.trim(),
-      },
-      ...current,
-    ])
-    setNewSemester({ name: "", schoolYear: "", enrollment: "Open", gradeSubmission: "" })
+    const semesterData = {
+      id: `SEM-${String(semesters.length + 1).padStart(3, "0")}`,
+      semester: newSemester.semester,
+      schoolYearStart: newSemester.schoolYearStart,
+      schoolYearEnd: newSemester.schoolYearEnd,
+      status: newSemester.status,
+    }
+    setSemesters((current) => [semesterData, ...current])
+    setNewSemester({
+      semester: "First Semester",
+      schoolYearStart: new Date().getFullYear(),
+      schoolYearEnd: new Date().getFullYear() + 1,
+      status: "Active",
+    })
     setShowAddSemesterForm(false)
-    addAuditLog(`Created semester "${newSemester.name}"`)
-    void syncApi("POST", "/api/portal/semesters", newSemester)
+    addAuditLog(`Created semester "${newSemester.semester}"`)
+    void syncApi("POST", "/api/portal/semesters", semesterData)
   }
 
   function handleUpdateSemester(updated: SemesterRecord) {
@@ -1383,47 +1356,61 @@ export function usePortalDashboardModel(role: Role) {
       current.map((item) => (item.id === updated.id ? updated : item))
     )
     void syncApi("PUT", `/api/portal/semesters/${updated.id}`, updated)
-    addAuditLog(`Updated semester "${updated.name}"`)
+    addAuditLog(`Updated semester "${updated.semester}"`)
   }
 
   function handleDeleteSemester(id: string) {
     const item = semesters.find((s) => s.id === id)
     setSemesters((current) => current.filter((s) => s.id !== id))
     void syncApi("DELETE", `/api/portal/semesters/${id}`)
-    if (item) addAuditLog(`Deleted semester "${item.name}"`)
+    if (item) addAuditLog(`Deleted semester "${item.semester}"`)
   }
 
   function handleAddSubject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!newSubject.code.trim() || !newSubject.title.trim()) return
-    setSubjects((current) => [
-      {
-        code: newSubject.code.trim().toUpperCase(),
-        title: newSubject.title.trim(),
-        units: Number(newSubject.units) || 0,
-        instructor: newSubject.instructor.trim(),
-      },
-      ...current,
-    ])
-    setNewSubject({ code: "", title: "", units: "3", instructor: "" })
+    if (!newSubject.code.trim() || !newSubject.name.trim()) return
+    const subjectData: SubjectRecord = {
+      id: `SUBJ-${String(subjects.length + 1).padStart(3, "0")}`,
+      curriculumId: newSubject.curriculumId,
+      yearLevel: newSubject.yearLevel,
+      semester: newSubject.semester,
+      code: newSubject.code.trim().toUpperCase(),
+      name: newSubject.name.trim(),
+      type: newSubject.type,
+      lectureUnits: newSubject.lectureUnits,
+      labUnits: newSubject.labUnits,
+      totalUnits: newSubject.totalUnits,
+    }
+    setSubjects((current) => [subjectData, ...current])
+    setNewSubject({
+      curriculumId: curricula[0]?.id ?? "",
+      yearLevel: "1st Year",
+      semester: "First Semester",
+      code: "",
+      name: "",
+      type: "Lecture",
+      lectureUnits: 3,
+      labUnits: 0,
+      totalUnits: 3,
+    })
     setShowAddSubjectForm(false)
-    addAuditLog(`Created subject "${newSubject.title}"`)
-    void syncApi("POST", "/api/portal/subjects", newSubject)
+    addAuditLog(`Created subject "${newSubject.name}"`)
+    void syncApi("POST", "/api/portal/subjects", subjectData)
   }
 
   function handleUpdateSubject(updated: SubjectRecord) {
     setSubjects((current) =>
-      current.map((item) => (item.code === updated.code ? updated : item))
+      current.map((item) => (item.id === updated.id ? updated : item))
     )
-    void syncApi("PUT", `/api/portal/subjects/${updated.code}`, updated)
-    addAuditLog(`Updated subject "${updated.title}"`)
+    void syncApi("PUT", `/api/portal/subjects/${updated.id}`, updated)
+    addAuditLog(`Updated subject "${updated.name}"`)
   }
 
-  function handleDeleteSubject(code: string) {
-    const item = subjects.find((s) => s.code === code)
-    setSubjects((current) => current.filter((s) => s.code !== code))
-    void syncApi("DELETE", `/api/portal/subjects/${code}`)
-    if (item) addAuditLog(`Deleted subject "${item.title}"`)
+  function handleDeleteSubject(id: string) {
+    const item = subjects.find((s) => s.id === id)
+    setSubjects((current) => current.filter((s) => s.id !== id))
+    void syncApi("DELETE", `/api/portal/subjects/${id}`)
+    if (item) addAuditLog(`Deleted subject "${item.name}"`)
   }
 
   function handleAddTermToCurriculum(
@@ -1560,10 +1547,10 @@ export function usePortalDashboardModel(role: Role) {
     const id = `FB-${1000 + tickets.length + 1}`
     const newItem = {
       id,
-      studentId: feedbackDraft.anonymous ? undefined : roleProfiles.student.id,
+      studentId: feedbackDraft.anonymous ? undefined : profile.id,
       studentName: feedbackDraft.anonymous
         ? "Anonymous"
-        : roleProfiles.student.name,
+        : profile.name,
       category: feedbackDraft.category,
       subject: feedbackDraft.subject.trim(),
       description: feedbackDraft.description.trim(),
@@ -1595,7 +1582,7 @@ export function usePortalDashboardModel(role: Role) {
       description: "New seminar created from the admin event manager.",
       capacity: Number(eventDraft.capacity) || 30,
       enlistedStudentIds: [] as string[],
-      host: roleProfiles.faculty.name,
+      host: profile.name,
       status: "Active" as const,
     }
     setSeminars((current) => [newItem, ...current])
@@ -1714,7 +1701,7 @@ export function usePortalDashboardModel(role: Role) {
   }
 
   function handleEnlist(eventId: string) {
-    const studentId = roleProfiles.student.id
+    const studentId = profile.id
     let updatedEvent: Record<string, unknown> | null = null
     setSeminars((current) =>
       current.map((event) => {
@@ -1855,6 +1842,7 @@ export function usePortalDashboardModel(role: Role) {
     setProfileDetails,
     profilePhotoUrl,
     profile,
+    profileSection,
     navigation,
     userStats,
     allClassSections,
@@ -1862,7 +1850,12 @@ export function usePortalDashboardModel(role: Role) {
     facultyClassStudents,
     facultyGradeRecords,
     visibleSchedules,
+    selectedScheduleEntry,
+    setSelectedScheduleEntry,
+    selectedScheduleStudents,
+    selectedScheduleGrades,
     studentGrades,
+    allStudentGrades,
     gradeAverage,
     filteredTheses,
     filteredFaculty,
@@ -1883,6 +1876,7 @@ export function usePortalDashboardModel(role: Role) {
     updateGrade,
     updateGradeRemarks,
     releaseGradesForSection,
+    handleCreateGrade,
     updateTicketStatus,
     updateFacultyStatus,
     confirmAndToggleUserStatus,

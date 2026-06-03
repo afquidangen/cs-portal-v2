@@ -31,6 +31,8 @@ export type UserRecord = {
   section?: string
   position?: string
   status: "Active" | "Inactive"
+  createdAt?: string
+  lastLogin?: string
 }
 
 export type FacultyRecord = {
@@ -126,6 +128,7 @@ export type Announcement = {
 
 export type ScheduleItem = {
   id: string
+  semesterId: string
   day: string
   time: string
   subject: string
@@ -832,6 +835,7 @@ export const announcementsSeed: Announcement[] = [
 export const scheduleSeed: ScheduleItem[] = [
   {
     id: "SCH-001",
+    semesterId: "SEM-001",
     day: "Monday",
     time: "8:00 AM - 10:00 AM",
     subject: "Web Systems and Technologies",
@@ -841,6 +845,7 @@ export const scheduleSeed: ScheduleItem[] = [
   },
   {
     id: "SCH-002",
+    semesterId: "SEM-001",
     day: "Tuesday",
     time: "10:00 AM - 12:00 PM",
     subject: "Data Structures",
@@ -850,6 +855,7 @@ export const scheduleSeed: ScheduleItem[] = [
   },
   {
     id: "SCH-003",
+    semesterId: "SEM-001",
     day: "Wednesday",
     time: "1:00 PM - 3:00 PM",
     subject: "Software Engineering",
@@ -859,6 +865,7 @@ export const scheduleSeed: ScheduleItem[] = [
   },
   {
     id: "SCH-004",
+    semesterId: "SEM-001",
     day: "Thursday",
     time: "9:00 AM - 11:00 AM",
     subject: "Database Systems",
@@ -868,6 +875,7 @@ export const scheduleSeed: ScheduleItem[] = [
   },
   {
     id: "SCH-005",
+    semesterId: "SEM-001",
     day: "Friday",
     time: "1:00 PM - 3:00 PM",
     subject: "Thesis Consultation",
@@ -1404,72 +1412,114 @@ export const quickLinksSeed = [
 
 export type SemesterRecord = {
   id: string
-  name: string
-  schoolYear: string
-  enrollment: string
-  gradeSubmission: string
+  semester: "First Semester" | "Midyear" | "Second Semester"
+  schoolYearStart: number
+  schoolYearEnd: number
+  status: "Active" | "Inactive"
 }
 
 export type SubjectRecord = {
+  id: string
+  curriculumId: string
+  yearLevel: string
+  semester: string
   code: string
-  title: string
-  units: number
-  instructor: string
+  name: string
+  type: "Lecture" | "Lecture with Lab"
+  lectureUnits: number
+  labUnits: number
+  totalUnits: number
 }
 
 export const semestersSeed: SemesterRecord[] = [
   {
     id: "SEM-001",
-    name: "2nd Semester",
-    schoolYear: "2025-2026",
-    enrollment: "Open",
-    gradeSubmission: "May 20 - June 5, 2026",
+    semester: "Second Semester",
+    schoolYearStart: 2025,
+    schoolYearEnd: 2026,
+    status: "Active",
   },
   {
     id: "SEM-002",
-    name: "Summer Term",
-    schoolYear: "2025-2026",
-    enrollment: "Upcoming",
-    gradeSubmission: "July 20 - July 30, 2026",
+    semester: "Midyear",
+    schoolYearStart: 2025,
+    schoolYearEnd: 2026,
+    status: "Inactive",
   },
 ]
 
-export const subjectsSeed = [
+export const subjectsSeed: SubjectRecord[] = [
   {
+    id: "SUBJ-001",
+    curriculumId: "CURR-001",
+    yearLevel: "3rd Year",
+    semester: "Second Semester",
     code: "CS311",
-    title: "Web Systems and Technologies",
-    units: 3,
-    instructor: "Maria Santos",
+    name: "Web Systems and Technologies",
+    type: "Lecture with Lab",
+    lectureUnits: 2,
+    labUnits: 1,
+    totalUnits: 3,
   },
   {
+    id: "SUBJ-002",
+    curriculumId: "CURR-001",
+    yearLevel: "3rd Year",
+    semester: "Second Semester",
     code: "CS312",
-    title: "Database Systems",
-    units: 3,
-    instructor: "Hezron Gagarin",
+    name: "Database Systems",
+    type: "Lecture with Lab",
+    lectureUnits: 2,
+    labUnits: 1,
+    totalUnits: 3,
   },
   {
+    id: "SUBJ-003",
+    curriculumId: "CURR-001",
+    yearLevel: "3rd Year",
+    semester: "Second Semester",
     code: "CS313",
-    title: "Software Engineering",
-    units: 3,
-    instructor: "Kyla Cablay",
+    name: "Software Engineering",
+    type: "Lecture with Lab",
+    lectureUnits: 2,
+    labUnits: 1,
+    totalUnits: 3,
   },
   {
+    id: "SUBJ-004",
+    curriculumId: "CURR-001",
+    yearLevel: "3rd Year",
+    semester: "Second Semester",
     code: "CS304",
-    title: "Operating Systems",
-    units: 3,
-    instructor: "Hezron Gagarin",
+    name: "Operating Systems",
+    type: "Lecture with Lab",
+    lectureUnits: 2,
+    labUnits: 1,
+    totalUnits: 3,
   },
   {
+    id: "SUBJ-005",
+    curriculumId: "CURR-001",
+    yearLevel: "2nd Year",
+    semester: "First Semester",
     code: "CS201",
-    title: "Data Structures",
-    units: 3,
-    instructor: "Faculty Test 1",
+    name: "Data Structures",
+    type: "Lecture with Lab",
+    lectureUnits: 2,
+    labUnits: 1,
+    totalUnits: 3,
   },
   {
+    id: "SUBJ-006",
+    curriculumId: "CURR-001",
+    yearLevel: "4th Year",
+    semester: "First Semester",
     code: "CS400",
-    title: "Thesis Consultation",
-    units: 3,
-    instructor: "Faculty Test 2",
+    name: "Thesis Consultation",
+    type: "Lecture",
+    lectureUnits: 3,
+    labUnits: 0,
+    totalUnits: 3,
   },
 ]
 

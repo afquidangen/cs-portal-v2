@@ -1,46 +1,33 @@
 import { connectToDatabase } from "@/lib/mongodb"
-import {
-  announcementsSeed,
-  auditLogsSeed,
-  classRosterSeed,
-  csoReportsSeed,
-  curriculumCatalogSeed,
-  facultySeed,
-  feedbackSeed,
-  gradeSeed,
-  quickLinksSeed,
-  scheduleSeed,
-  semestersSeed,
-  subjectsSeed,
-  seminarSeed,
-  thesisSeed,
-  usersSeed,
-  yearSectionsSeed,
-} from "../data/portal-data"
 import type { PortalDashboardData } from "../types/collections"
 import { BaseRepository } from "./base.repository"
 
-export const portalSeedData: PortalDashboardData = {
-  users: usersSeed,
-  faculty: facultySeed,
-  grades: gradeSeed,
-  theses: thesisSeed,
-  seminars: seminarSeed,
-  tickets: feedbackSeed,
-  announcements: announcementsSeed,
-  roster: classRosterSeed,
-  semesters: semestersSeed,
-  subjects: subjectsSeed,
-  curricula: curriculumCatalogSeed,
-  yearSections: yearSectionsSeed,
-  classSchedules: scheduleSeed,
-  auditLogs: auditLogsSeed,
-  csoReports: csoReportsSeed,
-  quickLinks: quickLinksSeed,
+const emptyDashboard: PortalDashboardData = {
+  users: [],
+  faculty: [],
+  grades: [],
+  theses: [],
+  seminars: [],
+  tickets: [],
+  announcements: [],
+  roster: [],
+  semesters: [],
+  subjects: [],
+  curricula: [],
+  yearSections: [],
+  classSchedules: [],
+  auditLogs: [],
+  csoReports: [],
+  quickLinks: [],
 }
 
 export async function getPortalDashboardData(): Promise<PortalDashboardData> {
-  await connectToDatabase()
+  try {
+    await connectToDatabase()
+  } catch {
+    console.warn("[PortalDashboard] MongoDB unavailable, returning empty data")
+    return emptyDashboard
+  }
 
   const { usersRepository } = await import("./users.repository")
   const { facultyRepository } = await import("./faculty.repository")
@@ -78,26 +65,24 @@ export async function getPortalDashboardData(): Promise<PortalDashboardData> {
     auditLogsRepository.findAll(),
   ])
 
-  const data: PortalDashboardData = {
-    users: (results[0]?.length ?? 0) > 0 ? results[0] as never[] as PortalDashboardData["users"] : usersSeed,
-    faculty: (results[1]?.length ?? 0) > 0 ? results[1] as never[] as PortalDashboardData["faculty"] : facultySeed,
-    grades: (results[2]?.length ?? 0) > 0 ? results[2] as never[] as PortalDashboardData["grades"] : gradeSeed,
-    theses: (results[3]?.length ?? 0) > 0 ? results[3] as never[] as PortalDashboardData["theses"] : thesisSeed,
-    seminars: (results[4]?.length ?? 0) > 0 ? results[4] as never[] as PortalDashboardData["seminars"] : seminarSeed,
-    tickets: (results[5]?.length ?? 0) > 0 ? results[5] as never[] as PortalDashboardData["tickets"] : feedbackSeed,
-    announcements: (results[6]?.length ?? 0) > 0 ? results[6] as never[] as PortalDashboardData["announcements"] : announcementsSeed,
-    classSchedules: (results[7]?.length ?? 0) > 0 ? results[7] as never[] as PortalDashboardData["classSchedules"] : scheduleSeed,
-    curricula: (results[8]?.length ?? 0) > 0 ? results[8] as never[] as PortalDashboardData["curricula"] : curriculumCatalogSeed,
-    roster: (results[9]?.length ?? 0) > 0 ? results[9] as never[] as PortalDashboardData["roster"] : classRosterSeed,
-    csoReports: (results[10]?.length ?? 0) > 0 ? results[10] as never[] as PortalDashboardData["csoReports"] : csoReportsSeed,
-    semesters: (results[11]?.length ?? 0) > 0 ? results[11] as never[] as PortalDashboardData["semesters"] : semestersSeed,
-    subjects: (results[12]?.length ?? 0) > 0 ? results[12] as never[] as PortalDashboardData["subjects"] : subjectsSeed,
-    yearSections: (results[13]?.length ?? 0) > 0 ? results[13] as never[] as PortalDashboardData["yearSections"] : yearSectionsSeed,
-    quickLinks: (results[14]?.length ?? 0) > 0 ? results[14] as never[] as PortalDashboardData["quickLinks"] : quickLinksSeed,
-    auditLogs: (results[15]?.length ?? 0) > 0 ? results[15] as never[] as PortalDashboardData["auditLogs"] : auditLogsSeed,
+  return {
+    users: (results[0] ?? []) as PortalDashboardData["users"],
+    faculty: (results[1] ?? []) as PortalDashboardData["faculty"],
+    grades: (results[2] ?? []) as PortalDashboardData["grades"],
+    theses: (results[3] ?? []) as PortalDashboardData["theses"],
+    seminars: (results[4] ?? []) as PortalDashboardData["seminars"],
+    tickets: (results[5] ?? []) as PortalDashboardData["tickets"],
+    announcements: (results[6] ?? []) as PortalDashboardData["announcements"],
+    classSchedules: (results[7] ?? []) as PortalDashboardData["classSchedules"],
+    curricula: (results[8] ?? []) as PortalDashboardData["curricula"],
+    roster: (results[9] ?? []) as PortalDashboardData["roster"],
+    csoReports: (results[10] ?? []) as PortalDashboardData["csoReports"],
+    semesters: (results[11] ?? []) as PortalDashboardData["semesters"],
+    subjects: (results[12] ?? []) as PortalDashboardData["subjects"],
+    yearSections: (results[13] ?? []) as PortalDashboardData["yearSections"],
+    quickLinks: (results[14] ?? []) as PortalDashboardData["quickLinks"],
+    auditLogs: (results[15] ?? []) as PortalDashboardData["auditLogs"],
   }
-
-  return data
 }
 
 export async function replacePortalDashboardData(data: PortalDashboardData) {

@@ -271,12 +271,18 @@ export function UsersModule({ model }: PortalModuleProps) {
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
                       Role
                     </th>
-                    <th className="hidden xl:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                      Details
-                    </th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                      Status
-                    </th>
+                      <th className="hidden xl:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                        Details
+                      </th>
+                      <th className="hidden 2xl:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                        Created
+                      </th>
+                      <th className="hidden 2xl:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                        Last Login
+                      </th>
+                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                        Status
+                      </th>
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
                       Actions
                     </th>
@@ -316,6 +322,12 @@ export function UsersModule({ model }: PortalModuleProps) {
                         {user.role === "student"
                           ? `${user.year ?? "-"}${user.section ?? ""} \u00B7 ${user.studentType ?? "Regular"} \u00B7 ${user.curriculum ?? "N/A"}`
                           : `${user.academicTitle ?? "N/A"} \u00B7 ${user.employmentType ?? "Regular"} \u00B7 ${user.advisoryClass ?? "No advisory"}`}
+                      </td>
+                      <td className="hidden 2xl:table-cell px-4 py-3 text-xs text-foreground/60">
+                        {user.createdAt ?? "—"}
+                      </td>
+                      <td className="hidden 2xl:table-cell px-4 py-3 text-xs text-foreground/60">
+                        {user.lastLogin ?? "—"}
                       </td>
                       <td className="px-4 py-3">
                         <StatusBadge value={user.status} />
@@ -779,6 +791,18 @@ export function UsersModule({ model }: PortalModuleProps) {
                     placeholder="Leave blank to keep current"
                     type="text"
                   />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Account Created</label>
+                  <p className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground/80">
+                    {editUser.createdAt ?? "—"}
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Last Login</label>
+                  <p className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground/80">
+                    {editUser.lastLogin ?? "—"}
+                  </p>
                 </div>
                 {editUser.role === "student" ? (
                   <>

@@ -1,15 +1,15 @@
 "use client"
 
-import { Download, Send, Upload } from "lucide-react"
+import { useMemo } from "react"
+import { Download, Send, Upload, Award } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 import {
-  calculateFinalGrade,
   calculateGradePercentage,
+  EQUIVALENT_GRADES,
   gradeRemarkOptions,
-  gradeRemarks,
   transmutedToEquivalent,
 } from "../../lib/grades"
 import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
@@ -20,11 +20,30 @@ export function GradesModule({ model }: PortalModuleProps) {
     return <FacultyGradesPanel model={model} full />
   }
 
-  const { downloadGradeReport, studentGrades } = model
+  const { downloadGradeReport, allStudentGrades, studentGrades } = model
+
+  const gwaData = useMemo(() => {
+    const graded = studentGrades.filter(
+      (g) => g.midterm !== undefined && g.finalTerm !== undefined
+    )
+    if (graded.length === 0) return null
+    const totalUnits = graded.reduce((sum, g) => sum + (g.units || 0), 0)
+    const weightedSum = graded.reduce(
+      (sum, g) => sum + (g.gradePercentage ?? 0) * (g.units || 0),
+      0
+    )
+    const gwa = Number((weightedSum / totalUnits).toFixed(2))
+    const equivalent = transmutedToEquivalent(gwa)
+    let honors: string | null = null
+    if (equivalent >= 1.0 && equivalent <= 1.19) honors = "With Highest Honors"
+    else if (equivalent >= 1.2 && equivalent <= 1.44) honors = "With High Honors"
+    else if (equivalent >= 1.45 && equivalent <= 1.75) honors = "Dean's Lister"
+    return { gwa, totalUnits, equivalent, honors }
+  }, [studentGrades])
 
   return (
     <Panel
-      title="Curriculum Plan, Grade Guide, and Downloadable Report"
+      title="Grades & Report"
       eyebrow="Student records"
       actions={
         <Button size="sm" onClick={downloadGradeReport} className="rounded-2xl">
@@ -33,6 +52,28 @@ export function GradesModule({ model }: PortalModuleProps) {
         </Button>
       }
     >
+      {gwaData && (
+        <div className="mb-5 flex flex-wrap items-center gap-4">
+          <div className="rounded-2xl border border-border bg-card px-5 py-3 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              GWA
+            </p>
+            <p className="mt-1 text-2xl font-bold text-foreground">
+              {gwaData.equivalent.toFixed(2)}
+            </p>
+          </div>
+
+          {gwaData.honors && (
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 shadow-sm dark:border-amber-800 dark:bg-amber-950">
+              <Award className="size-5 text-amber-600 dark:text-amber-400" />
+              <span className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                {gwaData.honors}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="overflow-x-auto rounded-2xl border border-border">
         <table className="w-full min-w-[820px] text-left text-sm">
           <thead className="bg-muted text-foreground">
@@ -50,49 +91,80 @@ export function GradesModule({ model }: PortalModuleProps) {
                 Final Term
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Percentage
+                Grade %
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Final Grade
+                Equivalent
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Remarks
+                Status
               </th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-border bg-card">
-            {studentGrades.map((grade) => {
-              const finalGrade = calculateFinalGrade(grade)
-              const percentage = calculateGradePercentage(grade)
+            {allStudentGrades.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="px-4 py-12 text-center text-sm text-muted-foreground"
+                >
+                  No grade records yet.
+                </td>
+              </tr>
+            ) : (
+              allStudentGrades.map((grade) => {
+                const percentage = calculateGradePercentage(grade)
+                const equivalent =
+                  percentage !== undefined
+                    ? transmutedToEquivalent(percentage)
+                    : undefined
 
-              return (
-                <tr key={grade.id} className="transition-colors hover:bg-muted/50">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-foreground">
-                      {grade.subject}
-                    </p>
-                    <p className="text-xs text-foreground/70">{grade.code}</p>
-                  </td>
-                  <td className="px-4 py-3 text-foreground/80">{grade.units}</td>
-                  <td className="px-4 py-3 text-foreground/80">
-                    {grade.midterm.toFixed(2)}
-                  </td>
-                  <td className="px-4 py-3 text-foreground/80">
-                    {grade.finalTerm.toFixed(2)}
-                  </td>
-                  <td className="px-4 py-3 text-foreground/80">
-                    {percentage !== undefined ? percentage.toFixed(2) : "N/A"}
-                  </td>
-                  <td className="px-4 py-3 font-semibold text-foreground">
-                    {finalGrade.toFixed(2)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge value={gradeRemarks(finalGrade, grade.remarks)} />
-                  </td>
-                </tr>
-              )
-            })}
+                return (
+                  <tr key={grade.id} className="transition-colors hover:bg-muted/50">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-foreground">
+                        {grade.subject}
+                      </p>
+                      <p className="text-xs text-foreground/70">{grade.code}</p>
+                    </td>
+                    <td className="px-4 py-3 text-foreground/80">{grade.units}</td>
+
+                    {grade.released ? (
+                      <>
+                        <td className="px-4 py-3 text-foreground/80">
+                          {grade.midterm.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-foreground/80">
+                          {grade.finalTerm.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-foreground/80">
+                          {percentage !== undefined ? percentage.toFixed(2) : "N/A"}
+                        </td>
+                        <td className="px-4 py-3 font-semibold text-foreground">
+                          {equivalent !== undefined ? equivalent.toFixed(2) : "N/A"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusBadge value={grade.remarks || "Passed"} />
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-4 py-3 text-foreground/40">&mdash;</td>
+                        <td className="px-4 py-3 text-foreground/40">&mdash;</td>
+                        <td className="px-4 py-3 text-foreground/40">&mdash;</td>
+                        <td className="px-4 py-3 text-foreground/40">&mdash;</td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                            IN PROGRESS
+                          </span>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                )
+              })
+            )}
           </tbody>
         </table>
       </div>
@@ -179,16 +251,16 @@ export function FacultyGradesPanel({
                 Subject
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Midterms
+                Midterm
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Tentative Final Grade
+                Final
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Final Grade
+                Grade % (Transmuted)
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Transmuted
+                Equivalent
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
                 Remarks
@@ -224,36 +296,30 @@ export function FacultyGradesPanel({
                   </td>
 
                   <td className="px-4 py-3">
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={grade.midtermTransmuted ?? ""}
-                      onChange={(event) =>
+                    <Select
+                      value={grade.midterm !== undefined ? String(grade.midterm.toFixed(2)) : ""}
+                      onChange={(value) =>
                         updateGrade(
                           grade.id,
-                          "midtermTransmuted",
-                          event.target.value
+                          "midterm",
+                          value
                         )
                       }
-                      className="h-9 w-24 rounded-2xl"
+                      options={EQUIVALENT_GRADES.map((g) => g.toFixed(2))}
                     />
                   </td>
 
                   <td className="px-4 py-3">
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={grade.finalTransmuted ?? ""}
-                      onChange={(event) =>
+                    <Select
+                      value={grade.finalTerm !== undefined ? String(grade.finalTerm.toFixed(2)) : ""}
+                      onChange={(value) =>
                         updateGrade(
                           grade.id,
-                          "finalTransmuted",
-                          event.target.value
+                          "finalTerm",
+                          value
                         )
                       }
-                      className="h-9 w-24 rounded-2xl"
+                      options={EQUIVALENT_GRADES.map((g) => g.toFixed(2))}
                     />
                   </td>
 

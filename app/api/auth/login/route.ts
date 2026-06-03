@@ -1,4 +1,5 @@
 import { authenticateAccount } from "@/features/auth/repositories/auth.repository"
+import { signToken } from "@/lib/jwt"
 
 export const runtime = "nodejs"
 
@@ -24,7 +25,20 @@ export async function POST(request: Request) {
       )
     }
 
-    return Response.json({ account })
+    const token = await signToken({
+      email: account.email,
+      role: account.role,
+      name: account.name,
+      id: account.id,
+    })
+
+    const response = Response.json({ account })
+    response.headers.set(
+      "Set-Cookie",
+      `session=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}`
+    )
+
+    return response
   } catch (error) {
     return Response.json(
       {

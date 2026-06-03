@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react"
 
 export type ModuleId =
   | "overview"
+  | "my-classes"
   | "grades"
   | "thesis"
   | "announcements"

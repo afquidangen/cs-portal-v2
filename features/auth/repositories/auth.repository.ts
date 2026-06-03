@@ -35,14 +35,15 @@ export async function authenticateAccount(
   email: string,
   password: string
 ): Promise<AuthenticatedAccount | null> {
+  const normalizedEmail = email.toLowerCase().trim()
+
   await connectToDatabase()
 
-  const user = await UserModel.findOne({
-    email: email.toLowerCase().trim(),
-    password,
-  }).lean()
-
+  const user = await UserModel.findOne({ email: normalizedEmail })
   if (!user) return null
+
+  const isMatch = await user.comparePassword(password)
+  if (!isMatch) return null
 
   return {
     email: user.email,

@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs"
 import mongoose, { Schema, type Document, type Model } from "mongoose"
 
 export interface IUser extends Document {
@@ -24,6 +25,13 @@ export interface IUser extends Document {
   section?: string
   position?: string
   status: "Active" | "Inactive"
+  createdAt?: string
+  lastLogin?: string
+  comparePassword(candidate: string): Promise<boolean>
+}
+
+if (mongoose.models.User) {
+  delete mongoose.models.User
 }
 
 const UserSchema = new Schema<IUser>(
@@ -55,10 +63,20 @@ const UserSchema = new Schema<IUser>(
     section: String,
     position: String,
     status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
+    createdAt: String,
+    lastLogin: String,
   },
   { timestamps: true }
 )
 
-export const UserModel =
-  (mongoose.models.User as Model<IUser> | undefined) ??
-  mongoose.model<IUser>("User", UserSchema)
+UserSchema.pre("save", async function () {
+  if (!this.isModified("password")) return
+  const salt = await bcrypt.genSalt(10)
+  this.password = await bcrypt.hash(this.password, salt)
+})
+
+UserSchema.methods.comparePassword = async function (candidate: string): Promise<boolean> {
+  return bcrypt.compare(candidate, this.password)
+}
+
+export const UserModel: Model<IUser> = mongoose.model<IUser>("User", UserSchema)
