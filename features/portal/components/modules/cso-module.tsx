@@ -14,40 +14,36 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-import type { CsoReport, Role } from "../../data/portal-data"
-import { csoReportsSeed } from "../../data/portal-data"
+import type { CsoReport } from "../../data/portal-data"
 import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
+import type { PortalDashboardModel } from "../../hooks/use-portal-dashboard-model"
 
-export function CsoModule({ role }: { role: Role }) {
-  const [reports, setReports] = useState<CsoReport[]>(csoReportsSeed)
+export function CsoModule({ model }: { model: PortalDashboardModel }) {
   const [editingReport, setEditingReport] = useState<CsoReport | null>(null)
   const [deletingReport, setDeletingReport] = useState<CsoReport | null>(null)
   const [viewingReport, setViewingReport] = useState<CsoReport | null>(null)
   const [showForm, setShowForm] = useState(false)
 
-  const isAdmin = role === "admin"
+  const isAdmin = model.role === "admin"
 
-  const accomplishments = reports.filter(
-    (report) => report.type === "Accomplishment" || report.type === "Event"
+  const accomplishments = model.csoReports.filter(
+    (report: CsoReport) => report.type === "Accomplishment" || report.type === "Event"
   )
-  const financials = reports.filter((report) => report.type === "Financial")
+  const financials = model.csoReports.filter((report: CsoReport) => report.type === "Financial")
 
   function handleSave(report: CsoReport) {
-    setReports((prev) => {
-      const idx = prev.findIndex((r) => r.id === report.id)
-      if (idx >= 0) {
-        const next = [...prev]
-        next[idx] = report
-        return next
-      }
-      return [...prev, report]
-    })
+    const existing = model.csoReports.find((r: CsoReport) => r.id === report.id)
+    if (existing) {
+      model.handleUpdateCsoReport(report)
+    } else {
+      model.handleCreateCsoReport(report)
+    }
     setShowForm(false)
     setEditingReport(null)
   }
 
   function handleDelete(id: string) {
-    setReports((prev) => prev.filter((r) => r.id !== id))
+    model.handleDeleteCsoReport(id)
     setDeletingReport(null)
   }
 
@@ -98,7 +94,7 @@ export function CsoModule({ role }: { role: Role }) {
 
       <ReportGrid
         title="Transparency Documents"
-        reports={reports}
+        reports={model.csoReports}
         isAdmin={isAdmin}
         onEdit={(r) => {
           setEditingReport(r)

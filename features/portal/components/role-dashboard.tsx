@@ -77,7 +77,47 @@ import { UsersModule } from "./modules/users-module"
 
 export function RoleDashboard({ role }: { role: Role }) {
   const model = usePortalDashboardModel(role)
+  const [dataLoading, setDataLoading] = useState(true)
+  const [dataError, setDataError] = useState<string | null>(null)
   const [darkMode, setDarkMode] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadServerData() {
+      try {
+        const res = await fetch("/api/portal/dashboard")
+        if (!res.ok) throw new Error("Failed to load dashboard data")
+        const json = await res.json()
+        if (cancelled) return
+
+        const d = json.data
+        model.setUsers(d.users ?? model.users)
+        model.setFaculty(d.faculty ?? model.faculty)
+        model.setGrades(d.grades ?? model.grades)
+        model.setTheses(d.theses ?? model.theses)
+        model.setSeminars(d.seminars ?? model.seminars)
+        model.setTickets(d.tickets ?? model.tickets)
+        model.setAnnouncements(d.announcements ?? model.announcements)
+        model.setRoster(d.roster ?? model.roster)
+        model.setSemesters(d.semesters ?? model.semesters)
+        model.setSubjects(d.subjects ?? model.subjects)
+        model.setCurricula(d.curricula ?? model.curricula)
+        model.setYearSections(d.yearSections ?? model.yearSections)
+        model.setClassSchedules(d.classSchedules ?? model.classSchedules)
+        model.setCsoReports(d.csoReports ?? model.csoReports)
+        setDataLoading(false)
+      } catch (err) {
+        if (!cancelled) {
+          setDataError(err instanceof Error ? err.message : "Unable to load data")
+          setDataLoading(false)
+        }
+      }
+    }
+
+    void loadServerData()
+    return () => { cancelled = true }
+  }, [role])
   const [announcementIndex, setAnnouncementIndex] = useState(0)
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false)
   const [isMediumScreen, setIsMediumScreen] = useState(
@@ -149,7 +189,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       seminars: <SeminarsModule model={model} />,
       availability: <AvailabilityModule model={model} />,
       instructors: <InstructorsModule model={model} />,
-      cso: <CsoModule role={role} />,
+      cso: <CsoModule model={model} />,
       schedule: <SchedulePanel model={model} />,
       curriculum: <CurriculumModule model={model} />,
       "quick-links": <QuickLinksModule />,
@@ -262,6 +302,38 @@ export function RoleDashboard({ role }: { role: Role }) {
       "edu-glacier": "edu-glacier edu-ring-glacier",
     }
     return map[tone] || "edu-slate edu-ring-slate"
+  }
+
+  if (dataLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground border-t-primary" />
+          <p className="text-sm text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (dataError) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background p-8">
+        <div className="flex max-w-md flex-col items-center gap-4 rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+          <p className="text-sm text-red-700">{dataError}</p>
+          <button
+            type="button"
+            onClick={() => {
+              setDataLoading(true)
+              setDataError(null)
+              window.location.reload()
+            }}
+            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      </main>
+    )
   }
 
   return (

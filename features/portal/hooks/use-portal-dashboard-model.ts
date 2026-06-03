@@ -19,6 +19,7 @@ import {
   type Announcement,
   type AvailabilityStatus,
   type ClassStudent,
+  type CsoReport,
   type CurriculumRecord,
   type GradeRecord,
   type ProfileDetails,
@@ -33,6 +34,7 @@ import {
   announcementsSeed,
   auditLogsSeed,
   classRosterSeed,
+  csoReportsSeed,
   curriculumCatalogSeed,
   facultyHandledSections,
   facultySeed,
@@ -187,6 +189,19 @@ export function usePortalDashboardModel(role: Role) {
   )
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [query, setQuery] = useState("")
+
+  async function syncApi(method: string, url: string, body?: unknown) {
+    try {
+      await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      })
+    } catch {
+      // Silently fail — local state is already updated
+    }
+  }
+
   const [users, setUsers] = useStoredState<UserRecord[]>(
     "comsite-users",
     usersSeed
@@ -233,6 +248,10 @@ export function usePortalDashboardModel(role: Role) {
   const [auditLogs, setAuditLogs] = useStoredState(
     "comsite-audit-logs",
     auditLogsSeed
+  )
+  const [csoReports, setCsoReports] = useStoredState(
+    "comsite-cso-reports",
+    csoReportsSeed
   )
 
   const [roleFilter, setRoleFilter] = useState("All")
@@ -682,6 +701,7 @@ export function usePortalDashboardModel(role: Role) {
         grade.id === id ? { ...grade, remarks, updatedAt: "June 1, 2026" } : grade
       )
     )
+    void syncApi("PUT", `/api/portal/grades/${id}`, { remarks })
   }
 
   function releaseGradesForSection(section: string) {
@@ -710,6 +730,7 @@ export function usePortalDashboardModel(role: Role) {
           : ticket
       )
     )
+    void syncApi("PUT", `/api/portal/feedback/${ticketId}`, { status, resolution })
     const ticket = tickets.find((t) => t.id === ticketId)
     if (ticket) addAuditLog(`Updated ticket "${ticket.subject}" to ${status}`)
   }
@@ -726,6 +747,7 @@ export function usePortalDashboardModel(role: Role) {
           : member
       )
     )
+    void syncApi("PUT", `/api/portal/faculty/${facultyId}`, { status, notes })
     const member = faculty.find((f) => f.id === facultyId)
     if (member) addAuditLog(`Updated faculty status for "${member.name}" to ${status}`)
   }
@@ -838,6 +860,7 @@ export function usePortalDashboardModel(role: Role) {
     }
 
     addAuditLog(`Created ${newUser.role} account "${fullName}" (${newUser.email})`)
+    void syncApi("POST", "/api/portal/users", { id: accountId, name: fullName, email: newUser.email.trim(), role: newUser.role, status: "Active", password: newUser.password || "password123" })
   }
 
   function confirmAndToggleUserStatus(userId: string) {
@@ -913,6 +936,7 @@ export function usePortalDashboardModel(role: Role) {
     setGrades((current) =>
       current.filter((grade) => grade.studentId !== userId)
     )
+    void syncApi("DELETE", `/api/portal/users/${userId}`)
     const customAccountsKey = "comsite-custom-accounts"
     try {
       const existing = JSON.parse(window.localStorage.getItem(customAccountsKey) || "[]") as Array<Record<string, string>>
@@ -979,6 +1003,7 @@ export function usePortalDashboardModel(role: Role) {
       window.localStorage.setItem(customAccountsKey, JSON.stringify(existing))
     } catch { /* ignore */ }
     addAuditLog(`Updated account "${updatedUser.name}"`)
+    void syncApi("PUT", `/api/portal/users/${updatedUser.id}`, updatedUser)
   }
 
   function confirmAndDeleteThesis(thesisId: string) {
@@ -1035,6 +1060,17 @@ export function usePortalDashboardModel(role: Role) {
           : user
       )
     )
+    void syncApi("PUT", `/api/portal/users/${rawProfile.id}`, {
+      firstName: draft.firstName,
+      middleName: draft.middleName,
+      lastName: draft.lastName,
+      email: draft.email,
+      contactNumber: draft.contactNumber,
+      sex: draft.sex,
+      birthday: draft.birthday,
+      address: draft.address,
+      photoUrl: draft.photoUrl,
+    })
   }
 
   function resetStudentDraft(section = activeClassSection) {
@@ -1126,6 +1162,7 @@ export function usePortalDashboardModel(role: Role) {
     const student = roster.find((s) => s.id === studentId)
     setRoster((current) => current.filter((s) => s.id !== studentId))
     setGrades((current) => current.filter((g) => g.studentId !== studentId))
+    void syncApi("DELETE", `/api/portal/roster/${studentId}`)
     if (student) addAuditLog(`Removed student "${student.name}" from roster`)
   }
 
@@ -1142,6 +1179,7 @@ export function usePortalDashboardModel(role: Role) {
           : item
       )
     )
+    void syncApi("PUT", `/api/portal/roster/${studentId}`, { enrolled })
   }
 
   function handleAddClassSection(event: FormEvent<HTMLFormElement>) {
@@ -1167,18 +1205,17 @@ export function usePortalDashboardModel(role: Role) {
     event.preventDefault()
     if (!scheduleDraft.section.trim() || !scheduleDraft.subject.trim()) return
 
-    setClassSchedules((current) => [
-      {
-        id: `SCH-${String(current.length + 1).padStart(3, "0")}`,
-        day: scheduleDraft.day.trim() || "TBA",
-        time: scheduleDraft.time.trim() || "TBA",
-        subject: scheduleDraft.subject.trim(),
-        room: scheduleDraft.room.trim() || "TBA",
-        instructor: scheduleDraft.instructor.trim() || profile.name,
-        section: scheduleDraft.section.trim(),
-      },
-      ...current,
-    ])
+    const newItem = {
+      id: `SCH-${String(classSchedules.length + 1).padStart(3, "0")}`,
+      day: scheduleDraft.day.trim() || "TBA",
+      time: scheduleDraft.time.trim() || "TBA",
+      subject: scheduleDraft.subject.trim(),
+      room: scheduleDraft.room.trim() || "TBA",
+      instructor: scheduleDraft.instructor.trim() || profile.name,
+      section: scheduleDraft.section.trim(),
+    }
+    setClassSchedules((current) => [newItem, ...current])
+    void syncApi("POST", "/api/portal/schedules", newItem)
 
     setScheduleDraft({
       day: "",
@@ -1226,12 +1263,14 @@ export function usePortalDashboardModel(role: Role) {
     setClassSchedules((current) =>
       current.map((item) => (item.id === updated.id ? updated : item))
     )
+    void syncApi("PUT", `/api/portal/schedules/${updated.id}`, updated)
     addAuditLog(`Updated schedule for "${updated.subject}"`)
   }
 
   function handleDeleteSchedule(id: string) {
     const item = classSchedules.find((s) => s.id === id)
     setClassSchedules((current) => current.filter((item) => item.id !== id))
+    void syncApi("DELETE", `/api/portal/schedules/${id}`)
     if (item) addAuditLog(`Deleted schedule for "${item.subject}" (${item.section})`)
   }
 
@@ -1335,20 +1374,23 @@ export function usePortalDashboardModel(role: Role) {
     ])
     setNewSemester({ name: "", schoolYear: "", enrollment: "Open", gradeSubmission: "" })
     setShowAddSemesterForm(false)
-    addAuditLog(`Created semester "${newSemester.name}" (${newSemester.schoolYear})`)
+    addAuditLog(`Created semester "${newSemester.name}"`)
+    void syncApi("POST", "/api/portal/semesters", newSemester)
   }
 
   function handleUpdateSemester(updated: SemesterRecord) {
     setSemesters((current) =>
       current.map((item) => (item.id === updated.id ? updated : item))
     )
+    void syncApi("PUT", `/api/portal/semesters/${updated.id}`, updated)
     addAuditLog(`Updated semester "${updated.name}"`)
   }
 
   function handleDeleteSemester(id: string) {
     const item = semesters.find((s) => s.id === id)
-    setSemesters((current) => current.filter((item) => item.id !== id))
-    if (item) addAuditLog(`Deleted semester "${item.name}" (${item.schoolYear})`)
+    setSemesters((current) => current.filter((s) => s.id !== id))
+    void syncApi("DELETE", `/api/portal/semesters/${id}`)
+    if (item) addAuditLog(`Deleted semester "${item.name}"`)
   }
 
   function handleAddSubject(event: FormEvent<HTMLFormElement>) {
@@ -1365,35 +1407,23 @@ export function usePortalDashboardModel(role: Role) {
     ])
     setNewSubject({ code: "", title: "", units: "3", instructor: "" })
     setShowAddSubjectForm(false)
-    addAuditLog(`Created subject "${newSubject.code} - ${newSubject.title}"`)
+    addAuditLog(`Created subject "${newSubject.title}"`)
+    void syncApi("POST", "/api/portal/subjects", newSubject)
   }
 
   function handleUpdateSubject(updated: SubjectRecord) {
     setSubjects((current) =>
-      current.map((item) =>
-        item.code === updated.code ? updated : item
-      )
+      current.map((item) => (item.code === updated.code ? updated : item))
     )
-    addAuditLog(`Updated subject "${updated.code}"`)
+    void syncApi("PUT", `/api/portal/subjects/${updated.code}`, updated)
+    addAuditLog(`Updated subject "${updated.title}"`)
   }
 
   function handleDeleteSubject(code: string) {
     const item = subjects.find((s) => s.code === code)
-    setSubjects((current) => current.filter((item) => item.code !== code))
-    if (item) addAuditLog(`Deleted subject "${item.code} - ${item.title}"`)
-  }
-
-  function handleDeleteCurriculum(id: string) {
-    const item = curricula.find((c) => c.id === id)
-    setCurricula((current) => current.filter((item) => item.id !== id))
-    if (item) addAuditLog(`Deleted curriculum "${item.name}" (${item.major})`)
-  }
-
-  function handleUpdateCurriculum(updated: CurriculumRecord) {
-    setCurricula((current) =>
-      current.map((item) => (item.id === updated.id ? updated : item))
-    )
-    addAuditLog(`Updated curriculum "${updated.name}"`)
+    setSubjects((current) => current.filter((s) => s.code !== code))
+    void syncApi("DELETE", `/api/portal/subjects/${code}`)
+    if (item) addAuditLog(`Deleted subject "${item.title}"`)
   }
 
   function handleAddTermToCurriculum(
@@ -1528,23 +1558,22 @@ export function usePortalDashboardModel(role: Role) {
       return
     }
     const id = `FB-${1000 + tickets.length + 1}`
-    setTickets((current) => [
-      {
-        id,
-        studentId: feedbackDraft.anonymous ? undefined : roleProfiles.student.id,
-        studentName: feedbackDraft.anonymous
-          ? "Anonymous"
-          : roleProfiles.student.name,
-        category: feedbackDraft.category,
-        subject: feedbackDraft.subject.trim(),
-        description: feedbackDraft.description.trim(),
-        status: "Pending",
-        submittedAt: "May 26, 2026",
-        assignedTo: "Admin",
-        anonymous: feedbackDraft.anonymous,
-      },
-      ...current,
-    ])
+    const newItem = {
+      id,
+      studentId: feedbackDraft.anonymous ? undefined : roleProfiles.student.id,
+      studentName: feedbackDraft.anonymous
+        ? "Anonymous"
+        : roleProfiles.student.name,
+      category: feedbackDraft.category,
+      subject: feedbackDraft.subject.trim(),
+      description: feedbackDraft.description.trim(),
+      status: "Pending" as const,
+      submittedAt: "May 26, 2026",
+      assignedTo: "Admin",
+      anonymous: feedbackDraft.anonymous,
+    }
+    setTickets((current) => [newItem, ...current])
+    void syncApi("POST", "/api/portal/feedback", newItem)
     setFeedbackDraft({
       category: "Academic",
       subject: "",
@@ -1557,21 +1586,20 @@ export function usePortalDashboardModel(role: Role) {
   function handleCreateEvent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!eventDraft.title.trim() || !eventDraft.date.trim()) return
-    setSeminars((current) => [
-      {
-        id: `SEM-${String(current.length + 1).padStart(3, "0")}`,
-        title: eventDraft.title.trim(),
-        speaker: eventDraft.speaker.trim() || "To be announced",
-        date: eventDraft.date.trim(),
-        location: eventDraft.location.trim() || "CS Department",
-        description: "New seminar created from the admin event manager.",
-        capacity: Number(eventDraft.capacity) || 30,
-        enlistedStudentIds: [],
-        host: roleProfiles.faculty.name,
-        status: "Active",
-      },
-      ...current,
-    ])
+    const newItem = {
+      id: `SEM-${String(seminars.length + 1).padStart(3, "0")}`,
+      title: eventDraft.title.trim(),
+      speaker: eventDraft.speaker.trim() || "To be announced",
+      date: eventDraft.date.trim(),
+      location: eventDraft.location.trim() || "CS Department",
+      description: "New seminar created from the admin event manager.",
+      capacity: Number(eventDraft.capacity) || 30,
+      enlistedStudentIds: [] as string[],
+      host: roleProfiles.faculty.name,
+      status: "Active" as const,
+    }
+    setSeminars((current) => [newItem, ...current])
+    void syncApi("POST", "/api/portal/seminars", newItem)
     setEventDraft({
       title: "",
       speaker: "",
@@ -1593,28 +1621,27 @@ export function usePortalDashboardModel(role: Role) {
       return
     }
 
-    setTheses((current) => [
-      {
-        id: `TH-${String(current.length + 1).padStart(3, "0")}`,
-        title: thesisDraft.title.trim(),
-        authors: thesisDraft.authors.trim(),
-        year: Number(thesisDraft.year) || 2026,
-        category: thesisDraft.category.trim(),
-        adviser: thesisDraft.adviser.trim() || "For assignment",
-        abstract:
-          thesisDraft.abstract.trim() ||
-          "Abstract will be supplied after manuscript review.",
-        tags: thesisDraft.category
-          .split(" ")
-          .filter(Boolean)
-          .slice(0, 3),
-        pdfUrl: thesisDraft.pdfUrl,
-        fileName:
-          thesisDraft.fileName ||
-          `${thesisDraft.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`,
-      },
-      ...current,
-    ])
+    const newItem = {
+      id: `TH-${String(theses.length + 1).padStart(3, "0")}`,
+      title: thesisDraft.title.trim(),
+      authors: thesisDraft.authors.trim(),
+      year: Number(thesisDraft.year) || 2026,
+      category: thesisDraft.category.trim(),
+      adviser: thesisDraft.adviser.trim() || "For assignment",
+      abstract:
+        thesisDraft.abstract.trim() ||
+        "Abstract will be supplied after manuscript review.",
+      tags: thesisDraft.category
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 3),
+      pdfUrl: thesisDraft.pdfUrl,
+      fileName:
+        thesisDraft.fileName ||
+        `${thesisDraft.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`,
+    }
+    setTheses((current) => [newItem, ...current])
+    void syncApi("POST", "/api/portal/theses", newItem)
 
     setThesisDraft({
       title: "",
@@ -1627,7 +1654,23 @@ export function usePortalDashboardModel(role: Role) {
       fileName: "",
     })
     setShowThesisUploadForm(false)
-    addAuditLog(`Created thesis record "${thesisDraft.title}"`)
+    addAuditLog(`Created curriculum "${newCurriculum.name}"`)
+    void syncApi("POST", "/api/portal/curricula", newCurriculum)
+  }
+
+  function handleDeleteCurriculum(id: string) {
+    const item = curricula.find((c) => c.id === id)
+    setCurricula((current) => current.filter((c) => c.id !== id))
+    void syncApi("DELETE", `/api/portal/curricula/${id}`)
+    if (item) addAuditLog(`Deleted curriculum "${item.name}"`)
+  }
+
+  function handleUpdateCurriculum(updated: CurriculumRecord) {
+    setCurricula((current) =>
+      current.map((item) => (item.id === updated.id ? updated : item))
+    )
+    void syncApi("PUT", `/api/portal/curricula/${updated.id}`, updated)
+    addAuditLog(`Updated curriculum "${updated.name}"`)
   }
 
   function handleCreateAnnouncement(event: FormEvent<HTMLFormElement>) {
@@ -1635,17 +1678,16 @@ export function usePortalDashboardModel(role: Role) {
     if (!announcementDraft.title.trim() || !announcementDraft.content.trim()) {
       return
     }
-    setAnnouncements((current) => [
-      {
-        id: `ANN-${String(current.length + 1).padStart(3, "0")}`,
-        title: announcementDraft.title.trim(),
-        content: announcementDraft.content.trim(),
-        date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
-        audience: announcementDraft.audience,
-        priority: announcementDraft.priority,
-      },
-      ...current,
-    ])
+    const newItem = {
+      id: `ANN-${String(announcements.length + 1).padStart(3, "0")}`,
+      title: announcementDraft.title.trim(),
+      content: announcementDraft.content.trim(),
+      date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+      audience: announcementDraft.audience,
+      priority: announcementDraft.priority,
+    }
+    setAnnouncements((current) => [newItem, ...current])
+    void syncApi("POST", "/api/portal/announcements", newItem)
     setAnnouncementDraft({
       title: "",
       content: "",
@@ -1660,36 +1702,34 @@ export function usePortalDashboardModel(role: Role) {
     setAnnouncements((current) =>
       current.map((item) => (item.id === updated.id ? updated : item))
     )
+    void syncApi("PUT", `/api/portal/announcements/${updated.id}`, updated)
     addAuditLog(`Updated announcement "${updated.title}"`)
   }
 
   function handleDeleteAnnouncement(id: string) {
     const item = announcements.find((a) => a.id === id)
     setAnnouncements((current) => current.filter((item) => item.id !== id))
+    void syncApi("DELETE", `/api/portal/announcements/${id}`)
     if (item) addAuditLog(`Deleted announcement "${item.title}"`)
   }
 
   function handleEnlist(eventId: string) {
     const studentId = roleProfiles.student.id
+    let updatedEvent: Record<string, unknown> | null = null
     setSeminars((current) =>
       current.map((event) => {
         if (event.id !== eventId) return event
         const alreadyEnlisted = event.enlistedStudentIds.includes(studentId)
         if (alreadyEnlisted) {
-          return {
-            ...event,
-            enlistedStudentIds: event.enlistedStudentIds.filter(
-              (id) => id !== studentId
-            ),
-          }
+          updatedEvent = { enlistedStudentIds: event.enlistedStudentIds.filter((id) => id !== studentId) }
+          return { ...event, ...updatedEvent }
         }
         if (event.enlistedStudentIds.length >= event.capacity) return event
-        return {
-          ...event,
-          enlistedStudentIds: [...event.enlistedStudentIds, studentId],
-        }
+        updatedEvent = { enlistedStudentIds: [...event.enlistedStudentIds, studentId] }
+        return { ...event, ...updatedEvent }
       })
     )
+    if (updatedEvent) void syncApi("PUT", `/api/portal/seminars/${eventId}`, updatedEvent)
   }
 
   function handleFacultySelfStatus(event: FormEvent<HTMLFormElement>) {
@@ -1698,6 +1738,27 @@ export function usePortalDashboardModel(role: Role) {
     if (facultyMember) {
       updateFacultyStatus(facultyMember.id, myFacultyStatus, myFacultyNotes)
     }
+  }
+
+  function handleCreateCsoReport(report: CsoReport) {
+    setCsoReports((current) => [report, ...current])
+    void syncApi("POST", "/api/portal/cso-reports", report)
+    addAuditLog(`Created CSO report "${report.title}"`)
+  }
+
+  function handleUpdateCsoReport(report: CsoReport) {
+    setCsoReports((current) =>
+      current.map((r) => (r.id === report.id ? report : r))
+    )
+    void syncApi("PUT", `/api/portal/cso-reports/${report.id}`, report)
+    addAuditLog(`Updated CSO report "${report.title}"`)
+  }
+
+  function handleDeleteCsoReport(id: string) {
+    const item = csoReports.find((r) => r.id === id)
+    setCsoReports((current) => current.filter((r) => r.id !== id))
+    void syncApi("DELETE", `/api/portal/cso-reports/${id}`)
+    if (item) addAuditLog(`Deleted CSO report "${item.title}"`)
   }
 
   return {
@@ -1808,6 +1869,8 @@ export function usePortalDashboardModel(role: Role) {
     filteredUsers,
     studentTickets,
     auditLogs,
+    csoReports,
+    setCsoReports,
     selectedNav,
     currentTitle,
     selectModule,
@@ -1865,6 +1928,9 @@ export function usePortalDashboardModel(role: Role) {
     handleDeleteAnnouncement,
     handleEnlist,
     handleFacultySelfStatus,
+    handleCreateCsoReport,
+    handleUpdateCsoReport,
+    handleDeleteCsoReport,
   }
 }
 

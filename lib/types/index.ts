@@ -1,0 +1,24 @@
+export type { Announcement } from "./announcement"
+export type { AuditLogRecord } from "./audit-log"
+export type { ClassStudent } from "./class-student"
+export type { AvailabilityStatus, Role, TicketStatus } from "./common"
+export type { CsoReport } from "./cso-report"
+export type { CurriculumRecord } from "./curriculum"
+export type { FacultyRecord } from "./faculty"
+export type { FeedbackTicket } from "./feedback"
+export type { GradeRecord } from "./grade"
+export type { NewsItem } from "./news"
+export type { ProfileDetails } from "./profile"
+export type { QuickLinkRecord } from "./quick-link"
+export type { ScheduleItem } from "./schedule"
+export type { SemesterRecord } from "./semester"
+export type { SeminarRecord } from "./seminar"
+export type { SubjectRecord } from "./subject"
+export type { ThesisRecord } from "./thesis"
+export type { UserRecord } from "./user"
+export type { YearSectionRecord } from "./year-section"
+export type {
+  PortalCollectionMap,
+  PortalCollectionName,
+  PortalDashboardData,
+} from "./collections"

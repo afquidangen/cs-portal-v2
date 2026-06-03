@@ -16,11 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-import {
-  authenticateTestAccount,
-  testAccounts,
-  testSessionStorageKey,
-} from "../data/test-accounts"
+import { testAccounts, testSessionStorageKey } from "../data/test-accounts"
 
 export function LoginPage() {
   const [email, setEmail] = useState("")
@@ -42,28 +38,42 @@ export function LoginPage() {
     }
   }, [router])
 
-  function handleLogin(event: FormEvent<HTMLFormElement>) {
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setMessage("")
-
-    const account = authenticateTestAccount(email, password)
-    if (!account) {
-      setMessage("Use one of the listed test accounts and its matching password.")
-      return
-    }
-
     setLoading(true)
-    window.localStorage.setItem(
-      testSessionStorageKey,
-      JSON.stringify({
-        email: account.email,
-        role: account.role,
-        name: account.name,
-        title: account.title,
-        id: account.id,
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       })
-    )
-    router.push(account.route)
+
+      const json = await res.json()
+
+      if (!res.ok) {
+        setMessage(json.error ?? "Invalid email or password.")
+        setLoading(false)
+        return
+      }
+
+      const { account } = json
+      window.localStorage.setItem(
+        testSessionStorageKey,
+        JSON.stringify({
+          email: account.email,
+          role: account.role,
+          name: account.name,
+          title: account.title,
+          id: account.id,
+        })
+      )
+      router.push(account.route)
+    } catch {
+      setMessage("Unable to connect. Please try again.")
+      setLoading(false)
+    }
   }
 
   return (
