@@ -129,7 +129,7 @@ export function usePortalDashboardModel(role: Role) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [query, setQuery] = useState("")
 
-  async function syncApi(method: string, url: string, body?: unknown) {
+  async function syncApi<T = unknown>(method: string, url: string, body?: unknown): Promise<T> {
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
@@ -139,6 +139,7 @@ export function usePortalDashboardModel(role: Role) {
       const text = await res.text().catch(() => "")
       throw new Error(`Failed to sync ${url} (${res.status}): ${text}`)
     }
+    return res.json() as Promise<T>
   }
 
   const [users, setUsers] = useState<UserRecord[]>([])
@@ -1004,9 +1005,25 @@ export function usePortalDashboardModel(role: Role) {
     reader.readAsDataURL(file)
   }
 
-  function handleSaveProfile(draft: ProfileDetails) {
+  async function handleSaveProfile(draft: ProfileDetails) {
     setProfileDetails(draft)
     const fullName = getProfileFullName(draft)
+
+    const result = await syncApi<{ data: { photoUrl?: string } }>("PUT", `/api/portal/users/${profile.id}`, {
+      firstName: draft.firstName,
+      middleName: draft.middleName,
+      lastName: draft.lastName,
+      email: draft.email,
+      contactNumber: draft.contactNumber,
+      sex: draft.sex,
+      birthday: draft.birthday,
+      address: draft.address,
+      photoUrl: draft.photoUrl,
+    })
+
+    const photoUrl = result.data?.photoUrl ?? draft.photoUrl
+    setProfileDetails((current) => ({ ...current, photoUrl }))
+
     setUsers((current) =>
       current.map((user) =>
         user.id === profile.id
@@ -1021,22 +1038,11 @@ export function usePortalDashboardModel(role: Role) {
               sex: draft.sex,
               birthday: draft.birthday,
               address: draft.address,
-              photoUrl: draft.photoUrl,
+              photoUrl,
             }
           : user
       )
     )
-    void syncApi("PUT", `/api/portal/users/${profile.id}`, {
-      firstName: draft.firstName,
-      middleName: draft.middleName,
-      lastName: draft.lastName,
-      email: draft.email,
-      contactNumber: draft.contactNumber,
-      sex: draft.sex,
-      birthday: draft.birthday,
-      address: draft.address,
-      photoUrl: draft.photoUrl,
-    })
   }
 
   function resetStudentDraft(section = activeClassSection) {

@@ -20,6 +20,7 @@ export function ProfileModule({ model }: PortalModuleProps) {
 
   const [draft, setDraft] = useState(profileDetails)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState(false)
 
   const roleLabel =
     role === "admin"
@@ -41,10 +42,16 @@ export function ProfileModule({ model }: PortalModuleProps) {
     reader.readAsDataURL(file)
   }
 
-  function handleSave() {
-    handleSaveProfile(draft)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+  async function handleSave() {
+    try {
+      await handleSaveProfile(draft)
+      setSaved(true)
+      setSaveError(false)
+      setTimeout(() => setSaved(false), 2000)
+    } catch {
+      setSaveError(true)
+      setTimeout(() => setSaveError(false), 3000)
+    }
   }
 
   function handleCancel() {
@@ -193,7 +200,11 @@ export function ProfileModule({ model }: PortalModuleProps) {
       </div>
 
       <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-end">
-        {saved ? (
+        {saveError ? (
+          <span className="text-sm font-medium text-red-600 dark:text-red-400">
+            Failed to save profile. Please try again.
+          </span>
+        ) : saved ? (
           <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
             Profile saved successfully
           </span>

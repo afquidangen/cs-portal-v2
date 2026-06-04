@@ -53,6 +53,7 @@ export async function GET(request: Request) {
         name: user.name,
         id: user.id,
         title: computeTitle(user),
+        photoUrl: user.photoUrl,
       },
     })
   } catch (error) {

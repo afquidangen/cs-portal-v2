@@ -31,11 +31,12 @@ export function ProfileDialog({
     profile,
     profileDetails,
     role,
-    setProfileDetails,
+    handleSaveProfile,
   } = model
 
   const [draft, setDraft] = useState(profileDetails)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState(false)
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -50,10 +51,16 @@ export function ProfileDialog({
     reader.readAsDataURL(file)
   }
 
-  function handleSave() {
-    setProfileDetails(draft)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+  async function handleSave() {
+    try {
+      await handleSaveProfile(draft)
+      setSaved(true)
+      setSaveError(false)
+      setTimeout(() => setSaved(false), 2000)
+    } catch {
+      setSaveError(true)
+      setTimeout(() => setSaveError(false), 3000)
+    }
   }
 
   const hasChanges = JSON.stringify(draft) !== JSON.stringify(profileDetails)
@@ -212,7 +219,11 @@ export function ProfileDialog({
         </div>
 
         <DialogFooter className="flex-col gap-2 border-t border-border px-4 py-4 sm:flex-row sm:px-8">
-          {saved ? (
+          {saveError ? (
+            <span className="text-sm font-medium text-red-600 dark:text-red-400">
+              Failed to save profile. Please try again.
+            </span>
+          ) : saved ? (
             <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
               Profile saved successfully
             </span>
