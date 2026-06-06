@@ -199,12 +199,6 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
   }
 
   const instructorOptions = useMemo(() => users.filter((u) => u.role === "faculty").map((u) => u.name), [users])
-  const dayOptions = ["M", "T", "W", "Th", "F"]
-  const roomOptions = useMemo(() => {
-    const defaults = ["Room 101", "Room 102", "Room 103", "Room 201", "Room 202", "Room 203", "Room 204", "Room 205", "Room 301", "Room 302", "Room 303", "Room 401", "Room 402", "Lab 201", "Lab 202", "Lab 203", "Lab 204", "CS Lab 1", "CS Lab 2", "Auditorium", "Multimedia Room"]
-    const existing = new Set(classSchedules.map((s) => s.room).filter(Boolean))
-    return [...new Set([...defaults, ...existing])]
-  }, [classSchedules])
 
   const semesterLabels = useMemo(
     () => semesters.map((s) => `${s.semester} - ${s.schoolYearStart}/${s.schoolYearEnd}`),
@@ -580,24 +574,47 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                             ? getCurriculumSubjects(addScheduleYear, getSemesterType(selectedSemesterId))
                             : curriculumSubjectOptions
                         }
+                        contentClassName="max-h-48 overflow-y-auto"
                       />
                     </div>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <p className="mb-1.5 text-sm font-medium text-foreground">Days *</p>
-                      <Select
-                        value={scheduleDraft.day}
-                        onChange={(value) => setScheduleDraft((c) => ({ ...c, day: value }))}
-                        options={dayOptions}
-                      />
+                      <div className="flex flex-wrap gap-1.5">
+                        {["M", "T", "W", "Th", "F"].map((day) => {
+                          const days = scheduleDraft.day ? scheduleDraft.day.split(/\s+/).filter(Boolean) : []
+                          const checked = days.includes(day)
+                          return (
+                            <button
+                              key={day}
+                              type="button"
+                              onClick={() => {
+                                const newDays = checked
+                                  ? days.filter((d) => d !== day)
+                                  : [...days, day]
+                                setScheduleDraft((c) => ({ ...c, day: newDays.join(" ") }))
+                              }}
+                              className={
+                                checked
+                                  ? "inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm"
+                                  : "inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
+                              }
+                            >
+                              {day}
+                            </button>
+                          )
+                        })}
+                      </div>
                     </div>
                     <div>
                       <p className="mb-1.5 text-sm font-medium text-foreground">Room</p>
-                      <Select
+                      <Input
+                        type="text"
                         value={scheduleDraft.room}
-                        onChange={(value) => setScheduleDraft((c) => ({ ...c, room: value }))}
-                        options={roomOptions}
+                        onChange={(e) => setScheduleDraft((c) => ({ ...c, room: e.target.value }))}
+                        placeholder="e.g. Room 101"
+                        className="h-11 rounded-md"
                       />
                     </div>
                   </div>
@@ -687,38 +704,61 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                           options={instructorOptions}
                         />
                       </div>
-                      <div>
-                        <p className="mb-1.5 text-sm font-medium text-foreground">Subject</p>
-                        <Select
-                          value={editingSchedule.subject}
-                          onChange={(value) => setEditingSchedule((c) => ({ ...c!, subject: value }))}
-                          options={
-                            (() => {
-                              const editYear = yearSections.find((y) => y.sections.includes(editingSchedule.section))?.year
-                              const editSemesterType = getSemesterType(editingSchedule.semesterId)
-                              return editYear && editSemesterType
-                                ? getCurriculumSubjects(editYear, editSemesterType)
-                                : curriculumSubjectOptions
-                            })()
-                          }
-                        />
-                      </div>
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Subject</p>
+                      <Select
+                        value={editingSchedule.subject}
+                        onChange={(value) => setEditingSchedule((c) => ({ ...c!, subject: value }))}
+                        options={
+                          (() => {
+                            const editYear = yearSections.find((y) => y.sections.includes(editingSchedule.section))?.year
+                            const editSemesterType = getSemesterType(editingSchedule.semesterId)
+                            return editYear && editSemesterType
+                              ? getCurriculumSubjects(editYear, editSemesterType)
+                              : curriculumSubjectOptions
+                          })()
+                        }
+                        contentClassName="max-h-48 overflow-y-auto"
+                      />
                     </div>
+                  </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
                         <p className="mb-1.5 text-sm font-medium text-foreground">Days</p>
-                        <Select
-                          value={editingSchedule.day}
-                          onChange={(value) => setEditingSchedule((c) => ({ ...c!, day: value }))}
-                          options={dayOptions}
-                        />
+                        <div className="flex flex-wrap gap-1.5">
+                          {["M", "T", "W", "Th", "F"].map((day) => {
+                            const days = editingSchedule.day ? editingSchedule.day.split(/\s+/).filter(Boolean) : []
+                            const checked = days.includes(day)
+                            return (
+                              <button
+                                key={day}
+                                type="button"
+                                onClick={() => {
+                                  const newDays = checked
+                                    ? days.filter((d) => d !== day)
+                                    : [...days, day]
+                                  setEditingSchedule((c) => ({ ...c!, day: newDays.join(" ") }))
+                                }}
+                                className={
+                                  checked
+                                    ? "inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm"
+                                    : "inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
+                                }
+                              >
+                                {day}
+                              </button>
+                            )
+                          })}
+                        </div>
                       </div>
                       <div>
                         <p className="mb-1.5 text-sm font-medium text-foreground">Room</p>
-                        <Select
+                        <Input
+                          type="text"
                           value={editingSchedule.room}
-                          onChange={(value) => setEditingSchedule((c) => ({ ...c!, room: value }))}
-                          options={roomOptions}
+                          onChange={(e) => setEditingSchedule((c) => ({ ...c!, room: e.target.value }))}
+                          placeholder="e.g. Room 101"
+                          className="h-11 rounded-md"
                         />
                       </div>
                     </div>

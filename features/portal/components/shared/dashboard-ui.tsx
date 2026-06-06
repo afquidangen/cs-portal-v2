@@ -200,12 +200,14 @@ export function Select({
   options,
   label,
   className,
+  contentClassName,
 }: {
   value: string
   onChange: (value: string) => void
   options: string[]
   label?: string
   className?: string
+  contentClassName?: string
 }) {
   return (
     <label className="grid gap-1.5 text-sm text-foreground/80">
@@ -221,7 +223,7 @@ export function Select({
           <SelectValue placeholder="Select option" />
         </SelectTrigger>
 
-        <SelectContent className="border border-border bg-white text-foreground dark:bg-neutral-950">
+        <SelectContent className={cn("border border-border bg-white text-foreground dark:bg-neutral-950", contentClassName)}>
           {[...new Set(options)].map((option) => (
             <SelectItem
               key={option}

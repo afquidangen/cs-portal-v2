@@ -728,7 +728,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                     <div className="grid gap-4 md:grid-cols-2">
                       <Metric
                         label="Handled Classes"
-                        value={String(model.facultyClassSections.length)}
+                        value={String(model.visibleSchedules.length)}
                         icon={ClipboardList}
                         tone="lapis"
                       />

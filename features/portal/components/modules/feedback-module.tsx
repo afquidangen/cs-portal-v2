@@ -24,7 +24,6 @@ export function FeedbackModule({ model }: PortalModuleProps) {
   const {
     feedbackDraft,
     handleFeedbackSubmit,
-    profile,
     role,
     setFeedbackDraft,
     studentTickets,
@@ -90,11 +89,6 @@ export function FeedbackModule({ model }: PortalModuleProps) {
     )
   }
 
-  const visibleTickets =
-    role === "faculty"
-      ? tickets.filter((ticket) => ticket.assignedTo === profile.name)
-      : tickets
-
   return (
     <div className="space-y-5">
       {role === "faculty" ? (
@@ -144,11 +138,11 @@ export function FeedbackModule({ model }: PortalModuleProps) {
       ) : null}
 
       <Panel
-        title={role === "admin" ? "Master Inbox" : "Assigned Faculty Inbox"}
+        title={role === "admin" ? "Master Inbox" : "Feedback Inbox"}
         eyebrow="Ticket status management"
       >
       <div className="space-y-3">
-        {visibleTickets.map((ticket) => (
+        {tickets.map((ticket) => (
           <div
             key={ticket.id}
             className="rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors"
@@ -218,7 +212,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
           </div>
         ))}
 
-        {visibleTickets.length === 0 ? (
+        {tickets.length === 0 ? (
           <EmptyState text="No tickets are assigned here." />
         ) : null}
       </div>

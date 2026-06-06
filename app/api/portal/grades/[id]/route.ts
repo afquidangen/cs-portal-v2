@@ -24,8 +24,7 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const grade = await gradesRepository.update({ id }, { $set: body })
-    if (!grade) return notFound("Grade")
+    const grade = await gradesRepository.upsert({ id }, body)
     return success(grade)
   } catch (err) {
     return error(err instanceof Error ? err.message : "Unable to update grade.")

@@ -374,14 +374,15 @@ export function usePortalDashboardModel(role: Role) {
 
   const facultyClassSections = useMemo(() => {
     const advisory = profileAdvisoryClass ? [profileAdvisoryClass] : []
+    const facultyName = profileUser?.name ?? profile.name
     const scheduleSections = classSchedules
-      .filter((item) => item.instructor === profile.name)
+      .filter((item) => item.instructor === facultyName)
       .map((item) => item.section)
 
     return Array.from(
       new Set([...advisory, ...scheduleSections])
     ).filter(Boolean)
-  }, [classSchedules, profile.id, profile.name, profileAdvisoryClass])
+  }, [classSchedules, profileUser, profile.name, profileAdvisoryClass])
 
   const activeClassSection =
     role === "faculty" && !facultyClassSections.includes(selectedClassSection)
@@ -416,15 +417,16 @@ export function usePortalDashboardModel(role: Role) {
   const profileSection = roster.find((s) => s.id === profile.id && s.enrolled)?.section ?? profileUser?.section ?? ""
   const visibleSchedules = useMemo(() => {
     if (role === "faculty") {
+      const facultyName = profileUser?.name ?? profile.name
       return classSchedules.filter((item) =>
-        item.instructor === profile.name
+        item.instructor === facultyName
       )
     }
     if (role === "student" && profileSection) {
       return classSchedules.filter((item) => item.section.includes(profileSection))
     }
     return classSchedules
-  }, [classSchedules, facultyClassSections, role, profileSection])
+  }, [classSchedules, facultyClassSections, role, profileSection, profileUser, profile.name])
 
   const selectedScheduleStudents = useMemo(
     () =>
@@ -618,9 +620,9 @@ export function usePortalDashboardModel(role: Role) {
     field: "midterm" | "finalTerm",
     value: string
   ) {
-    const numericValue = Number(value)
-    const equiv = Number.isNaN(numericValue) ? 0 : numericValue
-    const percentage = equiv
+    const percentile = Number(value)
+    if (Number.isNaN(percentile)) return
+    const equiv = transmutedToEquivalent(percentile)
 
     setGrades((current) =>
       current.map((grade) => {
@@ -629,13 +631,13 @@ export function usePortalDashboardModel(role: Role) {
         const nextGrade = {
           ...grade,
           [field]: equiv,
-          ...(field === "midterm" ? { midtermTransmuted: percentage } : {}),
-          ...(field === "finalTerm" ? { finalTransmuted: percentage } : {}),
+          ...(field === "midterm" ? { midtermTransmuted: percentile } : {}),
+          ...(field === "finalTerm" ? { finalTransmuted: percentile } : {}),
           updatedAt: "June 1, 2026",
         }
 
-        const mt = field === "midterm" ? percentage : nextGrade.midtermTransmuted
-        const ft = field === "finalTerm" ? percentage : nextGrade.finalTransmuted
+        const mt = field === "midterm" ? percentile : nextGrade.midtermTransmuted
+        const ft = field === "finalTerm" ? percentile : nextGrade.finalTransmuted
         nextGrade.gradePercentage =
           mt !== undefined && ft !== undefined
             ? Number((((mt as number) + (ft as number)) / 2).toFixed(2))
@@ -645,7 +647,11 @@ export function usePortalDashboardModel(role: Role) {
       })
     )
 
-    void syncApi("PUT", `/api/portal/grades/${id}`, { [field]: equiv })
+    void syncApi("PUT", `/api/portal/grades/${id}`, {
+      [field]: equiv,
+      ...(field === "midterm" ? { midtermTransmuted: percentile } : {}),
+      ...(field === "finalTerm" ? { finalTransmuted: percentile } : {}),
+    })
   }
 
   function updateGradeRemarks(id: string, remarks: string) {
@@ -691,7 +697,9 @@ export function usePortalDashboardModel(role: Role) {
       subject: selectedScheduleEntry.subject,
       code: selectedScheduleEntry.subject,
       units: 3,
+      midtermTransmuted: undefined,
       midterm: 0,
+      finalTransmuted: undefined,
       finalTerm: 0,
       released: false,
       updatedAt: "June 1, 2026",
@@ -1258,7 +1266,7 @@ export function usePortalDashboardModel(role: Role) {
     if (!scheduleDraft.section.trim() || !scheduleDraft.subject.trim()) return
 
     const newItem: ScheduleItem = {
-      id: `SCH-${String(classSchedules.length + 1).padStart(3, "0")}`,
+      id: `SCH-${Date.now()}`,
       semesterId: scheduleDraft.semesterId,
       day: scheduleDraft.day.trim() || "TBA",
       time: scheduleDraft.time.trim() || "TBA",
@@ -1630,7 +1638,7 @@ export function usePortalDashboardModel(role: Role) {
     if (!feedbackDraft.subject.trim() || !feedbackDraft.description.trim()) {
       return
     }
-    const id = `FB-${1000 + tickets.length + 1}`
+    const id = `FB-${Date.now()}`
     const newItem = {
       id,
       studentId: feedbackDraft.anonymous ? undefined : profile.id,

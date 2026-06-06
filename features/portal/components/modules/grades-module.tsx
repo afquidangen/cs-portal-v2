@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 
 import {
   calculateGradePercentage,
-  EQUIVALENT_GRADES,
   gradeRemarkOptions,
   transmutedToEquivalent,
 } from "../../lib/grades"
@@ -134,10 +133,10 @@ export function GradesModule({ model }: PortalModuleProps) {
                     {grade.released ? (
                       <>
                         <td className="px-4 py-3 text-foreground/80">
-                          {grade.midterm.toFixed(2)}
+                          {grade.midtermTransmuted !== undefined ? grade.midtermTransmuted.toFixed(2) : "N/A"}
                         </td>
                         <td className="px-4 py-3 text-foreground/80">
-                          {grade.finalTerm.toFixed(2)}
+                          {grade.finalTransmuted !== undefined ? grade.finalTransmuted.toFixed(2) : "N/A"}
                         </td>
                         <td className="px-4 py-3 text-foreground/80">
                           {percentage !== undefined ? percentage.toFixed(2) : "N/A"}
@@ -447,7 +446,9 @@ function SectionTable({
                   subject: selectedSubject,
                   code: selectedSubject,
                   units: 3,
+                  midtermTransmuted: undefined,
                   midterm: 0,
+                  finalTransmuted: undefined,
                   finalTerm: 0,
                   released: false,
                   updatedAt: now,
@@ -459,7 +460,11 @@ function SectionTable({
                     id: newId, studentId: student.id, student: student.name,
                     section: student.section, subject: selectedSubject,
                     code: selectedSubject, units: 3,
-                    midterm: 0, finalTerm: 0, released: false, updatedAt: now,
+                    midtermTransmuted: undefined,
+                    midterm: 0,
+                    finalTransmuted: undefined,
+                    finalTerm: 0,
+                    released: false, updatedAt: now,
                   }),
                 }).catch(() => {})
                 return newId
@@ -491,18 +496,26 @@ function SectionTable({
                   </td>
 
                   <td className="px-4 py-3">
-                    <Select
-                      value={grade?.midterm !== undefined ? String(grade.midterm.toFixed(2)) : ""}
-                      onChange={handleMidterm}
-                      options={EQUIVALENT_GRADES.map((g) => g.toFixed(2))}
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="any"
+                      value={grade?.midtermTransmuted !== undefined ? String(grade.midtermTransmuted) : ""}
+                      onChange={(e) => handleMidterm(e.target.value)}
+                      className="h-9 w-24 rounded-xl"
                     />
                   </td>
 
                   <td className="px-4 py-3">
-                    <Select
-                      value={grade?.finalTerm !== undefined ? String(grade.finalTerm.toFixed(2)) : ""}
-                      onChange={handleFinal}
-                      options={EQUIVALENT_GRADES.map((g) => g.toFixed(2))}
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="any"
+                      value={grade?.finalTransmuted !== undefined ? String(grade.finalTransmuted) : ""}
+                      onChange={(e) => handleFinal(e.target.value)}
+                      className="h-9 w-24 rounded-xl"
                     />
                   </td>
 
