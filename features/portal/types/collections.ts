@@ -7,12 +7,11 @@ import type {
   FeedbackTicket,
   GradeRecord,
   ScheduleItem,
-  SemesterRecord,
   SeminarRecord,
-  SubjectRecord,
   ThesisRecord,
   UserRecord,
 } from "../data/portal-data"
+import type { SemesterRecord, SubjectRecord } from "@/lib/types"
 
 export type YearSectionRecord = {
   year: string

@@ -146,7 +146,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
     handleToggleEnrolled, handleScheduleUpload,
     newSectionName, scheduleDraft, selectedClassYear, setNewSectionName,
     setScheduleDraft, setSelectedClassYear, setRoster, setUsers, users, yearSections, roster,
-    subjects, semesters,
+    semesters, curricula,
   } = model
 
   const [adminTab, setAdminTab] = useState("Sections")
@@ -159,11 +159,45 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
   const [editingRosterId, setEditingRosterId] = useState<string | null>(null)
   const [deleteRosterId, setDeleteRosterId] = useState<string | null>(null)
   const [addScheduleOpen, setAddScheduleOpen] = useState(false)
+  const [addScheduleYear, setAddScheduleYear] = useState("")
 
   const activeSemester = semesters.find((s) => s.id === selectedSemesterId)
 
   const sectionOptions = useMemo(() => yearSections.flatMap((y) => y.sections), [yearSections])
-  const subjectOptions = useMemo(() => subjects.map((s) => `${s.code} - ${s.name}`), [subjects])
+
+  const yearOptionsList = useMemo(() => yearSections.map((y) => y.year), [yearSections])
+
+  const addSectionOptions = useMemo(() => {
+    if (!addScheduleYear) return []
+    const found = yearSections.find((y) => y.year === addScheduleYear)
+    return found?.sections ?? []
+  }, [addScheduleYear, yearSections])
+  const curriculumSubjectOptions = useMemo(() => {
+    return curricula.flatMap((c) =>
+      c.terms.flatMap((t) =>
+        t.subjects.map((s) => `${s.code} - ${s.name}`)
+      )
+    )
+  }, [curricula])
+
+  function getCurriculumSubjects(year: string, semesterType: string): string[] {
+    const results: string[] = []
+    for (const c of curricula) {
+      for (const term of c.terms) {
+        if (term.year === year && term.semester === semesterType) {
+          for (const sub of term.subjects) {
+            results.push(`${sub.code} - ${sub.name}`)
+          }
+        }
+      }
+    }
+    return results
+  }
+
+  function getSemesterType(semesterId: string): string {
+    return semesters.find((s) => s.id === semesterId)?.semester ?? ""
+  }
+
   const instructorOptions = useMemo(() => users.filter((u) => u.role === "faculty").map((u) => u.name), [users])
   const dayOptions = ["M", "T", "W", "Th", "F"]
   const roomOptions = useMemo(() => {
@@ -485,101 +519,126 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
           {/* ── Add New Class Dialog ── */}
           <Dialog open={addScheduleOpen} onOpenChange={(o) => {
             if (o) {
+              const firstYear = yearOptionsList[0] ?? ""
+              setAddScheduleYear(firstYear)
               setScheduleDraft((c) => ({
                 ...c,
                 semesterId: selectedSemesterId,
-                day: "", time: "", subject: "", room: "", instructor: "", section: sectionOptions[0] ?? "",
+                day: "", time: "", subject: "", room: "", instructor: "", section: "",
               }))
             }
             if (!o) setAddScheduleOpen(false)
           }}>
-            <DialogContent className="w-[95vw] sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle className="text-xl text-foreground">Add New Class</DialogTitle>
+            <DialogContent className="flex flex-col w-full sm:max-w-lg md:max-w-xl max-h-[85dvh] p-0 gap-0">
+              <DialogHeader className="px-5 pt-5 pb-0 shrink-0">
+                <DialogTitle className="text-lg sm:text-xl text-foreground">Add New Class</DialogTitle>
                 <DialogDescription className="pt-1 text-muted-foreground">Create a class under {activeSemester ? `${activeSemester.semester} - ${activeSemester.schoolYearStart}/${activeSemester.schoolYearEnd}` : "selected semester"}</DialogDescription>
               </DialogHeader>
               <form onSubmit={(e) => {
                 e.preventDefault()
                 handleCreateSchedule(e)
                 setAddScheduleOpen(false)
-              }} className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Instructor *</label>
-                  <Select
-                    value={scheduleDraft.instructor}
-                    onChange={(value) => setScheduleDraft((c) => ({ ...c, instructor: value }))}
-                    options={instructorOptions}
-                  />
+              }} className="flex flex-col min-h-0 flex-1">
+                <div className="overflow-y-auto flex-1 px-5 py-5 space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Year</p>
+                      <Select
+                        value={addScheduleYear}
+                        onChange={(v) => {
+                          setAddScheduleYear(v)
+                          setScheduleDraft((c) => ({ ...c, section: "" }))
+                        }}
+                        options={yearOptionsList}
+                      />
+                    </div>
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Section *</p>
+                      <Select
+                        value={scheduleDraft.section}
+                        onChange={(value) => setScheduleDraft((c) => ({ ...c, section: value }))}
+                        options={addSectionOptions}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Instructor *</p>
+                      <Select
+                        value={scheduleDraft.instructor}
+                        onChange={(value) => setScheduleDraft((c) => ({ ...c, instructor: value }))}
+                        options={instructorOptions}
+                      />
+                    </div>
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Subject *</p>
+                      <Select
+                        value={scheduleDraft.subject}
+                        onChange={(value) => setScheduleDraft((c) => ({ ...c, subject: value }))}
+                        options={
+                          addScheduleYear && selectedSemesterId
+                            ? getCurriculumSubjects(addScheduleYear, getSemesterType(selectedSemesterId))
+                            : curriculumSubjectOptions
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Days *</p>
+                      <Select
+                        value={scheduleDraft.day}
+                        onChange={(value) => setScheduleDraft((c) => ({ ...c, day: value }))}
+                        options={dayOptions}
+                      />
+                    </div>
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Room</p>
+                      <Select
+                        value={scheduleDraft.room}
+                        onChange={(value) => setScheduleDraft((c) => ({ ...c, room: value }))}
+                        options={roomOptions}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Start Time</p>
+                      <Input
+                        type="time"
+                        value={scheduleDraft.time?.split(" - ")[0] ?? ""}
+                        onChange={(e) => {
+                          const end = scheduleDraft.time?.split(" - ")[1] ?? ""
+                          setScheduleDraft((c) => ({ ...c, time: end ? `${e.target.value} - ${end}` : e.target.value }))
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">End Time</p>
+                      <Input
+                        type="time"
+                        value={scheduleDraft.time?.split(" - ")[1] ?? ""}
+                        onChange={(e) => {
+                          const start = scheduleDraft.time?.split(" - ")[0] ?? ""
+                          setScheduleDraft((c) => ({ ...c, time: start ? `${start} - ${e.target.value}` : e.target.value }))
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Section *</label>
-                  <Select
-                    value={scheduleDraft.section}
-                    onChange={(value) => setScheduleDraft((c) => ({ ...c, section: value }))}
-                    options={sectionOptions}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Subject *</label>
-                  <Select
-                    value={scheduleDraft.subject}
-                    onChange={(value) => setScheduleDraft((c) => ({ ...c, subject: value }))}
-                    options={subjectOptions}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Days *</label>
-                  <Select
-                    value={scheduleDraft.day}
-                    onChange={(value) => setScheduleDraft((c) => ({ ...c, day: value }))}
-                    options={dayOptions}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Room</label>
-                  <Select
-                    value={scheduleDraft.room}
-                    onChange={(value) => setScheduleDraft((c) => ({ ...c, room: value }))}
-                    options={roomOptions}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Start Time</label>
-                  <Input
-                    type="time"
-                    value={scheduleDraft.time?.split(" - ")[0] ?? ""}
-                    onChange={(e) => {
-                      const end = scheduleDraft.time?.split(" - ")[1] ?? ""
-                      setScheduleDraft((c) => ({ ...c, time: end ? `${e.target.value} - ${end}` : e.target.value }))
-                    }}
-                    className="h-10 rounded-2xl"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">End Time</label>
-                  <Input
-                    type="time"
-                    value={scheduleDraft.time?.split(" - ")[1] ?? ""}
-                    onChange={(e) => {
-                      const start = scheduleDraft.time?.split(" - ")[0] ?? ""
-                      setScheduleDraft((c) => ({ ...c, time: start ? `${start} - ${e.target.value}` : e.target.value }))
-                    }}
-                    className="h-10 rounded-2xl"
-                  />
-                </div>
-                <DialogFooter className="mt-2 gap-2 sm:col-span-2">
+                <DialogFooter className="shrink-0 px-5 pb-5 pt-4 border-t border-border gap-3 flex-col-reverse sm:flex-row">
                   <DialogClose asChild>
-                    <Button type="button" variant="ghost">Cancel</Button>
+                    <Button type="button" variant="ghost" className="w-full sm:w-auto">Cancel</Button>
                   </DialogClose>
-                  <Button type="submit"><Plus className="size-4" /> Add Class</Button>
+                  <Button type="submit" className="w-full sm:w-auto"><Plus className="size-4" /> Add Class</Button>
                 </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>
 
           <Dialog open={!!editingSchedule} onOpenChange={(open) => { if (!open) setEditingSchedule(null) }}>
-            <DialogContent className="w-[95vw] sm:max-w-lg">
-              <DialogHeader>
+            <DialogContent className="flex flex-col w-full sm:max-w-lg max-h-[85dvh] p-0 gap-0">
+              <DialogHeader className="px-5 pt-5 pb-0 shrink-0">
                 <DialogTitle>Edit Class</DialogTitle>
               </DialogHeader>
               {editingSchedule ? (
@@ -589,76 +648,109 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                     handleUpdateSchedule(editingSchedule)
                     setEditingSchedule(null)
                   }}
-                  className="grid gap-4 sm:grid-cols-2"
+                  className="flex flex-col min-h-0 flex-1"
                 >
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">Instructor</label>
-                    <Select
-                      value={editingSchedule.instructor}
-                      onChange={(value) => setEditingSchedule((c) => ({ ...c!, instructor: value }))}
-                      options={instructorOptions}
-                    />
+                  <div className="overflow-y-auto flex-1 px-5 py-5 space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <p className="mb-1.5 text-sm font-medium text-foreground">Year</p>
+                        <Select
+                          value={
+                            yearSections.find((y) => y.sections.includes(editingSchedule.section))?.year ?? ""
+                          }
+                          onChange={(v) => {
+                            const year = yearSections.find((y) => y.year === v)
+                            const firstSection = year?.sections[0] ?? editingSchedule.section
+                            setEditingSchedule((c) => ({ ...c!, section: firstSection }))
+                          }}
+                          options={yearOptionsList}
+                        />
+                      </div>
+                      <div>
+                        <p className="mb-1.5 text-sm font-medium text-foreground">Section</p>
+                        <Select
+                          value={editingSchedule.section}
+                          onChange={(value) => setEditingSchedule((c) => ({ ...c!, section: value }))}
+                          options={
+                            yearSections.find((y) => y.sections.includes(editingSchedule.section))
+                              ?.sections ?? sectionOptions
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <p className="mb-1.5 text-sm font-medium text-foreground">Instructor</p>
+                        <Select
+                          value={editingSchedule.instructor}
+                          onChange={(value) => setEditingSchedule((c) => ({ ...c!, instructor: value }))}
+                          options={instructorOptions}
+                        />
+                      </div>
+                      <div>
+                        <p className="mb-1.5 text-sm font-medium text-foreground">Subject</p>
+                        <Select
+                          value={editingSchedule.subject}
+                          onChange={(value) => setEditingSchedule((c) => ({ ...c!, subject: value }))}
+                          options={
+                            (() => {
+                              const editYear = yearSections.find((y) => y.sections.includes(editingSchedule.section))?.year
+                              const editSemesterType = getSemesterType(editingSchedule.semesterId)
+                              return editYear && editSemesterType
+                                ? getCurriculumSubjects(editYear, editSemesterType)
+                                : curriculumSubjectOptions
+                            })()
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <p className="mb-1.5 text-sm font-medium text-foreground">Days</p>
+                        <Select
+                          value={editingSchedule.day}
+                          onChange={(value) => setEditingSchedule((c) => ({ ...c!, day: value }))}
+                          options={dayOptions}
+                        />
+                      </div>
+                      <div>
+                        <p className="mb-1.5 text-sm font-medium text-foreground">Room</p>
+                        <Select
+                          value={editingSchedule.room}
+                          onChange={(value) => setEditingSchedule((c) => ({ ...c!, room: value }))}
+                          options={roomOptions}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <p className="mb-1.5 text-sm font-medium text-foreground">Start Time</p>
+                        <Input
+                          type="time"
+                          value={editingSchedule.time?.split(" - ")[0] ?? ""}
+                          onChange={(e) => {
+                            const end = editingSchedule.time?.split(" - ")[1] ?? ""
+                            setEditingSchedule((c) => ({ ...c!, time: end ? `${e.target.value} - ${end}` : e.target.value }))
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <p className="mb-1.5 text-sm font-medium text-foreground">End Time</p>
+                        <Input
+                          type="time"
+                          value={editingSchedule.time?.split(" - ")[1] ?? ""}
+                          onChange={(e) => {
+                            const start = editingSchedule.time?.split(" - ")[0] ?? ""
+                            setEditingSchedule((c) => ({ ...c!, time: start ? `${start} - ${e.target.value}` : e.target.value }))
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">Section</label>
-                    <Select
-                      value={editingSchedule.section}
-                      onChange={(value) => setEditingSchedule((c) => ({ ...c!, section: value }))}
-                      options={sectionOptions}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">Subject</label>
-                    <Select
-                      value={editingSchedule.subject}
-                      onChange={(value) => setEditingSchedule((c) => ({ ...c!, subject: value }))}
-                      options={subjectOptions}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">Days</label>
-                    <Select
-                      value={editingSchedule.day}
-                      onChange={(value) => setEditingSchedule((c) => ({ ...c!, day: value }))}
-                      options={dayOptions}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">Room</label>
-                    <Select
-                      value={editingSchedule.room}
-                      onChange={(value) => setEditingSchedule((c) => ({ ...c!, room: value }))}
-                      options={roomOptions}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">Start Time</label>
-                    <Input
-                      type="time"
-                      value={editingSchedule.time?.split(" - ")[0] ?? ""}
-                      onChange={(e) => {
-                        const end = editingSchedule.time?.split(" - ")[1] ?? ""
-                        setEditingSchedule((c) => ({ ...c!, time: end ? `${e.target.value} - ${end}` : e.target.value }))
-                      }}
-                      className="h-10 rounded-2xl"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">End Time</label>
-                    <Input
-                      type="time"
-                      value={editingSchedule.time?.split(" - ")[1] ?? ""}
-                      onChange={(e) => {
-                        const start = editingSchedule.time?.split(" - ")[0] ?? ""
-                        setEditingSchedule((c) => ({ ...c!, time: start ? `${start} - ${e.target.value}` : e.target.value }))
-                      }}
-                      className="h-10 rounded-2xl"
-                    />
-                  </div>
-                  <div className="flex items-end gap-2 sm:col-span-2">
-                    <Button type="submit"><Pencil className="size-4" /> Update Class</Button>
+                  <DialogFooter className="shrink-0 px-5 pb-5 pt-4 border-t border-border gap-3">
                     <Button type="button" variant="outline" onClick={() => setEditingSchedule(null)}>Cancel</Button>
-                  </div>
+                    <Button type="submit"><Pencil className="size-4" /> Update Class</Button>
+                  </DialogFooter>
                 </form>
               ) : null}
             </DialogContent>

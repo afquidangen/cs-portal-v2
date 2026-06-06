@@ -29,42 +29,6 @@ export const testAccounts: TestAccount[] = [
     id: "ADM-002",
     route: "/admin",
   },
-  {
-    email: "faculty1@gmail.com",
-    password: "facultytest123",
-    role: "faculty",
-    name: "Faculty Test 1",
-    title: "Assistant Professor - Computer Science",
-    id: "FAC-014",
-    route: "/faculty",
-  },
-  {
-    email: "faculty2@gmail.com",
-    password: "facultytest123",
-    role: "faculty",
-    name: "Faculty Test 2",
-    title: "Instructor I - Computer Science",
-    id: "FAC-018",
-    route: "/faculty",
-  },
-  {
-    email: "student1@gmail.com",
-    password: "studenttest123",
-    role: "student",
-    name: "Student Test 1",
-    title: "BSCS 3A - Regular Student",
-    id: "2024-001245",
-    route: "/student",
-  },
-  {
-    email: "student2@gmail.com",
-    password: "studenttest123",
-    role: "student",
-    name: "Student Test 2",
-    title: "BSCS 3A - Regular Student",
-    id: "2024-001284",
-    route: "/student",
-  },
 ]
 
 export const testSessionStorageKey = "comsite-test-session"

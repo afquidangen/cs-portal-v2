@@ -1,9 +1,9 @@
 export type SemesterRecord = {
   id: string
-  name: string
-  schoolYear: string
-  enrollment: string
-  gradeSubmission: string
+  semester: "First Semester" | "Midyear" | "Second Semester"
+  schoolYearStart: number
+  schoolYearEnd: number
+  status: "Active" | "Inactive"
   createdAt?: string
   updatedAt?: string
 }

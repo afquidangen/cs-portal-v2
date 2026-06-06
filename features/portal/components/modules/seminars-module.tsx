@@ -5,7 +5,7 @@ import { Check, Download, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-import { roleProfiles } from "../../data/portal-data"
+
 import { Panel, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
@@ -15,6 +15,7 @@ export function SeminarsModule({ model }: PortalModuleProps) {
     eventDraft,
     handleCreateEvent,
     handleEnlist,
+    profile,
     role,
     seminars,
     setEventDraft,
@@ -99,7 +100,7 @@ export function SeminarsModule({ model }: PortalModuleProps) {
         <div className="grid gap-4 lg:grid-cols-2">
           {seminars.map((event) => {
             const enlisted = event.enlistedStudentIds.includes(
-              roleProfiles.student.id
+              profile.id
             )
             const remaining = event.capacity - event.enlistedStudentIds.length
             const percent = Math.min(
@@ -109,7 +110,7 @@ export function SeminarsModule({ model }: PortalModuleProps) {
               )
             )
             const facultyOwnsEvent =
-              role === "faculty" && event.host === roleProfiles.faculty.name
+              role === "faculty" && event.host === profile.name
             return (
               <article
                 key={event.id}

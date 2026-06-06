@@ -37,6 +37,13 @@ import type { PortalModuleProps } from "./types"
 
 const PAGE_SIZE = 8
 
+const YEAR_LABELS: Record<string, string> = {
+  "1": "First Year",
+  "2": "Second Year",
+  "3": "Third Year",
+  "4": "Fourth Year",
+}
+
 export function UsersModule({ model }: PortalModuleProps) {
   const {
     curricula,
@@ -52,6 +59,7 @@ export function UsersModule({ model }: PortalModuleProps) {
     deleteUser,
     handleUpdateUser,
     users,
+    yearSections,
   } = model
 
   const [editUser, setEditUser] = useState<(UserRecord & { password?: string }) | null>(null)
@@ -71,6 +79,13 @@ export function UsersModule({ model }: PortalModuleProps) {
   const curriculumOptions = Array.from(
     new Set(curricula.map((c) => c.name))
   )
+
+  const sectionOptions = useMemo(() => {
+    const label = YEAR_LABELS[newUser.year]
+    if (!label) return []
+    const entry = yearSections.find((ys) => ys.year === label)
+    return entry?.sections ?? []
+  }, [newUser.year, yearSections])
 
   const stats = useMemo(() => {
     return {
@@ -412,18 +427,18 @@ export function UsersModule({ model }: PortalModuleProps) {
       <Dialog open={addOpen} onOpenChange={(o) => {
         if (!o) setAddOpen(false)
       }}>
-        <DialogContent className="w-[95vw] sm:max-w-lg">
-          <form onSubmit={handleAddSubmit}>
-            <DialogHeader>
-              <DialogTitle className="text-xl text-foreground">Add Account</DialogTitle>
-              <DialogDescription className="pt-1 text-muted-foreground">
-                Create a new user account
-              </DialogDescription>
-            </DialogHeader>
+        <DialogContent className="flex flex-col w-full sm:max-w-lg md:max-w-xl max-h-[85dvh] p-0 gap-0">
+          <DialogHeader className="px-5 pt-5 pb-0 shrink-0">
+            <DialogTitle className="text-lg sm:text-xl text-foreground">Add Account</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">
+              Create a new user account
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">Role</label>
+          <form onSubmit={handleAddSubmit} className="flex flex-col min-h-0 flex-1">
+            <div className="overflow-y-auto flex-1 px-5 py-5 space-y-4">
+              <div>
+                <p className="mb-1.5 text-sm font-medium text-foreground">Role</p>
                 <Select
                   value={addRole}
                   onChange={(value) => {
@@ -434,34 +449,9 @@ export function UsersModule({ model }: PortalModuleProps) {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">ID Number</label>
-                <Input
-                  value={newUser.idNumber}
-                  onChange={(e) =>
-                    setNewUser((current) => ({
-                      ...current,
-                      idNumber: e.target.value,
-                    }))
-                  }
-                  placeholder="IS-00-00000"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">Sex</label>
-                <Select
-                  value={newUser.sex}
-                  onChange={(value) =>
-                    setNewUser((current) => ({ ...current, sex: value }))
-                  }
-                  options={["Male", "Female"]}
-                />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">First name *</label>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">First name *</p>
                   <Input
                     value={newUser.firstName}
                     onChange={(e) =>
@@ -474,8 +464,8 @@ export function UsersModule({ model }: PortalModuleProps) {
                     required
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Middle name</label>
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">Middle name</p>
                   <Input
                     value={newUser.middleName}
                     onChange={(e) =>
@@ -487,8 +477,8 @@ export function UsersModule({ model }: PortalModuleProps) {
                     placeholder="Santos"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Last name *</label>
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">Last name *</p>
                   <Input
                     value={newUser.lastName}
                     onChange={(e) =>
@@ -503,8 +493,34 @@ export function UsersModule({ model }: PortalModuleProps) {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">Email *</label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">ID Number</p>
+                  <Input
+                    value={newUser.idNumber}
+                    onChange={(e) =>
+                      setNewUser((current) => ({
+                        ...current,
+                        idNumber: e.target.value,
+                      }))
+                    }
+                    placeholder="IS-00-00000"
+                  />
+                </div>
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">Sex</p>
+                  <Select
+                    value={newUser.sex}
+                    onChange={(value) =>
+                      setNewUser((current) => ({ ...current, sex: value }))
+                    }
+                    options={["Male", "Female"]}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-1.5 text-sm font-medium text-foreground">Email *</p>
                 <Input
                   value={newUser.email}
                   onChange={(e) =>
@@ -525,134 +541,139 @@ export function UsersModule({ model }: PortalModuleProps) {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">Password *</label>
-                <Input
-                  value={newUser.password}
-                  onChange={(e) =>
-                    setNewUser((current) => ({
-                      ...current,
-                      password: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter password"
-                  type="text"
-                  required
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">Password *</p>
+                  <Input
+                    value={newUser.password}
+                    onChange={(e) =>
+                      setNewUser((current) => ({
+                        ...current,
+                        password: e.target.value,
+                      }))
+                    }
+                    placeholder="Enter password"
+                    type="text"
+                    required
+                  />
+                </div>
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">Section</p>
+                  <Select
+                    value={newUser.section}
+                    onChange={(value) =>
+                      setNewUser((current) => ({ ...current, section: value }))
+                    }
+                    options={sectionOptions.length > 0 ? sectionOptions : ["A", "B", "C", "D"]}
+                  />
+                </div>
               </div>
 
               {addRole === "student" ? (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">Year</label>
-                    <Select
-                      value={newUser.year}
-                      onChange={(value) =>
-                        setNewUser((current) => ({ ...current, year: value }))
-                      }
-                      options={["1", "2", "3", "4"]}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">Section</label>
-                    <Input
-                      value={newUser.section}
-                      onChange={(e) =>
-                        setNewUser((current) => ({
-                          ...current,
-                          section: e.target.value,
-                        }))
-                      }
-                      placeholder="BSCS 3A"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">Student type</label>
-                    <Select
-                      value={newUser.studentType}
-                      onChange={(value) =>
-                        setNewUser((current) => ({
-                          ...current,
-                          studentType: value,
-                        }))
-                      }
-                      options={[
-                        "Regular",
-                        "Irregular",
-                        "Overstayed",
-                        "Transferee",
-                        "Shifter",
-                      ]}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">Curriculum</label>
-                    <Select
-                      value={newUser.curriculum}
-                      onChange={(value) =>
-                        setNewUser((current) => ({
-                          ...current,
-                          curriculum: value,
-                        }))
-                      }
-                      options={curriculumOptions}
-                    />
+                <div className="space-y-4 border-t border-border pt-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Student Details</p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Year</p>
+                      <Select
+                        value={newUser.year}
+                        onChange={(value) =>
+                          setNewUser((current) => ({ ...current, year: value }))
+                        }
+                        options={["1", "2", "3", "4"]}
+                      />
+                    </div>
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Student type</p>
+                      <Select
+                        value={newUser.studentType}
+                        onChange={(value) =>
+                          setNewUser((current) => ({
+                            ...current,
+                            studentType: value,
+                          }))
+                        }
+                        options={[
+                          "Regular",
+                          "Irregular",
+                          "Overstayed",
+                          "Transferee",
+                          "Shifter",
+                        ]}
+                      />
+                    </div>
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Curriculum</p>
+                      <Select
+                        value={newUser.curriculum}
+                        onChange={(value) =>
+                          setNewUser((current) => ({
+                            ...current,
+                            curriculum: value,
+                          }))
+                        }
+                        options={curriculumOptions}
+                      />
+                    </div>
                   </div>
                 </div>
               ) : null}
 
               {addRole === "faculty" ? (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">Advisory class</label>
-                    <Input
-                      value={newUser.advisoryClass}
-                      onChange={(e) =>
-                        setNewUser((current) => ({
-                          ...current,
-                          advisoryClass: e.target.value,
-                        }))
-                      }
-                      placeholder="BSCS 3A"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">Employment type</label>
-                    <Select
-                      value={newUser.employmentType}
-                      onChange={(value) =>
-                        setNewUser((current) => ({
-                          ...current,
-                          employmentType: value,
-                        }))
-                      }
-                      options={["Regular", "Part Time"]}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">Academic title</label>
-                    <Select
-                      value={newUser.academicTitle}
-                      onChange={(value) =>
-                        setNewUser((current) => ({
-                          ...current,
-                          academicTitle: value,
-                        }))
-                      }
-                      options={["PhD", "MIT", "DIT", "LPT"]}
-                    />
+                <div className="space-y-4 border-t border-border pt-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Faculty Details</p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Advisory class</p>
+                      <Input
+                        value={newUser.advisoryClass}
+                        onChange={(e) =>
+                          setNewUser((current) => ({
+                            ...current,
+                            advisoryClass: e.target.value,
+                          }))
+                        }
+                        placeholder="BSCS 3A"
+                      />
+                    </div>
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Employment type</p>
+                      <Select
+                        value={newUser.employmentType}
+                        onChange={(value) =>
+                          setNewUser((current) => ({
+                            ...current,
+                            employmentType: value,
+                          }))
+                        }
+                        options={["Regular", "Part Time"]}
+                      />
+                    </div>
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Academic title</p>
+                      <Select
+                        value={newUser.academicTitle}
+                        onChange={(value) =>
+                          setNewUser((current) => ({
+                            ...current,
+                            academicTitle: value,
+                          }))
+                        }
+                        options={["PhD", "MIT", "DIT", "LPT"]}
+                      />
+                    </div>
                   </div>
                 </div>
               ) : null}
             </div>
 
-            <DialogFooter className="gap-2">
+            <DialogFooter className="shrink-0 px-5 pb-5 pt-4 border-t border-border gap-3 flex-col-reverse sm:flex-row">
               <DialogClose asChild>
-                <Button type="button" variant="ghost">
+                <Button type="button" variant="ghost" className="w-full sm:w-auto">
                   Cancel
                 </Button>
               </DialogClose>
-              <Button type="submit">
+              <Button type="submit" className="w-full sm:w-auto">
                 <Plus className="mr-1.5 size-4" /> Save Account
               </Button>
             </DialogFooter>
@@ -662,61 +683,65 @@ export function UsersModule({ model }: PortalModuleProps) {
 
       {/* ── Edit Dialog ── */}
       <Dialog open={!!editUser} onOpenChange={(o) => !o && setEditUser(null)}>
-        <DialogContent className="w-[95vw] sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-xl text-foreground">Edit User</DialogTitle>
+        <DialogContent className="flex flex-col w-full sm:max-w-lg md:max-w-xl max-h-[85dvh] p-0 gap-0">
+          <DialogHeader className="px-5 pt-5 pb-0 shrink-0">
+            <DialogTitle className="text-lg sm:text-xl text-foreground">Edit User</DialogTitle>
             <DialogDescription className="pt-1 text-muted-foreground">
               Update account details for {editUser?.name}
             </DialogDescription>
           </DialogHeader>
 
           {editUser ? (
-            <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Role</label>
-                  <Select
-                    value={editUser.role}
-                    onChange={(value) =>
-                      setEditUser({ ...editUser, role: value as "student" | "faculty" | "admin" })
-                    }
-                    options={["student", "faculty", "admin"]}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Sex</label>
-                  <Select
-                    value={editUser.sex ?? "Male"}
-                    onChange={(value) =>
-                      setEditUser({ ...editUser, sex: value })
-                    }
-                    options={["Male", "Female"]}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">ID Number</label>
-                  <Input
-                    value={editUser.id}
-                    onChange={(e) =>
-                      setEditUser({ ...editUser, id: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Status</label>
-                  <Select
-                    value={editUser.status}
-                    onChange={(value) =>
-                      setEditUser({
-                        ...editUser,
-                        status: value as "Active" | "Inactive",
-                      })
-                    }
-                    options={["Active", "Inactive"]}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">First name</label>
+            <div className="overflow-y-auto px-5 py-5 space-y-4">
+              <div>
+                <p className="mb-1.5 text-sm font-medium text-foreground">Role</p>
+                <Select
+                  value={editUser.role}
+                  onChange={(value) =>
+                    setEditUser({ ...editUser, role: value as "student" | "faculty" | "admin" })
+                  }
+                  options={["student", "faculty", "admin"]}
+                />
+              </div>
+
+              <div>
+                <p className="mb-1.5 text-sm font-medium text-foreground">Sex</p>
+                <Select
+                  value={editUser.sex ?? "Male"}
+                  onChange={(value) =>
+                    setEditUser({ ...editUser, sex: value })
+                  }
+                  options={["Male", "Female"]}
+                />
+              </div>
+
+              <div>
+                <p className="mb-1.5 text-sm font-medium text-foreground">ID Number</p>
+                <Input
+                  value={editUser.id}
+                  onChange={(e) =>
+                    setEditUser({ ...editUser, id: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <p className="mb-1.5 text-sm font-medium text-foreground">Status</p>
+                <Select
+                  value={editUser.status}
+                  onChange={(value) =>
+                    setEditUser({
+                      ...editUser,
+                      status: value as "Active" | "Inactive",
+                    })
+                  }
+                  options={["Active", "Inactive"]}
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">First name</p>
                   <Input
                     value={editUser.firstName ?? ""}
                     onChange={(e) =>
@@ -724,8 +749,8 @@ export function UsersModule({ model }: PortalModuleProps) {
                     }
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Middle name</label>
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">Middle name</p>
                   <Input
                     value={editUser.middleName ?? ""}
                     onChange={(e) =>
@@ -733,8 +758,8 @@ export function UsersModule({ model }: PortalModuleProps) {
                     }
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Last name</label>
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">Last name</p>
                   <Input
                     value={editUser.lastName ?? ""}
                     onChange={(e) =>
@@ -742,17 +767,21 @@ export function UsersModule({ model }: PortalModuleProps) {
                     }
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Email</label>
-                  <Input
-                    value={editUser.email}
-                    onChange={(e) =>
-                      setEditUser({ ...editUser, email: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Contact Number</label>
+              </div>
+
+              <div>
+                <p className="mb-1.5 text-sm font-medium text-foreground">Email</p>
+                <Input
+                  value={editUser.email}
+                  onChange={(e) =>
+                    setEditUser({ ...editUser, email: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">Contact Number</p>
                   <Input
                     value={editUser.contactNumber ?? ""}
                     onChange={(e) =>
@@ -761,8 +790,8 @@ export function UsersModule({ model }: PortalModuleProps) {
                     placeholder="0917 000 0000"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Birthday</label>
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">Birthday</p>
                   <Input
                     type="date"
                     value={editUser.birthday ?? ""}
@@ -771,43 +800,52 @@ export function UsersModule({ model }: PortalModuleProps) {
                     }
                   />
                 </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-sm font-medium text-foreground">Address</label>
-                  <Input
-                    value={editUser.address ?? ""}
-                    onChange={(e) =>
-                      setEditUser({ ...editUser, address: e.target.value })
-                    }
-                    placeholder="City, Province"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Password</label>
-                  <Input
-                    value={editUser.password ?? ""}
-                    onChange={(e) =>
-                      setEditUser({ ...editUser, password: e.target.value })
-                    }
-                    placeholder="Leave blank to keep current"
-                    type="text"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Account Created</label>
-                  <p className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground/80">
+              </div>
+
+              <div>
+                <p className="mb-1.5 text-sm font-medium text-foreground">Address</p>
+                <Input
+                  value={editUser.address ?? ""}
+                  onChange={(e) =>
+                    setEditUser({ ...editUser, address: e.target.value })
+                  }
+                  placeholder="City, Province"
+                />
+              </div>
+
+              <div>
+                <p className="mb-1.5 text-sm font-medium text-foreground">Password</p>
+                <Input
+                  value={editUser.password ?? ""}
+                  onChange={(e) =>
+                    setEditUser({ ...editUser, password: e.target.value })
+                  }
+                  placeholder="Leave blank to keep current"
+                  type="text"
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">Account Created</p>
+                  <p className="rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-sm text-foreground/80">
                     {editUser.createdAt ?? "—"}
                   </p>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Last Login</label>
-                  <p className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground/80">
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">Last Login</p>
+                  <p className="rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-sm text-foreground/80">
                     {editUser.lastLogin ?? "—"}
                   </p>
                 </div>
-                {editUser.role === "student" ? (
-                  <>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-foreground">Year</label>
+              </div>
+
+              {editUser.role === "student" ? (
+                <div className="space-y-4 border-t border-border pt-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Student Details</p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Year</p>
                       <Select
                         value={String(editUser.year ?? "1")}
                         onChange={(value) =>
@@ -816,17 +854,22 @@ export function UsersModule({ model }: PortalModuleProps) {
                         options={["1", "2", "3", "4"]}
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-foreground">Section</label>
-                      <Input
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Section</p>
+                      <Select
                         value={editUser.section ?? ""}
-                        onChange={(e) =>
-                          setEditUser({ ...editUser, section: e.target.value })
+                        onChange={(value) =>
+                          setEditUser({ ...editUser, section: value })
                         }
+                        options={(() => {
+                          const label = YEAR_LABELS[String(editUser?.year ?? "1")]
+                          const entry = label ? yearSections.find((ys) => ys.year === label) : undefined
+                          return entry?.sections ?? ["A", "B", "C", "D"]
+                        })()}
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-foreground">Student type</label>
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Student type</p>
                       <Select
                         value={editUser.studentType ?? "Regular"}
                         onChange={(value) =>
@@ -844,8 +887,8 @@ export function UsersModule({ model }: PortalModuleProps) {
                         ]}
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-foreground">Curriculum</label>
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Curriculum</p>
                       <Select
                         value={editUser.curriculum ?? "Old Curriculum"}
                         onChange={(value) =>
@@ -854,11 +897,14 @@ export function UsersModule({ model }: PortalModuleProps) {
                         options={curriculumOptions}
                       />
                     </div>
-                  </>
-                ) : editUser.role === "faculty" ? (
-                  <>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-foreground">Academic title</label>
+                  </div>
+                </div>
+              ) : editUser.role === "faculty" ? (
+                <div className="space-y-4 border-t border-border pt-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Faculty Details</p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Academic title</p>
                       <Select
                         value={editUser.academicTitle ?? "MIT"}
                         onChange={(value) =>
@@ -867,8 +913,8 @@ export function UsersModule({ model }: PortalModuleProps) {
                         options={["PhD", "MIT", "DIT", "LPT"]}
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-foreground">Employment type</label>
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Employment type</p>
                       <Select
                         value={editUser.employmentType ?? "Regular"}
                         onChange={(value) =>
@@ -880,8 +926,8 @@ export function UsersModule({ model }: PortalModuleProps) {
                         options={["Regular", "Part Time"]}
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-foreground">Advisory class</label>
+                    <div className="sm:col-span-2">
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Advisory class</p>
                       <Input
                         value={editUser.advisoryClass ?? ""}
                         onChange={(e) =>
@@ -892,21 +938,17 @@ export function UsersModule({ model }: PortalModuleProps) {
                         }
                       />
                     </div>
-                  </>
-                ) : null}
-              </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
 
-          <DialogFooter className="mt-2 gap-2">
+          <DialogFooter className="px-5 pb-5 pt-4 border-t border-border gap-3 flex-col-reverse sm:flex-row">
             <DialogClose asChild>
-              <Button variant="ghost">
-                Cancel
-              </Button>
+              <Button variant="ghost" className="w-full sm:w-auto">Cancel</Button>
             </DialogClose>
-            <Button onClick={handleEditSave}>
-              Save Changes
-            </Button>
+            <Button onClick={handleEditSave} className="w-full sm:w-auto">Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

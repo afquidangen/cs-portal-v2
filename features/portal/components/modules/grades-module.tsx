@@ -1,7 +1,7 @@
 "use client"
 
-import { useMemo } from "react"
-import { Download, Send, Upload, Award } from "lucide-react"
+import { useMemo, useState } from "react"
+import { Download, GraduationCap, Send, Upload, Award } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,12 +14,9 @@ import {
 } from "../../lib/grades"
 import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
+import type { GradeRecord } from "../../data/portal-data"
 
 export function GradesModule({ model }: PortalModuleProps) {
-  if (model.role === "faculty") {
-    return <FacultyGradesPanel model={model} full />
-  }
-
   const { downloadGradeReport, allStudentGrades, studentGrades } = model
 
   const gwaData = useMemo(() => {
@@ -40,6 +37,10 @@ export function GradesModule({ model }: PortalModuleProps) {
     else if (equivalent >= 1.45 && equivalent <= 1.75) honors = "Dean's Lister"
     return { gwa, totalUnits, equivalent, honors }
   }, [studentGrades])
+
+  if (model.role === "faculty") {
+    return <FacultyGradesPanel model={model} />
+  }
 
   return (
     <Panel
@@ -172,28 +173,91 @@ export function GradesModule({ model }: PortalModuleProps) {
   )
 }
 
-export function FacultyGradesPanel({
-  model,
-  full = false,
-}: PortalModuleProps & { full?: boolean }) {
+function FacultyGradesPanel({ model }: PortalModuleProps) {
   const {
     downloadGradeTemplate,
-    facultyClassSections,
-    facultyGradeRecords,
+    grades,
+    setGrades,
+    roster,
     handleGradeWorkbookUpload,
     releaseGradesForSection,
-    selectedGradeSection,
-    setSelectedGradeSection,
     updateGrade,
     updateGradeRemarks,
     uploadName,
+    visibleSchedules,
   } = model
-  const visibleGrades = full ? facultyGradeRecords : facultyGradeRecords.slice(0, 4)
+
+  const [selectedSubject, setSelectedSubject] = useState("")
+  const [selectedSection, setSelectedSection] = useState<string | null>(null)
+
+  const facultySubjects = useMemo(() => {
+    const seen = new Set<string>()
+    return visibleSchedules.filter((s) => {
+      if (seen.has(s.subject)) return false
+      seen.add(s.subject)
+      return true
+    })
+  }, [visibleSchedules])
+
+  const subjectSections = useMemo(() => {
+    if (!selectedSubject) return []
+    const seen = new Set<string>()
+    return visibleSchedules
+      .filter((s) => s.subject === selectedSubject)
+      .filter((s) => {
+        if (seen.has(s.section)) return false
+        seen.add(s.section)
+        return true
+      })
+      .map((s) => s.section)
+  }, [visibleSchedules, selectedSubject])
+
+  const subjectRoster = useMemo(() => {
+    if (subjectSections.length === 0) return []
+    const sectionSet = new Set(subjectSections)
+    return roster.filter((s) => sectionSet.has(s.section) && s.enrolled)
+  }, [roster, subjectSections])
+
+  const rosterBySection = useMemo(() => {
+    const groups = new Map<string, typeof subjectRoster>()
+    for (const student of subjectRoster) {
+      const section = student.section || "Unassigned"
+      if (!groups.has(section)) groups.set(section, [])
+      groups.get(section)!.push(student)
+    }
+    return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+  }, [subjectRoster])
+
+  const gradeMap = useMemo(() => {
+    const map = new Map()
+    if (!selectedSubject) return map
+    for (const g of grades) {
+      if (g.subject === selectedSubject) {
+        map.set(g.studentId, g)
+      }
+    }
+    return map
+  }, [grades, selectedSubject])
+
+  function handleReleaseAll() {
+    if (subjectSections.length === 0 || !selectedSubject) return
+    const label = `${selectedSubject} (${subjectSections.join(", ")})`
+    const approved = window.confirm(`Release all grades for ${label} to students?`)
+    if (!approved) return
+
+    for (const section of subjectSections) {
+      releaseGradesForSection(section, selectedSubject)
+    }
+  }
 
   return (
     <Panel
       title="Manage Grades"
-      eyebrow="Section grade encoding"
+      eyebrow={
+        selectedSubject && subjectSections.length > 0
+          ? `${selectedSubject} \u2022 ${subjectSections.join(", ")}`
+          : "Subject grade encoding"
+      }
       actions={
         <div className="flex flex-wrap gap-2">
           <Button size="sm" onClick={downloadGradeTemplate} className="rounded-2xl">
@@ -203,7 +267,7 @@ export function FacultyGradesPanel({
           <Button
             size="sm"
             variant="outline"
-            onClick={() => releaseGradesForSection(selectedGradeSection)}
+            onClick={handleReleaseAll}
             className="rounded-2xl"
           >
             <Send className="size-4" />
@@ -212,20 +276,32 @@ export function FacultyGradesPanel({
         </div>
       }
     >
-      <div className="mb-4 flex flex-wrap gap-2">
-        {facultyClassSections.map((section) => (
-          <Button
-            key={section}
-            type="button"
-            variant={selectedGradeSection === section ? "default" : "outline"}
-            onClick={() => setSelectedGradeSection(section)}
-            className="rounded-xl"
-          >
-            {section}
-          </Button>
-        ))}
+      {/* Subject selector */}
+      <div className="mb-4">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Subject</p>
+        <div className="flex flex-wrap gap-2">
+          {facultySubjects.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No subjects assigned.</p>
+          ) : (
+            facultySubjects.map((s) => (
+              <Button
+                key={s.subject}
+                type="button"
+                variant={selectedSubject === s.subject ? "default" : "outline"}
+                onClick={() => {
+                  setSelectedSubject(s.subject)
+                  setSelectedSection(null)
+                }}
+                className="rounded-xl"
+              >
+                {s.subject}
+              </Button>
+            ))
+          )}
+        </div>
       </div>
 
+      {/* Upload */}
       <div className="mb-4 grid gap-3 md:grid-cols-[1fr_auto]">
         <Input
           type="file"
@@ -240,111 +316,214 @@ export function FacultyGradesPanel({
       </div>
       <p className="mb-4 text-sm text-muted-foreground">{uploadName}</p>
 
+      {/* Section selector */}
+      {selectedSubject && subjectSections.length > 0 && (
+        <div className="mb-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Section</p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant={selectedSection === null ? "default" : "outline"}
+              onClick={() => setSelectedSection(null)}
+              className="rounded-xl"
+            >
+              All Sections
+            </Button>
+            {subjectSections.map((s) => (
+              <Button
+                key={s}
+                type="button"
+                variant={selectedSection === s ? "default" : "outline"}
+                onClick={() => setSelectedSection(s)}
+                className="rounded-xl"
+              >
+                Section {s}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Grade tables */}
+      {selectedSubject && rosterBySection.length > 0 ? (
+        selectedSection === null ? (
+          /* All sections stacked */
+          <div className="space-y-6">
+            {rosterBySection.map(([section, students]) => (
+              <SectionTable
+                key={section}
+                section={section}
+                students={students}
+                gradeMap={gradeMap}
+                selectedSubject={selectedSubject}
+                updateGrade={updateGrade}
+                updateGradeRemarks={updateGradeRemarks}
+                setGrades={setGrades}
+                roster={roster}
+              />
+            ))}
+          </div>
+        ) : (() => {
+          const students = rosterBySection.find(([sec]) => sec === selectedSection)?.[1] ?? []
+          return (
+            <SectionTable
+              section={selectedSection}
+              students={students}
+              gradeMap={gradeMap}
+              selectedSubject={selectedSubject}
+              updateGrade={updateGrade}
+              updateGradeRemarks={updateGradeRemarks}
+              setGrades={setGrades}
+              roster={roster}
+            />
+          )
+        })()
+      ) : (
+        selectedSubject && (
+          <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center text-sm text-muted-foreground">
+            <GraduationCap className="mx-auto mb-2 size-8 text-muted-foreground/50" />
+            No students enrolled for this subject.
+          </div>
+        )
+      )}
+    </Panel>
+  )
+}
+
+function SectionTable({
+  section, students, gradeMap, selectedSubject, updateGrade, updateGradeRemarks, setGrades,
+}: {
+  section: string
+  students: typeof roster
+  gradeMap: Map<string, GradeRecord>
+  selectedSubject: string
+  updateGrade: (id: string, field: string, value: string) => void
+  updateGradeRemarks: (id: string, value: string) => void
+  setGrades: (updater: (prev: GradeRecord[]) => GradeRecord[]) => void
+}) {
+  if (students.length === 0) {
+    return (
+      <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center text-sm text-muted-foreground">
+        <GraduationCap className="mx-auto mb-2 size-8 text-muted-foreground/50" />
+        No students enrolled for this section.
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        Section {section}
+      </p>
       <div className="overflow-x-auto rounded-2xl border border-border">
         <table className="w-full min-w-[960px] text-left text-sm">
           <thead className="bg-muted text-foreground">
             <tr className="border-b border-border">
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Student
-              </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Subject
-              </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Midterm
-              </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Final
-              </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Grade % (Transmuted)
-              </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Equivalent
-              </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Remarks
-              </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Status
-              </th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Student</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Midterm</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Final</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Grade %</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Equivalent</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Remarks</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Status</th>
             </tr>
           </thead>
-
           <tbody className="divide-y divide-border bg-card">
-            {visibleGrades.map((grade) => {
-              const finalGrade = calculateGradePercentage(grade)
-              const transmuted =
-                finalGrade !== undefined
-                  ? transmutedToEquivalent(finalGrade)
-                  : undefined
+            {students.map((student) => {
+              const grade = gradeMap.get(student.id)
+              const finalGrade = grade ? calculateGradePercentage(grade) : undefined
+              const transmuted = finalGrade !== undefined ? transmutedToEquivalent(finalGrade) : undefined
+
+              function ensureGradeFor() {
+                const existing = gradeMap.get(student.id)
+                if (existing) return existing.id
+                const newId = `GRD-${Date.now()}`
+                const now = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+                setGrades((current) => [{
+                  id: newId,
+                  studentId: student.id,
+                  student: student.name,
+                  section: student.section,
+                  subject: selectedSubject,
+                  code: selectedSubject,
+                  units: 3,
+                  midterm: 0,
+                  finalTerm: 0,
+                  released: false,
+                  updatedAt: now,
+                }, ...current])
+                fetch("/api/portal/grades", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    id: newId, studentId: student.id, student: student.name,
+                    section: student.section, subject: selectedSubject,
+                    code: selectedSubject, units: 3,
+                    midterm: 0, finalTerm: 0, released: false, updatedAt: now,
+                  }),
+                }).catch(() => {})
+                return newId
+              }
+
+              function handleMidterm(value: string) {
+                const g = gradeMap.get(student.id)
+                if (g) updateGrade(g.id, "midterm", value)
+                else updateGrade(ensureGradeFor(), "midterm", value)
+              }
+
+              function handleFinal(value: string) {
+                const g = gradeMap.get(student.id)
+                if (g) updateGrade(g.id, "finalTerm", value)
+                else updateGrade(ensureGradeFor(), "finalTerm", value)
+              }
+
+              function handleRemarks(value: string) {
+                const g = gradeMap.get(student.id)
+                if (g) updateGradeRemarks(g.id, value)
+                else updateGradeRemarks(ensureGradeFor(), value)
+              }
 
               return (
-                <tr key={grade.id} className="transition-colors hover:bg-muted/50">
+                <tr key={student.id} className="transition-colors hover:bg-muted/50">
                   <td className="px-4 py-3">
-                    <p className="font-medium text-foreground">
-                      {grade.student}
-                    </p>
-                    <p className="text-xs text-foreground/70">
-                      {grade.studentId} - {grade.section}
-                    </p>
-                  </td>
-
-                  <td className="px-4 py-3 text-foreground/80">
-                    <p>{grade.code}</p>
-                    <p className="text-xs text-foreground/70">{grade.subject}</p>
+                    <p className="font-medium text-foreground">{student.name}</p>
+                    <p className="text-xs text-foreground/70">{student.id}</p>
                   </td>
 
                   <td className="px-4 py-3">
                     <Select
-                      value={grade.midterm !== undefined ? String(grade.midterm.toFixed(2)) : ""}
-                      onChange={(value) =>
-                        updateGrade(
-                          grade.id,
-                          "midterm",
-                          value
-                        )
-                      }
+                      value={grade?.midterm !== undefined ? String(grade.midterm.toFixed(2)) : ""}
+                      onChange={handleMidterm}
                       options={EQUIVALENT_GRADES.map((g) => g.toFixed(2))}
                     />
                   </td>
 
                   <td className="px-4 py-3">
                     <Select
-                      value={grade.finalTerm !== undefined ? String(grade.finalTerm.toFixed(2)) : ""}
-                      onChange={(value) =>
-                        updateGrade(
-                          grade.id,
-                          "finalTerm",
-                          value
-                        )
-                      }
+                      value={grade?.finalTerm !== undefined ? String(grade.finalTerm.toFixed(2)) : ""}
+                      onChange={handleFinal}
                       options={EQUIVALENT_GRADES.map((g) => g.toFixed(2))}
                     />
                   </td>
 
                   <td className="px-4 py-3 font-semibold text-foreground">
-                    {finalGrade !== undefined
-                      ? finalGrade.toFixed(2)
-                      : "N/A"}
+                    {finalGrade !== undefined ? finalGrade.toFixed(2) : "N/A"}
                   </td>
 
                   <td className="px-4 py-3 font-semibold text-foreground">
-                    {transmuted !== undefined
-                      ? transmuted.toFixed(2)
-                      : "N/A"}
+                    {transmuted !== undefined ? transmuted.toFixed(2) : "N/A"}
                   </td>
 
                   <td className="px-4 py-3">
                     <Select
-                      value={grade.remarks || "Passed"}
-                      onChange={(value) => updateGradeRemarks(grade.id, value)}
+                      value={grade?.remarks || "Passed"}
+                      onChange={handleRemarks}
                       options={gradeRemarkOptions}
                     />
                   </td>
 
                   <td className="px-4 py-3">
-                    <StatusBadge value={grade.released ? "Released" : "Draft"} />
+                    <StatusBadge value={grade?.released ? "Released" : "Draft"} />
                   </td>
                 </tr>
               )
@@ -352,6 +531,6 @@ export function FacultyGradesPanel({
           </tbody>
         </table>
       </div>
-    </Panel>
+    </div>
   )
 }

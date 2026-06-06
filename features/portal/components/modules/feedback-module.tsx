@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input"
 
 import {
   type TicketStatus,
-  roleProfiles,
   ticketStatusOptions,
 } from "../../data/portal-data"
 import {
@@ -25,6 +24,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
   const {
     feedbackDraft,
     handleFeedbackSubmit,
+    profile,
     role,
     setFeedbackDraft,
     studentTickets,
@@ -92,7 +92,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
 
   const visibleTickets =
     role === "faculty"
-      ? tickets.filter((ticket) => ticket.assignedTo === roleProfiles.faculty.name)
+      ? tickets.filter((ticket) => ticket.assignedTo === profile.name)
       : tickets
 
   return (

@@ -11,6 +11,7 @@ import {
 
 import { initialModule, roleNavigation } from "../config/navigation"
 import type { AuditLogRecord } from "@/lib/types/audit-log"
+import type { QuickLinkRecord } from "@/lib/types/quick-link"
 import type { YearSectionRecord } from "@/lib/types/year-section"
 import {
   type Announcement,
@@ -25,12 +26,11 @@ import {
   type Role,
   type ScheduleItem,
   type SeminarRecord,
-  type SemesterRecord,
-  type SubjectRecord,
   type ThesisRecord,
   type TicketStatus,
   type UserRecord,
 } from "../data/portal-data"
+import type { SemesterRecord, SubjectRecord } from "@/lib/types"
 import { csvEscape, downloadFile } from "../lib/downloads"
 import { calculateFinalGrade, transmutedToEquivalent } from "../lib/grades"
 import { parseGradeWorkbook, parseScheduleWorkbook } from "../lib/xlsx"
@@ -157,6 +157,7 @@ export function usePortalDashboardModel(role: Role) {
   const [classSchedules, setClassSchedules] = useState<ScheduleItem[]>([])
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([])
   const [csoReports, setCsoReports] = useState<CsoReport[]>([])
+  const [quickLinks, setQuickLinks] = useState<QuickLinkRecord[]>([])
 
   const [roleFilter, setRoleFilter] = useState("All")
   const [selectedAcademicSection, setSelectedAcademicSection] =
@@ -294,20 +295,35 @@ export function usePortalDashboardModel(role: Role) {
   }, [role, router])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRoster((current) => {
       const rosterIds = new Set(current.map((s) => s.id))
+      let changed = false
+
+      const updated = current.map((entry) => {
+        const user = users.find((u) => u.id === entry.id && u.role === "student")
+        if (!user) return entry
+        const newSection = user.section ?? ""
+        const newName = user.name
+        if (entry.section !== newSection || entry.name !== newName) {
+          changed = true
+          return { ...entry, name: newName, section: newSection }
+        }
+        return entry
+      })
+
       const missing = users.filter(
         (u) => u.role === "student" && u.section && !rosterIds.has(u.id)
       )
-      if (missing.length === 0) return current
-      const newEntries = missing.map((u) => {
-        const rawSection = u.section ?? ""
-        const rosterSection = rawSection.startsWith("BSCS")
-          ? rawSection
-          : `BSCS ${u.year ?? ""}${rawSection}`
-        return { id: u.id, name: u.name, section: rosterSection, enrolled: u.status === "Active" }
-      })
-      return [...newEntries, ...current]
+      if (missing.length > 0) {
+        changed = true
+        const newEntries = missing.map((u) => ({
+          id: u.id, name: u.name, section: u.section ?? "", enrolled: u.status === "Active"
+        }))
+        return [...newEntries, ...updated]
+      }
+
+      return changed ? updated : current
     })
   }, [users, setRoster])
 
@@ -397,7 +413,7 @@ export function usePortalDashboardModel(role: Role) {
     [activeGradeSection, facultyClassSections, grades]
   )
 
-  const profileSection = profileUser?.section ?? ""
+  const profileSection = roster.find((s) => s.id === profile.id && s.enrolled)?.section ?? profileUser?.section ?? ""
   const visibleSchedules = useMemo(() => {
     if (role === "faculty") {
       return classSchedules.filter((item) =>
@@ -718,6 +734,51 @@ export function usePortalDashboardModel(role: Role) {
     if (member) addAuditLog(`Updated faculty status for "${member.name}" to ${status}`)
   }
 
+  function deleteFacultyMember(facultyId: string) {
+    const member = faculty.find((f) => f.id === facultyId)
+    setFaculty((current) => current.filter((item) => item.id !== facultyId))
+    void syncApi("DELETE", `/api/portal/faculty/${facultyId}`)
+    if (member) addAuditLog(`Deleted faculty account "${member.name}"`)
+  }
+
+  function syncFacultyFromUsers() {
+    const facultyUsers = users.filter((u) => u.role === "faculty")
+    const facultyUserNames = new Set(facultyUsers.map((u) => u.name.toLowerCase().trim()))
+    const existingFacultyNames = new Map<string, string>()
+    for (const f of faculty) {
+      existingFacultyNames.set(f.name.toLowerCase().trim(), f.id)
+    }
+
+    for (const member of faculty) {
+      if (!facultyUserNames.has(member.name.toLowerCase().trim())) {
+        void syncApi("DELETE", `/api/portal/faculty/${member.id}`)
+        addAuditLog(`Deleted faculty account "${member.name}"`)
+      }
+    }
+
+    setFaculty((current) => current.filter((m) => facultyUserNames.has(m.name.toLowerCase().trim())))
+
+    for (const user of facultyUsers) {
+      if (!existingFacultyNames.has(user.name.toLowerCase().trim())) {
+        const newId = `FAC-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const newEntry = {
+          id: newId,
+          name: user.name,
+          position: "Faculty",
+          role: "faculty",
+          email: user.email,
+          education: "",
+          status: "Available" as const,
+          notes: "",
+          schedule: [],
+        }
+        setFaculty((current) => [...current, newEntry])
+        void syncApi("POST", "/api/portal/faculty", newEntry)
+        addAuditLog(`Created faculty account for "${user.name}"`)
+      }
+    }
+  }
+
   function addAuditLog(action: string) {
     const now = new Date()
     const time = now.toLocaleDateString("en-US", {
@@ -815,15 +876,12 @@ export function usePortalDashboardModel(role: Role) {
       academicTitle: "MIT",
     })
     if (newUser.role === "student") {
-      const rosterSection = newUser.section.startsWith("BSCS")
-        ? newUser.section
-        : `BSCS ${newUser.year}${newUser.section}`
       setRoster((current) => {
         const exists = current.some((s) => s.id === accountId)
         if (exists) return current
-        return [{ id: accountId, name: fullName, section: rosterSection, enrolled: true }, ...current]
+        return [{ id: accountId, name: fullName, section: newUser.section, enrolled: true }, ...current]
       })
-      void syncApi("POST", "/api/portal/roster", { id: accountId, name: fullName, section: rosterSection, enrolled: true })
+      void syncApi("POST", "/api/portal/roster", { id: accountId, name: fullName, section: newUser.section, enrolled: true })
     }
 
     addAuditLog(`Created ${newUser.role} account "${fullName}" (${newUser.email})`)
@@ -920,28 +978,31 @@ export function usePortalDashboardModel(role: Role) {
       current.map((item) => (item.id === updatedUser.id ? updatedUser : item))
     )
     if (updatedUser.role === "student") {
-      const rawSection = updatedUser.section ?? ""
-      const rosterSection = rawSection.startsWith("BSCS")
-        ? rawSection
-        : `BSCS ${updatedUser.year}${rawSection}`
+      const section = updatedUser.section ?? ""
       setRoster((current) => {
         const exists = current.some((item) => item.id === updatedUser.id)
         if (!exists) {
-          return [{ id: updatedUser.id, name: updatedUser.name, section: rosterSection, enrolled: updatedUser.status === "Active" }, ...current]
+          return [{ id: updatedUser.id, name: updatedUser.name, section, enrolled: updatedUser.status === "Active" }, ...current]
         }
         return current.map((item) =>
           item.id === updatedUser.id
-            ? { ...item, name: updatedUser.name, section: rosterSection }
+            ? { ...item, name: updatedUser.name, section }
             : item
         )
       })
       setGrades((current) =>
         current.map((grade) =>
           grade.studentId === updatedUser.id
-            ? { ...grade, student: updatedUser.name, section: rosterSection }
+            ? { ...grade, student: updatedUser.name, section }
             : grade
         )
       )
+      void syncApi("PUT", `/api/portal/roster/${updatedUser.id}`, { name: updatedUser.name, section })
+      for (const grade of grades) {
+        if (grade.studentId === updatedUser.id) {
+          void syncApi("PUT", `/api/portal/grades/${grade.id}`, { student: updatedUser.name, section })
+        }
+      }
     }
     const customAccountsKey = "comsite-custom-accounts"
     try {
@@ -1043,6 +1104,25 @@ export function usePortalDashboardModel(role: Role) {
           : user
       )
     )
+
+    if (fullName) {
+      setRoster((current) =>
+        current.map((s) =>
+          s.id === profile.id ? { ...s, name: fullName } : s
+        )
+      )
+      setGrades((current) =>
+        current.map((grade) =>
+          grade.studentId === profile.id ? { ...grade, student: fullName } : grade
+        )
+      )
+      void syncApi("PUT", `/api/portal/roster/${profile.id}`, { name: fullName })
+      for (const grade of grades) {
+        if (grade.studentId === profile.id) {
+          void syncApi("PUT", `/api/portal/grades/${grade.id}`, { student: fullName })
+        }
+      }
+    }
   }
 
   function resetStudentDraft(section = activeClassSection) {
@@ -1870,6 +1950,8 @@ export function usePortalDashboardModel(role: Role) {
     auditLogs,
     csoReports,
     setCsoReports,
+    quickLinks,
+    setQuickLinks,
     selectedNav,
     currentTitle,
     selectModule,
@@ -1885,6 +1967,8 @@ export function usePortalDashboardModel(role: Role) {
     handleCreateGrade,
     updateTicketStatus,
     updateFacultyStatus,
+    deleteFacultyMember,
+    syncFacultyFromUsers,
     confirmAndToggleUserStatus,
     toggleUserStatus,
     confirmAndDeleteUser,

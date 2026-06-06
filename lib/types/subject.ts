@@ -1,8 +1,14 @@
 export type SubjectRecord = {
+  id: string
+  curriculumId: string
+  yearLevel: string
+  semester: string
   code: string
-  title: string
-  units: number
-  instructor: string
+  name: string
+  type: string
+  lectureUnits: number
+  labUnits: number
+  totalUnits: number
   createdAt?: string
   updatedAt?: string
 }

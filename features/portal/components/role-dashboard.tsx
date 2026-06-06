@@ -45,7 +45,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { NewsItem } from "@/lib/news-data"
+type NewsItem = {
+  id: string
+  title: string
+  category: string
+  summary: string
+  content: string
+  accent: string
+}
 import { cn } from "@/lib/utils"
 
 import type { Announcement, Role } from "../data/portal-data"
@@ -107,6 +114,7 @@ export function RoleDashboard({ role }: { role: Role }) {
         model.setYearSections(d.yearSections ?? model.yearSections)
         model.setClassSchedules(d.classSchedules ?? model.classSchedules)
         model.setCsoReports(d.csoReports ?? model.csoReports)
+        model.setQuickLinks(d.quickLinks ?? model.quickLinks)
         setDataLoading(false)
       } catch (err) {
         if (!cancelled) {
@@ -195,7 +203,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       grades: <GradesModule model={model} />,
       schedule: <SchedulePanel model={model} />,
       curriculum: <CurriculumModule model={model} />,
-      "quick-links": <QuickLinksModule />,
+      "quick-links": <QuickLinksModule model={model} />,
       users: <UsersModule model={model} />,
       academic: <AcademicModule model={model} />,
       templates: <TemplatesModule model={model} />,
