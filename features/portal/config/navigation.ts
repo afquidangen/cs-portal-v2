@@ -4,6 +4,7 @@ import {
   BookOpen,
   CalendarDays,
   CheckCircle2,
+  Clock,
   Database,
   FileArchive,
   FileSpreadsheet,
@@ -16,7 +17,6 @@ import {
   UserCircle,
   Settings,
   Users,
-  Calendar,
 } from "lucide-react"
 
 import type { Role } from "../data/portal-data"
@@ -36,6 +36,7 @@ export const roleNavigation: Record<Role, NavItem[]> = {
     { id: "cso", label: "CSSO Records", icon: FileArchive },
     { id: "curriculum", label: "Curriculum", icon: GraduationCap },
     { id: "quick-links", label: "Quick Links", icon: LinkIcon },
+    { id: "grade-history", label: "Past Grades", icon: Clock },
   ],
   faculty: [
     { id: "overview", label: "Overview", icon: LayoutDashboard },

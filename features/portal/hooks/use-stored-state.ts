@@ -55,6 +55,7 @@ export function useStoredState<T>(
       serializedRef.current = serialized
       setValue(isValid && !isValid(stored) ? initialValue : stored)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, initialValue])
 
   useEffect(() => {
@@ -67,6 +68,7 @@ export function useStoredState<T>(
       }
     })
     return unsub
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, initialValue])
 
   useEffect(() => {
@@ -89,6 +91,7 @@ export function useStoredState<T>(
     }
     window.addEventListener("storage", handleStorage)
     return () => window.removeEventListener("storage", handleStorage)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, initialValue])
 
   useEffect(() => {
@@ -104,6 +107,7 @@ export function useStoredState<T>(
     }
     document.addEventListener("visibilitychange", handleVisibility)
     return () => document.removeEventListener("visibilitychange", handleVisibility)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, initialValue])
 
   useEffect(() => {
@@ -116,6 +120,7 @@ export function useStoredState<T>(
       }
     })
     return stop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, initialValue])
 
   useEffect(() => {

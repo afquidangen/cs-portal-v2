@@ -21,6 +21,7 @@ import {
   type CurriculumRecord,
   type FacultyRecord,
   type FeedbackTicket,
+  type GradeHistoryEntry,
   type GradeRecord,
   type ProfileDetails,
   type Role,
@@ -240,6 +241,9 @@ export function usePortalDashboardModel(role: Role) {
     lastName: "",
     studentType: "Regular",
     curriculum: "Old Curriculum",
+    curriculumId: "",
+    currentYearLevel: "First Year",
+    currentSemester: "First Semester",
     year: "1",
     section: "A",
     advisoryClass: "BSCS 3A",
@@ -281,7 +285,6 @@ export function usePortalDashboardModel(role: Role) {
     "Available for consultation."
   )
   const [authenticatedUser, setAuthenticatedUser] = useState<SessionUser | null>(null)
-  const [authLoading, setAuthLoading] = useState(true)
 
   useEffect(() => {
     fetchSession().then((user) => {
@@ -290,7 +293,6 @@ export function usePortalDashboardModel(role: Role) {
         return
       }
       setAuthenticatedUser(user)
-      setAuthLoading(false)
     })
   }, [role, router])
 
@@ -339,9 +341,9 @@ export function usePortalDashboardModel(role: Role) {
   const profileUser = users.find((user) => user.id === profile.id)
   useEffect(() => {
     if (!authenticatedUser) return
-    setProfileDetails((prev) => {
-      const nameParts = splitProfileName(authenticatedUser.name)
-      return {
+    const nameParts = splitProfileName(authenticatedUser.name)
+    queueMicrotask(() =>
+      setProfileDetails({
         photoUrl: profileUser?.photoUrl ?? "",
         firstName: profileUser?.firstName ?? nameParts.firstName,
         middleName: profileUser?.middleName ?? nameParts.middleName,
@@ -351,8 +353,8 @@ export function usePortalDashboardModel(role: Role) {
         sex: profileUser?.sex ?? "",
         birthday: profileUser?.birthday ?? "",
         address: profileUser?.address ?? "",
-      }
-    })
+      })
+    )
   }, [authenticatedUser, profileUser])
   const profileAdvisoryClass = profileUser?.advisoryClass
   const profilePhotoUrl = profileDetails.photoUrl
@@ -426,7 +428,7 @@ export function usePortalDashboardModel(role: Role) {
       return classSchedules.filter((item) => item.section.includes(profileSection))
     }
     return classSchedules
-  }, [classSchedules, facultyClassSections, role, profileSection, profileUser, profile.name])
+  }, [classSchedules, role, profileSection, profileUser, profile.name])
 
   const selectedScheduleStudents = useMemo(
     () =>
@@ -829,6 +831,12 @@ export function usePortalDashboardModel(role: Role) {
             : undefined,
         curriculum:
           newUser.role === "student" ? newUser.curriculum : undefined,
+        curriculumId:
+          newUser.role === "student" ? newUser.curriculumId : undefined,
+        currentYearLevel:
+          newUser.role === "student" ? newUser.currentYearLevel : undefined,
+        currentSemester:
+          newUser.role === "student" ? newUser.currentSemester : undefined,
         course: newUser.role === "student" ? "BSCS" : undefined,
         year: newUser.role === "student" ? Number(newUser.year) : undefined,
         section: newUser.role === "student" ? newUser.section : undefined,
@@ -877,6 +885,9 @@ export function usePortalDashboardModel(role: Role) {
       lastName: "",
       studentType: "Regular",
       curriculum: "Old Curriculum",
+      curriculumId: "",
+      currentYearLevel: "First Year",
+      currentSemester: "First Semester",
       year: "1",
       section: "A",
       advisoryClass: "BSCS 3A",
@@ -893,7 +904,17 @@ export function usePortalDashboardModel(role: Role) {
     }
 
     addAuditLog(`Created ${newUser.role} account "${fullName}" (${newUser.email})`)
-    void syncApi("POST", "/api/portal/users", { id: accountId, name: fullName, email: newUser.email.trim(), role: newUser.role, status: "Active", password: newUser.password || "password123" })
+    void syncApi("POST", "/api/portal/users", {
+      id: accountId,
+      name: fullName,
+      email: newUser.email.trim(),
+      role: newUser.role,
+      status: "Active",
+      password: newUser.password || "password123",
+      curriculumId: newUser.role === "student" ? newUser.curriculumId : undefined,
+      currentYearLevel: newUser.role === "student" ? newUser.currentYearLevel : undefined,
+      currentSemester: newUser.role === "student" ? newUser.currentSemester : undefined,
+    })
   }
 
   function confirmAndToggleUserStatus(userId: string) {
@@ -1040,6 +1061,159 @@ export function usePortalDashboardModel(role: Role) {
     } catch { /* ignore */ }
     addAuditLog(`Updated account "${updatedUser.name}"`)
     void syncApi("PUT", `/api/portal/users/${updatedUser.id}`, updatedUser)
+  }
+
+  function handleChangeCurriculum(
+    studentId: string,
+    newCurriculumId: string,
+    newYearLevel: string,
+    newSemester: string,
+    createHistory: boolean
+  ) {
+    const student = users.find((u) => u.id === studentId)
+    if (!student) return
+
+    const oldCurriculum = curricula.find((c) => c.id === student.curriculumId)
+    const newCurriculum = curricula.find((c) => c.id === newCurriculumId)
+    if (!newCurriculum) return
+
+    const newCurriculumLabel = `${newCurriculum.name} - ${newCurriculum.major}`
+    const existingHistory = student.gradeHistory ?? []
+
+    const newHistory = createHistory && oldCurriculum
+      ? (() => {
+          const currentTermIdx = oldCurriculum.terms.findIndex(
+            (t) => t.year === student.currentYearLevel && t.semester === student.currentSemester
+          )
+          const completedTerms = currentTermIdx >= 0
+            ? oldCurriculum.terms.slice(0, currentTermIdx)
+            : []
+
+          const entries: GradeHistoryEntry[] = []
+          for (const term of completedTerms) {
+            for (const subj of term.subjects) {
+              const exists = existingHistory.some(
+                (g) => g.subjectCode === subj.code && g.yearLevel === term.year && g.semester === term.semester
+              )
+              if (exists) continue
+
+              const gradeRecord = grades.find(
+                (g) => g.studentId === studentId && g.code === subj.code
+              )
+              const midtermPct = gradeRecord?.midtermTransmuted ?? 0
+              const finalPct = gradeRecord?.finalTransmuted ?? 0
+              const finalPercentile = midtermPct || finalPct
+                ? Number(((midtermPct + finalPct) / 2).toFixed(2))
+                : 0
+              const gradePct = gradeRecord?.gradePercentage
+              const transmutedGrade = gradePct !== undefined
+                ? transmutedToEquivalent(gradePct)
+                : 0
+
+              entries.push({
+                subjectCode: subj.code,
+                subjectName: subj.name,
+                finalPercentile,
+                transmutedGrade,
+                remarks: gradeRecord?.remarks ?? "Passed",
+                curriculumId: oldCurriculum.id,
+                yearLevel: term.year,
+                semester: term.semester,
+              })
+            }
+          }
+          return entries
+        })()
+      : []
+
+    const gradeHistory = [...existingHistory, ...newHistory]
+
+    setUsers((current) =>
+      current.map((u) =>
+        u.id === studentId
+          ? {
+              ...u,
+              curriculumId: newCurriculumId,
+              curriculum: newCurriculumLabel,
+              currentYearLevel: newYearLevel,
+              currentSemester: newSemester,
+              gradeHistory,
+            }
+          : u
+      )
+    )
+
+    addAuditLog(
+      `Changed curriculum for "${student.name}" from ${student.curriculum ?? "N/A"} to ${newCurriculumLabel}`
+    )
+    void syncApi("PUT", `/api/portal/users/${studentId}`, {
+      curriculumId: newCurriculumId,
+      curriculum: newCurriculumLabel,
+      currentYearLevel: newYearLevel,
+      currentSemester: newSemester,
+      gradeHistory,
+    })
+  }
+
+  function handleAddGradeHistory(studentId: string, entry: GradeHistoryEntry) {
+    setUsers((current) =>
+      current.map((u) =>
+        u.id === studentId
+          ? { ...u, gradeHistory: [...(u.gradeHistory ?? []), entry] }
+          : u
+      )
+    )
+    const student = users.find((u) => u.id === studentId)
+    if (student) {
+      const updated: UserRecord = {
+        ...student,
+        gradeHistory: [...(student.gradeHistory ?? []), entry],
+      }
+      void syncApi("PUT", `/api/portal/users/${studentId}`, updated)
+    }
+  }
+
+  function handleRemoveGradeHistory(studentId: string, index: number) {
+    setUsers((current) =>
+      current.map((u) =>
+        u.id === studentId
+          ? { ...u, gradeHistory: (u.gradeHistory ?? []).filter((_, i) => i !== index) }
+          : u
+      )
+    )
+    const student = users.find((u) => u.id === studentId)
+    if (student) {
+      const updated: UserRecord = {
+        ...student,
+        gradeHistory: (student.gradeHistory ?? []).filter((_, i) => i !== index),
+      }
+      void syncApi("PUT", `/api/portal/users/${studentId}`, updated)
+    }
+  }
+
+  function handleUpdateGradeHistory(studentId: string, index: number, entry: GradeHistoryEntry) {
+    setUsers((current) =>
+      current.map((u) =>
+        u.id === studentId
+          ? {
+              ...u,
+              gradeHistory: (u.gradeHistory ?? []).map((e, i) =>
+                i === index ? entry : e
+              ),
+            }
+          : u
+      )
+    )
+    const student = users.find((u) => u.id === studentId)
+    if (student) {
+      const updated: UserRecord = {
+        ...student,
+        gradeHistory: (student.gradeHistory ?? []).map((e, i) =>
+          i === index ? entry : e
+        ),
+      }
+      void syncApi("PUT", `/api/portal/users/${studentId}`, updated)
+    }
   }
 
   function confirmAndDeleteThesis(thesisId: string) {
@@ -2011,6 +2185,10 @@ export function usePortalDashboardModel(role: Role) {
     handleUpdateSubjectInTerm,
     handleDeleteSubjectFromTerm,
     handleAddCurriculum,
+    handleChangeCurriculum,
+    handleAddGradeHistory,
+    handleRemoveGradeHistory,
+    handleUpdateGradeHistory,
     handleAddUser,
     handleFeedbackSubmit,
     handleCreateEvent,

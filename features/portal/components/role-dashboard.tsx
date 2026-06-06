@@ -67,6 +67,7 @@ import { ClassesModule } from "./modules/classes-module"
 import { CsoModule } from "./modules/cso-module"
 import { CurriculumModule } from "./modules/curriculum-module"
 import { FeedbackModule } from "./modules/feedback-module"
+import { GradeHistoryModule } from "./modules/grade-history-module"
 import { GradesModule } from "./modules/grades-module"
 import { GreetingCard } from "./modules/greeting-card"
 import { InstructorsModule } from "./modules/instructors-module"
@@ -126,6 +127,7 @@ export function RoleDashboard({ role }: { role: Role }) {
 
     void loadServerData()
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role])
   const [announcementIndex, setAnnouncementIndex] = useState(0)
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false)
@@ -204,6 +206,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       schedule: <SchedulePanel model={model} />,
       curriculum: <CurriculumModule model={model} />,
       "quick-links": <QuickLinksModule model={model} />,
+      "grade-history": <GradeHistoryModule model={model} />,
       users: <UsersModule model={model} />,
       academic: <AcademicModule model={model} />,
       templates: <TemplatesModule model={model} />,
@@ -253,6 +256,7 @@ export function RoleDashboard({ role }: { role: Role }) {
         "my-classes",
         "classes",
         "curriculum",
+        "grade-history",
         "academic",
         "instructors",
         "schedule",

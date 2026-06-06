@@ -1,6 +1,6 @@
 "use client"
 
-import { CalendarDays, Camera, Users } from "lucide-react"
+import { CalendarDays, Camera, Heart, Users } from "lucide-react"
 
 import { Panel } from "../shared/dashboard-ui"
 import Image from "next/image"
@@ -128,6 +128,38 @@ export function AboutModule() {
               <p className="mt-3 text-sm leading-6 text-foreground/75">
                 {member.details}
               </p>
+            </article>
+          ))}
+        </div>
+      </Panel>
+
+      <Panel title="Acknowledgments" eyebrow="Initial contributors">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex size-11 items-center justify-center rounded-2xl bg-muted text-foreground">
+            <Heart className="size-5" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">Credit and Acknowledgment</h3>
+            <p className="text-sm text-foreground/70">Past contributors and foundation</p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <p className="text-sm leading-7 text-foreground/80">
+            We acknowledge the initial contributors for providing the project&apos;s early foundation and concept.
+          </p>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {["Team Member 1", "Team Member 2", "Team Member 3", "Team Member 4"].map((name) => (
+            <article
+              key={name}
+              className="rounded-3xl border border-border bg-card p-4 text-center shadow-sm"
+            >
+              <div className="mx-auto mb-3 flex size-16 items-center justify-center rounded-full bg-muted">
+                <Users className="size-6 text-foreground/40" />
+              </div>
+              <h4 className="text-sm font-semibold text-foreground">{name}</h4>
             </article>
           ))}
         </div>

@@ -14,6 +14,7 @@ export type ModuleId =
   | "schedule"
   | "curriculum"
   | "quick-links"
+  | "grade-history"
   | "users"
   | "academic"
   | "profile"

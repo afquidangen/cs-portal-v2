@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { Eye, ImageIcon, Pencil, Plus, Trash2, X } from "lucide-react"
+import { Download, Eye, FileText, ImageIcon, Pencil, Plus, Trash2, Upload, X } from "lucide-react"
 import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -23,6 +23,8 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
   const [deletingReport, setDeletingReport] = useState<CsoReport | null>(null)
   const [viewingReport, setViewingReport] = useState<CsoReport | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [constitutionPdf, setConstitutionPdf] = useState<string | null>(null)
+  const [showConstitutionUpload, setShowConstitutionUpload] = useState(false)
 
   const isAdmin = model.role === "admin"
 
@@ -107,6 +109,53 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
           setShowForm(true)
         } : undefined}
       />
+
+      <Panel title="CSSO Constitution and By Laws" eyebrow="Governing document">
+        {constitutionPdf ? (
+          <div className="flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <FileText className="size-6 text-foreground/60" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Constitution and By Laws</p>
+                <p className="text-xs text-foreground/60">PDF document</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="rounded-2xl" onClick={() => window.open(constitutionPdf, "_blank")}>
+                <Download className="size-4" />
+                View
+              </Button>
+              {isAdmin ? (
+                <Button size="sm" variant="outline" className="rounded-2xl" onClick={() => setShowConstitutionUpload(true)}>
+                  <Upload className="size-4" />
+                  Replace
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted py-12 text-center">
+            <FileText className="mx-auto mb-3 size-10 text-foreground/40" />
+            <p className="text-sm text-foreground/60">No constitution uploaded yet.</p>
+            {isAdmin ? (
+              <Button size="sm" variant="outline" className="mt-3 rounded-2xl" onClick={() => setShowConstitutionUpload(true)}>
+                <Upload className="size-4" />
+                Upload PDF
+              </Button>
+            ) : null}
+          </div>
+        )}
+      </Panel>
+
+      {showConstitutionUpload ? (
+        <ConstitutionUploadDialog
+          onSave={(pdf) => {
+            setConstitutionPdf(pdf)
+            setShowConstitutionUpload(false)
+          }}
+          onClose={() => setShowConstitutionUpload(false)}
+        />
+      ) : null}
 
       {showForm ? (
         <ReportFormDialog
@@ -297,6 +346,58 @@ function ReportGrid({
         </div>
       )}
     </Panel>
+  )
+}
+
+function ConstitutionUploadDialog({
+  onSave,
+  onClose,
+}: {
+  onSave: (pdf: string) => void
+  onClose: () => void
+}) {
+  const [file, setFile] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setFile(f)
+    const reader = new FileReader()
+    reader.onload = () => setPreview(reader.result as string)
+    reader.readAsDataURL(f)
+  }
+
+  return (
+    <Dialog open onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-xl text-foreground">Upload Constitution and By Laws</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="grid gap-1.5">
+            <label className="text-sm font-medium text-foreground">PDF File</label>
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={handleFileChange}
+              className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
+            />
+          </div>
+          {preview ? (
+            <div className="rounded-2xl border border-border bg-muted p-3 text-center text-sm text-foreground/70">
+              {file?.name ?? "File selected"}
+            </div>
+          ) : null}
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => preview && onSave(preview)} disabled={!preview}>
+            <Upload className="mr-1.5 size-4" /> Upload
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 

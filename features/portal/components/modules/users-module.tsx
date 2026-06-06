@@ -2,9 +2,12 @@
 
 import { useMemo, useState } from "react"
 import {
+  ArrowLeftRight,
   ChevronLeft,
   ChevronRight,
   Edit,
+  History,
+  Pencil,
   Plus,
   ShieldCheck,
   Trash2,
@@ -32,7 +35,7 @@ import {
   Select,
   StatusBadge,
 } from "../shared/dashboard-ui"
-import type { UserRecord } from "../../data/portal-data"
+import type { GradeHistoryEntry, UserRecord } from "../../data/portal-data"
 import type { PortalModuleProps } from "./types"
 
 const PAGE_SIZE = 8
@@ -49,6 +52,10 @@ export function UsersModule({ model }: PortalModuleProps) {
     curricula,
     filteredUsers,
     handleAddUser,
+    handleChangeCurriculum,
+    handleAddGradeHistory,
+    handleRemoveGradeHistory,
+    handleUpdateGradeHistory,
     newUser,
     query,
     roleFilter,
@@ -65,6 +72,24 @@ export function UsersModule({ model }: PortalModuleProps) {
   const [editUser, setEditUser] = useState<(UserRecord & { password?: string }) | null>(null)
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null)
   const [toggleUserId, setToggleUserId] = useState<string | null>(null)
+  const [changeCurriculumUser, setChangeCurriculumUser] = useState<{
+    user: UserRecord
+    newCurriculumId: string
+    newYearLevel: string
+    newSemester: string
+  } | null>(null)
+  const [gradeHistoryUser, setGradeHistoryUser] = useState<UserRecord | null>(null)
+  const [gradeHistoryEntry, setGradeHistoryEntry] = useState({
+    subjectCode: "",
+    subjectName: "",
+    finalPercentile: 0,
+    transmutedGrade: 0,
+    remarks: "FAILED",
+    curriculumId: "",
+    yearLevel: "",
+    semester: "",
+  })
+  const [editGradeHistoryIndex, setEditGradeHistoryIndex] = useState<number | null>(null)
   const [page, setPage] = useState(1)
   const [addOpen, setAddOpen] = useState(false)
   const [addRole, setAddRole] = useState("student")
@@ -76,9 +101,24 @@ export function UsersModule({ model }: PortalModuleProps) {
     safePage * PAGE_SIZE
   )
 
-  const curriculumOptions = Array.from(
-    new Set(curricula.map((c) => c.name))
+  const curriculumOptions = curricula.map(
+    (c) => `${c.id} - ${c.name} - ${c.major}`
   )
+
+  const semesterOptions = ["First Semester", "Second Semester", "Midyear"]
+
+  function subjectsForTerm(
+    curriculumId: string,
+    yearLevel: string,
+    semester: string
+  ) {
+    const curr = curricula.find((c) => c.id === curriculumId)
+    if (!curr) return null
+    const term = curr.terms.find(
+      (t) => t.year === yearLevel && t.semester === semester
+    )
+    return term ?? null
+  }
 
   const sectionOptions = useMemo(() => {
     const label = YEAR_LABELS[newUser.year]
@@ -261,6 +301,16 @@ export function UsersModule({ model }: PortalModuleProps) {
                     <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setEditUser(user)} title="Edit user">
                       <Edit className="size-3.5" />
                     </Button>
+                    {user.role === "student" ? (
+                      <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setChangeCurriculumUser({ user, newCurriculumId: user.curriculumId ?? "", newYearLevel: user.currentYearLevel ?? YEAR_LABELS[String(user.year ?? "1")], newSemester: user.currentSemester ?? "First Semester" })} title="Change curriculum">
+                        <ArrowLeftRight className="size-3.5" />
+                      </Button>
+                    ) : null}
+                    {user.role === "student" ? (
+                      <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "" }) }} title="Grade history">
+                        <History className="size-3.5" />
+                      </Button>
+                    ) : null}
                     <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setToggleUserId(user.id)} title={user.status === "Active" ? "Deactivate" : "Activate"}>
                       {user.status === "Active" ? <UserX className="size-3.5" /> : <UserCheck className="size-3.5" />}
                     </Button>
@@ -358,6 +408,28 @@ export function UsersModule({ model }: PortalModuleProps) {
                           >
                             <Edit className="size-3.5" />
                           </Button>
+                          {user.role === "student" ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-xl"
+                              onClick={() => setChangeCurriculumUser({ user, newCurriculumId: user.curriculumId ?? "", newYearLevel: user.currentYearLevel ?? YEAR_LABELS[String(user.year ?? "1")], newSemester: user.currentSemester ?? "First Semester" })}
+                              title="Change curriculum"
+                            >
+                              <ArrowLeftRight className="size-3.5" />
+                            </Button>
+                          ) : null}
+                          {user.role === "student" ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-xl"
+                              onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "" }) }}
+                              title="Grade history"
+                            >
+                              <History className="size-3.5" />
+                            </Button>
+                          ) : null}
                           <Button
                             size="sm"
                             variant="outline"
@@ -574,13 +646,19 @@ export function UsersModule({ model }: PortalModuleProps) {
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Student Details</p>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <p className="mb-1.5 text-sm font-medium text-foreground">Year</p>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Year Level</p>
                       <Select
-                        value={newUser.year}
+                        value={newUser.currentYearLevel}
                         onChange={(value) =>
-                          setNewUser((current) => ({ ...current, year: value }))
+                          setNewUser((current) => ({
+                            ...current,
+                            currentYearLevel: value,
+                            year: String(
+                              ["First Year", "Second Year", "Third Year", "Fourth Year"].indexOf(value) + 1
+                            ),
+                          }))
                         }
-                        options={["1", "2", "3", "4"]}
+                        options={["First Year", "Second Year", "Third Year", "Fourth Year"]}
                       />
                     </div>
                     <div>
@@ -606,16 +684,57 @@ export function UsersModule({ model }: PortalModuleProps) {
                       <p className="mb-1.5 text-sm font-medium text-foreground">Curriculum</p>
                       <Select
                         value={newUser.curriculum}
-                        onChange={(value) =>
+                        onChange={(value) => {
+                          const curr = curricula.find(
+                            (c) => `${c.id} - ${c.name} - ${c.major}` === value
+                          )
                           setNewUser((current) => ({
                             ...current,
                             curriculum: value,
+                            curriculumId: curr?.id ?? "",
                           }))
-                        }
+                        }}
                         options={curriculumOptions}
                       />
                     </div>
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Semester</p>
+                      <Select
+                        value={newUser.currentSemester}
+                        onChange={(value) =>
+                          setNewUser((current) => ({
+                            ...current,
+                            currentSemester: value,
+                          }))
+                        }
+                        options={semesterOptions}
+                      />
+                    </div>
                   </div>
+                  {(() => {
+                    const term = subjectsForTerm(
+                      newUser.curriculumId,
+                      newUser.currentYearLevel,
+                      newUser.currentSemester
+                    )
+                    if (!term) return null
+                    return (
+                      <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Subjects for {newUser.currentYearLevel} - {newUser.currentSemester}
+                        </p>
+                        <div className="grid gap-1.5 text-xs text-foreground/80">
+                          {term.subjects.map((sub) => (
+                            <div key={sub.code} className="flex items-center gap-2">
+                              <span className="font-medium">{sub.code}</span>
+                              <span>{sub.name}</span>
+                              <span className="ml-auto text-muted-foreground">{sub.total} units</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </div>
               ) : null}
 
@@ -678,6 +797,358 @@ export function UsersModule({ model }: PortalModuleProps) {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Change Curriculum Dialog ── */}
+      <Dialog open={!!changeCurriculumUser} onOpenChange={(o) => { if (!o) setChangeCurriculumUser(null) }}>
+        <DialogContent className="flex flex-col w-full sm:max-w-lg md:max-w-xl max-h-[85dvh] p-0 gap-0">
+          <DialogHeader className="px-5 pt-5 pb-0 shrink-0">
+            <DialogTitle className="text-lg sm:text-xl text-foreground">Change Curriculum</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">
+              Update curriculum assignment for {changeCurriculumUser?.user.name}
+            </DialogDescription>
+          </DialogHeader>
+
+          {changeCurriculumUser ? (
+            <div className="overflow-y-auto px-5 py-5 space-y-4">
+              <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-1 text-sm">
+                <p className="text-xs font-semibold text-muted-foreground">Current</p>
+                <p className="text-foreground font-medium">
+                  {(() => {
+                    const c = curricula.find((cr) => cr.id === changeCurriculumUser.user.curriculumId)
+                    return c ? `${c.id} - ${c.name} - ${c.major}` : changeCurriculumUser.user.curriculum ?? "N/A"
+                  })()}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {changeCurriculumUser.user.currentYearLevel ?? YEAR_LABELS[String(changeCurriculumUser.user.year ?? "1")]} &middot; {changeCurriculumUser.user.currentSemester ?? "—"}
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">New Curriculum</p>
+                  <Select
+                    value={(() => {
+                      const c = curricula.find((cr) => cr.id === changeCurriculumUser.newCurriculumId)
+                      return c ? `${c.id} - ${c.name} - ${c.major}` : ""
+                    })()}
+                    onChange={(value) => {
+                      const curr = curricula.find(
+                        (c) => `${c.id} - ${c.name} - ${c.major}` === value
+                      )
+                      if (curr) {
+                        setChangeCurriculumUser((prev) =>
+                          prev ? { ...prev, newCurriculumId: curr.id } : null
+                        )
+                      }
+                    }}
+                    options={curriculumOptions}
+                  />
+                </div>
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">Year Level</p>
+                  <Select
+                    value={changeCurriculumUser.newYearLevel}
+                    onChange={(value) =>
+                      setChangeCurriculumUser((prev) =>
+                        prev ? { ...prev, newYearLevel: value } : null
+                      )
+                    }
+                    options={["First Year", "Second Year", "Third Year", "Fourth Year"]}
+                  />
+                </div>
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">Semester</p>
+                  <Select
+                    value={changeCurriculumUser.newSemester}
+                    onChange={(value) =>
+                      setChangeCurriculumUser((prev) =>
+                        prev ? { ...prev, newSemester: value } : null
+                      )
+                    }
+                    options={semesterOptions}
+                  />
+                </div>
+              </div>
+
+              {(() => {
+                const curr = curricula.find((c) => c.id === changeCurriculumUser.newCurriculumId)
+                const term = curr?.terms.find(
+                  (t) => t.year === changeCurriculumUser.newYearLevel && t.semester === changeCurriculumUser.newSemester
+                )
+                if (!term) return null
+                return (
+                  <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Subjects for {changeCurriculumUser.newYearLevel} - {changeCurriculumUser.newSemester}
+                    </p>
+                    <div className="grid gap-1.5 text-xs text-foreground/80">
+                      {term.subjects.map((sub) => (
+                        <div key={sub.code} className="flex items-center gap-2">
+                          <span className="font-medium">{sub.code}</span>
+                          <span>{sub.name}</span>
+                          <span className="ml-auto text-muted-foreground">{sub.total} units</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Completed terms from the previous curriculum will have their grades recorded as grade history entries for record-keeping.
+              </p>
+            </div>
+          ) : null}
+
+          <DialogFooter className="px-5 pb-5 pt-4 border-t border-border gap-3 flex-col-reverse sm:flex-row">
+            <DialogClose asChild>
+              <Button variant="ghost" className="w-full sm:w-auto">Cancel</Button>
+            </DialogClose>
+            <Button onClick={() => {
+              if (!changeCurriculumUser) return
+              const isDifferent = changeCurriculumUser.user.curriculumId !== changeCurriculumUser.newCurriculumId
+              handleChangeCurriculum(
+                changeCurriculumUser.user.id,
+                changeCurriculumUser.newCurriculumId,
+                changeCurriculumUser.newYearLevel,
+                changeCurriculumUser.newSemester,
+                isDifferent
+              )
+              setChangeCurriculumUser(null)
+            }} className="w-full sm:w-auto">
+              <ArrowLeftRight className="mr-1.5 size-4" /> Change Curriculum
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Grade History Dialog ── */}
+      <Dialog open={!!gradeHistoryUser} onOpenChange={(o) => { if (!o) setGradeHistoryUser(null) }}>
+        <DialogContent className="flex flex-col w-full sm:max-w-2xl max-h-[85dvh] p-0 gap-0">
+          <DialogHeader className="px-5 pt-5 pb-0 shrink-0">
+            <DialogTitle>Grade History — {gradeHistoryUser?.name}</DialogTitle>
+            <DialogDescription>Add or remove past grade entries for this student.</DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto px-5 py-4 space-y-4 grow">
+            {(() => {
+              const student = gradeHistoryUser
+              if (!student) return null
+              const curriculum = curricula.find((c) => c.id === student.curriculumId)
+              const history = student.gradeHistory ?? []
+
+              const subjectOptions: { value: string; label: string; subjectName: string; yearLevel: string; semester: string }[] = []
+              if (curriculum) {
+                for (const term of curriculum.terms) {
+                  for (const subj of term.subjects) {
+                    subjectOptions.push({
+                      value: subj.code,
+                      label: `${subj.code} - ${subj.name} (${term.year} - ${term.semester})`,
+                      subjectName: subj.name,
+                      yearLevel: term.year,
+                      semester: term.semester,
+                    })
+                  }
+                }
+              }
+
+              return (
+                <>
+                  {history.length > 0 ? (
+                    <div className="overflow-x-auto rounded-xl border border-border">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-muted/50 text-left text-xs font-semibold text-muted-foreground">
+                            <th className="px-3 py-2">Code</th>
+                            <th className="px-3 py-2">Subject</th>
+                            <th className="px-3 py-2 text-center">Final %</th>
+                            <th className="px-3 py-2 text-center">Trans. Grade</th>
+                            <th className="px-3 py-2">Remarks</th>
+                            <th className="px-3 py-2">Term</th>
+                            <th className="px-3 py-2 text-center w-10"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {history.map((entry, idx) => (
+                            <tr key={idx} className="border-t border-border">
+                              <td className="px-3 py-2 font-medium text-foreground">{entry.subjectCode}</td>
+                              <td className="px-3 py-2 text-foreground/80">{entry.subjectName}</td>
+                              <td className="px-3 py-2 text-center text-foreground">{entry.finalPercentile}</td>
+                              <td className="px-3 py-2 text-center text-foreground">{entry.transmutedGrade}</td>
+                              <td className="px-3 py-2 text-foreground/80">{entry.remarks}</td>
+                              <td className="px-3 py-2 text-foreground/60 text-xs">{entry.yearLevel} — {entry.semester}</td>
+                              <td className="px-3 py-2 text-center">
+                                <div className="flex justify-center gap-1">
+                                  <button
+                                    className="text-blue-500 hover:text-blue-700 text-xs font-semibold"
+                                    onClick={() => {
+                                      setGradeHistoryEntry({
+                                        subjectCode: entry.subjectCode,
+                                        subjectName: entry.subjectName,
+                                        finalPercentile: entry.finalPercentile,
+                                        transmutedGrade: entry.transmutedGrade,
+                                        remarks: entry.remarks,
+                                        curriculumId: entry.curriculumId,
+                                        yearLevel: entry.yearLevel,
+                                        semester: entry.semester,
+                                      })
+                                      setEditGradeHistoryIndex(idx)
+                                    }}
+                                  >
+                                    <Pencil className="size-3.5 inline" />
+                                  </button>
+                                  <button
+                                    className="text-red-500 hover:text-red-700 text-xs font-semibold"
+                                    onClick={() => handleRemoveGradeHistory(student.id, idx)}
+                                  >
+                                    <Trash2 className="size-3.5 inline" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-6">No grade history entries yet.</p>
+                  )}
+
+                  <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+                    <p className="text-sm font-semibold text-foreground">
+                      {editGradeHistoryIndex !== null ? "Edit Entry" : "Add Entry"}
+                    </p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="sm:col-span-2">
+                        <p className="mb-1 text-xs font-medium text-foreground/70">Subject</p>
+                        <Select
+                          value={subjectOptions.find((o) => o.value === gradeHistoryEntry.subjectCode)?.label ?? ""}
+                          onChange={(label) => {
+                            const opt = subjectOptions.find((o) => o.label === label)
+                            if (opt) {
+                              setGradeHistoryEntry((prev) => ({
+                                ...prev,
+                                subjectCode: opt.value,
+                                subjectName: opt.subjectName,
+                                curriculumId: curriculum?.id ?? "",
+                                yearLevel: opt.yearLevel,
+                                semester: opt.semester,
+                              }))
+                            }
+                          }}
+                          options={subjectOptions.map((o) => o.label)}
+                          contentClassName="max-h-48 overflow-y-auto"
+                        />
+                      </div>
+                      <div>
+                        <p className="mb-1 text-xs font-medium text-foreground/70">Final Percentile</p>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={gradeHistoryEntry.finalPercentile || ""}
+                          onChange={(e) => {
+                            const val = Number(e.target.value)
+                            setGradeHistoryEntry((prev) => ({
+                              ...prev,
+                              finalPercentile: val,
+                              transmutedGrade: val >= 97 ? 1 : val >= 94 ? 1.25 : val >= 91 ? 1.5 : val >= 88 ? 1.75 : val >= 85 ? 2 : val >= 82 ? 2.25 : val >= 79 ? 2.5 : val >= 76 ? 2.75 : val >= 75 ? 3 : val >= 72 ? 4 : 5,
+                            }))
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <p className="mb-1 text-xs font-medium text-foreground/70">Transmuted Grade</p>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={5}
+                          step={0.25}
+                          value={gradeHistoryEntry.transmutedGrade || ""}
+                          onChange={(e) =>
+                            setGradeHistoryEntry((prev) => ({ ...prev, transmutedGrade: Number(e.target.value) }))
+                          }
+                        />
+                      </div>
+                      <div>
+                        <p className="mb-1 text-xs font-medium text-foreground/70">Remarks</p>
+                        <Select
+                          value={gradeHistoryEntry.remarks}
+                          onChange={(value) => setGradeHistoryEntry((prev) => ({ ...prev, remarks: value }))}
+                          options={["FAILED", "INC", "DROP", "UNOFFICIALLY DROP"]}
+                        />
+                      </div>
+                      <div>
+                        <p className="mb-1 text-xs font-medium text-foreground/70">Year Level</p>
+                        <Select
+                          value={gradeHistoryEntry.yearLevel}
+                          onChange={(value) => setGradeHistoryEntry((prev) => ({ ...prev, yearLevel: value }))}
+                          options={Object.values(YEAR_LABELS)}
+                        />
+                      </div>
+                      <div>
+                        <p className="mb-1 text-xs font-medium text-foreground/70">Semester</p>
+                        <Select
+                          value={gradeHistoryEntry.semester}
+                          onChange={(value) => setGradeHistoryEntry((prev) => ({ ...prev, semester: value }))}
+                          options={semesterOptions}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="rounded-xl"
+                        disabled={!gradeHistoryEntry.subjectCode || !gradeHistoryEntry.finalPercentile}
+                        onClick={() => {
+                          if (!student) return
+                          const entry: GradeHistoryEntry = {
+                            subjectCode: gradeHistoryEntry.subjectCode,
+                            subjectName: gradeHistoryEntry.subjectName,
+                            finalPercentile: gradeHistoryEntry.finalPercentile,
+                            transmutedGrade: gradeHistoryEntry.transmutedGrade,
+                            remarks: gradeHistoryEntry.remarks,
+                            curriculumId: gradeHistoryEntry.curriculumId || (student.curriculumId ?? ""),
+                            yearLevel: gradeHistoryEntry.yearLevel,
+                            semester: gradeHistoryEntry.semester,
+                          }
+                          if (editGradeHistoryIndex !== null) {
+                            handleUpdateGradeHistory(student.id, editGradeHistoryIndex, entry)
+                            setEditGradeHistoryIndex(null)
+                          } else {
+                            handleAddGradeHistory(student.id, entry)
+                          }
+                          setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: student.curriculumId ?? "", yearLevel: "", semester: "" })
+                        }}
+                      >
+                        {editGradeHistoryIndex !== null ? <Pencil className="mr-1 size-4" /> : <Plus className="mr-1 size-4" />}
+                        {editGradeHistoryIndex !== null ? "Update Entry" : "Add Entry"}
+                      </Button>
+                      {editGradeHistoryIndex !== null ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-xl"
+                          onClick={() => {
+                            setEditGradeHistoryIndex(null)
+                            setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: student.curriculumId ?? "", yearLevel: "", semester: "" })
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+                </>
+              )
+            })()}
+          </div>
+          <DialogFooter className="px-5 pb-5 pt-2 shrink-0">
+            <DialogClose asChild>
+              <Button variant="outline" className="rounded-xl">Close</Button>
+            </DialogClose>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -845,13 +1316,19 @@ export function UsersModule({ model }: PortalModuleProps) {
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Student Details</p>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <p className="mb-1.5 text-sm font-medium text-foreground">Year</p>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Year Level</p>
                       <Select
-                        value={String(editUser.year ?? "1")}
+                        value={editUser.currentYearLevel ?? YEAR_LABELS[String(editUser.year ?? "1")]}
                         onChange={(value) =>
-                          setEditUser({ ...editUser, year: Number(value) })
+                          setEditUser({
+                            ...editUser,
+                            currentYearLevel: value,
+                            year: Number(
+                              ["First Year", "Second Year", "Third Year", "Fourth Year"].indexOf(value) + 1
+                            ),
+                          })
                         }
-                        options={["1", "2", "3", "4"]}
+                        options={["First Year", "Second Year", "Third Year", "Fourth Year"]}
                       />
                     </div>
                     <div>
@@ -890,14 +1367,62 @@ export function UsersModule({ model }: PortalModuleProps) {
                     <div>
                       <p className="mb-1.5 text-sm font-medium text-foreground">Curriculum</p>
                       <Select
-                        value={editUser.curriculum ?? "Old Curriculum"}
-                        onChange={(value) =>
-                          setEditUser({ ...editUser, curriculum: value })
+                        value={
+                          editUser.curriculumId
+                            ? (() => {
+                                const c = curricula.find((cr) => cr.id === editUser.curriculumId)
+                                return c ? `${c.id} - ${c.name} - ${c.major}` : editUser.curriculum ?? "Old Curriculum"
+                              })()
+                            : editUser.curriculum ?? "Old Curriculum"
                         }
+                        onChange={(value) => {
+                          const curr = curricula.find(
+                            (c) => `${c.id} - ${c.name} - ${c.major}` === value
+                          )
+                          setEditUser({
+                            ...editUser,
+                            curriculum: value,
+                            curriculumId: curr?.id ?? "",
+                          })
+                        }}
                         options={curriculumOptions}
                       />
                     </div>
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Semester</p>
+                      <Select
+                        value={editUser.currentSemester ?? "First Semester"}
+                        onChange={(value) =>
+                          setEditUser({ ...editUser, currentSemester: value })
+                        }
+                        options={semesterOptions}
+                      />
+                    </div>
                   </div>
+                  {(() => {
+                    const term = subjectsForTerm(
+                      editUser.curriculumId ?? "",
+                      editUser.currentYearLevel ?? YEAR_LABELS[String(editUser.year ?? "1")],
+                      editUser.currentSemester ?? "First Semester"
+                    )
+                    if (!term) return null
+                    return (
+                      <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Subjects for {editUser.currentYearLevel ?? YEAR_LABELS[String(editUser.year ?? "1")]} - {editUser.currentSemester ?? "First Semester"}
+                        </p>
+                        <div className="grid gap-1.5 text-xs text-foreground/80">
+                          {term.subjects.map((sub) => (
+                            <div key={sub.code} className="flex items-center gap-2">
+                              <span className="font-medium">{sub.code}</span>
+                              <span>{sub.name}</span>
+                              <span className="ml-auto text-muted-foreground">{sub.total} units</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </div>
               ) : editUser.role === "faculty" ? (
                 <div className="space-y-4 border-t border-border pt-4">

@@ -17,6 +17,19 @@ export interface IUser extends Document {
   photoUrl?: string
   studentType?: string
   curriculum?: string
+  curriculumId?: string
+  currentYearLevel?: string
+  currentSemester?: string
+  gradeHistory?: {
+    subjectCode: string
+    subjectName: string
+    finalPercentile: number
+    transmutedGrade: number
+    remarks: string
+    curriculumId: string
+    yearLevel: string
+    semester: string
+  }[]
   advisoryClass?: string
   employmentType?: string
   academicTitle?: string
@@ -55,6 +68,21 @@ const UserSchema = new Schema<IUser>(
     photoUrl: String,
     studentType: String,
     curriculum: String,
+    curriculumId: String,
+    currentYearLevel: String,
+    currentSemester: String,
+    gradeHistory: [
+      {
+        subjectCode: String,
+        subjectName: String,
+        finalPercentile: Number,
+        transmutedGrade: Number,
+        remarks: String,
+        curriculumId: String,
+        yearLevel: String,
+        semester: String,
+      },
+    ],
     advisoryClass: String,
     employmentType: String,
     academicTitle: String,

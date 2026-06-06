@@ -24,25 +24,80 @@ import {
 import { Input } from "@/components/ui/input"
 
 import { EmptyState, Panel, Select, StatusBadge } from "../shared/dashboard-ui"
-import type { CurriculumRecord } from "../../data/portal-data"
+import type { CurriculumRecord, GradeRecord } from "../../data/portal-data"
 import type { PortalModuleProps } from "./types"
+import { cn } from "@/lib/utils"
 
 /* ──────────────────────────────────────────────
    Student mode
    ────────────────────────────────────────────── */
 function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps["model"]> }) {
-  const { curricula, profile, users } = model
+  const { curricula, grades, profile, users } = model
   const [activeTermIdx, setActiveTermIdx] = useState(0)
 
-  const studentCurriculumName = users.find(
-    (u) => u.name === profile.name
-  )?.curriculum
+  const studentUser = users.find((u) => u.id === profile.id)
+  const studentCurriculumName = studentUser?.curriculum
 
   const enrolledCurriculum = studentCurriculumName
-    ? curricula.find((c) => c.name === studentCurriculumName)
+    ? curricula.find(
+        (c) =>
+          c.id === studentUser?.curriculumId || c.name === studentCurriculumName
+      )
     : curricula[0]
 
   const allTerms = enrolledCurriculum?.terms ?? []
+  const studentGradeHistory = studentUser?.gradeHistory ?? []
+
+  function getSubjectStatus(
+    code: string,
+    year: string,
+    semester: string
+  ): { label: string; className: string } | null {
+    const gradeRecord = grades.find(
+      (g: GradeRecord) => g.studentId === profile.id && g.code === code
+    )
+    if (gradeRecord && gradeRecord.released) {
+      const r = (gradeRecord.remarks ?? "").toLowerCase()
+      if (r === "passed" || (gradeRecord.gradePercentage ?? 0) >= 75) {
+        return { label: "Passed", className: "text-green-600 dark:text-green-400" }
+      }
+      if (r === "failed" || r === "drp" || r === "dropped" || (gradeRecord.gradePercentage ?? 0) < 75) {
+        if (r === "drp" || r === "dropped") {
+          return { label: "DRP", className: "text-amber-600 dark:text-amber-400" }
+        }
+        return { label: "Failed", className: "text-red-600 dark:text-red-400" }
+      }
+    }
+
+    const historyEntry = studentGradeHistory.find(
+      (h) => h.subjectCode === code && h.yearLevel === year && h.semester === semester
+    )
+    if (historyEntry) {
+      const r = historyEntry.remarks.toUpperCase()
+      if (r === "FAILED") {
+        return { label: "FAILED", className: "text-red-600 dark:text-red-400" }
+      }
+      if (r === "INC") {
+        return { label: "INC", className: "text-red-600 dark:text-red-400" }
+      }
+      if (r === "DROP") {
+        return { label: "DRP", className: "text-amber-600 dark:text-amber-400" }
+      }
+      if (r === "UNOFFICIALLY DROP") {
+        return { label: "UDRP", className: "text-orange-600 dark:text-orange-400" }
+      }
+      return { label: "Passed", className: "text-green-600 dark:text-green-400" }
+    }
+
+    if (
+      studentUser?.currentYearLevel === year &&
+      studentUser?.currentSemester === semester
+    ) {
+      return { label: "Current", className: "text-blue-600 dark:text-blue-400" }
+    }
+
+    return null
+  }
 
   const totalUnits = allTerms.reduce(
     (sum, t) => sum + t.subjects.reduce((s, sub) => s + sub.total, 0),
@@ -122,18 +177,34 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
                       <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Lec</th>
                       <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Lab</th>
                       <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Units</th>
+                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border bg-card">
-                    {activeTerm.subjects.map((subject, i) => (
-                      <tr key={`${subject.code}-${i}`} className="transition-colors hover:bg-muted/40">
-                        <td className="px-4 py-3 font-medium text-foreground">{subject.code}</td>
-                        <td className="px-4 py-3 text-foreground/80">{subject.name}</td>
-                        <td className="px-4 py-3 text-foreground/80">{subject.lec}</td>
-                        <td className="px-4 py-3 text-foreground/80">{subject.lab}</td>
-                        <td className="px-4 py-3 text-foreground/80">{subject.total}</td>
-                      </tr>
-                    ))}
+                    {activeTerm.subjects.map((subject, i) => {
+                      const status = getSubjectStatus(subject.code, activeTerm.year, activeTerm.semester)
+                      return (
+                        <tr key={`${subject.code}-${i}`} className="transition-colors hover:bg-muted/40">
+                          <td className="px-4 py-3 font-medium text-foreground">{subject.code}</td>
+                          <td className="px-4 py-3 text-foreground/80">{subject.name}</td>
+                          <td className="px-4 py-3 text-foreground/80">{subject.lec}</td>
+                          <td className="px-4 py-3 text-foreground/80">{subject.lab}</td>
+                          <td className="px-4 py-3 text-foreground/80">{subject.total}</td>
+                          <td className="px-4 py-3">
+                            {status ? (
+                              <span className={cn("inline-flex items-center gap-1 text-xs font-semibold", status.className)}>
+                                {status.label === "Passed" ? (
+                                  <svg className="size-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg>
+                                ) : null}
+                                {status.label}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>

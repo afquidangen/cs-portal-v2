@@ -143,7 +143,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
   const {
     classSchedules, handleAddClassSection, handleCreateSchedule,
     handleUpdateSchedule, handleDeleteSchedule, handleDeleteRosterStudent,
-    handleToggleEnrolled, handleScheduleUpload,
+    handleToggleEnrolled,
     newSectionName, scheduleDraft, selectedClassYear, setNewSectionName,
     setScheduleDraft, setSelectedClassYear, setRoster, setUsers, users, yearSections, roster,
     semesters, curricula,

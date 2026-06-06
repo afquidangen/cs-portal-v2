@@ -42,11 +42,12 @@ export function useApiData<T>(
       setStatus("error")
       options?.onError?.(e)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, options?.onSuccess, options?.onError])
 
   useEffect(() => {
     mountedRef.current = true
-    void fetchData()
+    queueMicrotask(() => void fetchData())
     return () => {
       mountedRef.current = false
     }

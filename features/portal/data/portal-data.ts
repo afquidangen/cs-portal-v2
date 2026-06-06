@@ -8,6 +8,17 @@ export type AvailabilityStatus =
 
 export type TicketStatus = "Pending" | "In Progress" | "Resolved"
 
+export type GradeHistoryEntry = {
+  subjectCode: string
+  subjectName: string
+  finalPercentile: number
+  transmutedGrade: number
+  remarks: string
+  curriculumId: string
+  yearLevel: string
+  semester: string
+}
+
 export type UserRecord = {
   id: string
   name: string
@@ -23,6 +34,10 @@ export type UserRecord = {
   photoUrl?: string
   studentType?: "Irregular" | "Regular" | "Overstayed" | "Transferee" | "Shifter"
   curriculum?: string
+  curriculumId?: string
+  currentYearLevel?: string
+  currentSemester?: string
+  gradeHistory?: GradeHistoryEntry[]
   advisoryClass?: string
   employmentType?: "Part Time" | "Regular"
   academicTitle?: string
@@ -139,8 +154,14 @@ export type ScheduleItem = {
 
 export type CurriculumTerm = {
   year: string
-  term: string
-  subjects: string[]
+  semester: string
+  subjects: {
+    code: string
+    name: string
+    lec: number
+    lab: number
+    total: number
+  }[]
 }
 
 export type CurriculumRecord = {

@@ -125,7 +125,7 @@ export async function replacePortalDashboardData(data: PortalDashboardData) {
   ]
 
   await Promise.all(
-    collections.map(async ([_name, items, repo]) => {
+    collections.map(async ([, items, repo]) => {
       const r = repo as BaseRepository
       await r.deleteMany()
       if (Array.isArray(items) && items.length > 0) {
