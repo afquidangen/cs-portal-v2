@@ -11,6 +11,7 @@ import {
 
 import { initialModule, roleNavigation } from "../config/navigation"
 import type { AuditLogRecord } from "@/lib/types/audit-log"
+import type { DownloadableRecord } from "@/lib/types/downloadable"
 import type { QuickLinkRecord } from "@/lib/types/quick-link"
 import type { YearSectionRecord } from "@/lib/types/year-section"
 import {
@@ -159,6 +160,16 @@ export function usePortalDashboardModel(role: Role) {
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([])
   const [csoReports, setCsoReports] = useState<CsoReport[]>([])
   const [quickLinks, setQuickLinks] = useState<QuickLinkRecord[]>([])
+  const [downloadables, setDownloadables] = useState<DownloadableRecord[]>([])
+  const [showQuickLinkForm, setShowQuickLinkForm] = useState(false)
+  const [quickLinkDraft, setQuickLinkDraft] = useState({
+    label: "",
+    href: "",
+    type: "link" as "link" | "file",
+    fileName: "",
+    fileSize: 0,
+    fileData: "",
+  })
 
   const [roleFilter, setRoleFilter] = useState("All")
   const [selectedAcademicSection, setSelectedAcademicSection] =
@@ -2006,6 +2017,80 @@ export function usePortalDashboardModel(role: Role) {
     if (item) addAuditLog(`Deleted announcement "${item.title}"`)
   }
 
+  async function handleCreateQuickLink(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!quickLinkDraft.label.trim()) return
+    if (quickLinkDraft.type === "link" && !quickLinkDraft.href.trim()) return
+    if (quickLinkDraft.type === "file" && !quickLinkDraft.fileData) return
+
+    const payload: Record<string, unknown> = {
+      label: quickLinkDraft.label.trim(),
+      href: quickLinkDraft.type === "file" ? quickLinkDraft.fileData : quickLinkDraft.href.trim(),
+      type: quickLinkDraft.type,
+      fileName: quickLinkDraft.fileName || undefined,
+      fileSize: quickLinkDraft.fileSize || undefined,
+    }
+
+    const result = await syncApi<{ data: QuickLinkRecord }>("POST", "/api/portal/quick-links", payload)
+    if (result.data) {
+      setQuickLinks((current) => [result.data, ...current])
+    }
+
+    setQuickLinkDraft({ label: "", href: "", type: "link", fileName: "", fileSize: 0, fileData: "" })
+    setShowQuickLinkForm(false)
+    addAuditLog(`Created quick link "${quickLinkDraft.label}"`)
+  }
+
+  function handleUpdateQuickLink(updated: QuickLinkRecord) {
+    setQuickLinks((current) =>
+      current.map((item) => (item._id === updated._id ? updated : item))
+    )
+    void syncApi("PUT", `/api/portal/quick-links/${updated._id}`, updated)
+    addAuditLog(`Updated quick link "${updated.label}"`)
+  }
+
+  function handleDeleteQuickLink(id: string) {
+    const item = quickLinks.find((ql) => ql._id === id)
+    setQuickLinks((current) => current.filter((ql) => ql._id !== id))
+    void syncApi("DELETE", `/api/portal/quick-links/${id}`)
+    if (item) addAuditLog(`Deleted quick link "${item.label}"`)
+  }
+
+  function handleDeleteDownloadable(id: string) {
+    const item = downloadables.find((d) => d._id === id)
+    setDownloadables((current) => current.filter((d) => d._id !== id))
+    void syncApi("DELETE", `/api/portal/downloadables/${id}`)
+    if (item) addAuditLog(`Deleted downloadable "${item.label}"`)
+  }
+
+  async function handleUploadStudentManual(file: File) {
+    return new Promise<void>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = async () => {
+        try {
+          const fileData = typeof reader.result === "string" ? reader.result : ""
+          const payload = {
+            label: "ISPSC Student Manual",
+            href: fileData,
+            type: "file",
+            fileName: file.name,
+            fileSize: file.size,
+          }
+          const result = await syncApi<{ data: QuickLinkRecord }>("POST", "/api/portal/quick-links", payload)
+          if (result.data) {
+            setQuickLinks((current) => [result.data, ...current])
+          }
+          addAuditLog(`Uploaded ISPSC Student Manual`)
+          resolve()
+        } catch (err) {
+          reject(err)
+        }
+      }
+      reader.onerror = () => reject(reader.error)
+      reader.readAsDataURL(file)
+    })
+  }
+
   function handleEnlist(eventId: string) {
     const studentId = profile.id
     let updatedEvent: Record<string, unknown> | null = null
@@ -2172,6 +2257,17 @@ export function usePortalDashboardModel(role: Role) {
     setCsoReports,
     quickLinks,
     setQuickLinks,
+    downloadables,
+    setDownloadables,
+    quickLinkDraft,
+    setQuickLinkDraft,
+    showQuickLinkForm,
+    setShowQuickLinkForm,
+    handleCreateQuickLink,
+    handleUpdateQuickLink,
+    handleDeleteQuickLink,
+    handleDeleteDownloadable,
+    handleUploadStudentManual,
     selectedNav,
     currentTitle,
     selectModule,

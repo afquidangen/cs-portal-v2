@@ -1,8 +1,7 @@
-export type QuickLinkRecord = {
+export type DownloadableRecord = {
   _id?: string
   label: string
   href: string
-  type?: "link" | "file"
   fileName?: string
   fileSize?: number
   createdAt?: string

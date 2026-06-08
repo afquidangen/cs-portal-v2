@@ -19,6 +19,7 @@ const emptyDashboard: PortalDashboardData = {
   auditLogs: [],
   csoReports: [],
   quickLinks: [],
+  downloadables: [],
 }
 
 export async function getPortalDashboardData(): Promise<PortalDashboardData> {
@@ -44,6 +45,7 @@ export async function getPortalDashboardData(): Promise<PortalDashboardData> {
   const { subjectsRepository } = await import("./subjects.repository")
   const { yearSectionsRepository } = await import("./year-sections.repository")
   const { quickLinksRepository } = await import("./quick-links.repository")
+  const { downloadablesRepository } = await import("./downloadables.repository")
   const { auditLogsRepository } = await import("./audit-logs.repository")
 
   const results = await Promise.all([
@@ -62,6 +64,7 @@ export async function getPortalDashboardData(): Promise<PortalDashboardData> {
     subjectsRepository.findAll(),
     yearSectionsRepository.findAll(),
     quickLinksRepository.findAll(),
+    downloadablesRepository.findAll(),
     auditLogsRepository.findAll(),
   ])
 
@@ -81,7 +84,8 @@ export async function getPortalDashboardData(): Promise<PortalDashboardData> {
     subjects: (results[12] ?? []) as PortalDashboardData["subjects"],
     yearSections: (results[13] ?? []) as PortalDashboardData["yearSections"],
     quickLinks: (results[14] ?? []) as PortalDashboardData["quickLinks"],
-    auditLogs: (results[15] ?? []) as PortalDashboardData["auditLogs"],
+    downloadables: (results[15] ?? []) as PortalDashboardData["downloadables"],
+    auditLogs: (results[16] ?? []) as PortalDashboardData["auditLogs"],
   }
 }
 

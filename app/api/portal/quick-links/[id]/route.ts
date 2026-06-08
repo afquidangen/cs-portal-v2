@@ -1,3 +1,4 @@
+import mongoose from "mongoose"
 import { quickLinksRepository } from "@/features/portal/repositories/quick-links.repository"
 import { success, error, notFound } from "@/lib/api-response"
 
@@ -9,7 +10,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const link = await quickLinksRepository.findById(id)
+    const link = await quickLinksRepository.findOne({ _id: new mongoose.Types.ObjectId(id) })
     if (!link) return notFound("Quick link")
     return success(link)
   } catch (err) {
@@ -24,7 +25,10 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const link = await quickLinksRepository.update({ id }, { $set: body })
+    const link = await quickLinksRepository.update(
+      { _id: new mongoose.Types.ObjectId(id) },
+      { $set: body }
+    )
     if (!link) return notFound("Quick link")
     return success(link)
   } catch (err) {
@@ -38,7 +42,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const deleted = await quickLinksRepository.delete({ id })
+    const deleted = await quickLinksRepository.delete({ _id: new mongoose.Types.ObjectId(id) })
     if (!deleted) return notFound("Quick link")
     return success({ deleted: true })
   } catch (err) {

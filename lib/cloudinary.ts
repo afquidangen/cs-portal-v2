@@ -19,3 +19,17 @@ export async function uploadProfilePhoto(
 
   return result.secure_url
 }
+
+export async function uploadFile(
+  dataUrl: string,
+  publicId: string,
+  folder: string
+): Promise<{ secureUrl: string; publicId: string }> {
+  const result = await cloudinary.uploader.upload(dataUrl, {
+    folder: `cs-portal/${folder}`,
+    public_id: publicId,
+    resource_type: "raw",
+  })
+
+  return { secureUrl: result.secure_url, publicId: result.public_id }
+}

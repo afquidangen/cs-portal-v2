@@ -116,6 +116,7 @@ export function RoleDashboard({ role }: { role: Role }) {
         model.setClassSchedules(d.classSchedules ?? model.classSchedules)
         model.setCsoReports(d.csoReports ?? model.csoReports)
         model.setQuickLinks(d.quickLinks ?? model.quickLinks)
+        model.setDownloadables(d.downloadables ?? model.downloadables)
         setDataLoading(false)
       } catch (err) {
         if (!cancelled) {
@@ -153,6 +154,7 @@ export function RoleDashboard({ role }: { role: Role }) {
           model.setClassSchedules(d.classSchedules ?? model.classSchedules)
           model.setCsoReports(d.csoReports ?? model.csoReports)
           model.setQuickLinks(d.quickLinks ?? model.quickLinks)
+          model.setDownloadables(d.downloadables ?? model.downloadables)
         })
         .catch(() => {})
     }

@@ -1,8 +1,6 @@
-export type QuickLinkRecord = {
+export type GoverningDocumentRecord = {
   _id?: string
-  label: string
   href: string
-  type?: "link" | "file"
   fileName?: string
   fileSize?: number
   createdAt?: string

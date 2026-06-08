@@ -50,27 +50,26 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
 
   function getSubjectStatus(
     code: string,
+    subjectName: string,
     year: string,
     semester: string
   ): { label: string; className: string } | null {
     const gradeRecord = grades.find(
-      (g: GradeRecord) => g.studentId === profile.id && g.code === code
+      (g: GradeRecord) => g.studentId === profile.id && (g.code === code || g.subject === subjectName)
     )
     if (gradeRecord && gradeRecord.released) {
       const r = (gradeRecord.remarks ?? "").toLowerCase()
-      if (r === "passed" || (gradeRecord.gradePercentage ?? 0) >= 75) {
-        return { label: "Passed", className: "text-green-600 dark:text-green-400" }
-      }
-      if (r === "failed" || r === "drp" || r === "dropped" || (gradeRecord.gradePercentage ?? 0) < 75) {
-        if (r === "drp" || r === "dropped") {
-          return { label: "DRP", className: "text-amber-600 dark:text-amber-400" }
-        }
-        return { label: "Failed", className: "text-red-600 dark:text-red-400" }
-      }
+      if (r === "passed") return { label: "Passed", className: "text-green-600 dark:text-green-400" }
+      if (r === "inc") return { label: "INC", className: "text-red-600 dark:text-red-400" }
+      if (r === "dropped") return { label: "DRP", className: "text-amber-600 dark:text-amber-400" }
+      if (r === "unofficial drop") return { label: "UDRP", className: "text-orange-600 dark:text-orange-400" }
+      if (r === "failed") return { label: "Failed", className: "text-red-600 dark:text-red-400" }
+      if ((gradeRecord.gradePercentage ?? 0) >= 75) return { label: "Passed", className: "text-green-600 dark:text-green-400" }
+      return { label: "Failed", className: "text-red-600 dark:text-red-400" }
     }
 
     const historyEntry = studentGradeHistory.find(
-      (h) => h.subjectCode === code && h.yearLevel === year && h.semester === semester
+      (h) => (h.subjectCode === code || h.subjectName === subjectName) && h.yearLevel === year && h.semester === semester
     )
     if (historyEntry) {
       const r = historyEntry.remarks.toUpperCase()
@@ -83,7 +82,7 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
       if (r === "DROP") {
         return { label: "DRP", className: "text-amber-600 dark:text-amber-400" }
       }
-      if (r === "UNOFFICIALLY DROP") {
+      if (r === "UNOFFICIAL DROP") {
         return { label: "UDRP", className: "text-orange-600 dark:text-orange-400" }
       }
       return { label: "Passed", className: "text-green-600 dark:text-green-400" }
@@ -182,7 +181,7 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
                   </thead>
                   <tbody className="divide-y divide-border bg-card">
                     {activeTerm.subjects.map((subject, i) => {
-                      const status = getSubjectStatus(subject.code, activeTerm.year, activeTerm.semester)
+                      const status = getSubjectStatus(subject.code, subject.name, activeTerm.year, activeTerm.semester)
                       return (
                         <tr key={`${subject.code}-${i}`} className="transition-colors hover:bg-muted/40">
                           <td className="px-4 py-3 font-medium text-foreground">{subject.code}</td>

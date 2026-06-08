@@ -2,6 +2,7 @@ import type { GradeRecord } from "../data/portal-data"
 
 export const gradeRemarkOptions = [
   "Passed",
+  "Failed",
   "INC",
   "Dropped",
   "Unofficial Drop",

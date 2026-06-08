@@ -6,6 +6,7 @@ import type { CurriculumRecord } from "./curriculum"
 import type { FacultyRecord } from "./faculty"
 import type { FeedbackTicket } from "./feedback"
 import type { GradeRecord } from "./grade"
+import type { DownloadableRecord } from "./downloadable"
 import type { QuickLinkRecord } from "./quick-link"
 import type { ScheduleItem } from "./schedule"
 import type { SemesterRecord } from "./semester"
@@ -32,6 +33,7 @@ export type PortalCollectionMap = {
   auditLogs: AuditLogRecord[]
   csoReports: CsoReport[]
   quickLinks: QuickLinkRecord[]
+  downloadables: DownloadableRecord[]
 }
 
 export type PortalCollectionName = keyof PortalCollectionMap

@@ -1,15 +1,42 @@
 "use client"
 
-import { Panel } from "../shared/dashboard-ui"
+import { useMemo, useState } from "react"
+
+import { Panel, Select } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
 export function GradeHistoryModule({ model }: PortalModuleProps) {
   const studentUser = model.users.find((u) => u.id === model.profile.id)
-  const history = studentUser?.gradeHistory ?? []
+  const history = useMemo(() => studentUser?.gradeHistory ?? [], [studentUser?.gradeHistory])
+
+  const termOptions = useMemo(() => {
+    const seen = new Set<string>()
+    const all = history.map((h) => `${h.yearLevel} — ${h.semester}`)
+    return ["All", ...all.filter((t) => {
+      if (seen.has(t)) return false
+      seen.add(t)
+      return true
+    })]
+  }, [history])
+
+  const [selectedTerm, setSelectedTerm] = useState("All")
+
+  const filteredHistory = useMemo(() => {
+    if (selectedTerm === "All") return history
+    return history.filter(
+      (h) => `${h.yearLevel} — ${h.semester}` === selectedTerm
+    )
+  }, [history, selectedTerm])
 
   return (
-    <Panel title="Past Grades" eyebrow="Grade History">
-      {history.length === 0 ? (
+    <Panel title="Past Grades" eyebrow="Grade History"
+      actions={
+        termOptions.length > 1 ? (
+          <Select value={selectedTerm} onChange={setSelectedTerm} options={termOptions} />
+        ) : undefined
+      }
+    >
+      {filteredHistory.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-6">No past grade records yet.</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border">
@@ -25,7 +52,7 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
               </tr>
             </thead>
             <tbody>
-              {history.map((entry, idx) => (
+              {filteredHistory.map((entry, idx) => (
                 <tr key={idx} className="border-t border-border">
                   <td className="px-3 py-2 font-medium text-foreground">{entry.subjectCode}</td>
                   <td className="px-3 py-2 text-foreground/80">{entry.subjectName}</td>

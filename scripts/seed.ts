@@ -101,64 +101,12 @@ function calcTotalUnits(terms: typeof generalTerms): number {
   )
 }
 
-const embeddedTerms = generalTerms.map((term) => {
-  if (term.year === "Second Year" && term.semester === "Second Semester") {
-    return {
-      ...term,
-      subjects: term.subjects.map((s) =>
-        s.code === "CS 141" ? { ...s, name: "Advanced Embedded Systems" } : s
-      ),
-    }
-  }
-  if (term.year === "Third Year" && term.semester === "First Semester") {
-    return {
-      ...term,
-      subjects: term.subjects.map((s) =>
-        s.code === "CS 311" ? { ...s, name: "Wireless Sensor Networks" } : s
-      ),
-    }
-  }
-  if (term.year === "Third Year" && term.semester === "Second Semester") {
-    return {
-      ...term,
-      subjects: term.subjects.map((s) =>
-        s.code === "CS 241" ? { ...s, name: "Edge Computing and AI" } : s
-      ),
-    }
-  }
-  return term
-})
-
-const secureSweTerms = generalTerms.map((term) => {
-  if (term.year === "Second Year" && term.semester === "Second Semester") {
-    return {
-      ...term,
-      subjects: term.subjects.map((s) =>
-        s.code === "CS 141" ? { ...s, name: "Principles of Blockchain" } : s
-      ),
-    }
-  }
-  if (term.year === "Third Year" && term.semester === "First Semester") {
-    return {
-      ...term,
-      subjects: term.subjects.map((s) =>
-        s.code === "CS 311" ? { ...s, name: "Continuous Integration/Continuous Deployment (CI/CD)" } : s
-      ),
-    }
-  }
-  if (term.year === "Third Year" && term.semester === "Second Semester") {
-    return {
-      ...term,
-      subjects: term.subjects.map((s) =>
-        s.code === "CS 241" ? { ...s, name: "Secure Software Development (Web3)" } : s
-      ),
-    }
-  }
-  return term
-})
-
 async function seed() {
   await connectToDatabase()
+
+  console.log("[Seed] Removing CURR-005 and CURR-006 from database...")
+  await CurriculumModel.deleteOne({ id: "CURR-005" })
+  await CurriculumModel.deleteOne({ id: "CURR-006" })
 
   const curricula = [
     {
@@ -168,22 +116,6 @@ async function seed() {
       status: "Active" as const,
       totalUnits: calcTotalUnits(generalTerms),
       terms: generalTerms,
-    },
-    {
-      id: "CURR-005",
-      name: "Bachelor of Science in Computer Science",
-      major: "Embedded Systems and AI",
-      status: "Active" as const,
-      totalUnits: calcTotalUnits(embeddedTerms),
-      terms: embeddedTerms,
-    },
-    {
-      id: "CURR-006",
-      name: "Bachelor of Science in Computer Science",
-      major: "Secure Software Engineering",
-      status: "Active" as const,
-      totalUnits: calcTotalUnits(secureSweTerms),
-      terms: secureSweTerms,
     },
   ]
 

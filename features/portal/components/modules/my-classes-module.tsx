@@ -30,7 +30,7 @@ export function MyClassesModule({ model }: PortalModuleProps) {
     const days = ["M", "T", "W", "Th", "F"]
     const grouped: Record<string, typeof enrolledSchedules> = {}
     for (const day of days) {
-      grouped[day] = enrolledSchedules.filter((s) => s.day === day)
+      grouped[day] = enrolledSchedules.filter((s) => s.day.split(/\s+/).includes(day))
     }
     return grouped
   }, [enrolledSchedules])

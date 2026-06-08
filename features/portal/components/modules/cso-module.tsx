@@ -1,8 +1,8 @@
 "use client"
 
 import Image from "next/image"
-import { Download, Eye, FileText, ImageIcon, Pencil, Plus, Trash2, Upload, X } from "lucide-react"
-import { useState } from "react"
+import { Download, Eye, FileText, ImageIcon, Loader2, Pencil, Plus, Trash2, Upload, X } from "lucide-react"
+import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -23,7 +23,8 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
   const [deletingReport, setDeletingReport] = useState<CsoReport | null>(null)
   const [viewingReport, setViewingReport] = useState<CsoReport | null>(null)
   const [showForm, setShowForm] = useState(false)
-  const [constitutionPdf, setConstitutionPdf] = useState<string | null>(null)
+  const [constitutionDoc, setConstitutionDoc] = useState<{ href: string; fileName?: string; fileSize?: number } | null>(null)
+  const [constitutionUploading, setConstitutionUploading] = useState(false)
   const [showConstitutionUpload, setShowConstitutionUpload] = useState(false)
 
   const isAdmin = model.role === "admin"
@@ -47,6 +48,68 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
   function handleDelete(id: string) {
     model.handleDeleteCsoReport(id)
     setDeletingReport(null)
+  }
+
+  useEffect(() => {
+    fetch("/api/portal/governing-document")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (json?.data) setConstitutionDoc(json.data)
+      })
+      .catch(() => {})
+  }, [])
+
+  async function handleConstitutionDownload() {
+    if (!constitutionDoc) return
+    try {
+      const res = await fetch(constitutionDoc.href)
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = constitutionDoc.fileName || "CSSO-Constitution.pdf"
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch {
+      window.open(constitutionDoc.href, "_blank")
+    }
+  }
+
+  async function handleConstitutionUpload(base64: string, fileName: string) {
+    setConstitutionUploading(true)
+    try {
+      const res = await fetch("/api/portal/governing-document", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ href: base64, fileName }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? "Upload failed.")
+      if (json.data) setConstitutionDoc(json.data)
+    } catch {
+      window.alert("Failed to upload constitution.")
+      setConstitutionUploading(false)
+      return
+    }
+    setShowConstitutionUpload(false)
+    setConstitutionUploading(false)
+    window.alert("Constitution uploaded successfully.")
+  }
+
+  async function handleDeleteConstitution() {
+    if (!constitutionDoc) return
+    const approved = window.confirm("Delete the Constitution and By Laws PDF? This action cannot be undone.")
+    if (!approved) return
+    try {
+      const res = await fetch("/api/portal/governing-document", { method: "DELETE" })
+      if (!res.ok) throw new Error("Failed to delete.")
+      setConstitutionDoc(null)
+      window.alert("Constitution deleted successfully.")
+    } catch {
+      window.alert("Failed to delete constitution.")
+    }
   }
 
   return (
@@ -111,25 +174,34 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
       />
 
       <Panel title="CSSO Constitution and By Laws" eyebrow="Governing document">
-        {constitutionPdf ? (
+        {constitutionDoc ? (
           <div className="flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-sm">
             <div className="flex items-center gap-3">
               <FileText className="size-6 text-foreground/60" />
               <div>
                 <p className="text-sm font-medium text-foreground">Constitution and By Laws</p>
-                <p className="text-xs text-foreground/60">PDF document</p>
+                <p className="text-xs text-foreground/60">
+                  {constitutionDoc.fileName ?? "PDF document"}
+                  {constitutionDoc.fileSize ? ` \u00B7 ${(constitutionDoc.fileSize / 1024).toFixed(0)} KB` : ""}
+                </p>
               </div>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="rounded-2xl" onClick={() => window.open(constitutionPdf, "_blank")}>
+              <Button size="sm" variant="outline" className="rounded-2xl" onClick={handleConstitutionDownload}>
                 <Download className="size-4" />
-                View
+                Download
               </Button>
               {isAdmin ? (
-                <Button size="sm" variant="outline" className="rounded-2xl" onClick={() => setShowConstitutionUpload(true)}>
-                  <Upload className="size-4" />
-                  Replace
-                </Button>
+                <>
+                  <Button size="sm" variant="outline" className="rounded-2xl" onClick={() => setShowConstitutionUpload(true)}>
+                    <Upload className="size-4" />
+                    Replace
+                  </Button>
+                  <Button size="sm" variant="destructive" className="rounded-2xl" onClick={handleDeleteConstitution}>
+                    <Trash2 className="size-4" />
+                    Delete
+                  </Button>
+                </>
               ) : null}
             </div>
           </div>
@@ -149,10 +221,8 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
 
       {showConstitutionUpload ? (
         <ConstitutionUploadDialog
-          onSave={(pdf) => {
-            setConstitutionPdf(pdf)
-            setShowConstitutionUpload(false)
-          }}
+          uploading={constitutionUploading}
+          onSave={(base64, fileName) => handleConstitutionUpload(base64, fileName)}
           onClose={() => setShowConstitutionUpload(false)}
         />
       ) : null}
@@ -350,10 +420,12 @@ function ReportGrid({
 }
 
 function ConstitutionUploadDialog({
+  uploading,
   onSave,
   onClose,
 }: {
-  onSave: (pdf: string) => void
+  uploading: boolean
+  onSave: (pdf: string, fileName: string) => void
   onClose: () => void
 }) {
   const [file, setFile] = useState<File | null>(null)
@@ -374,13 +446,20 @@ function ConstitutionUploadDialog({
         <DialogHeader>
           <DialogTitle className="text-xl text-foreground">Upload Constitution and By Laws</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="relative space-y-4">
+          {uploading && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-lg bg-background/80 backdrop-blur-sm">
+              <Loader2 className="size-8 animate-spin text-primary" />
+              <p className="text-sm font-medium text-foreground">Uploading PDF\u2026</p>
+            </div>
+          )}
           <div className="grid gap-1.5">
             <label className="text-sm font-medium text-foreground">PDF File</label>
             <input
               type="file"
               accept=".pdf"
               onChange={handleFileChange}
+              disabled={uploading}
               className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
             />
           </div>
@@ -391,9 +470,14 @@ function ConstitutionUploadDialog({
           ) : null}
         </div>
         <DialogFooter className="gap-2">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => preview && onSave(preview)} disabled={!preview}>
-            <Upload className="mr-1.5 size-4" /> Upload
+          <Button variant="ghost" onClick={onClose} disabled={uploading}>Cancel</Button>
+          <Button onClick={() => preview && file && onSave(preview, file.name)} disabled={!preview || uploading}>
+            {uploading ? (
+              <Loader2 className="mr-1.5 size-4 animate-spin" />
+            ) : (
+              <Upload className="mr-1.5 size-4" />
+            )}
+            {uploading ? "Uploading\u2026" : "Upload"}
           </Button>
         </DialogFooter>
       </DialogContent>
