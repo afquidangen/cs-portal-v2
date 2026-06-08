@@ -1,6 +1,6 @@
 import "dotenv/config"
 import { connectToDatabase, disconnectFromDatabase } from "../lib/mongodb"
-import { CurriculumModel } from "../lib/models"
+import { CurriculumModel, UserModel } from "../lib/models"
 
 const generalTerms = [
   {
@@ -195,6 +195,37 @@ async function seed() {
     } else {
       console.log(`[Seed] Creating ${curr.id} - ${curr.major}`)
       await CurriculumModel.create(curr)
+    }
+  }
+
+  const adminAccounts = [
+    {
+      id: "ADM-001",
+      name: "Admin Test 1",
+      email: "admin1@gmail.com",
+      password: "admintest123",
+      role: "admin" as const,
+      title: "System Administrator - CS Department",
+    },
+    {
+      id: "ADM-002",
+      name: "Admin Test 2",
+      email: "admin2@gmail.com",
+      password: "admintest123",
+      role: "admin" as const,
+      title: "Assistant Portal Administrator",
+    },
+  ]
+
+  for (const acct of adminAccounts) {
+    const existing = await UserModel.findOne({ id: acct.id })
+    if (existing) {
+      console.log(`[Seed] Updating admin ${acct.id} - ${acct.email}`)
+      const { password, ...rest } = acct
+      await UserModel.updateOne({ id: acct.id }, { $set: rest })
+    } else {
+      console.log(`[Seed] Creating admin ${acct.id} - ${acct.email}`)
+      await UserModel.create(acct)
     }
   }
 

@@ -129,6 +129,37 @@ export function RoleDashboard({ role }: { role: Role }) {
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role])
+
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.visibilityState !== "visible") return
+      fetch("/api/portal/dashboard")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((json) => {
+          if (!json) return
+          const d = json.data
+          model.setUsers(d.users ?? model.users)
+          model.setFaculty(d.faculty ?? model.faculty)
+          model.setGrades(d.grades ?? model.grades)
+          model.setTheses(d.theses ?? model.theses)
+          model.setSeminars(d.seminars ?? model.seminars)
+          model.setTickets(d.tickets ?? model.tickets)
+          model.setAnnouncements(d.announcements ?? model.announcements)
+          model.setRoster(d.roster ?? model.roster)
+          model.setSemesters(d.semesters ?? model.semesters)
+          model.setSubjects(d.subjects ?? model.subjects)
+          model.setCurricula(d.curricula ?? model.curricula)
+          model.setYearSections(d.yearSections ?? model.yearSections)
+          model.setClassSchedules(d.classSchedules ?? model.classSchedules)
+          model.setCsoReports(d.csoReports ?? model.csoReports)
+          model.setQuickLinks(d.quickLinks ?? model.quickLinks)
+        })
+        .catch(() => {})
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
+  }, [])
+
   const [announcementIndex, setAnnouncementIndex] = useState(0)
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false)
   const [isMediumScreen, setIsMediumScreen] = useState(

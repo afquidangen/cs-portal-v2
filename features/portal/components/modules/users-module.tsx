@@ -152,33 +152,7 @@ export function UsersModule({ model }: PortalModuleProps) {
       .map((p) => (p ?? "").trim())
       .filter(Boolean)
       .join(" ")
-    handleUpdateUser({ ...editUser, name: fullName || editUser.name })
-    if (editUser.password) {
-      try {
-        const key = "comsite-custom-accounts"
-        const existing = JSON.parse(window.localStorage.getItem(key) || "[]") as Array<Record<string, string>>
-        const idx = existing.findIndex((a) => a.id === editUser.id)
-        if (idx !== -1) {
-          existing[idx].password = editUser.password
-        } else {
-          const routeMap: Record<string, string> = { student: "/student", faculty: "/faculty", admin: "/admin" }
-          existing.push({
-            email: editUser.email,
-            password: editUser.password,
-            role: editUser.role,
-            name: fullName || editUser.name,
-            title: editUser.role === "student"
-              ? `BSCS ${editUser.year ?? ""}${editUser.section ?? ""} - ${editUser.studentType ?? "Regular"} Student`
-              : editUser.role === "faculty"
-                ? `Instructor - Computer Science`
-                : "System Administrator - CS Department",
-            id: editUser.id,
-            route: routeMap[editUser.role] || "/student",
-          })
-        }
-        window.localStorage.setItem(key, JSON.stringify(existing))
-      } catch { /* ignore */ }
-    }
+    handleUpdateUser({ ...editUser, email: editUser.email.toLowerCase().trim(), name: fullName || editUser.name })
     setEditUser(null)
   }
 
@@ -614,7 +588,7 @@ export function UsersModule({ model }: PortalModuleProps) {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div>
+                <div className={addRole !== "student" ? "sm:col-span-2" : ""}>
                   <p className="mb-1.5 text-sm font-medium text-foreground">Password *</p>
                   <Input
                     value={newUser.password}
@@ -629,16 +603,18 @@ export function UsersModule({ model }: PortalModuleProps) {
                     required
                   />
                 </div>
-                <div>
-                  <p className="mb-1.5 text-sm font-medium text-foreground">Section</p>
-                  <Select
-                    value={newUser.section}
-                    onChange={(value) =>
-                      setNewUser((current) => ({ ...current, section: value }))
-                    }
-                    options={sectionOptions.length > 0 ? sectionOptions : ["A", "B", "C", "D"]}
-                  />
-                </div>
+                {addRole === "student" && (
+                  <div>
+                    <p className="mb-1.5 text-sm font-medium text-foreground">Section</p>
+                    <Select
+                      value={newUser.section}
+                      onChange={(value) =>
+                        setNewUser((current) => ({ ...current, section: value }))
+                      }
+                      options={sectionOptions.length > 0 ? sectionOptions : ["A", "B", "C", "D"]}
+                    />
+                  </div>
+                )}
               </div>
 
               {addRole === "student" ? (
@@ -649,15 +625,20 @@ export function UsersModule({ model }: PortalModuleProps) {
                       <p className="mb-1.5 text-sm font-medium text-foreground">Year Level</p>
                       <Select
                         value={newUser.currentYearLevel}
-                        onChange={(value) =>
+                        onChange={(value) => {
+                          const newYear = String(
+                            ["First Year", "Second Year", "Third Year", "Fourth Year"].indexOf(value) + 1
+                          )
+                          const label = YEAR_LABELS[newYear]
+                          const entry = label ? yearSections.find((ys) => ys.year === label) : undefined
+                          const firstSection = entry?.sections?.[0] ?? ""
                           setNewUser((current) => ({
                             ...current,
                             currentYearLevel: value,
-                            year: String(
-                              ["First Year", "Second Year", "Third Year", "Fourth Year"].indexOf(value) + 1
-                            ),
+                            year: newYear,
+                            section: firstSection,
                           }))
-                        }
+                        }}
                         options={["First Year", "Second Year", "Third Year", "Fourth Year"]}
                       />
                     </div>
@@ -743,16 +724,16 @@ export function UsersModule({ model }: PortalModuleProps) {
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Faculty Details</p>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <p className="mb-1.5 text-sm font-medium text-foreground">Advisory class</p>
-                      <Input
-                        value={newUser.advisoryClass}
-                        onChange={(e) =>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Has advisory class?</p>
+                      <Select
+                        value={newUser.hasAdvisory ? "Yes" : "No"}
+                        onChange={(value) =>
                           setNewUser((current) => ({
                             ...current,
-                            advisoryClass: e.target.value,
+                            hasAdvisory: value === "Yes",
                           }))
                         }
-                        placeholder="BSCS 3A"
+                        options={["Yes", "No"]}
                       />
                     </div>
                     <div>
@@ -768,7 +749,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                         options={["Regular", "Part Time"]}
                       />
                     </div>
-                    <div>
+                    <div className={newUser.hasAdvisory ? "" : "sm:col-span-2"}>
                       <p className="mb-1.5 text-sm font-medium text-foreground">Academic title</p>
                       <Select
                         value={newUser.academicTitle}
@@ -782,6 +763,21 @@ export function UsersModule({ model }: PortalModuleProps) {
                       />
                     </div>
                   </div>
+                  {newUser.hasAdvisory ? (
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Advisory class</p>
+                      <Input
+                        value={newUser.advisoryClass}
+                        onChange={(e) =>
+                          setNewUser((current) => ({
+                            ...current,
+                            advisoryClass: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g. BSCS 3A"
+                      />
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -1319,15 +1315,20 @@ export function UsersModule({ model }: PortalModuleProps) {
                       <p className="mb-1.5 text-sm font-medium text-foreground">Year Level</p>
                       <Select
                         value={editUser.currentYearLevel ?? YEAR_LABELS[String(editUser.year ?? "1")]}
-                        onChange={(value) =>
+                        onChange={(value) => {
+                          const newYear = Number(
+                            ["First Year", "Second Year", "Third Year", "Fourth Year"].indexOf(value) + 1
+                          )
+                          const label = YEAR_LABELS[String(newYear)]
+                          const entry = label ? yearSections.find((ys) => ys.year === label) : undefined
+                          const firstSection = entry?.sections?.[0] ?? ""
                           setEditUser({
                             ...editUser,
                             currentYearLevel: value,
-                            year: Number(
-                              ["First Year", "Second Year", "Third Year", "Fourth Year"].indexOf(value) + 1
-                            ),
+                            year: newYear,
+                            section: firstSection,
                           })
-                        }
+                        }}
                         options={["First Year", "Second Year", "Third Year", "Fourth Year"]}
                       />
                     </div>
@@ -1371,9 +1372,9 @@ export function UsersModule({ model }: PortalModuleProps) {
                           editUser.curriculumId
                             ? (() => {
                                 const c = curricula.find((cr) => cr.id === editUser.curriculumId)
-                                return c ? `${c.id} - ${c.name} - ${c.major}` : editUser.curriculum ?? "Old Curriculum"
+                                return c ? `${c.id} - ${c.name} - ${c.major}` : editUser.curriculum ?? ""
                               })()
-                            : editUser.curriculum ?? "Old Curriculum"
+                            : editUser.curriculum ?? ""
                         }
                         onChange={(value) => {
                           const curr = curricula.find(
@@ -1451,10 +1452,25 @@ export function UsersModule({ model }: PortalModuleProps) {
                         options={["Regular", "Part Time"]}
                       />
                     </div>
-                    <div className="sm:col-span-2">
+                    <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Has advisory class?</p>
+                      <Select
+                        value={editUser.advisoryClass ? "Yes" : "No"}
+                        onChange={(value) =>
+                          setEditUser({
+                            ...editUser,
+                            advisoryClass: value === "Yes" ? (editUser.advisoryClass || "BSCS ") : "",
+                          })
+                        }
+                        options={["Yes", "No"]}
+                      />
+                    </div>
+                  </div>
+                  {editUser.advisoryClass ? (
+                    <div>
                       <p className="mb-1.5 text-sm font-medium text-foreground">Advisory class</p>
                       <Input
-                        value={editUser.advisoryClass ?? ""}
+                        value={editUser.advisoryClass}
                         onChange={(e) =>
                           setEditUser({
                             ...editUser,
@@ -1463,7 +1479,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                         }
                       />
                     </div>
-                  </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>

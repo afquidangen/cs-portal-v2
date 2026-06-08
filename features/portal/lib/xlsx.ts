@@ -249,7 +249,7 @@ export async function parseGradeWorkbook(file: File) {
   const metadata = classRecord.rows.find((row) => row.rowNumber === 2)?.cells ?? {}
   const subject = metadata.B || "Uploaded Subject"
   const code = metadata.D || "CS"
-  const section = metadata.J || "BSCS 3A"
+  const section = metadata.J || ""
 
   return classRecord.rows
     .map((row): ImportedGradeRow | null => {

@@ -118,7 +118,7 @@ function buildGradeFromImport(
     gradePercentage,
     remarks: imported.remarks || "Passed",
     released: false,
-    updatedAt: "June 1, 2026",
+    updatedAt: new Date(),
   }
 }
 
@@ -164,10 +164,10 @@ export function usePortalDashboardModel(role: Role) {
   const [selectedAcademicSection, setSelectedAcademicSection] =
     useState("Semesters")
   const [selectedClassYear, setSelectedClassYear] = useState("First Year")
-  const [selectedClassSection, setSelectedClassSection] = useState("BSCS 3A")
-  const [selectedGradeSection, setSelectedGradeSection] = useState("BSCS 3A")
+  const [selectedClassSection, setSelectedClassSection] = useState("")
+  const [selectedGradeSection, setSelectedGradeSection] = useState("")
   const [selectedScheduleEntry, setSelectedScheduleEntry] = useState<ScheduleItem | null>(null)
-  const [selectedCurriculumId, setSelectedCurriculumId] = useState("CURR-001")
+  const [selectedCurriculumId, setSelectedCurriculumId] = useState("")
   const [curriculumFilter, setCurriculumFilter] = useState("All")
   const [showThesisUploadForm, setShowThesisUploadForm] = useState(false)
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false)
@@ -175,7 +175,7 @@ export function usePortalDashboardModel(role: Role) {
   const [studentDraft, setStudentDraft] = useState({
     id: "",
     name: "",
-    section: "BSCS 3A",
+    section: "",
   })
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null)
   const [scheduleDraft, setScheduleDraft] = useState({
@@ -185,7 +185,7 @@ export function usePortalDashboardModel(role: Role) {
     subject: "",
     room: "",
     instructor: "",
-    section: "BSCS 3A",
+    section: "",
   })
   const [showAddSemesterForm, setShowAddSemesterForm] = useState(false)
   const [showAddSubjectForm, setShowAddSubjectForm] = useState(false)
@@ -240,13 +240,14 @@ export function usePortalDashboardModel(role: Role) {
     middleName: "",
     lastName: "",
     studentType: "Regular",
-    curriculum: "Old Curriculum",
+    curriculum: "",
     curriculumId: "",
     currentYearLevel: "First Year",
     currentSemester: "First Semester",
     year: "1",
     section: "A",
-    advisoryClass: "BSCS 3A",
+    hasAdvisory: true,
+    advisoryClass: "",
     employmentType: "Regular",
     academicTitle: "MIT",
   })
@@ -328,6 +329,38 @@ export function usePortalDashboardModel(role: Role) {
       return changed ? updated : current
     })
   }, [users, setRoster])
+
+  // Set form defaults from MongoDB data after it loads
+  useEffect(() => {
+    if (curricula.length > 0) {
+      const first = curricula[0]
+      setSelectedCurriculumId((prev) => !prev ? first.id : prev)
+      setNewUser((prev) => ({
+        ...prev,
+        curriculum: !prev.curriculum ? first.name : prev.curriculum,
+        curriculumId: !prev.curriculumId ? first.id : prev.curriculumId,
+      }))
+    }
+    if (yearSections.length > 0) {
+      const firstSection = yearSections.flatMap((item) => item.sections)[0]
+      if (firstSection) {
+        setSelectedClassSection((prev) => !prev ? firstSection : prev)
+        setSelectedGradeSection((prev) => !prev ? firstSection : prev)
+        setStudentDraft((prev) => ({
+          ...prev,
+          section: !prev.section ? firstSection : prev.section,
+        }))
+        setScheduleDraft((prev) => ({
+          ...prev,
+          section: !prev.section ? firstSection : prev.section,
+        }))
+        setNewUser((prev) => ({
+          ...prev,
+          advisoryClass: !prev.advisoryClass ? firstSection : prev.advisoryClass,
+        }))
+      }
+    }
+  }, [curricula, yearSections])
 
   const [profileDetails, setProfileDetails] = useState<ProfileDetails>({
     photoUrl: "", firstName: "", middleName: "", lastName: "",
@@ -625,7 +658,9 @@ export function usePortalDashboardModel(role: Role) {
     const percentile = Number(value)
     if (Number.isNaN(percentile)) return
     const equiv = transmutedToEquivalent(percentile)
+    const now = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
 
+    let updated: GradeRecord | undefined
     setGrades((current) =>
       current.map((grade) => {
         if (grade.id !== id) return grade
@@ -635,7 +670,7 @@ export function usePortalDashboardModel(role: Role) {
           [field]: equiv,
           ...(field === "midterm" ? { midtermTransmuted: percentile } : {}),
           ...(field === "finalTerm" ? { finalTransmuted: percentile } : {}),
-          updatedAt: "June 1, 2026",
+          updatedAt: now,
         }
 
         const mt = field === "midterm" ? percentile : nextGrade.midtermTransmuted
@@ -645,24 +680,36 @@ export function usePortalDashboardModel(role: Role) {
             ? Number((((mt as number) + (ft as number)) / 2).toFixed(2))
             : nextGrade.gradePercentage
 
+        updated = nextGrade
         return nextGrade
       })
     )
 
-    void syncApi("PUT", `/api/portal/grades/${id}`, {
-      [field]: equiv,
-      ...(field === "midterm" ? { midtermTransmuted: percentile } : {}),
-      ...(field === "finalTerm" ? { finalTransmuted: percentile } : {}),
-    })
+    if (updated) {
+      syncApi("PUT", `/api/portal/grades/${id}`, updated).catch((e) =>
+        console.error(`Failed to sync grade ${id}:`, e)
+      )
+    }
   }
 
   function updateGradeRemarks(id: string, remarks: string) {
+    const now = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+
+    let updated: GradeRecord | undefined
     setGrades((current) =>
-      current.map((grade) =>
-        grade.id === id ? { ...grade, remarks, updatedAt: "June 1, 2026" } : grade
-      )
+      current.map((grade) => {
+        if (grade.id !== id) return grade
+        const nextGrade = { ...grade, remarks, updatedAt: now }
+        updated = nextGrade
+        return nextGrade
+      })
     )
-    void syncApi("PUT", `/api/portal/grades/${id}`, { remarks })
+
+    if (updated) {
+      syncApi("PUT", `/api/portal/grades/${id}`, updated).catch((e) =>
+        console.error(`Failed to sync grade remarks ${id}:`, e)
+      )
+    }
   }
 
   function releaseGradesForSection(section: string, subject?: string) {
@@ -704,7 +751,7 @@ export function usePortalDashboardModel(role: Role) {
       finalTransmuted: undefined,
       finalTerm: 0,
       released: false,
-      updatedAt: "June 1, 2026",
+      updatedAt: new Date(),
     }
     setGrades((current) => [newGrade, ...current])
     void syncApi("POST", "/api/portal/grades", newGrade)
@@ -815,11 +862,23 @@ export function usePortalDashboardModel(role: Role) {
       .filter(Boolean)
       .join(" ")
     const accountId = newUser.idNumber.trim() || `USR-${String(users.length + 1).padStart(3, "0")}`
+    if (users.some((u) => u.id === accountId)) {
+      alert(`An account with ID "${accountId}" already exists.`)
+      return
+    }
+    if (users.some((u) => u.email.toLowerCase() === newUser.email.trim().toLowerCase())) {
+      alert(`An account with email "${newUser.email.trim()}" already exists.`)
+      return
+    }
+    if (newUser.role === "student" && roster.some((r) => r.id === accountId)) {
+      alert(`A roster entry with ID "${accountId}" already exists.`)
+      return
+    }
     setUsers((current) => [
       {
         id: accountId,
         name: fullName,
-        email: newUser.email.trim(),
+        email: newUser.email.trim().toLowerCase(),
         role: newUser.role,
         sex: newUser.sex,
         firstName: newUser.firstName.trim(),
@@ -841,7 +900,7 @@ export function usePortalDashboardModel(role: Role) {
         year: newUser.role === "student" ? Number(newUser.year) : undefined,
         section: newUser.role === "student" ? newUser.section : undefined,
         advisoryClass:
-          newUser.role === "faculty" ? newUser.advisoryClass : undefined,
+          newUser.role === "faculty" && newUser.hasAdvisory ? newUser.advisoryClass : undefined,
         employmentType:
           newUser.role === "faculty"
             ? (newUser.employmentType as UserRecord["employmentType"])
@@ -853,26 +912,6 @@ export function usePortalDashboardModel(role: Role) {
       },
       ...current,
     ])
-    const customAccountsKey = "comsite-custom-accounts"
-    const existing = JSON.parse(
-      window.localStorage.getItem(customAccountsKey) || "[]"
-    ) as Array<{ email: string; password: string; role: string; name: string; title: string; id: string; route: string }>
-    const routeMap: Record<string, string> = { student: "/student", faculty: "/faculty", admin: "/admin" }
-    existing.push({
-      email: newUser.email.trim(),
-      password: newUser.password || "password123",
-      role: newUser.role,
-      name: fullName,
-      title: newUser.role === "student"
-        ? `BSCS ${newUser.year}${newUser.section} - ${newUser.studentType} Student`
-        : newUser.role === "faculty"
-          ? `Instructor - Computer Science`
-          : "System Administrator - CS Department",
-      id: accountId,
-      route: routeMap[newUser.role] || "/student",
-    })
-    window.localStorage.setItem(customAccountsKey, JSON.stringify(existing))
-
     setNewUser({
       name: "",
       email: "",
@@ -884,13 +923,14 @@ export function usePortalDashboardModel(role: Role) {
       middleName: "",
       lastName: "",
       studentType: "Regular",
-      curriculum: "Old Curriculum",
+      curriculum: "",
       curriculumId: "",
       currentYearLevel: "First Year",
       currentSemester: "First Semester",
       year: "1",
       section: "A",
-      advisoryClass: "BSCS 3A",
+      hasAdvisory: true,
+      advisoryClass: "",
       employmentType: "Regular",
       academicTitle: "MIT",
     })
@@ -900,21 +940,69 @@ export function usePortalDashboardModel(role: Role) {
         if (exists) return current
         return [{ id: accountId, name: fullName, section: newUser.section, enrolled: true }, ...current]
       })
-      void syncApi("POST", "/api/portal/roster", { id: accountId, name: fullName, section: newUser.section, enrolled: true })
+      syncApi("POST", "/api/portal/roster", { id: accountId, name: fullName, section: newUser.section, enrolled: true }).catch((e) =>
+        console.error(`Failed to sync roster for ${accountId}:`, e)
+      )
+    }
+
+    if (newUser.role === "faculty") {
+      const facultyId = `FAC-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+      const facultyEntry = {
+        id: facultyId,
+        name: fullName,
+        position: "Faculty",
+        role: "faculty",
+        email: newUser.email.trim().toLowerCase(),
+        education: "",
+        status: "Available" as const,
+        notes: "",
+        schedule: [],
+      }
+      setFaculty((current) => [facultyEntry, ...current])
+      syncApi("POST", "/api/portal/faculty", facultyEntry).catch((e) =>
+        console.error(`Failed to sync faculty ${facultyId}:`, e)
+      )
     }
 
     addAuditLog(`Created ${newUser.role} account "${fullName}" (${newUser.email})`)
-    void syncApi("POST", "/api/portal/users", {
+    syncApi("POST", "/api/portal/users", {
       id: accountId,
       name: fullName,
-      email: newUser.email.trim(),
+      email: newUser.email.trim().toLowerCase(),
       role: newUser.role,
+      sex: newUser.sex,
+      firstName: newUser.firstName.trim(),
+      middleName: newUser.middleName.trim(),
+      lastName: newUser.lastName.trim(),
+      studentType:
+        newUser.role === "student"
+          ? (newUser.studentType as UserRecord["studentType"])
+          : undefined,
+      curriculum:
+        newUser.role === "student" ? newUser.curriculum : undefined,
+      curriculumId:
+        newUser.role === "student" ? newUser.curriculumId : undefined,
+      currentYearLevel:
+        newUser.role === "student" ? newUser.currentYearLevel : undefined,
+      currentSemester:
+        newUser.role === "student" ? newUser.currentSemester : undefined,
+      course: newUser.role === "student" ? "BSCS" : undefined,
+      year: newUser.role === "student" ? Number(newUser.year) : undefined,
+      section: newUser.role === "student" ? newUser.section : undefined,
+      advisoryClass:
+        newUser.role === "faculty" && newUser.hasAdvisory ? newUser.advisoryClass : undefined,
+      employmentType:
+        newUser.role === "faculty"
+          ? (newUser.employmentType as UserRecord["employmentType"])
+          : undefined,
+      academicTitle:
+        newUser.role === "faculty" ? newUser.academicTitle : undefined,
+      position: newUser.role === "faculty" ? "Instructor" : undefined,
       status: "Active",
       password: newUser.password || "password123",
-      curriculumId: newUser.role === "student" ? newUser.curriculumId : undefined,
-      currentYearLevel: newUser.role === "student" ? newUser.currentYearLevel : undefined,
-      currentSemester: newUser.role === "student" ? newUser.currentSemester : undefined,
-    })
+    }).catch((e) =>
+      console.error(`Failed to sync user ${accountId}:`, e)
+    )
   }
 
   function confirmAndToggleUserStatus(userId: string) {
@@ -945,30 +1033,6 @@ export function usePortalDashboardModel(role: Role) {
           : item
       )
     )
-    const customAccountsKey = "comsite-custom-accounts"
-    try {
-      const existing = JSON.parse(window.localStorage.getItem(customAccountsKey) || "[]") as Array<Record<string, string>>
-      if (wasActive) {
-        const filtered = existing.filter((a) => a.id !== userId)
-        window.localStorage.setItem(customAccountsKey, JSON.stringify(filtered))
-      } else if (user) {
-        const routeMap: Record<string, string> = { student: "/student", faculty: "/faculty", admin: "/admin" }
-        existing.push({
-          email: user.email,
-          password: "password123",
-          role: user.role,
-          name: user.name,
-          title: user.role === "student"
-            ? `BSCS ${user.year ?? ""}${user.section ?? ""} - ${user.studentType ?? "Regular"} Student`
-            : user.role === "faculty"
-              ? `Instructor - Computer Science`
-              : "System Administrator - CS Department",
-          id: user.id,
-          route: routeMap[user.role] || "/student",
-        })
-        window.localStorage.setItem(customAccountsKey, JSON.stringify(existing))
-      }
-    } catch { /* ignore */ }
     if (user) {
       const newStatus = wasActive ? "Inactive" : "Active"
       addAuditLog(`${newStatus === "Active" ? "Activated" : "Deactivated"} account "${user.name}"`)
@@ -991,12 +1055,6 @@ export function usePortalDashboardModel(role: Role) {
       current.filter((grade) => grade.studentId !== userId)
     )
     void syncApi("DELETE", `/api/portal/users/${userId}`)
-    const customAccountsKey = "comsite-custom-accounts"
-    try {
-      const existing = JSON.parse(window.localStorage.getItem(customAccountsKey) || "[]") as Array<Record<string, string>>
-      const filtered = existing.filter((a) => a.id !== userId)
-      window.localStorage.setItem(customAccountsKey, JSON.stringify(filtered))
-    } catch { /* ignore */ }
     if (user) {
       addAuditLog(`Deleted ${user.role} account "${user.name}"`)
     }
@@ -1026,41 +1084,21 @@ export function usePortalDashboardModel(role: Role) {
             : grade
         )
       )
-      void syncApi("PUT", `/api/portal/roster/${updatedUser.id}`, { name: updatedUser.name, section })
+      syncApi("PUT", `/api/portal/roster/${updatedUser.id}`, { name: updatedUser.name, section }).catch((e) =>
+        console.error(`Failed to sync roster for ${updatedUser.id}:`, e)
+      )
       for (const grade of grades) {
         if (grade.studentId === updatedUser.id) {
-          void syncApi("PUT", `/api/portal/grades/${grade.id}`, { student: updatedUser.name, section })
+          syncApi("PUT", `/api/portal/grades/${grade.id}`, { student: updatedUser.name, section }).catch((e) =>
+            console.error(`Failed to sync grade ${grade.id}:`, e)
+          )
         }
       }
     }
-    const customAccountsKey = "comsite-custom-accounts"
-    try {
-      const existing = JSON.parse(window.localStorage.getItem(customAccountsKey) || "[]") as Array<Record<string, string>>
-      const idx = existing.findIndex((a) => a.id === updatedUser.id)
-      if (idx !== -1) {
-        existing[idx].email = updatedUser.email
-        existing[idx].name = updatedUser.name
-        existing[idx].role = updatedUser.role
-      } else {
-        const routeMap: Record<string, string> = { student: "/student", faculty: "/faculty", admin: "/admin" }
-        existing.push({
-          email: updatedUser.email,
-          password: "password123",
-          role: updatedUser.role,
-          name: updatedUser.name,
-          title: updatedUser.role === "student"
-            ? `BSCS ${updatedUser.year ?? ""}${updatedUser.section ?? ""} - ${updatedUser.studentType ?? "Regular"} Student`
-            : updatedUser.role === "faculty"
-              ? `Instructor - Computer Science`
-              : "System Administrator - CS Department",
-          id: updatedUser.id,
-          route: routeMap[updatedUser.role] || "/student",
-        })
-      }
-      window.localStorage.setItem(customAccountsKey, JSON.stringify(existing))
-    } catch { /* ignore */ }
     addAuditLog(`Updated account "${updatedUser.name}"`)
-    void syncApi("PUT", `/api/portal/users/${updatedUser.id}`, updatedUser)
+    syncApi("PUT", `/api/portal/users/${updatedUser.id}`, updatedUser).catch((e) =>
+      console.error(`Failed to sync user ${updatedUser.id}:`, e)
+    )
   }
 
   function handleChangeCurriculum(

@@ -453,20 +453,6 @@ function SectionTable({
                   released: false,
                   updatedAt: now,
                 }, ...current])
-                fetch("/api/portal/grades", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    id: newId, studentId: student.id, student: student.name,
-                    section: student.section, subject: selectedSubject,
-                    code: selectedSubject, units: 3,
-                    midtermTransmuted: undefined,
-                    midterm: 0,
-                    finalTransmuted: undefined,
-                    finalTerm: 0,
-                    released: false, updatedAt: now,
-                  }),
-                }).catch(() => {})
                 return newId
               }
 
