@@ -723,12 +723,35 @@ export function usePortalDashboardModel(role: Role) {
     }
   }
 
-  function releaseGradesForSection(section: string, subject?: string) {
+  async function refreshDashboardData() {
+    try {
+      const res = await fetch("/api/portal/dashboard")
+      if (!res.ok) return
+      const json = await res.json()
+      const d = json.data
+      setUsers(d.users ?? users)
+      setFaculty(d.faculty ?? faculty)
+      setGrades(d.grades ?? grades)
+      setTheses(d.theses ?? theses)
+      setSeminars(d.seminars ?? seminars)
+      setTickets(d.tickets ?? tickets)
+      setAnnouncements(d.announcements ?? announcements)
+      setRoster(d.roster ?? roster)
+      setSemesters(d.semesters ?? semesters)
+      setSubjects(d.subjects ?? subjects)
+      setCurricula(d.curricula ?? curricula)
+      setYearSections(d.yearSections ?? yearSections)
+      setClassSchedules(d.classSchedules ?? classSchedules)
+      setCsoReports(d.csoReports ?? csoReports)
+      setQuickLinks(d.quickLinks ?? quickLinks)
+      setDownloadables(d.downloadables ?? downloadables)
+    } catch {
+      // Silently fail
+    }
+  }
+
+  async function releaseGradesForSection(section: string, subject?: string) {
     const label = subject ? `${section} - ${subject}` : section
-    const approved = window.confirm(
-      `Release grades for ${label} to students?`
-    )
-    if (!approved) return
 
     setGrades((current) =>
       current.map((grade) =>
@@ -737,8 +760,14 @@ export function usePortalDashboardModel(role: Role) {
           : grade
       )
     )
-    void syncApi("POST", "/api/portal/grades/release", { section, subject })
-    addAuditLog(`Released grades for ${label}`)
+
+    try {
+      await syncApi("POST", "/api/portal/grades/release", { section, subject })
+      addAuditLog(`Released grades for ${label}`)
+      await refreshDashboardData()
+    } catch (e) {
+      console.error("Failed to release grades:", e)
+    }
   }
 
   function handleCreateGrade(studentId: string, studentName: string) {
@@ -755,7 +784,7 @@ export function usePortalDashboardModel(role: Role) {
       student: studentName,
       section: selectedScheduleEntry.section,
       subject: selectedScheduleEntry.subject,
-      code: selectedScheduleEntry.subject,
+      code: selectedScheduleEntry.subject.split(" - ")[0]?.trim() ?? selectedScheduleEntry.subject,
       units: 3,
       midtermTransmuted: undefined,
       midterm: 0,
@@ -2279,6 +2308,7 @@ export function usePortalDashboardModel(role: Role) {
     downloadThesisDetails,
     updateGrade,
     updateGradeRemarks,
+    refreshDashboardData,
     releaseGradesForSection,
     handleCreateGrade,
     updateTicketStatus,

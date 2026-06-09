@@ -444,7 +444,7 @@ function SectionTable({
                   student: student.name,
                   section: student.section,
                   subject: selectedSubject,
-                  code: selectedSubject,
+                  code: selectedSubject.split(" - ")[0]?.trim() ?? selectedSubject,
                   units: 3,
                   midtermTransmuted: undefined,
                   midterm: 0,

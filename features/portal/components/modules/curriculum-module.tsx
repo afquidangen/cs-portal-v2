@@ -8,6 +8,7 @@ import {
   GraduationCap,
   Layers3,
   Plus,
+  RefreshCw,
   Trash2,
 } from "lucide-react"
 
@@ -141,7 +142,18 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
       </div>
 
       {/* Term selector */}
-      <Panel title={`${enrolledCurriculum.name}`} eyebrow={`${enrolledCurriculum.major} \u2022 ${totalSubjects} subjects`}>
+      <Panel
+        title={`${enrolledCurriculum.name}`}
+        eyebrow={`${enrolledCurriculum.major} \u2022 ${totalSubjects} subjects`}
+        actions={
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="rounded-xl" onClick={() => model.refreshDashboardData()}>
+              <RefreshCw className="size-4" />
+              Refresh
+            </Button>
+          </div>
+        }
+      >
         {allTerms.length === 0 ? (
           <EmptyState text="No terms available for this curriculum." />
         ) : (

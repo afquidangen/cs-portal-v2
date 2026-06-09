@@ -162,6 +162,15 @@ export function RoleDashboard({ role }: { role: Role }) {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
   }, [])
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        model.refreshDashboardData()
+      }
+    }, 60000)
+    return () => clearInterval(interval)
+  }, [])
+
   const [announcementIndex, setAnnouncementIndex] = useState(0)
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false)
   const [isMediumScreen, setIsMediumScreen] = useState(
