@@ -41,6 +41,7 @@ export const roleNavigation: Record<Role, NavItem[]> = {
   faculty: [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
     { id: "schedule", label: "Class Schedule", icon: CalendarDays },
+    { id: "student-roster", label: "Student Roster", icon: BookMarked },
     { id: "grades", label: "Manage Grades", icon: FileSpreadsheet },
     { id: "availability", label: "My Status", icon: CheckCircle2 },
     { id: "instructors", label: "Instructor Info", icon: Network },
@@ -53,6 +54,7 @@ export const roleNavigation: Record<Role, NavItem[]> = {
     { id: "overview", label: "Overview", icon: LayoutDashboard },
     { id: "profile", label: "Admin Profile", icon: UserCircle },
     { id: "users", label: "User Management", icon: Users },
+    { id: "irregular-students", label: "Irregular Students", icon: Users },
     { id: "academic", label: "Academic Setup", icon: Settings },
     { id: "classes", label: "Classes", icon: GraduationCap },
     { id: "thesis", label: "Thesis Management", icon: BookMarked },

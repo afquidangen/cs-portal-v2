@@ -18,6 +18,11 @@ import type { GradeRecord } from "../../data/portal-data"
 export function GradesModule({ model }: PortalModuleProps) {
   const { downloadGradeReport, allStudentGrades, studentGrades } = model
 
+  const visibleAllGrades = useMemo(
+    () => allStudentGrades.filter((g) => !(g.remarks === "Passed" && g.released)),
+    [allStudentGrades]
+  )
+
   const gwaData = useMemo(() => {
     const graded = studentGrades.filter(
       (g) => g.midterm !== undefined && g.finalTerm !== undefined
@@ -103,7 +108,7 @@ export function GradesModule({ model }: PortalModuleProps) {
           </thead>
 
           <tbody className="divide-y divide-border bg-card">
-            {allStudentGrades.length === 0 ? (
+            {visibleAllGrades.length === 0 ? (
               <tr>
                 <td
                   colSpan={7}
@@ -113,7 +118,7 @@ export function GradesModule({ model }: PortalModuleProps) {
                 </td>
               </tr>
             ) : (
-              allStudentGrades.map((grade) => {
+              visibleAllGrades.map((grade) => {
                 const percentage = calculateGradePercentage(grade)
                 const equivalent =
                   percentage !== undefined
@@ -214,8 +219,13 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
   const subjectRoster = useMemo(() => {
     if (subjectSections.length === 0) return []
     const sectionSet = new Set(subjectSections)
-    return roster.filter((s) => sectionSet.has(s.section) && s.enrolled)
-  }, [roster, subjectSections])
+    const passedIds = new Set(
+      grades
+        .filter((g) => g.subject === selectedSubject && g.remarks === "Passed" && g.released)
+        .map((g) => g.studentId)
+    )
+    return roster.filter((s) => sectionSet.has(s.section) && s.enrolled && !passedIds.has(s.id))
+  }, [roster, subjectSections, grades, selectedSubject])
 
   const rosterBySection = useMemo(() => {
     const groups = new Map<string, typeof subjectRoster>()

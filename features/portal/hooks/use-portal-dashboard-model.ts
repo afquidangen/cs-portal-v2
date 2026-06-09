@@ -460,6 +460,35 @@ export function usePortalDashboardModel(role: Role) {
     [activeGradeSection, facultyClassSections, grades]
   )
 
+  const facultySubjects = useMemo(() => {
+    const facultyName = profileUser?.name ?? profile.name
+    const seen = new Set<string>()
+    return classSchedules
+      .filter((item) => item.instructor === facultyName)
+      .map((item) => {
+        const code = item.subject.split(" - ")[0]?.trim() ?? item.subject
+        const label = item.subject
+        const key = `${code}|${label}`
+        if (seen.has(key)) return null
+        seen.add(key)
+        return { code, subject: label, sections: [] as string[] }
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== null)
+      .map((entry) => ({
+        ...entry,
+        sections: [
+          ...new Set(
+            classSchedules
+              .filter(
+                (s) =>
+                  s.instructor === facultyName && s.subject === entry.subject
+              )
+              .map((s) => s.section)
+          ),
+        ],
+      }))
+  }, [classSchedules, profileUser, profile.name])
+
   const profileSection = roster.find((s) => s.id === profile.id && s.enrolled)?.section ?? profileUser?.section ?? ""
   const visibleSchedules = useMemo(() => {
     if (role === "faculty") {
@@ -468,11 +497,35 @@ export function usePortalDashboardModel(role: Role) {
         item.instructor === facultyName
       )
     }
-    if (role === "student" && profileSection) {
-      return classSchedules.filter((item) => item.section.includes(profileSection))
+    if (role === "student") {
+      const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
+      const passedCodes = new Set(
+        (profileUser?.gradeHistory ?? [])
+          .filter((h) => h.remarks?.toLowerCase() === "passed")
+          .map((h) => normalize(h.subjectCode))
+      )
+
+      const enrolledSections = [
+        ...new Set([
+          ...grades
+            .filter((g) => g.studentId === profile.id && !passedCodes.has(normalize(g.code)))
+            .map((g) => g.section),
+          ...roster
+            .filter((r) => r.id === profile.id && r.enrolled)
+            .map((r) => r.section),
+        ]),
+      ].filter(Boolean)
+      const allSections = profileSection
+        ? [...new Set([profileSection, ...enrolledSections])]
+        : enrolledSections
+      if (allSections.length === 0) return []
+      return classSchedules.filter((item) => {
+        const code = normalize(item.subject.split(" - ")[0]?.trim() ?? "")
+        return allSections.some((sec) => item.section.includes(sec)) && !passedCodes.has(code)
+      })
     }
     return classSchedules
-  }, [classSchedules, role, profileSection, profileUser, profile.name])
+  }, [classSchedules, role, profileSection, profileUser, profile.name, grades, profile.id, users])
 
   const selectedScheduleStudents = useMemo(
     () =>
@@ -497,7 +550,10 @@ export function usePortalDashboardModel(role: Role) {
   const studentGrades = useMemo(
     () =>
       grades.filter(
-        (grade) => grade.studentId === profile.id && grade.released === true
+        (grade) =>
+          grade.studentId === profile.id &&
+          grade.released === true &&
+          grade.remarks !== "Passed"
       ),
     [grades, profile.id]
   )
@@ -795,6 +851,200 @@ export function usePortalDashboardModel(role: Role) {
     }
     setGrades((current) => [newGrade, ...current])
     void syncApi("POST", "/api/portal/grades", newGrade)
+  }
+
+  function handleUnenrollFromSubject(studentId: string, section: string, gradeId?: string) {
+    const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
+    const normSection = normalize(section)
+
+    if (gradeId) {
+      const grade = grades.find((g) => g.id === gradeId)
+      setGrades((current) => current.filter((g) => g.id !== gradeId))
+      if (grade) {
+        void syncApi("DELETE", `/api/portal/grades/${gradeId}`, {})
+        addAuditLog(`Unenrolled student ${grade.student} from ${grade.subject}`)
+      }
+    }
+
+    const remainingInSection = grades.filter(
+      (g) => g.studentId === studentId && normalize(g.section ?? "") === normSection && g.id !== gradeId
+    )
+    if (remainingInSection.length === 0) {
+      setRoster((current) =>
+        current.map((r) =>
+          r.id === studentId && normalize(r.section ?? "") === normSection
+            ? { ...r, enrolled: false }
+            : r
+        )
+      )
+      void syncApi("PUT", `/api/portal/roster/${studentId}`, { enrolled: false })
+    }
+  }
+
+  function handleAddStudentToSubject(
+    studentId: string,
+    studentName: string,
+    subjectLabel: string,
+    section: string,
+    subjectCode: string
+  ) {
+    const now = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
+    const normSubject = normalize(subjectLabel)
+    const normSection = normalize(section)
+
+    const existingPassed = grades.find(
+      (g) => normalize(g.subject ?? "") === normSubject && normalize(g.section ?? "") === normSection && g.studentId === studentId && g.remarks === "Passed"
+    )
+    if (existingPassed) {
+      const updated = {
+        ...existingPassed,
+        midtermTransmuted: undefined,
+        midterm: 0,
+        finalTransmuted: undefined,
+        finalTerm: 0,
+        gradePercentage: undefined,
+        remarks: undefined,
+        released: false,
+        updatedAt: now,
+      }
+      setGrades((current) => current.map((g) => g.id === existingPassed.id ? updated : g))
+      void syncApi("PUT", `/api/portal/grades/${existingPassed.id}`, updated)
+    } else {
+      const exists = grades.some(
+        (g) => normalize(g.subject ?? "") === normSubject && normalize(g.section ?? "") === normSection && g.studentId === studentId
+      )
+      if (exists) return
+
+      const newId = `GRD-${Date.now()}`
+      const newGrade: GradeRecord = {
+        id: newId,
+        studentId,
+        student: studentName,
+        section,
+        subject: subjectLabel,
+        code: subjectCode,
+        units: 3,
+        midtermTransmuted: undefined,
+        midterm: 0,
+        finalTransmuted: undefined,
+        finalTerm: 0,
+        released: false,
+        updatedAt: now,
+      }
+      setGrades((current) => [newGrade, ...current])
+      void syncApi("POST", "/api/portal/grades", newGrade)
+    }
+
+    const existingRoster = roster.find(
+      (r) => r.id === studentId && normalize(r.section ?? "") === normSection
+    )
+    if (!existingRoster) {
+      const newRosterEntry = { id: studentId, name: studentName, section, enrolled: true }
+      setRoster((current) => [newRosterEntry, ...current])
+      void syncApi("PUT", `/api/portal/roster/${studentId}`, newRosterEntry)
+    } else if (!existingRoster.enrolled) {
+      setRoster((current) =>
+        current.map((r) =>
+          r.id === studentId && normalize(r.section ?? "") === normSection
+            ? { ...r, enrolled: true }
+            : r
+        )
+      )
+      void syncApi("PUT", `/api/portal/roster/${studentId}`, { enrolled: true })
+    }
+
+    addAuditLog(`Added student ${studentName} to ${subjectLabel} (${section})`)
+  }
+
+  function handleUpsertCompletedGrade(
+    studentId: string,
+    studentName: string,
+    subjectCode: string,
+    subjectName: string,
+    percentile: number,
+    remarks: string,
+    curriculumId: string
+  ) {
+    const now = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+
+    const studentUser = users.find((u) => u.id === studentId)
+
+    const matchingSchedules = classSchedules.filter((s) => {
+      const code = s.subject.split(" - ")[0]?.trim() ?? ""
+      return code === subjectCode
+    })
+
+    const sections = matchingSchedules.length > 0
+      ? [...new Set(matchingSchedules.map((s) => s.section))]
+      : studentUser?.section
+        ? [studentUser.section]
+        : roster.find((r) => r.id === studentId)?.section
+          ? [roster.find((r) => r.id === studentId)!.section]
+          : []
+
+    for (const section of sections) {
+      const existing = grades.find(
+        (g) => g.studentId === studentId && g.code === subjectCode && g.section === section
+      )
+
+      const gradePercentage = percentile
+      const equiv = percentile >= 97 ? 1.0 : percentile >= 94 ? 1.25 : percentile >= 91 ? 1.5 : percentile >= 88 ? 1.75 : percentile >= 85 ? 2.0 : percentile >= 82 ? 2.25 : percentile >= 79 ? 2.5 : percentile >= 76 ? 2.75 : 3.0
+
+      if (existing) {
+        const updated = {
+          ...existing,
+          midtermTransmuted: percentile,
+          midterm: equiv,
+          finalTransmuted: percentile,
+          finalTerm: equiv,
+          gradePercentage,
+          remarks,
+          released: true,
+          updatedAt: now,
+        }
+        setGrades((current) => current.map((g) => (g.id === existing.id ? updated : g)))
+        void syncApi("PUT", `/api/portal/grades/${existing.id}`, updated)
+      } else {
+        const newId = `GRD-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const newGrade: GradeRecord = {
+          id: newId,
+          studentId,
+          student: studentName,
+          section,
+          subject: `${subjectCode} - ${subjectName}`,
+          code: subjectCode,
+          units: 3,
+          midtermTransmuted: percentile,
+          midterm: equiv,
+          finalTransmuted: percentile,
+          finalTerm: equiv,
+          gradePercentage,
+          remarks,
+          released: true,
+          updatedAt: now,
+        }
+        setGrades((current) => [newGrade, ...current])
+        void syncApi("POST", "/api/portal/grades", newGrade)
+      }
+
+      const inRoster = roster.some((r) => r.id === studentId && r.section === section)
+      if (!inRoster) {
+        const newRosterEntry = { id: studentId, name: studentName, section, enrolled: true }
+        setRoster((current) => [newRosterEntry, ...current])
+        void syncApi("PUT", `/api/portal/roster/${studentId}`, newRosterEntry)
+      }
+    }
+  }
+
+  function handleDeleteCompletedGrade(studentId: string, subjectCode: string) {
+    const toRemove = grades.filter(
+      (g) => g.studentId === studentId && g.code === subjectCode
+    )
+    for (const grade of toRemove) {
+      setGrades((current) => current.filter((g) => g.id !== grade.id))
+      void syncApi("DELETE", `/api/portal/grades/${grade.id}`, {})
+    }
   }
 
   function updateTicketStatus(
@@ -1517,18 +1767,51 @@ export function usePortalDashboardModel(role: Role) {
     event.preventDefault()
     if (!scheduleDraft.section.trim() || !scheduleDraft.subject.trim()) return
 
+    const now = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    const sectionStr = scheduleDraft.section.trim()
+    const subjectStr = scheduleDraft.subject.trim()
+    const subjectCode = subjectStr.split(" - ")[0]?.trim() ?? subjectStr
+
     const newItem: ScheduleItem = {
       id: `SCH-${Date.now()}`,
       semesterId: scheduleDraft.semesterId,
       day: scheduleDraft.day.trim() || "TBA",
       time: scheduleDraft.time.trim() || "TBA",
-      subject: scheduleDraft.subject.trim(),
+      subject: subjectStr,
       room: scheduleDraft.room.trim() || "TBA",
       instructor: scheduleDraft.instructor.trim() || profile.name,
-      section: scheduleDraft.section.trim(),
+      section: sectionStr,
     }
     setClassSchedules((current) => [newItem, ...current])
     void syncApi("POST", "/api/portal/schedules", newItem)
+
+    for (const student of roster) {
+      if (student.section === sectionStr && student.enrolled) {
+        const exists = grades.some(
+          (g) => g.studentId === student.id && g.subject === subjectStr && g.section === sectionStr
+        )
+        if (!exists) {
+          const newId = `GRD-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+          const newGrade: GradeRecord = {
+            id: newId,
+            studentId: student.id,
+            student: student.name,
+            section: sectionStr,
+            subject: subjectStr,
+            code: subjectCode,
+            units: 3,
+            midtermTransmuted: undefined,
+            midterm: 0,
+            finalTransmuted: undefined,
+            finalTerm: 0,
+            released: false,
+            updatedAt: now,
+          }
+          setGrades((current) => [newGrade, ...current])
+          void syncApi("POST", "/api/portal/grades", newGrade)
+        }
+      }
+    }
 
     setScheduleDraft({
       semesterId: scheduleDraft.semesterId,
@@ -2269,6 +2552,7 @@ export function usePortalDashboardModel(role: Role) {
     facultyClassSections,
     facultyClassStudents,
     facultyGradeRecords,
+    facultySubjects,
     visibleSchedules,
     selectedScheduleEntry,
     setSelectedScheduleEntry,
@@ -2311,6 +2595,10 @@ export function usePortalDashboardModel(role: Role) {
     refreshDashboardData,
     releaseGradesForSection,
     handleCreateGrade,
+    handleUnenrollFromSubject,
+    handleAddStudentToSubject,
+    handleUpsertCompletedGrade,
+    handleDeleteCompletedGrade,
     updateTicketStatus,
     updateFacultyStatus,
     deleteFacultyMember,

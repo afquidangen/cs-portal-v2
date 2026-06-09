@@ -69,6 +69,8 @@ import { CurriculumModule } from "./modules/curriculum-module"
 import { FeedbackModule } from "./modules/feedback-module"
 import { GradeHistoryModule } from "./modules/grade-history-module"
 import { GradesModule } from "./modules/grades-module"
+import { IrregularStudentsModule } from "./modules/irregular-students-module"
+import { StudentRosterModule } from "./modules/student-roster-module"
 import { GreetingCard } from "./modules/greeting-card"
 import { InstructorsModule } from "./modules/instructors-module"
 import { LiveAnnouncementCard } from "./modules/live-announcement-card"
@@ -254,6 +256,8 @@ export function RoleDashboard({ role }: { role: Role }) {
       templates: <TemplatesModule model={model} />,
       profile: <ProfileModule model={model} />,
       audit: <AuditModule model={model} />,
+      "irregular-students": <IrregularStudentsModule model={model} />,
+      "student-roster": <StudentRosterModule model={model} />,
       about: <AboutModule />,
     }
 
@@ -305,6 +309,8 @@ export function RoleDashboard({ role }: { role: Role }) {
         "availability",
         "seminars",
         "thesis",
+        "irregular-students",
+        "student-roster",
       ].includes(item.id)
     )
     const management = items.filter((item: { id: string }) =>
@@ -752,7 +758,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                     />
                     <Metric
                       label="Enrolled Subjects"
-                      value={String(model.studentGrades.length)}
+                      value={String(new Set(model.visibleSchedules.map((s: { subject: string }) => s.subject)).size)}
                       icon={BookOpen}
                       tone="lapis"
                     />
@@ -781,7 +787,19 @@ export function RoleDashboard({ role }: { role: Role }) {
                       <Metric
                         label="Students Enrolled"
                         value={String(
-                          model.facultyClassStudents.filter((s) => s.enrolled).length
+                          model.facultyClassStudents.filter((s: { enrolled: boolean; id: string; section: string }) => {
+                            if (!s.enrolled) return false
+                            const studentUser = model.users.find((u: { id: string; studentType?: string }) => u.id === s.id)
+                            if (studentUser?.studentType && ["Irregular", "Transferee", "Shifter", "Overstayed"].includes(studentUser.studentType)) {
+                              const sectionGrades = model.grades.filter(
+                                (g: { studentId: string; section: string; remarks?: string }) =>
+                                  g.studentId === s.id && g.section === model.selectedClassSection
+                              )
+                              if (sectionGrades.length > 0 && sectionGrades.every((g: { remarks?: string }) => g.remarks === "Passed")) return false
+                              if (sectionGrades.length === 0) return false
+                            }
+                            return true
+                          }).length
                         )}
                         icon={Users}
                         tone="abyss"
