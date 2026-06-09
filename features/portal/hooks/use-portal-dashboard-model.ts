@@ -1447,6 +1447,7 @@ export function usePortalDashboardModel(role: Role) {
                 curriculumId: oldCurriculum.id,
                 yearLevel: term.year,
                 semester: term.semester,
+                units: subj.total,
               })
             }
           }
@@ -1550,6 +1551,8 @@ export function usePortalDashboardModel(role: Role) {
     )
     if (!approved) return
     setTheses((current) => current.filter((item) => item.id !== thesisId))
+    void syncApi("DELETE", `/api/portal/theses/${thesisId}`)
+    addAuditLog(`Deleted thesis record "${thesisId}"`)
   }
 
   function undoTicketResolution(ticketId: string) {
@@ -2226,54 +2229,6 @@ export function usePortalDashboardModel(role: Role) {
     addAuditLog(`Created event "${eventDraft.title}"`)
   }
 
-  function handleCreateThesis(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    if (
-      !thesisDraft.title.trim() ||
-      !thesisDraft.authors.trim() ||
-      !thesisDraft.pdfUrl
-    ) {
-      return
-    }
-
-    const newItem = {
-      id: `TH-${String(theses.length + 1).padStart(3, "0")}`,
-      title: thesisDraft.title.trim(),
-      authors: thesisDraft.authors.trim(),
-      year: Number(thesisDraft.year) || 2026,
-      category: thesisDraft.category.trim(),
-      adviser: thesisDraft.adviser.trim() || "For assignment",
-      abstract:
-        thesisDraft.abstract.trim() ||
-        "Abstract will be supplied after manuscript review.",
-      tags: thesisDraft.category
-        .split(" ")
-        .filter(Boolean)
-        .slice(0, 3),
-      pdfUrl: thesisDraft.pdfUrl,
-      fileName:
-        thesisDraft.fileName ||
-        `${thesisDraft.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`,
-    }
-    setTheses((current) => [newItem, ...current])
-    void syncApi("POST", "/api/portal/theses", newItem)
-
-    setThesisDraft({
-      title: "",
-      authors: "",
-      year: "2026",
-      category: "Software Engineering",
-      adviser: "",
-      abstract: "",
-      pdfUrl: "",
-      fileName: "",
-    })
-    setShowThesisUploadForm(false)
-    addAuditLog(`Created curriculum "${newCurriculum.name}"`)
-    void syncApi("POST", "/api/portal/curricula", newCurriculum)
-  }
-
   function handleDeleteCurriculum(id: string) {
     const item = curricula.find((c) => c.id === id)
     setCurricula((current) => current.filter((c) => c.id !== id))
@@ -2644,7 +2599,6 @@ export function usePortalDashboardModel(role: Role) {
     handleAddUser,
     handleFeedbackSubmit,
     handleCreateEvent,
-    handleCreateThesis,
     handleCreateAnnouncement,
     handleUpdateAnnouncement,
     handleDeleteAnnouncement,

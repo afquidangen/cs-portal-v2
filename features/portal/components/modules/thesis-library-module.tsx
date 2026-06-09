@@ -1,6 +1,7 @@
 "use client"
 
-import { Download, Plus } from "lucide-react"
+import { useState } from "react"
+import { Download, Loader2, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,7 +20,6 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
   const {
     confirmAndDeleteThesis,
     filteredTheses,
-    handleCreateThesis,
     query,
     role,
     setQuery,
@@ -32,6 +32,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
     thesisCategoryFilter,
     thesisDraft,
     thesisYearFilter,
+    setTheses,
   } = model
 
   
@@ -45,11 +46,71 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
     ...Array.from(new Set(theses.map((thesis) => String(thesis.year)))),
   ]
 
+  const [uploading, setUploading] = useState(false)
+
+  async function handleSubmitThesis(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!thesisDraft.title.trim() || !thesisDraft.authors.trim() || !thesisDraft.pdfUrl) return
+
+    setUploading(true)
+    try {
+      const newItem = {
+        id: `TH-${String(theses.length + 1).padStart(3, "0")}`,
+        title: thesisDraft.title.trim(),
+        authors: thesisDraft.authors.trim(),
+        year: Number(thesisDraft.year) || 2026,
+        category: thesisDraft.category.trim(),
+        adviser: thesisDraft.adviser.trim() || "For assignment",
+        abstract:
+          thesisDraft.abstract.trim() ||
+          "Abstract will be supplied after manuscript review.",
+        tags: thesisDraft.category.split(" ").filter(Boolean).slice(0, 3),
+        pdfUrl: thesisDraft.pdfUrl,
+        fileName:
+          thesisDraft.fileName ||
+          `${thesisDraft.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`,
+      }
+
+      const res = await fetch("/api/portal/theses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newItem),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? "Failed to save.")
+      if (json.data) setTheses((current) => [json.data, ...current])
+
+      setThesisDraft({
+        title: "",
+        authors: "",
+        year: "2026",
+        category: "Software Engineering",
+        adviser: "",
+        abstract: "",
+        pdfUrl: "",
+        fileName: "",
+      })
+      setShowThesisUploadForm(false)
+      window.alert("Thesis uploaded successfully.")
+    } catch {
+      window.alert("Failed to upload thesis.")
+    } finally {
+      setUploading(false)
+    }
+  }
+
   return (
     <div className="space-y-5">
       {role === "admin" && showThesisUploadForm ? (
         <Panel title="Upload Thesis PDF" eyebrow="Repository management">
-          <form onSubmit={handleCreateThesis} className="grid gap-3 lg:grid-cols-2">
+          <form onSubmit={handleSubmitThesis} className="relative grid gap-3 lg:grid-cols-2">
+            {uploading && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-2xl bg-background/80 backdrop-blur-sm">
+                <Loader2 className="size-8 animate-spin text-primary" />
+                <p className="text-sm font-medium text-foreground">Uploading PDF\u2026</p>
+              </div>
+            )}
+
             <Input
               value={thesisDraft.title}
               onChange={(event) =>
@@ -125,16 +186,24 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
       return
     }
 
-    setThesisDraft((current) => ({
-      ...current,
-      pdfUrl: URL.createObjectURL(file),
-      fileName: file.name,
-    }))
+    const reader = new FileReader()
+    reader.onload = () => {
+      setThesisDraft((current) => ({
+        ...current,
+        pdfUrl: reader.result as string,
+        fileName: file.name,
+      }))
+    }
+    reader.readAsDataURL(file)
   }}
 />
-              <Button type="submit" size="sm" className="rounded-2xl">
-                <Plus className="size-4" />
-                Save
+              <Button type="submit" size="sm" className="rounded-2xl" disabled={uploading}>
+                {uploading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Plus className="size-4" />
+                )}
+                {uploading ? "Uploading\u2026" : "Save"}
               </Button>
             </div>
 
@@ -228,19 +297,27 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
 
               <div className="mt-4 flex flex-wrap gap-2">
 <Button
-  asChild
   size="sm"
   className="rounded-2xl"
+  onClick={async () => {
+    try {
+      const res = await fetch(thesis.pdfUrl)
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = thesis.fileName || `${thesis.title}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch {
+      window.open(thesis.pdfUrl, "_blank")
+    }
+  }}
 >
-  <a
-    href={thesis.pdfUrl}
-    download={thesis.fileName || `${thesis.title}.pdf`}
-    target="_blank"
-    rel="noopener noreferrer"
-  >
-    <Download className="size-4" />
-    Download PDF
-  </a>
+  <Download className="size-4" />
+  Download PDF
 </Button>
 
                 {role === "admin" ? (

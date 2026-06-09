@@ -11,6 +11,7 @@ export interface IThesis extends Document {
   tags: string[]
   pdfUrl: string
   fileName: string
+  cloudinaryPublicId?: string
 }
 
 const ThesisSchema = new Schema<IThesis>(
@@ -25,6 +26,7 @@ const ThesisSchema = new Schema<IThesis>(
     tags: [String],
     pdfUrl: String,
     fileName: String,
+    cloudinaryPublicId: String,
   },
   { timestamps: true }
 )

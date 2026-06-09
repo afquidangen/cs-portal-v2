@@ -9,6 +9,7 @@ export type ThesisRecord = {
   tags: string[]
   pdfUrl: string
   fileName: string
+  cloudinaryPublicId?: string
   createdAt?: string
   updatedAt?: string
 }

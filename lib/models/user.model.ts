@@ -20,16 +20,17 @@ export interface IUser extends Document {
   curriculumId?: string
   currentYearLevel?: string
   currentSemester?: string
-  gradeHistory?: {
-    subjectCode: string
-    subjectName: string
-    finalPercentile: number
-    transmutedGrade: number
-    remarks: string
-    curriculumId: string
-    yearLevel: string
-    semester: string
-  }[]
+    gradeHistory?: {
+      subjectCode: string
+      subjectName: string
+      finalPercentile: number
+      transmutedGrade: number
+      remarks: string
+      curriculumId: string
+      yearLevel: string
+      semester: string
+      units?: number
+    }[]
   advisoryClass?: string
   employmentType?: string
   academicTitle?: string
@@ -81,6 +82,7 @@ const UserSchema = new Schema<IUser>(
         curriculumId: String,
         yearLevel: String,
         semester: String,
+        units: Number,
       },
     ],
     advisoryClass: String,

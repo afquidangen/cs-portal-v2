@@ -88,6 +88,7 @@ export function UsersModule({ model }: PortalModuleProps) {
     curriculumId: "",
     yearLevel: "",
     semester: "",
+    units: 3,
   })
   const [editGradeHistoryIndex, setEditGradeHistoryIndex] = useState<number | null>(null)
   const [page, setPage] = useState(1)
@@ -934,7 +935,7 @@ export function UsersModule({ model }: PortalModuleProps) {
               const curriculum = curricula.find((c) => c.id === student.curriculumId)
               const history = student.gradeHistory ?? []
 
-              const subjectOptions: { value: string; label: string; subjectName: string; yearLevel: string; semester: string }[] = []
+              const subjectOptions: { value: string; label: string; subjectName: string; yearLevel: string; semester: string; units: number }[] = []
               if (curriculum) {
                 for (const term of curriculum.terms) {
                   for (const subj of term.subjects) {
@@ -944,6 +945,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                       subjectName: subj.name,
                       yearLevel: term.year,
                       semester: term.semester,
+                      units: subj.total,
                     })
                   }
                 }
@@ -988,6 +990,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                                         curriculumId: entry.curriculumId,
                                         yearLevel: entry.yearLevel,
                                         semester: entry.semester,
+                                        units: entry.units ?? 3,
                                       })
                                       setEditGradeHistoryIndex(idx)
                                     }}
@@ -1030,6 +1033,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                                 curriculumId: curriculum?.id ?? "",
                                 yearLevel: opt.yearLevel,
                                 semester: opt.semester,
+                                units: opt.units,
                               }))
                             }
                           }}
@@ -1065,6 +1069,16 @@ export function UsersModule({ model }: PortalModuleProps) {
                           onChange={(e) =>
                             setGradeHistoryEntry((prev) => ({ ...prev, transmutedGrade: Number(e.target.value) }))
                           }
+                        />
+                      </div>
+                      <div>
+                        <p className="mb-1 text-xs font-medium text-foreground/70">Units</p>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={15}
+                          value={gradeHistoryEntry.units ?? 3}
+                          onChange={(e) => setGradeHistoryEntry((prev) => ({ ...prev, units: Number(e.target.value) }))}
                         />
                       </div>
                       <div>
@@ -1108,6 +1122,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                             curriculumId: gradeHistoryEntry.curriculumId || (student.curriculumId ?? ""),
                             yearLevel: gradeHistoryEntry.yearLevel,
                             semester: gradeHistoryEntry.semester,
+                            units: gradeHistoryEntry.units,
                           }
                           if (editGradeHistoryIndex !== null) {
                             handleUpdateGradeHistory(student.id, editGradeHistoryIndex, entry)
@@ -1115,7 +1130,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                           } else {
                             handleAddGradeHistory(student.id, entry)
                           }
-                          setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: student.curriculumId ?? "", yearLevel: "", semester: "" })
+                            setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: student.curriculumId ?? "", yearLevel: "", semester: "", units: 3 })
                         }}
                       >
                         {editGradeHistoryIndex !== null ? <Pencil className="mr-1 size-4" /> : <Plus className="mr-1 size-4" />}
@@ -1128,7 +1143,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                           className="rounded-xl"
                           onClick={() => {
                             setEditGradeHistoryIndex(null)
-                            setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: student.curriculumId ?? "", yearLevel: "", semester: "" })
+                          setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: student.curriculumId ?? "", yearLevel: "", semester: "", units: 3 })
                           }}
                         >
                           Cancel

@@ -64,6 +64,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
     subjectName: "",
     finalPercentile: "",
     remarks: "Passed",
+    units: 3,
   })
 
   const irregularStudents = useMemo(
@@ -146,6 +147,10 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
 
     const transmuted = percentile >= 97 ? 1.0 : percentile >= 94 ? 1.25 : percentile >= 91 ? 1.5 : percentile >= 88 ? 1.75 : percentile >= 85 ? 2.0 : percentile >= 82 ? 2.25 : percentile >= 79 ? 2.5 : percentile >= 76 ? 2.75 : 3.0
 
+    const curriculumSubject = studentCurriculum?.terms
+      .flatMap((t) => t.subjects)
+      .find((s) => s.code === gradeForm.subjectCode)
+
     const entry: GradeHistoryEntry = {
       subjectCode: gradeForm.subjectCode,
       subjectName: gradeForm.subjectName,
@@ -155,6 +160,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
       curriculumId: selectedStudent.curriculumId ?? "",
       yearLevel: gradeDialog?.yearLevel ?? "",
       semester: gradeDialog?.semester ?? "",
+      units: curriculumSubject?.total ?? gradeForm.units,
     }
 
     if (gradeDialog?.mode === "edit" && gradeDialog.index !== undefined) {
@@ -174,7 +180,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
     )
 
     setGradeDialog(null)
-    setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "", remarks: "Passed" })
+    setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "", remarks: "Passed", units: 3 })
   }
 
   function handleSaveCustom() {
@@ -194,6 +200,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
       curriculumId: selectedStudent.curriculumId ?? "",
       yearLevel: selectedStudent.currentYearLevel ?? "",
       semester: selectedStudent.currentSemester ?? "",
+      units: gradeForm.units,
     }
 
     handleAddGradeHistory(selectedStudent.id, entry)
@@ -222,7 +229,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
   }
 
   function openAddCustom() {
-    setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "75", remarks: "Passed" })
+    setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "75", remarks: "Passed", units: 3 })
     setCustomDialog(true)
   }
 
@@ -570,7 +577,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
       {/* Add custom subject dialog */}
       <Dialog
         open={customDialog}
-        onOpenChange={(o) => { if (!o) { setCustomDialog(false); setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "", remarks: "Passed" }) } }}
+        onOpenChange={(o) => { if (!o) { setCustomDialog(false); setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "", remarks: "Passed", units: 3 }) } }}
       >
         <DialogContent className="w-[95vw] sm:max-w-sm">
           <DialogHeader>
@@ -604,6 +611,16 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
                 max={100}
                 value={gradeForm.finalPercentile}
                 onChange={(e) => setGradeForm((c) => ({ ...c, finalPercentile: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">Units</label>
+              <Input
+                type="number"
+                min={0}
+                max={15}
+                value={gradeForm.units ?? 3}
+                onChange={(e) => setGradeForm((c) => ({ ...c, units: Number(e.target.value) }))}
               />
             </div>
             <div className="space-y-1.5">

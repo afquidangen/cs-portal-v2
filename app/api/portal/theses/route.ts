@@ -1,5 +1,6 @@
 import { thesesRepository } from "@/features/portal/repositories/theses.repository"
 import { success, error, badRequest } from "@/lib/api-response"
+import { uploadFile } from "@/lib/cloudinary"
 
 export const runtime = "nodejs"
 
@@ -18,6 +19,13 @@ export async function POST(request: Request) {
     if (!body.id || !body.title) {
       return badRequest("Thesis id and title are required.")
     }
+
+    if (typeof body.pdfUrl === "string" && body.pdfUrl.startsWith("data:")) {
+      const result = await uploadFile(body.pdfUrl, `thesis-${Date.now()}`, "theses")
+      body.pdfUrl = result.secureUrl
+      body.cloudinaryPublicId = result.publicId
+    }
+
     const thesis = await thesesRepository.create(body)
     return success(thesis, 201)
   } catch (err) {

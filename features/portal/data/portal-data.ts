@@ -17,6 +17,7 @@ export type GradeHistoryEntry = {
   curriculumId: string
   yearLevel: string
   semester: string
+  units?: number
 }
 
 export type UserRecord = {
@@ -91,6 +92,7 @@ export type ThesisRecord = {
   tags: string[]
   pdfUrl: string
   fileName: string
+  cloudinaryPublicId?: string
 }
 
 export type ProfileDetails = {
