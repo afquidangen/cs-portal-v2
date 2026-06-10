@@ -4,8 +4,13 @@ import {
   BarChart3,
   Bell,
   BookOpen,
+  CalendarDays,
   ClipboardList,
+  Code2,
+  Database,
+  Download,
   GraduationCap,
+  HardDrive,
   Info,
   Layers3,
   LogOut,
@@ -16,8 +21,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Phone,
+  Search,
+  Server,
   ShieldCheck,
-  Sparkles,
   Sun,
   Users,
   X,
@@ -279,19 +285,14 @@ export function RoleDashboard({ role }: { role: Role }) {
         ? "Manage classes, grading workflows, and student-related tasks."
         : "Access grades, announcements, seminars, and academic services."
 
-  const sectionLabel =
-    role === "admin"
-      ? "Academic operations"
-      : role === "faculty"
-        ? "Instructor management"
-        : "Student services"
-
   const roleLabel =
     role === "admin"
       ? "System Administrator"
       : role === "faculty"
         ? "Faculty Member"
         : "Student Portal User"
+  const firstName = model.profile.name.split(" ")[0] || model.profile.name
+  const totalUserCount = model.users.length || model.userStats.students + model.userStats.faculty + model.userStats.admins
 
   const navigationGroups = useMemo(() => {
     const items = model.navigation
@@ -336,37 +337,57 @@ export function RoleDashboard({ role }: { role: Role }) {
       label: "Students",
       value: String(model.userStats.students),
       icon: GraduationCap,
-      tone: "edu-abyss" as const,
+      delta: "+2 this week",
+      accent: "blue",
+      sparkline: [18, 24, 22, 30, 27, 43, 35, 31],
     },
     {
       label: "Faculty",
       value: String(model.userStats.faculty),
       icon: Layers3,
-      tone: "edu-lapis" as const,
+      delta: "No change",
+      accent: "blue",
+      sparkline: [16, 18, 15, 23, 17, 19, 18, 20],
     },
     {
       label: "Thesis Records",
       value: String(model.theses.length),
       icon: BookOpen,
-      tone: "edu-slate" as const,
+      delta: "+1 this week",
+      accent: "green",
+      sparkline: [14, 17, 18, 24, 31, 19, 21, 20],
     },
     {
       label: "Open Tickets",
       value: String(model.tickets.filter((t: { status: string }) => t.status !== "Resolved").length),
       icon: Bell,
-      tone: "edu-glacier" as const,
+      delta: "+1 this week",
+      accent: "amber",
+      sparkline: [12, 14, 13, 18, 16, 23, 18, 15],
     },
   ]
 
-  const eduCardIcon = (tone: string) => {
-    const map: Record<string, string> = {
-      "edu-abyss": "edu-abyss edu-ring-abyss",
-      "edu-lapis": "edu-lapis edu-ring-lapis",
-      "edu-slate": "edu-slate edu-ring-slate",
-      "edu-glacier": "edu-glacier edu-ring-glacier",
-    }
-    return map[tone] || "edu-slate edu-ring-slate"
-  }
+  const performanceMetrics = [
+    { label: "Page Views", value: "1,248", trend: "18.2%" },
+    { label: "Users", value: String(totalUserCount), trend: "9.3%" },
+    { label: "Sessions", value: String(Math.max(18, totalUserCount * 3)), trend: "12.5%" },
+    { label: "Bounce Rate", value: "24.6%", trend: "-4.1%" },
+  ]
+
+  const systemHealth = [
+    { label: "Database", status: "Operational", icon: Database },
+    { label: "Server", status: "Operational", icon: Server },
+    { label: "Storage", status: "Operational", icon: HardDrive },
+    { label: "API Services", status: "Operational", icon: Code2 },
+  ]
+
+  const recentActivity = [
+    { label: "New user registered", time: "2 minutes ago", icon: Users },
+    { label: "Thesis record updated", time: "15 minutes ago", icon: BookOpen },
+    { label: "Announcement published", time: "1 hour ago", icon: Bell },
+    { label: "System backup completed", time: "2 hours ago", icon: Database },
+    { label: "New ticket created", time: "3 hours ago", icon: MessageSquareWarning },
+  ]
 
   if (dataLoading) {
     return (
@@ -411,18 +432,18 @@ export function RoleDashboard({ role }: { role: Role }) {
         />
       ) : null}
 
-      <div className="mx-auto flex min-h-screen w-full max-w-[1720px]">
+      <div className="mx-auto flex min-h-screen w-full">
         <aside
           className={cn(
             "edu-sidebar-shell fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col border-r border-sidebar-border text-sidebar-foreground transition-all duration-300 md:sticky md:top-0 md:h-screen md:translate-x-0",
             model.sidebarOpen ? "translate-x-0" : "-translate-x-full",
-            effectivelyCollapsed ? "w-[92px]" : "w-[300px] max-w-[85vw]"
+            effectivelyCollapsed ? "w-[88px]" : "w-[282px] max-w-[85vw]"
           )}
         >
           <div className="border-b border-sidebar-border px-4 py-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="edu-sidebar-icon flex size-11 shrink-0 items-center justify-center rounded-2xl shadow-sm ring-1 ring-white/10">
+                <div className="edu-sidebar-icon flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm ring-1 ring-white/10">
                   {role === "admin" ? (
                     <ShieldCheck className="size-5 text-white" />
                   ) : (
@@ -467,7 +488,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                 model.setSidebarOpen(false)
               }}
               className={cn(
-                "edu-sidebar-profile mt-4 block w-full rounded-2xl text-left transition-all",
+                "edu-sidebar-profile mt-4 block w-full rounded-lg text-left transition-all",
                 effectivelyCollapsed ? "p-2" : ""
               )}
             >
@@ -529,7 +550,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                             model.setSidebarOpen(false)
                           }}
                           className={cn(
-                            "group edu-sidebar-button flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium transition-all duration-200 text-white",
+                            "group edu-sidebar-button flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 text-white",
                             effectivelyCollapsed && "justify-center px-2",
                             active && "edu-sidebar-button-active text-white"
                           )}
@@ -557,7 +578,7 @@ export function RoleDashboard({ role }: { role: Role }) {
               variant="ghost"
               onClick={() => setLogoutOpen(true)}
               className={cn(
-                "w-full rounded-2xl text-white hover:bg-white/10 hover:text-white",
+                "w-full rounded-md text-white hover:bg-white/10 hover:text-white",
                 effectivelyCollapsed ? "justify-center px-0" : "justify-start"
               )}
             >
@@ -568,8 +589,8 @@ export function RoleDashboard({ role }: { role: Role }) {
         </aside>
 
         <div className="min-w-0 flex-1 bg-background">
-          <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-xl">
-            <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-xl">
+            <div className="flex h-[86px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
               <div className="flex min-w-0 items-center gap-3">
                 <Button
                   variant="ghost"
@@ -580,15 +601,34 @@ export function RoleDashboard({ role }: { role: Role }) {
                 >
                   {model.sidebarOpen ? <X className="size-5" /> : <Menu className="size-5" />}
                 </Button>
+                <div className="min-w-0">
+                  <h2 className="truncate text-base font-semibold text-foreground sm:text-lg">
+                    Good evening, {firstName}
+                  </h2>
+                  <p className="truncate text-xs text-muted-foreground">
+                    Here&apos;s what&apos;s happening in your portal today.
+                  </p>
+                </div>
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
+                <div className="relative hidden w-[310px] lg:block xl:w-[380px]">
+                  <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="search"
+                    placeholder="Search anything..."
+                    className="h-11 w-full rounded-md border border-transparent bg-white px-11 text-sm text-foreground shadow-sm outline-none placeholder:text-muted-foreground focus:border-blue-200 focus:ring-2 focus:ring-blue-100"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
+                    Ctrl K
+                  </span>
+                </div>
                 <div ref={notifRef}>
                   <Button
                     ref={notifBtnRef}
                     variant="outline"
                     size="icon"
-                    className="rounded-xl border-border bg-background shadow-sm"
+                    className="rounded-md border-border bg-white shadow-sm"
                     aria-label="Notifications"
                     onClick={() => {
                       if (notifBtnRef.current) {
@@ -710,7 +750,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="rounded-xl border-border bg-background shadow-sm"
+                  className="rounded-md border-border bg-white shadow-sm"
                   aria-label="Toggle dark mode"
                   onClick={() => setDarkMode((current) => !current)}
                 >
@@ -720,7 +760,7 @@ export function RoleDashboard({ role }: { role: Role }) {
             </div>
           </header>
 
-          <section className="px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+          <section className="px-4 pb-6 sm:px-6 lg:px-8">
             {model.activeModule === "overview" ? (
               <div className="mb-8 space-y-5">
                 <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
@@ -728,6 +768,15 @@ export function RoleDashboard({ role }: { role: Role }) {
                     name={model.profile.name}
                     roleLabel={roleLabel}
                     subtitle={subtitle}
+                    stats={
+                      role === "admin"
+                        ? {
+                            totalUsers: String(totalUserCount),
+                            activeSessions: String(Math.max(18, Math.round(totalUserCount * 0.08))),
+                            systemStatus: "All Systems Operational",
+                          }
+                        : undefined
+                    }
                   />
                   {visibleAnnouncements.length > 0 ? (
                     <LiveAnnouncementCard
@@ -811,115 +860,184 @@ export function RoleDashboard({ role }: { role: Role }) {
                 ) : null}
 
                 {role === "admin" ? (
-                  <div className="space-y-3 pt-2">
-                    <div className="text-center">
-                      <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
-                        Status overview
-                      </p>
-                    </div>
-
+                  <>
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                       {adminStatusCards.map((item) => {
                         const Icon = item.icon
-                        const iconClasses = eduCardIcon(item.tone)
+                        const lineColor =
+                          item.accent === "green"
+                            ? "#25a66a"
+                            : item.accent === "amber"
+                              ? "#d7a11f"
+                              : "#2563eb"
+                        const iconClass =
+                          item.accent === "green"
+                            ? "bg-emerald-50 text-emerald-600"
+                            : item.accent === "amber"
+                              ? "bg-amber-50 text-amber-500"
+                              : "bg-blue-50 text-blue-600"
 
                         return (
-                          <Card
-                            key={item.label}
-                            className="overflow-hidden rounded-[28px] border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
-                          >
-                            <CardContent className="p-5">
-                              <div className={iconClasses + " mb-4 flex size-16 items-center justify-center rounded-[22px] border shadow-sm"}>
-                                <Icon className="size-7" strokeWidth={2.2} />
+                          <Card key={item.label} className="rounded-lg border-0 bg-card shadow-sm">
+                            <CardContent className="grid min-h-[116px] grid-cols-[minmax(0,1fr)_116px] gap-4 p-5">
+                              <div className="min-w-0">
+                                <div className={cn("mb-3 flex size-11 items-center justify-center rounded-lg", iconClass)}>
+                                  <Icon className="size-5" strokeWidth={2.1} />
+                                </div>
+                                <p className="text-sm font-medium text-foreground">
+                                  {item.label}
+                                </p>
+                                <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+                                  {item.value}
+                                </p>
+                                <p
+                                  className={cn(
+                                    "mt-3 text-xs font-medium",
+                                    item.accent === "amber" ? "text-amber-600" : item.accent === "green" ? "text-emerald-600" : "text-emerald-600"
+                                  )}
+                                >
+                                  {item.delta}
+                                </p>
                               </div>
-                              <p className="text-sm font-semibold text-foreground">
-                                {item.label}
-                              </p>
-                              <p className="mt-3 text-4xl font-bold tracking-tight text-foreground">
-                                {item.value}
-                              </p>
+                              <svg viewBox="0 0 120 58" className="mt-auto h-16 w-full self-end">
+                                <polyline
+                                  fill="none"
+                                  stroke={lineColor}
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  points={item.sparkline.map((point, index) => `${index * 17},${56 - point}`).join(" ")}
+                                />
+                              </svg>
                             </CardContent>
                           </Card>
                         )
                       })}
                     </div>
-                  </div>
-                ) : null}
 
-                {role === "admin" ? (
-                <Card className="relative overflow-hidden rounded-[32px] border border-border bg-card shadow-sm">
-                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.10),transparent_32%),radial-gradient(circle_at_right,hsl(var(--foreground)/0.04),transparent_26%)]" />
-                  <CardHeader className="relative pb-5">
-                        <div className="mb-3 flex flex-wrap items-center gap-2">
-<Badge
-  variant="outline"
-  className="rounded-full border-border bg-background text-foreground"
->
-                        {sectionLabel}
-                      </Badge>
-                      <Badge
-                        variant="outline"
-                        className="rounded-full border-border bg-background/80 text-muted-foreground"
-                      >
-                        <Sparkles className="mr-1 size-3.5" />
-                        Smart academic workspace
-                      </Badge>
-                    </div>
-
-<CardTitle className="max-w-3xl text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">                      Academic overview
-                    </CardTitle>
-
-                    <CardDescription className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
-                      Real-time insight into institutional activity, platform usage, and
-                      academic operations.
-                    </CardDescription>
-                  </CardHeader>
-
-                  <CardContent className="relative pt-0">
-                    <div className="grid gap-4">                      
-                      <div className="rounded-[28px] border border-border bg-background/80 p-5 shadow-sm">
-                        <div className="mb-5 flex items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">
-                              Academic activity
-                            </p>
-<h3 className="mt-1 text-xl font-semibold tracking-tight text-foreground">                              Portal performance overview
-                            </h3>
-                          </div>
-                          <div className="rounded-2xl border border-border bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
-                            This week
-                          </div>
+                    <Card className="rounded-lg border-0 bg-card shadow-sm">
+                      <CardHeader className="flex flex-col gap-4 border-b border-border px-5 py-5 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                          <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground">
+                            <Users className="size-5 text-blue-600" />
+                            Academic Overview
+                          </CardTitle>
+                          <CardDescription className="mt-2 text-sm text-muted-foreground">
+                            Real-time insight into institutional activity, platform usage, and academic operations.
+                          </CardDescription>
                         </div>
-
-                        <div className="flex h-[220px] items-end gap-3 rounded-[24px] border border-border bg-gradient-to-b from-muted/40 to-background px-4 pb-4 pt-8">
-                          {[42, 68, 54, 88, 72, 96, 78].map((height, index) => (
-                            <div key={index} className="flex flex-1 flex-col items-center gap-3">
-                              <div className="relative flex h-full w-full items-end justify-center">
-                                <div
-                                  className={cn(
-                                    "relative w-full rounded-full shadow-sm transition-all duration-300",
-                                    index === 0 && "bg-[var(--edu-glacier)]",
-                                    index === 1 && "bg-[var(--edu-slate)]",
-                                    index === 2 && "bg-[var(--edu-lapis)]",
-                                    index === 3 && "bg-[var(--edu-abyss)]",
-                                    index === 4 && "bg-[var(--edu-slate)]",
-                                    index === 5 && "bg-[var(--edu-lapis)]",
-                                    index === 6 && "bg-[var(--edu-glacier)]"
-                                  )}
-                                  style={{ height: `${height}%` }}
-                                />
-                              </div>
-                              <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index]}
-                              </span>
-                            </div>
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                          {["This Week", "This Month", "This Year"].map((label, index) => (
+                            <button
+                              key={label}
+                              type="button"
+                              className={cn(
+                                "rounded-md px-3 py-2 font-medium text-muted-foreground hover:bg-muted",
+                                index === 0 && "bg-blue-50 text-blue-600"
+                              )}
+                            >
+                              {label}
+                            </button>
                           ))}
+                          <button type="button" className="flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted">
+                            <CalendarDays className="size-4" />
+                          </button>
+                          <button type="button" className="flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted">
+                            <Download className="size-4" />
+                          </button>
                         </div>
-                      </div>
+                      </CardHeader>
 
-                      </div>
-                  </CardContent>
-                </Card>
+                      <CardContent className="grid gap-6 p-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.55fr)_minmax(280px,0.65fr)]">
+                        <div>
+                          <h3 className="text-base font-semibold text-foreground">Portal Performance</h3>
+                          <div className="mt-4 grid gap-4 sm:grid-cols-4">
+                            {performanceMetrics.map((metric) => (
+                              <div key={metric.label}>
+                                <p className="text-xs text-muted-foreground">{metric.label}</p>
+                                <p className="mt-2 text-lg font-semibold text-foreground">{metric.value}</p>
+                                <p className="mt-1 text-xs font-medium text-emerald-600">{metric.trend}</p>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-5 h-[200px] rounded-md bg-gradient-to-b from-blue-50/70 to-white p-4">
+                            <svg viewBox="0 0 680 170" className="h-full w-full">
+                              {[0, 1, 2, 3].map((line) => (
+                                <line key={line} x1="0" x2="680" y1={line * 42 + 8} y2={line * 42 + 8} stroke="#e5eaf2" />
+                              ))}
+                              <path
+                                d="M10 116 C70 76, 115 78, 155 66 S235 36, 275 75 S350 126, 405 82 S475 49, 528 114 S610 122, 670 78"
+                                fill="none"
+                                stroke="#2563eb"
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                              />
+                              <path
+                                d="M10 116 C70 76, 115 78, 155 66 S235 36, 275 75 S350 126, 405 82 S475 49, 528 114 S610 122, 670 78 L670 170 L10 170 Z"
+                                fill="url(#portalLineFill)"
+                              />
+                              <defs>
+                                <linearGradient id="portalLineFill" x1="0" x2="0" y1="0" y2="1">
+                                  <stop offset="0%" stopColor="#2563eb" stopOpacity="0.16" />
+                                  <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
+                                </linearGradient>
+                              </defs>
+                            </svg>
+                          </div>
+                          <div className="mt-2 grid grid-cols-7 text-center text-xs text-muted-foreground">
+                            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+                              <span key={day}>{day}</span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <h3 className="text-base font-semibold text-foreground">System Health</h3>
+                          <div className="mt-5 space-y-4">
+                            {systemHealth.map((item) => {
+                              const Icon = item.icon
+                              return (
+                                <div key={item.label} className="flex items-center gap-3">
+                                  <span className="flex size-9 items-center justify-center rounded-md bg-slate-50 text-slate-500">
+                                    <Icon className="size-4" />
+                                  </span>
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">{item.label}</p>
+                                    <p className="text-xs font-semibold text-emerald-600">{item.status}</p>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between gap-3">
+                            <h3 className="text-base font-semibold text-foreground">Recent Activity</h3>
+                            <button type="button" className="text-xs font-medium text-muted-foreground hover:text-foreground">
+                              View All
+                            </button>
+                          </div>
+                          <div className="mt-5 space-y-4">
+                            {recentActivity.map((item) => {
+                              const Icon = item.icon
+                              return (
+                                <div key={item.label} className="flex gap-3">
+                                  <span className="flex size-9 items-center justify-center rounded-md bg-slate-50 text-blue-600">
+                                    <Icon className="size-4" />
+                                  </span>
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-medium text-foreground">{item.label}</p>
+                                    <p className="text-xs text-muted-foreground">{item.time}</p>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
                 ) : null}
               </div>
             ) : null}

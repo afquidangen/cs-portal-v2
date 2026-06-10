@@ -59,18 +59,18 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* School palette */
-  --edu-abyss: #092c56;
-  --edu-lapis: #225688;
-  --edu-slate: #668ca9;
-  --edu-glacier: #a9cbe0;
-  --edu-quartz: #f0f5f4;
+  /* Portal palette */
+  --edu-abyss: #17469a;
+  --edu-lapis: #2563eb;
+  --edu-slate: #6f85a8;
+  --edu-glacier: #eaf2ff;
+  --edu-quartz: #f6f8fb;
 }
 
 /* Light mode */
 :root {
-  --background: #f8fbfc;
-  --foreground: #0c1c2e;
+  --background: #f4f7fb;
+  --foreground: #101827;
 
   --card: #ffffff;
   --card-foreground: #0c1c2e;
@@ -84,17 +84,17 @@
   --secondary: #eef4f6;
   --secondary-foreground: #0c1c2e;
 
-  --muted: #f2f7f8;
-  --muted-foreground: #5f7285;
+  --muted: #eef3f9;
+  --muted-foreground: #68748a;
 
-  --accent: #edf4f8;
-  --accent-foreground: #092c56;
+  --accent: #e8f0ff;
+  --accent-foreground: #17469a;
 
   --destructive: #ef4444;
 
-  --border: #d8e4eb;
-  --input: #d8e4eb;
-  --ring: #225688;
+  --border: #e5eaf2;
+  --input: #e5eaf2;
+  --ring: #2563eb;
 
   --chart-1: #092c56;
   --chart-2: #225688;
@@ -102,17 +102,17 @@
   --chart-4: #a9cbe0;
   --chart-5: #f0f5f4;
 
-  --radius: 1rem;
+  --radius: 0.625rem;
 
   --font-geist-mono: "Courier New", Courier, monospace;
 
-  --sidebar: #092c56;
+  --sidebar: #17469a;
   --sidebar-foreground: #f5fbfb;
   --sidebar-primary: #a9cbe0;
   --sidebar-primary-foreground: #092c56;
-  --sidebar-accent: #123964;
+  --sidebar-accent: #3866ad;
   --sidebar-accent-foreground: #f5fbfb;
-  --sidebar-border: #225688;
+  --sidebar-border: rgb(255 255 255 / 0.14);
   --sidebar-ring: #a9cbe0;
 
   --edu-shell-abyss-bg: linear-gradient(135deg, rgb(9 44 86 / 0.08), transparent 72%);
@@ -135,21 +135,18 @@
   --edu-border-glacier: rgb(169 203 224 / 0.75);
 
   --edu-sidebar-bg:
-    radial-gradient(circle at top left, rgb(169 203 224 / 0.08), transparent 24%),
-    linear-gradient(180deg, #092c56 0%, #0d3767 100%);
+    linear-gradient(180deg, #1d4fa6 0%, #1d75d8 100%);
 
   --edu-sidebar-profile-bg:
-    linear-gradient(135deg, rgb(169 203 224 / 0.12), rgb(34 86 136 / 0.08));
-  --edu-sidebar-profile-border: rgb(169 203 224 / 0.16);
+    rgb(255 255 255 / 0.11);
+  --edu-sidebar-profile-border: rgb(255 255 255 / 0.12);
 
   --edu-sidebar-button-fg: rgb(245 251 251 / 0.82);
-  --edu-sidebar-button-hover-bg:
-    linear-gradient(135deg, rgb(169 203 224 / 0.14), rgb(34 86 136 / 0.1));
-  --edu-sidebar-button-hover-border: rgb(169 203 224 / 0.18);
+  --edu-sidebar-button-hover-bg: rgb(255 255 255 / 0.11);
+  --edu-sidebar-button-hover-border: rgb(255 255 255 / 0.12);
 
-  --edu-sidebar-button-active-bg:
-    linear-gradient(135deg, rgb(169 203 224 / 0.24), rgb(102 140 169 / 0.18));
-  --edu-sidebar-button-active-border: rgb(169 203 224 / 0.28);
+  --edu-sidebar-button-active-bg: rgb(255 255 255 / 0.18);
+  --edu-sidebar-button-active-border: rgb(255 255 255 / 0.14);
 
   --edu-sidebar-icon-muted: rgb(169 203 224 / 0.82);
   --edu-sidebar-icon-active: #d7edf7;

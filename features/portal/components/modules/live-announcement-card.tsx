@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, Radio } from "lucide-react"
+import { Bell, CalendarDays, ChevronLeft, ChevronRight, Megaphone } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -19,49 +19,77 @@ export function LiveAnnouncementCard({
   return (
     <Card
       className={cn(
-        "relative overflow-hidden rounded-[28px] border border-border bg-card shadow-sm",
+        "relative overflow-hidden rounded-lg border border-border bg-card shadow-sm",
         className
       )}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.06),transparent_28%),radial-gradient(circle_at_bottom_left,hsl(var(--foreground)/0.03),transparent_28%)]" />
-
-      <CardContent className="relative p-5 sm:p-6">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <CardContent className="relative p-0">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="edu-glacier edu-ring-glacier flex size-11 items-center justify-center rounded-2xl border shadow-sm">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
               <Bell className="size-5" strokeWidth={2.2} />
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                Live announcements
+              <p className="text-base font-semibold tracking-tight text-foreground">
+                Live Announcements
               </p>
-              <p className="text-sm font-medium text-foreground">
+              <p className="text-xs text-muted-foreground">
+                Auto-rotate every 5 seconds
+              </p>
+            </div>
+          </div>
+
+          <button type="button" className="text-xs font-medium text-foreground">
+            View All
+          </button>
+        </div>
+
+        <div
+          key={index}
+          className="grid min-h-[184px] grid-cols-[32px_minmax(0,1fr)_32px] items-center gap-3 px-5 py-5 animate-in fade-in-0 slide-in-from-bottom-2 duration-500"
+        >
+          <button type="button" className="flex size-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted">
+            <ChevronLeft className="size-4" />
+          </button>
+
+          <div className="grid gap-5 sm:grid-cols-[96px_minmax(0,1fr)] sm:items-center">
+            <div className="flex size-24 items-center justify-center rounded-lg bg-blue-50 text-blue-500">
+              <Megaphone className="size-11" strokeWidth={1.8} />
+            </div>
+
+            <div className="min-w-0">
+              <Badge variant="outline" className="mb-3 rounded border-blue-100 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-blue-600">
+                {announcement.audience}
+              </Badge>
+              <h3 className="text-base font-semibold tracking-tight text-foreground">
+                {announcement.title}
+              </h3>
+              <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">
+                {announcement.content}
+              </p>
+              <p className="mt-3 inline-flex items-center gap-2 text-xs text-muted-foreground">
+                <CalendarDays className="size-4" />
                 {announcement.date}
               </p>
             </div>
           </div>
 
-          <Badge
-            variant="outline"
-            className="rounded-full border-border bg-background text-muted-foreground"
-          >
-            <Radio className="mr-1 size-3.5" />
-            {announcement.audience}
-          </Badge>
+          <button type="button" className="flex size-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted">
+            <ChevronRight className="size-4" />
+          </button>
         </div>
 
-        <div
-          key={index}
-          className="animate-in fade-in-0 slide-in-from-bottom-2 duration-500"
-        >
-          <h3 className="text-lg font-semibold tracking-tight text-[#092C56] dark:text-white sm:text-xl">
-            {announcement.title}
-          </h3>
-
-          <p className="mt-3 text-sm leading-7 text-muted-foreground">
-            {announcement.content}
-          </p>
+        <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 gap-2">
+          {[0, 1, 2, 3].map((dot) => (
+            <span
+              key={dot}
+              className={cn(
+                "h-1.5 rounded-full bg-slate-200",
+                dot === index % 4 ? "w-5 bg-blue-600" : "w-1.5"
+              )}
+            />
+          ))}
         </div>
       </CardContent>
     </Card>

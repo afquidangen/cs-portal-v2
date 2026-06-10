@@ -1,6 +1,6 @@
 "use client"
 
-import { Binary, Braces, Cpu, Orbit } from "lucide-react"
+import { Activity, ShieldCheck, Users } from "lucide-react"
 import { useMemo } from "react"
 
 import { Card, CardContent } from "@/components/ui/card"
@@ -11,11 +11,17 @@ export function GreetingCard({
   roleLabel,
   subtitle,
   className,
+  stats,
 }: {
   name: string
   roleLabel: string
   subtitle: string
   className?: string
+  stats?: {
+    totalUsers: string
+    activeSessions: string
+    systemStatus: string
+  }
 }) {
   const firstName = name.split(" ")[0] || name
   const timeGreeting = useMemo(() => {
@@ -26,50 +32,57 @@ export function GreetingCard({
   return (
     <Card
       className={cn(
-        "edu-sidebar-shell relative overflow-hidden rounded-[34px] border border-sidebar-border text-white shadow-lg",
+        "relative overflow-hidden rounded-lg border-0 bg-[linear-gradient(120deg,#2454bd_0%,#1d63d8_58%,#38a3ee_100%)] text-white shadow-sm",
         className
       )}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(169,203,224,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(169,203,224,0.07)_1px,transparent_1px)] bg-[size:30px_30px]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(169,203,224,0.16),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(102,140,169,0.16),transparent_30%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:34px_34px] opacity-40" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-black/5" />
 
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[320px] w-[320px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10" />
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[210px] w-[210px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/12" />
-
-      <div className="pointer-events-none absolute left-[10%] top-[18%] text-white/14">
-        <Binary className="size-8" />
-      </div>
-      <div className="pointer-events-none absolute right-[10%] top-[18%] text-white/14">
-        <Braces className="size-8" />
-      </div>
-      <div className="pointer-events-none absolute bottom-[18%] left-[13%] text-white/12">
-        <Cpu className="size-8" />
-      </div>
-      <div className="pointer-events-none absolute bottom-[18%] right-[13%] text-white/12">
-        <Orbit className="size-8" />
-      </div>
-
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/75 shadow-[0_0_34px_rgba(169,203,224,0.45)]" />
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-52 w-52 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(169,203,224,0.12)] blur-3xl" />
-
-      <CardContent className="relative flex min-h-[220px] flex-col items-center justify-center px-6 py-8 text-center sm:px-8 lg:px-10">
-        <div className="animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-3 duration-700">
-          <p className="text-sm font-medium text-white/80 sm:text-base">
-            {timeGreeting},
-          </p>
-
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
-            {firstName}
-          </h1>
-
-          <p className="mt-3 text-xs font-semibold uppercase tracking-[0.24em] text-white/80 sm:text-sm">
+      <CardContent className="relative grid min-h-[250px] gap-8 px-7 py-8 sm:px-9 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/70">
             {roleLabel}
           </p>
 
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-white/80 sm:text-base">
+          <h1 className="mt-5 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+            {firstName}
+          </h1>
+
+          <p className="mt-4 max-w-md text-sm leading-6 text-white/80">
             {subtitle}
           </p>
         </div>
+
+        {stats ? (
+          <div className="grid gap-5 text-sm text-white/80">
+            <div className="flex items-center justify-between gap-4">
+              <span className="inline-flex items-center gap-3">
+                <Users className="size-5 text-white/80" />
+                Total Users
+              </span>
+              <strong className="text-lg font-semibold text-white">{stats.totalUsers}</strong>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="inline-flex items-center gap-3">
+                <Activity className="size-5 text-white/80" />
+                Active Sessions
+              </span>
+              <strong className="text-lg font-semibold text-white">{stats.activeSessions}</strong>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="inline-flex items-center gap-3">
+                <ShieldCheck className="size-5 text-white/80" />
+                System Status
+              </span>
+              <strong className="text-sm font-semibold text-emerald-300">{stats.systemStatus}</strong>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm font-medium text-white/80 lg:text-right">
+            {timeGreeting}, {firstName}
+          </p>
+        )}
       </CardContent>
     </Card>
   )
