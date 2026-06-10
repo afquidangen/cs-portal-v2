@@ -45,14 +45,14 @@ export function Panel({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-[28px] border border-border bg-card text-card-foreground shadow-sm transition-all duration-200",
+        "overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-[0_18px_50px_rgb(15_23_42_/_0.06)] transition-all duration-200 dark:shadow-[0_18px_50px_rgb(0_0_0_/_0.22)]",
         className
       )}
     >
-      <div className="edu-bg-soft-glacier flex flex-col gap-3 border-b border-border bg-muted/20 px-5 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
+      <div className="edu-bg-soft-glacier flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
         <div className="min-w-0">
           {eyebrow ? (
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
               {eyebrow}
             </p>
           ) : null}
@@ -106,20 +106,20 @@ export function Metric({
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-[26px] border bg-card p-5 shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:ring-white/5",
+        "group relative overflow-hidden rounded-xl border bg-card p-5 shadow-[0_16px_44px_rgb(15_23_42_/_0.06)] ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_56px_rgb(15_23_42_/_0.1)] dark:ring-white/5",
         current.shell
       )}
     >
       <div
         className={cn(
-          "pointer-events-none absolute -right-8 -top-8 size-24 rounded-full blur-2xl opacity-60 transition-opacity duration-200 group-hover:opacity-100",
+          "pointer-events-none absolute -right-8 -top-8 size-24 rounded-full blur-2xl opacity-55 transition-opacity duration-200 group-hover:opacity-90",
           current.glow
         )}
       />
 
       <div className="relative flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-foreground">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             {label}
           </p>
           <p className="mt-3 truncate text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">
@@ -129,7 +129,7 @@ export function Metric({
 
         <span
           className={cn(
-            "flex size-12 shrink-0 items-center justify-center rounded-2xl border shadow-sm",
+            "flex size-12 shrink-0 items-center justify-center rounded-xl border shadow-sm ring-4 ring-white/50 dark:ring-white/5",
             current.icon
           )}
         >
@@ -156,7 +156,7 @@ export function SearchBox({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="edu-topbar-highlight h-11 rounded-2xl border bg-background pl-10 text-foreground shadow-sm transition-all duration-200 placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/20"
+        className="edu-topbar-highlight h-11 rounded-lg border bg-background pl-10 text-foreground shadow-sm transition-all duration-200 placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/20"
       />
     </div>
   )
@@ -164,7 +164,7 @@ export function SearchBox({
 
 export function EmptyState({ text }: { text: string }) {
   return (
-    <div className="edu-bg-soft-glacier rounded-[26px] border border-dashed border-border bg-muted/30 px-6 py-12 text-center shadow-sm">
+    <div className="edu-bg-soft-glacier rounded-xl border border-dashed border-border px-6 py-12 text-center shadow-sm">
       <p className="mx-auto max-w-md text-sm leading-7 text-muted-foreground">
         {text}
       </p>
@@ -189,7 +189,7 @@ export function Textarea({
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
       rows={rows}
-      className="w-full resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
+      className="w-full resize-none rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
     />
   )
 }
@@ -217,18 +217,18 @@ export function Select({
 
       <UiSelect value={value} onValueChange={onChange}>
         <SelectTrigger className={cn(
-          "h-11 rounded-md border bg-white text-foreground transition-all duration-200 focus:ring-2 focus:ring-ring/20 dark:bg-neutral-950",
+          "h-11 rounded-lg border bg-white text-black shadow-sm transition-all duration-200 hover:bg-slate-50 focus:ring-2 focus:ring-ring/20 dark:bg-[#0f1b2b] dark:text-white dark:hover:bg-secondary",
           className ?? "border-border"
         )}>
           <SelectValue placeholder="Select option" />
         </SelectTrigger>
 
-        <SelectContent className={cn("border border-border bg-white text-foreground dark:bg-neutral-950", contentClassName)}>
+        <SelectContent className={cn("border border-border bg-white text-black shadow-2xl dark:bg-[#0f1b2b] dark:text-white", contentClassName)}>
           {[...new Set(options)].map((option) => (
             <SelectItem
               key={option}
               value={option}
-              className="text-foreground focus:bg-muted focus:text-foreground"
+              className="text-black focus:bg-slate-100 focus:text-black data-[highlighted]:bg-slate-100 data-[highlighted]:text-black data-[state=checked]:bg-slate-100 data-[state=checked]:text-black dark:text-white dark:focus:bg-[#123768] dark:focus:text-white dark:data-[highlighted]:bg-[#123768] dark:data-[highlighted]:text-white dark:data-[state=checked]:bg-[#123768] dark:data-[state=checked]:text-white"
             >
               {option}
             </SelectItem>
@@ -254,7 +254,7 @@ export function TicketList({
         <article
           key={ticket.id}
           className={cn(
-            "rounded-[26px] border bg-card p-5 text-card-foreground shadow-sm transition-all duration-200 hover:shadow-md",
+            "rounded-xl border bg-card p-5 text-card-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
             index % 4 === 0 && "edu-ring-glacier edu-bg-soft-glacier",
             index % 4 === 1 && "edu-ring-lapis edu-bg-soft-lapis",
             index % 4 === 2 && "edu-ring-slate edu-bg-soft-slate",
@@ -278,7 +278,7 @@ export function TicketList({
           </p>
 
           {ticket.resolution ? (
-            <div className="mt-4 rounded-2xl border border-border bg-background/70 p-4">
+            <div className="mt-4 rounded-lg border border-border bg-background/70 p-4">
               <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
                 Resolution
               </p>

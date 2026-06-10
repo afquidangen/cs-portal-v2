@@ -192,9 +192,9 @@ export function UsersModule({ model }: PortalModuleProps) {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm"
+            className="edu-bg-soft-glacier flex items-center gap-3 rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm"
           >
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+            <div className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-xl shadow-sm">
               <stat.icon className="size-4" />
             </div>
             <div className="min-w-0">
@@ -236,7 +236,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                 setAddRole("student")
                 setAddOpen(true)
               }}
-              className="rounded-2xl"
+              className="rounded-lg"
             >
               <Plus className="size-4" />
               Add Account
@@ -254,7 +254,7 @@ export function UsersModule({ model }: PortalModuleProps) {
             {/* Mobile card view */}
             <div className="grid gap-3 md:hidden">
               {paginatedUsers.map((user) => (
-                <div key={user.id} className="rounded-2xl border border-border bg-card p-4">
+                <div key={user.id} className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <Avatar className="size-10 shrink-0 ring-1 ring-border">
@@ -302,7 +302,7 @@ export function UsersModule({ model }: PortalModuleProps) {
             </div>
 
             {/* Desktop table view */}
-            <div className="hidden md:block overflow-x-auto rounded-2xl border border-border">
+            <div className="hidden overflow-x-auto rounded-xl border border-border shadow-sm md:block">
               <table className="w-full text-left text-sm">
                 <thead className="bg-muted text-foreground">
                   <tr className="border-b border-border">

@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { BookMarked, Clock, Pencil, Plus, Trash2, Users, X } from "lucide-react"
+import { BookMarked, Pencil, Plus, Trash2, Users, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,7 +36,21 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap gap-2 rounded-2xl border border-border bg-card p-1.5 shadow-sm">
+      <div className="grid gap-3 md:grid-cols-3">
+        {[
+          { label: "Current Section", value: selectedClassSection, note: "Faculty roster view" },
+          { label: "Students", value: String(facultyClassStudents.length), note: "Listed in this section" },
+          { label: "Enrolled", value: String(facultyClassStudents.filter((student) => student.enrolled).length), note: "Currently active" },
+        ].map((item) => (
+          <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+            <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{item.note}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-1.5 shadow-sm">
         {facultyClassSections.map((section) => (
           <button
             key={section}
@@ -47,8 +61,8 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
             }}
             className={
               selectedClassSection === section
-                ? "inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm"
-                : "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
+                ? "inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm"
+                : "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
             }
           >
             {section}
@@ -57,21 +71,21 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
       </div>
 
       <Panel title="Student Management" eyebrow={`${selectedClassSection} \u2022 ${facultyClassStudents.length} students`}>
-        <form onSubmit={handleSaveStudent} className="mb-5 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-muted/30 p-4">
+        <form onSubmit={handleSaveStudent} className="edu-bg-soft-glacier mb-5 flex flex-wrap items-end gap-3 rounded-xl border border-[var(--edu-border-glacier)] p-4">
           <div className="min-w-0 flex-1">
             <label className="mb-1 block text-sm font-medium text-foreground">Student ID</label>
-            <Input value={studentDraft.id} onChange={(e) => setStudentDraft((c) => ({ ...c, id: e.target.value }))} placeholder="2024-001245" className="h-10 rounded-2xl" />
+            <Input value={studentDraft.id} onChange={(e) => setStudentDraft((c) => ({ ...c, id: e.target.value }))} placeholder="2024-001245" className="h-10 rounded-lg" />
           </div>
           <div className="min-w-0 flex-[1.5]">
             <label className="mb-1 block text-sm font-medium text-foreground">Full name</label>
-            <Input value={studentDraft.name} onChange={(e) => setStudentDraft((c) => ({ ...c, name: e.target.value }))} placeholder="Juan Dela Cruz" className="h-10 rounded-2xl" />
+            <Input value={studentDraft.name} onChange={(e) => setStudentDraft((c) => ({ ...c, name: e.target.value }))} placeholder="Juan Dela Cruz" className="h-10 rounded-lg" />
           </div>
-          <Button type="submit" className="rounded-2xl">
+          <Button type="submit" className="rounded-lg">
             {editingStudentId ? <Pencil className="size-4" /> : <Plus className="size-4" />}
             {editingStudentId ? "Update" : "Add"}
           </Button>
           {editingStudentId ? (
-            <Button type="button" variant="outline" onClick={() => resetStudentDraft(selectedClassSection)} className="rounded-2xl">
+            <Button type="button" variant="outline" onClick={() => resetStudentDraft(selectedClassSection)} className="rounded-lg">
               <X className="size-4" /> Cancel
             </Button>
           ) : null}
@@ -85,7 +99,7 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
         ) : (
           <div className="space-y-2">
             {facultyClassStudents.map((student) => (
-              <div key={student.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm transition-colors">
+              <div key={student.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm transition-colors hover:border-primary/25 hover:shadow-md">
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-foreground">{student.name}</p>
                   <p className="truncate text-sm text-foreground/70">{student.id}</p>
@@ -221,7 +235,22 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap gap-2 rounded-2xl border border-border bg-card p-1.5 shadow-sm">
+      <div className="grid gap-3 md:grid-cols-4">
+        {[
+          { label: "Year Levels", value: String(yearSections.length), note: "Configured groups" },
+          { label: "Sections", value: String(sectionOptions.length), note: "Across all years" },
+          { label: "Roster", value: String(roster.length), note: "Student records" },
+          { label: "Classes", value: String(filteredSchedules.length), note: "Selected semester" },
+        ].map((item) => (
+          <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+            <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{item.note}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-1.5 shadow-sm">
         {[
           { key: "Sections", label: "Year Sections", icon: Users },
           { key: "Roster", label: "Student Roster", icon: BookMarked },
@@ -235,8 +264,8 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
               onClick={() => setAdminTab(tab.key)}
               className={
                 adminTab === tab.key
-                  ? "inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm"
-                  : "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
+                  ? "inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm"
+                  : "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
               }
             >
               <Icon className="size-4" />
@@ -257,8 +286,8 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                 onClick={() => setSelectedClassYear(item.year)}
                 className={
                   selectedClassYear === item.year
-                    ? "rounded-xl border border-primary bg-primary/10 px-4 py-2 text-sm font-medium text-primary shadow-sm"
-                    : "rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
+                    ? "rounded-lg border border-primary bg-primary/10 px-4 py-2 text-sm font-medium text-primary shadow-sm"
+                    : "rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
                 }
               >
                 {item.year}
@@ -277,9 +306,9 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
             </div>
           </div>
 
-          <form onSubmit={handleAddClassSection} className="mt-5 flex max-w-md gap-2 rounded-2xl border border-border bg-muted/30 p-3">
-            <Input value={newSectionName} onChange={(e) => setNewSectionName(e.target.value)} placeholder="Add section, e.g. BSCS 1E" className="h-10 rounded-2xl" />
-            <Button type="submit" className="rounded-2xl"><Plus className="size-4" /> Add</Button>
+          <form onSubmit={handleAddClassSection} className="edu-bg-soft-glacier mt-5 flex max-w-md gap-2 rounded-xl border border-[var(--edu-border-glacier)] p-3">
+            <Input value={newSectionName} onChange={(e) => setNewSectionName(e.target.value)} placeholder="Add section, e.g. BSCS 1E" className="h-10 rounded-lg" />
+            <Button type="submit" className="rounded-lg"><Plus className="size-4" /> Add</Button>
           </form>
         </Panel>
       ) : null}
@@ -314,7 +343,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
               <p className="text-sm text-muted-foreground">No students enrolled in this year level.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-2xl border border-border">
+            <div className="overflow-x-auto rounded-xl border border-border shadow-sm">
               <table className="w-full text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-muted text-foreground">
                   <tr className="border-b border-border">

@@ -51,6 +51,19 @@ export function AuditModule({ model }: PortalModuleProps) {
         </div>
       }
     >
+      <div className="mb-4 grid gap-3 md:grid-cols-3">
+        {[
+          { label: "Total Entries", value: String(auditLogs.length) },
+          { label: "Visible Results", value: String(filtered.length) },
+          { label: "Actors", value: String(actors.length) },
+        ].map((item) => (
+          <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+            <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+          </div>
+        ))}
+      </div>
+
       {actors.length > 1 ? (
         <div className="mb-4 flex items-center gap-2">
           <Filter className="size-4 text-muted-foreground" />
@@ -86,11 +99,11 @@ export function AuditModule({ model }: PortalModuleProps) {
             <div
               key={log.id}
               className={cn(
-                "flex items-start gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md",
+                "flex items-start gap-4 rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-all hover:shadow-md edu-bg-soft-lapis",
                 index === 0 && "ring-1 ring-primary/10"
               )}
             >
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+              <div className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-xl shadow-sm">
                 <User className="size-4" />
               </div>
               <div className="min-w-0 flex-1">

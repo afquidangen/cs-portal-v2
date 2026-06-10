@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Panel, StatusBadge } from "../shared/dashboard-ui"
+import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
 export function StudentRosterModule({ model }: PortalModuleProps) {
@@ -184,30 +184,35 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-5">
+      <div className="grid gap-3 md:grid-cols-3">
+        {[
+          { label: "Subjects", value: String(subjectOptions.length) },
+          { label: "Sections", value: String(sectionOptions.length) },
+          { label: "Visible Students", value: String(rosterStudents.length) },
+        ].map((item) => (
+          <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+            <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+          </div>
+        ))}
+      </div>
+
       {/* Subject selector */}
-      <div className="flex flex-wrap gap-2 rounded-2xl border border-border bg-card p-1.5 shadow-sm">
+      <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
         {subjectOptions.length === 0 ? (
           <p className="px-3 py-2 text-sm text-muted-foreground">
             No subjects assigned to you yet.
           </p>
         ) : (
-          subjectOptions.map((subj) => (
-            <button
-              key={subj}
-              type="button"
-              onClick={() => {
-                setSelectedSubject(subj)
-                setSelectedSection(null)
-              }}
-              className={
-                selectedSubject === subj
-                  ? "inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm"
-                  : "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
-              }
-            >
-              {subj}
-            </button>
-          ))
+          <Select
+            label="Subject"
+            value={selectedSubject ?? ""}
+            onChange={(value) => {
+              setSelectedSubject(value)
+              setSelectedSection(null)
+            }}
+            options={subjectOptions}
+          />
         )}
       </div>
 
@@ -215,32 +220,13 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
         <>
           {/* Section filter */}
           {sectionOptions.length > 1 ? (
-            <div className="flex flex-wrap gap-2 rounded-2xl border border-border bg-card p-1.5 shadow-sm">
-              <button
-                type="button"
-                onClick={() => setSelectedSection(null)}
-                className={
-                  selectedSection === null
-                    ? "inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm"
-                    : "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
-                }
-              >
-                All Sections
-              </button>
-              {sectionOptions.map((sec) => (
-                <button
-                  key={sec}
-                  type="button"
-                  onClick={() => setSelectedSection(sec)}
-                  className={
-                    selectedSection === sec
-                      ? "inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm"
-                      : "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
-                  }
-                >
-                  {sec}
-                </button>
-              ))}
+            <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+              <Select
+                label="Section"
+                value={selectedSection ?? "All Sections"}
+                onChange={(value) => setSelectedSection(value === "All Sections" ? null : value)}
+                options={["All Sections", ...sectionOptions]}
+              />
             </div>
           ) : null}
 
@@ -253,7 +239,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
               <Button
                 size="sm"
                 variant="outline"
-                className="rounded-xl"
+                className="rounded-lg"
                 onClick={() => {
                   setAddSection("")
                   setAddDialog(true)
@@ -270,7 +256,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-2xl border border-border">
+              <div className="overflow-x-auto rounded-xl border border-border shadow-sm">
                 <table className="w-full text-left text-sm">
                   <thead className="sticky top-0 z-10 bg-muted text-foreground">
                     <tr className="border-b border-border">
@@ -313,7 +299,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="rounded-xl text-red-500 hover:text-red-600"
+                                className="rounded-lg text-red-500 hover:text-red-600"
                                 onClick={() => setConfirmUnenroll({ gradeId: entry.gradeId, studentId: entry.studentId, section: entry.section })}
                               >
                                 <Trash2 className="size-3.5 mr-1" /> Unenroll
@@ -348,7 +334,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
             <DialogTitle>Confirm Unenroll</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Remove this student's enrollment from this subject? The grade record will be permanently deleted.
+            Remove this student&apos;s enrollment from this subject? The grade record will be permanently deleted.
           </p>
           <DialogFooter className="mt-2 gap-2">
             <Button variant="ghost" onClick={() => setConfirmUnenroll(null)}>Cancel</Button>

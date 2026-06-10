@@ -45,11 +45,26 @@ export function AcademicModule({ model }: PortalModuleProps) {
 
   const currentYear = new Date().getFullYear()
   const yearOptions = Array.from({ length: 10 }, (_, i) => String(currentYear - 2 + i))
+  const activeSemesterCount = semesters.filter((semester) => semester.status === "Active").length
 
   return (
     <div className="space-y-5">
       {/* ── Tab bar ── */}
-      <div className="flex flex-wrap gap-2 rounded-2xl border border-border bg-card p-1.5 shadow-sm">
+      <div className="grid gap-3 md:grid-cols-3">
+        {[
+          { label: "Configured Semesters", value: String(semesters.length), note: "School-year records" },
+          { label: "Active Terms", value: String(activeSemesterCount), note: "Open for portal workflows" },
+          { label: "Current View", value: selectedAcademicSection, note: "Setup workspace" },
+        ].map((item) => (
+          <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+            <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{item.note}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-1.5 shadow-sm">
         {TABS.map((tab) => {
           const Icon = tab.icon
           const active = selectedAcademicSection === tab.key
@@ -60,8 +75,8 @@ export function AcademicModule({ model }: PortalModuleProps) {
               onClick={() => setSelectedAcademicSection(tab.key)}
               className={
                 active
-                  ? "inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm"
-                  : "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
+                  ? "inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm"
+                  : "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
               }
             >
               <Icon className="size-4" />
@@ -77,7 +92,7 @@ export function AcademicModule({ model }: PortalModuleProps) {
           title={`Semesters (${semesters.length})`}
           eyebrow="School year and enrollment periods"
           actions={
-            <Button type="button" variant="outline" className="rounded-xl" onClick={() => setAddSemesterOpen(true)}>
+            <Button type="button" variant="outline" className="rounded-lg" onClick={() => setAddSemesterOpen(true)}>
               <Plus className="size-4" /> Add Semester
             </Button>
           }
@@ -87,7 +102,7 @@ export function AcademicModule({ model }: PortalModuleProps) {
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
               {semesters.map((sem, idx) => (
-                <div key={sem?.id ?? idx} className="rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors">
+                <div key={sem?.id ?? idx} className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
@@ -101,8 +116,8 @@ export function AcademicModule({ model }: PortalModuleProps) {
                       </p>
                     </div>
                     <div className="flex shrink-0 gap-1">
-                      <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setEditSemester(sem)}><Edit className="size-3.5" /></Button>
-                      <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDeleteSemesterId(sem.id)}><Trash2 className="size-3.5" /></Button>
+                      <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setEditSemester(sem)}><Edit className="size-3.5" /></Button>
+                      <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setDeleteSemesterId(sem.id)}><Trash2 className="size-3.5" /></Button>
                     </div>
                   </div>
                 </div>

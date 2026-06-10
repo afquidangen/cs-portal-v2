@@ -120,8 +120,21 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
 
   return (
     <div className="space-y-5">
+      <div className="grid gap-3 md:grid-cols-3">
+        {[
+          { label: "Accomplishments", value: String(accomplishments.length) },
+          { label: "Financial Reports", value: String(financials.length) },
+          { label: "All Documents", value: String(model.csoReports.length) },
+        ].map((item) => (
+          <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+            <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+          </div>
+        ))}
+      </div>
+
       <Panel title="CSSO Organizational Chart" eyebrow="Officers and adviser">
-        <div className="flex min-h-56 items-center justify-center rounded-2xl border border-dashed border-border bg-muted text-center text-foreground/70">
+        <div className="edu-bg-soft-glacier flex min-h-56 items-center justify-center rounded-xl border border-dashed border-[var(--edu-border-glacier)] text-center text-foreground/70">
           <div>
             <ImageIcon className="mx-auto size-10 text-foreground/60" />
             <p className="mt-3 text-sm font-medium">
@@ -181,7 +194,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
 
       <Panel title="CSSO Constitution and By Laws" eyebrow="Governing document">
         {constitutionDoc ? (
-          <div className="flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <div className="edu-bg-soft-lapis flex items-center justify-between rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm">
             <div className="flex items-center gap-3">
               <FileText className="size-6 text-foreground/60" />
               <div>
@@ -193,17 +206,17 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="rounded-2xl" onClick={handleConstitutionDownload}>
+              <Button size="sm" variant="outline" className="rounded-lg" onClick={handleConstitutionDownload}>
                 <Download className="size-4" />
                 Download
               </Button>
               {isAdmin ? (
                 <>
-                  <Button size="sm" variant="outline" className="rounded-2xl" onClick={() => setShowConstitutionUpload(true)}>
+                  <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setShowConstitutionUpload(true)}>
                     <Upload className="size-4" />
                     Replace
                   </Button>
-                  <Button size="sm" variant="destructive" className="rounded-2xl" onClick={handleDeleteConstitution}>
+                  <Button size="sm" variant="destructive" className="rounded-lg" onClick={handleDeleteConstitution}>
                     <Trash2 className="size-4" />
                     Delete
                   </Button>
@@ -212,11 +225,11 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted py-12 text-center">
+          <div className="edu-bg-soft-glacier flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--edu-border-glacier)] py-12 text-center">
             <FileText className="mx-auto mb-3 size-10 text-foreground/40" />
             <p className="text-sm text-foreground/60">No constitution uploaded yet.</p>
             {isAdmin ? (
-              <Button size="sm" variant="outline" className="mt-3 rounded-2xl" onClick={() => setShowConstitutionUpload(true)}>
+              <Button size="sm" variant="outline" className="mt-3 rounded-lg" onClick={() => setShowConstitutionUpload(true)}>
                 <Upload className="size-4" />
                 Upload PDF
               </Button>
@@ -336,7 +349,7 @@ function ReportGrid({
       eyebrow="CSSO transparency documents"
       actions={
         onAdd ? (
-          <Button size="sm" variant="default" className="rounded-2xl" onClick={onAdd}>
+          <Button size="sm" variant="default" className="rounded-lg" onClick={onAdd}>
             <Plus className="size-4" />
             Add Report
           </Button>
@@ -350,7 +363,7 @@ function ReportGrid({
           {reports.map((report) => (
             <article
               key={`${title}-${report.id}`}
-              className="group relative rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors"
+              className="group relative rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md edu-bg-soft-lapis"
             >
               {report.image ? (
                 <div className="mb-3 overflow-hidden rounded-xl border border-border">
@@ -389,7 +402,7 @@ function ReportGrid({
                     <Button
                       size="sm"
                       variant="outline"
-                      className="rounded-2xl"
+                      className="rounded-lg"
                       onClick={() => onEdit(report)}
                     >
                       <Pencil className="size-4" />
@@ -398,7 +411,7 @@ function ReportGrid({
                     <Button
                       size="sm"
                       variant="destructive"
-                      className="rounded-2xl"
+                      className="rounded-lg"
                       onClick={() => onDelete(report)}
                     >
                       <Trash2 className="size-4" />
@@ -409,7 +422,7 @@ function ReportGrid({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="rounded-2xl"
+                    className="rounded-lg"
                     onClick={() => onView(report)}
                   >
                     <Eye className="size-4" />

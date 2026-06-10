@@ -48,7 +48,7 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
             <Button
               size="sm"
               onClick={() => setShowAnnouncementForm((current) => !current)}
-              className="rounded-2xl"
+              className="rounded-lg"
             >
               <Plus className="size-4" />
               ADD ANNOUNCEMENT
@@ -67,16 +67,16 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
                 key={announcement.id}
                 className={
                   index === 0
-                    ? "rounded-2xl border border-border bg-muted p-5 shadow-sm transition-colors"
-                    : "rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors"
+                    ? "edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] p-5 shadow-sm transition-colors"
+                    : "rounded-xl border border-border bg-card p-4 shadow-sm transition-colors hover:border-primary/25 hover:shadow-md"
                 }
               >
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
-                    <h4 className="font-semibold text-foreground">
+                    <h4 className="text-lg font-bold tracking-tight text-foreground">
                       {announcement.title}
                     </h4>
-                    <p className="mt-1 text-sm leading-6 text-foreground/80">
+                    <p className="mt-2 text-sm leading-6 text-foreground/80">
                       {announcement.content}
                     </p>
                   </div>
@@ -87,7 +87,7 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="rounded-xl"
+                          className="rounded-lg"
                           onClick={() => setEditingAnn(announcement)}
                         >
                           <Edit className="size-3.5" />
@@ -95,7 +95,7 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="rounded-xl text-red-500 hover:text-red-600"
+                          className="rounded-lg text-red-500 hover:text-red-600"
                           onClick={() => setDeletingAnnId(announcement.id)}
                         >
                           <Trash2 className="size-3.5" />

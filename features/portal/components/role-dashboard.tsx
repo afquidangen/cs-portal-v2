@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import {
   BarChart3,
   Bell,
@@ -23,7 +24,6 @@ import {
   Phone,
   Search,
   Server,
-  ShieldCheck,
   Sun,
   Users,
   X,
@@ -285,13 +285,6 @@ export function RoleDashboard({ role }: { role: Role }) {
         ? "Manage classes, grading workflows, and student-related tasks."
         : "Access grades, announcements, seminars, and academic services."
 
-  const roleLabel =
-    role === "admin"
-      ? "System Administrator"
-      : role === "faculty"
-        ? "Faculty Member"
-        : "Student Portal User"
-  const firstName = model.profile.name.split(" ")[0] || model.profile.name
   const totalUserCount = model.users.length || model.userStats.students + model.userStats.faculty + model.userStats.admins
 
   const navigationGroups = useMemo(() => {
@@ -311,12 +304,11 @@ export function RoleDashboard({ role }: { role: Role }) {
         "availability",
         "seminars",
         "thesis",
-        "irregular-students",
         "student-roster",
       ].includes(item.id)
     )
     const management = items.filter((item: { id: string }) =>
-      ["announcements", "feedback", "templates", "users", "audit"].includes(item.id)
+      ["announcements", "feedback", "templates", "users", "irregular-students", "audit"].includes(item.id)
     )
     const services = items.filter((item: { id: string }) => ["quick-links", "cso"].includes(item.id))
 
@@ -391,10 +383,31 @@ export function RoleDashboard({ role }: { role: Role }) {
 
   if (dataLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground border-t-primary" />
-          <p className="text-sm text-muted-foreground">Loading dashboard...</p>
+      <main className="dashboard-loading-shell flex min-h-screen items-center justify-center bg-background px-4">
+        <div
+          className="dashboard-loading-terminal"
+          role="status"
+          aria-label="Loading dashboard"
+        >
+          <div className="dashboard-loading-terminal-bar" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="dashboard-loading-terminal-lines">
+            <span className="dashboard-loading-terminal-line dashboard-loading-terminal-line-command">
+              $ comscite dashboard --boot
+            </span>
+            <span className="dashboard-loading-terminal-line dashboard-loading-terminal-line-session">
+              Authenticating session token...
+            </span>
+            <span className="dashboard-loading-terminal-line dashboard-loading-terminal-line-data">
+              Loading workspace modules...
+            </span>
+            <span className="dashboard-loading-terminal-line dashboard-loading-terminal-line-ready">
+              Preparing your dashboard
+            </span>
+          </div>
         </div>
       </main>
     )
@@ -435,7 +448,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       <div className="mx-auto flex min-h-screen w-full">
         <aside
           className={cn(
-            "edu-sidebar-shell fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col border-r border-sidebar-border text-sidebar-foreground transition-all duration-300 md:sticky md:top-0 md:h-screen md:translate-x-0",
+            "edu-sidebar-shell fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col border-r border-sidebar-border text-sidebar-foreground shadow-2xl shadow-blue-950/10 transition-all duration-300 md:sticky md:top-0 md:h-screen md:translate-x-0",
             model.sidebarOpen ? "translate-x-0" : "-translate-x-full",
             effectivelyCollapsed ? "w-[88px]" : "w-[282px] max-w-[85vw]"
           )}
@@ -443,18 +456,20 @@ export function RoleDashboard({ role }: { role: Role }) {
           <div className="border-b border-sidebar-border px-4 py-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="edu-sidebar-icon flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm ring-1 ring-white/10">
-                  {role === "admin" ? (
-                    <ShieldCheck className="size-5 text-white" />
-                  ) : (
-                    <GraduationCap className="size-5 text-white" />
-                  )}
+                <div className="edu-sidebar-icon flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 shadow-sm ring-1 ring-white/20">
+                  <Image
+                    src="/portal-logo.svg"
+                    alt="Portal logo placeholder"
+                    width={32}
+                    height={32}
+                    className="size-full rounded-lg object-contain"
+                  />
                 </div>
 
                 {!effectivelyCollapsed ? (
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-white">
-                      ComSite Portal
+                      ComScite Portal
                     </p>
                     <p className="truncate text-xs capitalize text-white/80">
                       {role} workspace
@@ -488,7 +503,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                 model.setSidebarOpen(false)
               }}
               className={cn(
-                "edu-sidebar-profile mt-4 block w-full rounded-lg text-left transition-all",
+                "edu-sidebar-profile mt-4 block w-full rounded-xl text-left transition-all",
                 effectivelyCollapsed ? "p-2" : ""
               )}
             >
@@ -550,7 +565,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                             model.setSidebarOpen(false)
                           }}
                           className={cn(
-                            "group edu-sidebar-button flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 text-white",
+                            "group edu-sidebar-button flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 text-white",
                             effectivelyCollapsed && "justify-center px-2",
                             active && "edu-sidebar-button-active text-white"
                           )}
@@ -578,7 +593,7 @@ export function RoleDashboard({ role }: { role: Role }) {
               variant="ghost"
               onClick={() => setLogoutOpen(true)}
               className={cn(
-                "w-full rounded-md text-white hover:bg-white/10 hover:text-white",
+                "w-full rounded-lg text-white hover:bg-white/10 hover:text-white",
                 effectivelyCollapsed ? "justify-center px-0" : "justify-start"
               )}
             >
@@ -589,7 +604,7 @@ export function RoleDashboard({ role }: { role: Role }) {
         </aside>
 
         <div className="min-w-0 flex-1 bg-background">
-          <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-xl">
+          <header className="sticky top-0 z-30 border-b border-border/70 bg-background/88 backdrop-blur-xl">
             <div className="flex h-[86px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
               <div className="flex min-w-0 items-center gap-3">
                 <Button
@@ -603,21 +618,18 @@ export function RoleDashboard({ role }: { role: Role }) {
                 </Button>
                 <div className="min-w-0">
                   <h2 className="truncate text-base font-semibold text-foreground sm:text-lg">
-                    Good evening, {firstName}
+                    {model.currentTitle}
                   </h2>
-                  <p className="truncate text-xs text-muted-foreground">
-                    Here&apos;s what&apos;s happening in your portal today.
-                  </p>
                 </div>
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
-                <div className="relative hidden w-[310px] lg:block xl:w-[380px]">
+                <div className="relative hidden w-[260px] lg:block xl:w-[340px]">
                   <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="search"
-                    placeholder="Search anything..."
-                    className="h-11 w-full rounded-md border border-transparent bg-white px-11 text-sm text-foreground shadow-sm outline-none placeholder:text-muted-foreground focus:border-blue-200 focus:ring-2 focus:ring-blue-100"
+                    placeholder="Search portal..."
+                    className="edu-topbar-highlight h-11 w-full rounded-lg border border-border bg-background px-11 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground hover:bg-muted/40 focus:border-ring focus:ring-2 focus:ring-ring/20"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
                     Ctrl K
@@ -628,7 +640,10 @@ export function RoleDashboard({ role }: { role: Role }) {
                     ref={notifBtnRef}
                     variant="outline"
                     size="icon"
-                    className="rounded-md border-border bg-white shadow-sm"
+                    className={cn(
+                      "relative rounded-lg border-border bg-background text-foreground shadow-sm transition hover:bg-muted hover:text-foreground",
+                      showNotifications && "border-primary/40 bg-primary/10 text-primary"
+                    )}
                     aria-label="Notifications"
                     onClick={() => {
                       if (notifBtnRef.current) {
@@ -648,16 +663,18 @@ export function RoleDashboard({ role }: { role: Role }) {
 
                   {showNotifications ? (
                     <div
-                      className="fixed z-50 w-80 max-w-[calc(100vw-1rem)] border border-border bg-white text-foreground shadow-lg dark:bg-neutral-950"
+                      className="fixed z-50 w-[24rem] max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-border bg-white text-black shadow-2xl shadow-blue-950/15 dark:border-[#1d3858] dark:bg-[#071224] dark:text-white dark:shadow-black/40"
                       style={{ top: notifPosition.top, right: notifPosition.right }}
                     >
-                      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                      <div className="flex items-center justify-between border-b border-border bg-primary px-4 py-3 text-primary-foreground">
                         <div className="flex items-center gap-2">
-                          <Bell className="size-4" />
+                          <span className="flex size-8 items-center justify-center rounded-lg border border-white/20 bg-white/15">
+                            <Bell className="size-4" />
+                          </span>
                           <p className="text-sm font-semibold">Notifications</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                          <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-white">
                             {visibleAnnouncements.length} new
                           </span>
                           {visibleAnnouncements.length > 0 ? (
@@ -668,17 +685,17 @@ export function RoleDashboard({ role }: { role: Role }) {
                                   new Set(visibleAnnouncements.map((a) => a.id))
                                 )
                               }
-                              className="rounded-md px-2 py-0.5 text-[11px] font-medium text-primary transition-colors hover:bg-muted"
+                              className="rounded-lg px-2 py-0.5 text-[11px] font-semibold text-white/90 transition-colors hover:bg-white/15 hover:text-white"
                             >
                               Mark all read
                             </button>
                           ) : null}
                         </div>
                       </div>
-                      <div className="max-h-80 space-y-1 overflow-y-auto p-2">
+                      <div className="max-h-80 space-y-1 overflow-y-auto bg-white p-2 dark:bg-[#071224]">
                         {visibleAnnouncements.length === 0 ? (
                           <div className="flex flex-col items-center gap-2 px-2 py-10 text-center">
-                            <Bell className="size-8 text-muted-foreground/40" />
+                            <Bell className="size-8 text-muted-foreground" />
                             <p className="text-sm font-medium text-muted-foreground">
                               No notifications yet
                             </p>
@@ -706,14 +723,19 @@ export function RoleDashboard({ role }: { role: Role }) {
                                     setShowNotifications(false)
                                   }
                                 }}
-                                className="group cursor-pointer border border-transparent px-3 py-3 transition-all hover:border-border hover:bg-muted"
+                                className={cn(
+                                  "group cursor-pointer rounded-lg border px-3 py-3 transition-all hover:border-primary/30 hover:bg-accent dark:hover:bg-[#123768]",
+                                  isRead
+                                    ? "border-border bg-white text-black dark:border-[#1d3858] dark:bg-[#0f1b2b] dark:text-white"
+                                    : "border-primary/20 bg-[#e6f2ff] text-black dark:border-[#28a7f2]/30 dark:bg-[#123768] dark:text-white"
+                                )}
                               >
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex items-center gap-2 min-w-0">
                                     {!isRead ? (
                                       <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" />
                                     ) : null}
-                                    <p className={"text-sm truncate " + (isRead ? "font-medium text-muted-foreground" : "font-semibold text-foreground")}>
+                                    <p className={"truncate text-sm " + (isRead ? "font-medium text-slate-600 dark:text-white/70" : "font-semibold text-black dark:text-white")}>
                                       {ann.title}
                                     </p>
                                   </div>
@@ -724,19 +746,19 @@ export function RoleDashboard({ role }: { role: Role }) {
                                         ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                                         : ann.priority === "Medium"
                                           ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                                          : "bg-muted text-muted-foreground")
+                                        : "bg-slate-100 text-slate-700 dark:bg-secondary dark:text-white/80")
                                     }
                                   >
                                     {ann.priority}
                                   </span>
                                 </div>
-                                <p className={"mt-1 line-clamp-2 text-xs leading-relaxed " + (isRead ? "text-muted-foreground/70" : "text-foreground/80")}>
+                                <p className={"mt-1 line-clamp-2 text-xs leading-relaxed " + (isRead ? "text-slate-600 dark:text-white/65" : "text-black/85 dark:text-white/80")}>
                                   {ann.content}
                                 </p>
-                                <div className="mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground/70">
+                                <div className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-600 dark:text-white/60">
                                   <span>{ann.date}</span>
                                   <span className="size-1 rounded-full bg-muted-foreground/30" />
-                                  <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">{ann.audience}</span>
+                                  <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700 dark:bg-[#8bd3ff] dark:text-[#071224]">{ann.audience}</span>
                                 </div>
                               </div>
                             )
@@ -750,7 +772,10 @@ export function RoleDashboard({ role }: { role: Role }) {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="rounded-md border-border bg-white shadow-sm"
+                  className={cn(
+                    "rounded-lg border-border bg-background text-foreground shadow-sm transition hover:bg-muted hover:text-foreground",
+                    darkMode && "border-primary/40 bg-primary/10 text-primary"
+                  )}
                   aria-label="Toggle dark mode"
                   onClick={() => setDarkMode((current) => !current)}
                 >
@@ -766,7 +791,6 @@ export function RoleDashboard({ role }: { role: Role }) {
                 <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
                   <GreetingCard
                     name={model.profile.name}
-                    roleLabel={roleLabel}
                     subtitle={subtitle}
                     stats={
                       role === "admin"
@@ -869,19 +893,19 @@ export function RoleDashboard({ role }: { role: Role }) {
                             ? "#25a66a"
                             : item.accent === "amber"
                               ? "#d7a11f"
-                              : "#2563eb"
+                              : "#225688"
                         const iconClass =
                           item.accent === "green"
-                            ? "bg-emerald-50 text-emerald-600"
+                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
                             : item.accent === "amber"
-                              ? "bg-amber-50 text-amber-500"
-                              : "bg-blue-50 text-blue-600"
+                              ? "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300"
+                              : "edu-bg-soft-lapis edu-ring-lapis text-primary"
 
                         return (
-                          <Card key={item.label} className="rounded-lg border-0 bg-card shadow-sm">
+                          <Card key={item.label} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                             <CardContent className="grid min-h-[116px] grid-cols-[minmax(0,1fr)_116px] gap-4 p-5">
                               <div className="min-w-0">
-                                <div className={cn("mb-3 flex size-11 items-center justify-center rounded-lg", iconClass)}>
+                                <div className={cn("mb-3 flex size-11 items-center justify-center rounded-xl border shadow-sm", iconClass)}>
                                   <Icon className="size-5" strokeWidth={2.1} />
                                 </div>
                                 <p className="text-sm font-medium text-foreground">
@@ -893,13 +917,13 @@ export function RoleDashboard({ role }: { role: Role }) {
                                 <p
                                   className={cn(
                                     "mt-3 text-xs font-medium",
-                                    item.accent === "amber" ? "text-amber-600" : item.accent === "green" ? "text-emerald-600" : "text-emerald-600"
+                                    item.accent === "amber" ? "text-amber-600 dark:text-amber-300" : item.accent === "green" ? "text-emerald-600 dark:text-emerald-300" : "text-primary"
                                   )}
                                 >
                                   {item.delta}
                                 </p>
                               </div>
-                              <svg viewBox="0 0 120 58" className="mt-auto h-16 w-full self-end">
+                              <svg viewBox="0 0 120 58" className="mt-auto h-16 w-full self-end opacity-90">
                                 <polyline
                                   fill="none"
                                   stroke={lineColor}
@@ -915,11 +939,11 @@ export function RoleDashboard({ role }: { role: Role }) {
                       })}
                     </div>
 
-                    <Card className="rounded-lg border-0 bg-card shadow-sm">
+                    <Card className="rounded-xl border border-border bg-card shadow-sm">
                       <CardHeader className="flex flex-col gap-4 border-b border-border px-5 py-5 lg:flex-row lg:items-start lg:justify-between">
                         <div>
                           <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground">
-                            <Users className="size-5 text-blue-600" />
+                            <Users className="size-5 text-primary" />
                             Academic Overview
                           </CardTitle>
                           <CardDescription className="mt-2 text-sm text-muted-foreground">
@@ -932,17 +956,17 @@ export function RoleDashboard({ role }: { role: Role }) {
                               key={label}
                               type="button"
                               className={cn(
-                                "rounded-md px-3 py-2 font-medium text-muted-foreground hover:bg-muted",
-                                index === 0 && "bg-blue-50 text-blue-600"
+                                "rounded-lg px-3 py-2 font-medium text-muted-foreground hover:bg-muted",
+                                index === 0 && "bg-primary/10 text-primary"
                               )}
                             >
                               {label}
                             </button>
                           ))}
-                          <button type="button" className="flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted">
+                          <button type="button" className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted">
                             <CalendarDays className="size-4" />
                           </button>
-                          <button type="button" className="flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted">
+                          <button type="button" className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted">
                             <Download className="size-4" />
                           </button>
                         </div>
@@ -960,15 +984,15 @@ export function RoleDashboard({ role }: { role: Role }) {
                               </div>
                             ))}
                           </div>
-                          <div className="mt-5 h-[200px] rounded-md bg-gradient-to-b from-blue-50/70 to-white p-4">
+                          <div className="edu-bg-soft-glacier mt-5 h-[200px] rounded-xl border border-border p-4">
                             <svg viewBox="0 0 680 170" className="h-full w-full">
                               {[0, 1, 2, 3].map((line) => (
-                                <line key={line} x1="0" x2="680" y1={line * 42 + 8} y2={line * 42 + 8} stroke="#e5eaf2" />
+                                <line key={line} x1="0" x2="680" y1={line * 42 + 8} y2={line * 42 + 8} stroke="currentColor" className="text-border" />
                               ))}
                               <path
                                 d="M10 116 C70 76, 115 78, 155 66 S235 36, 275 75 S350 126, 405 82 S475 49, 528 114 S610 122, 670 78"
                                 fill="none"
-                                stroke="#2563eb"
+                                stroke="var(--primary)"
                                 strokeWidth="3"
                                 strokeLinecap="round"
                               />
@@ -978,8 +1002,8 @@ export function RoleDashboard({ role }: { role: Role }) {
                               />
                               <defs>
                                 <linearGradient id="portalLineFill" x1="0" x2="0" y1="0" y2="1">
-                                  <stop offset="0%" stopColor="#2563eb" stopOpacity="0.16" />
-                                  <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
+                                  <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.18" />
+                                  <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
                                 </linearGradient>
                               </defs>
                             </svg>
@@ -998,7 +1022,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                               const Icon = item.icon
                               return (
                                 <div key={item.label} className="flex items-center gap-3">
-                                  <span className="flex size-9 items-center justify-center rounded-md bg-slate-50 text-slate-500">
+                                  <span className="edu-bg-soft-slate edu-ring-slate flex size-9 items-center justify-center rounded-lg border text-primary">
                                     <Icon className="size-4" />
                                   </span>
                                   <div>
@@ -1023,7 +1047,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                               const Icon = item.icon
                               return (
                                 <div key={item.label} className="flex gap-3">
-                                  <span className="flex size-9 items-center justify-center rounded-md bg-slate-50 text-blue-600">
+                                  <span className="edu-bg-soft-lapis edu-ring-lapis flex size-9 items-center justify-center rounded-lg border text-primary">
                                     <Icon className="size-4" />
                                   </span>
                                   <div className="min-w-0">
@@ -1039,14 +1063,6 @@ export function RoleDashboard({ role }: { role: Role }) {
                     </Card>
                   </>
                 ) : null}
-              </div>
-            ) : null}
-
-            {model.activeModule !== "overview" ? (
-              <div className="mb-6 text-center">
-                <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                  {model.currentTitle}
-                </h2>
               </div>
             ) : null}
 
@@ -1075,14 +1091,16 @@ export function RoleDashboard({ role }: { role: Role }) {
                   </Badge>
                 </div>
 
-<DialogTitle className="text-2xl font-semibold tracking-tight text-foreground">                  </DialogTitle>
+                <DialogTitle className="text-2xl font-semibold tracking-tight text-foreground">
+                  {selectedNews.title}
+                </DialogTitle>
 
                 <DialogDescription className="pt-2 text-sm leading-7 text-muted-foreground">
                   {selectedNews.summary}
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="mt-2 border border-border bg-muted/30 p-5">
+              <div className="mt-2 rounded-xl border border-border bg-card p-5 shadow-sm dark:bg-[#0f1b2b]">
                 <p className="text-sm leading-8 text-foreground/90">
                   {selectedNews.content}
                 </p>
@@ -1093,31 +1111,41 @@ export function RoleDashboard({ role }: { role: Role }) {
       </Dialog>
 
       <Dialog open={logoutOpen} onOpenChange={setLogoutOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-xl text-foreground">Confirm Logout</DialogTitle>
-            <DialogDescription className="pt-1 text-muted-foreground">
-              Are you sure you want to log out? You will need to sign in again.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-sm overflow-hidden p-0">
+          <div className="bg-[linear-gradient(120deg,#18479f_0%,#1f6fe5_60%,#28a7f2_100%)] px-6 py-5 text-white">
+            <div className="mb-3 flex size-11 items-center justify-center rounded-xl border border-white/20 bg-white/15">
+              <LogOut className="size-5" />
+            </div>
+            <DialogHeader>
+              <DialogTitle className="text-xl text-white">Confirm Logout</DialogTitle>
+              <DialogDescription className="pt-1 text-white/78">
+                You will need to sign in again to access this workspace.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
 
-          <DialogFooter className="mt-2 gap-2">
-            <DialogClose asChild>
-              <Button variant="ghost">
-                Cancel
+          <div className="px-6 pb-6 pt-4">
+            <p className="text-sm leading-6 text-muted-foreground">
+              End the current portal session for {model.profile.name}?
+            </p>
+            <DialogFooter className="mt-5 gap-2">
+              <DialogClose asChild>
+                <Button variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  model.handleLogout()
+                  setLogoutOpen(false)
+                }}
+              >
+                <LogOut className="mr-1.5 size-4" />
+                Logout
               </Button>
-            </DialogClose>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                model.handleLogout()
-                setLogoutOpen(false)
-              }}
-            >
-              <LogOut className="mr-1.5 size-4" />
-              Logout
-            </Button>
-          </DialogFooter>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -1168,11 +1196,11 @@ export function RoleDashboard({ role }: { role: Role }) {
 
       <footer className="border-t border-border bg-background px-4 py-3 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-[1720px] flex-col items-center gap-2 text-xs text-muted-foreground sm:flex-row sm:justify-between">
-          <span>&copy; 2026 ComSite Portal &mdash; ISPSC Computing Studies Unit</span>
+          <span>&copy; 2026 ComScite Portal &mdash; ISPSC Computing Studies Unit</span>
           <span className="inline-flex flex-wrap items-center justify-center gap-3 sm:gap-4">
             <span className="inline-flex items-center gap-1.5">
               <Mail className="size-3.5" />
-              comsite@ispsc.edu.ph
+              comscite@ispsc.edu.ph
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Phone className="size-3.5" />

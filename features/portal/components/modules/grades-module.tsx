@@ -51,7 +51,7 @@ export function GradesModule({ model }: PortalModuleProps) {
       title="Grades & Report"
       eyebrow="Student records"
       actions={
-        <Button size="sm" onClick={downloadGradeReport} className="rounded-2xl">
+        <Button size="sm" onClick={downloadGradeReport} className="rounded-lg">
           <Download className="size-4" />
           Download CSV
         </Button>
@@ -59,7 +59,7 @@ export function GradesModule({ model }: PortalModuleProps) {
     >
       {gwaData && (
         <div className="mb-5 flex flex-wrap items-center gap-4">
-          <div className="rounded-2xl border border-border bg-card px-5 py-3 shadow-sm">
+          <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card px-5 py-3 shadow-sm">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               GWA
             </p>
@@ -69,7 +69,7 @@ export function GradesModule({ model }: PortalModuleProps) {
           </div>
 
           {gwaData.honors && (
-            <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 shadow-sm dark:border-amber-800 dark:bg-amber-950">
+            <div className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 shadow-sm dark:border-amber-800 dark:bg-amber-950">
               <Award className="size-5 text-amber-600 dark:text-amber-400" />
               <span className="text-sm font-semibold text-amber-800 dark:text-amber-200">
                 {gwaData.honors}
@@ -79,7 +79,7 @@ export function GradesModule({ model }: PortalModuleProps) {
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-2xl border border-border">
+      <div className="overflow-x-auto rounded-xl border border-border shadow-sm">
         <table className="w-full min-w-[820px] text-left text-sm">
           <thead className="bg-muted text-foreground">
             <tr className="border-b border-border">
@@ -274,7 +274,7 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
       }
       actions={
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={downloadGradeTemplate} className="rounded-2xl">
+          <Button size="sm" onClick={downloadGradeTemplate} className="rounded-lg">
             <Download className="size-4" />
             Template
           </Button>
@@ -282,7 +282,7 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
             size="sm"
             variant="outline"
             onClick={handleReleaseAll}
-            className="rounded-2xl"
+            className="rounded-lg"
           >
             <Send className="size-4" />
             Release
@@ -321,9 +321,9 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
           type="file"
           accept=".xlsx"
           onChange={handleGradeWorkbookUpload}
-          className="h-10 rounded-2xl"
+          className="h-10 rounded-lg"
         />
-        <Button type="button" variant="outline" className="rounded-2xl">
+        <Button type="button" variant="outline" className="rounded-lg">
           <Upload className="size-4" />
           Upload Excel
         </Button>
@@ -394,7 +394,7 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
         })()
       ) : (
         selectedSubject && (
-          <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center text-sm text-muted-foreground">
+          <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] px-4 py-12 text-center text-sm text-muted-foreground">
             <GraduationCap className="mx-auto mb-2 size-8 text-muted-foreground/50" />
             No students enrolled for this subject.
           </div>
@@ -417,7 +417,7 @@ function SectionTable({
 }) {
   if (students.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center text-sm text-muted-foreground">
+      <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] px-4 py-12 text-center text-sm text-muted-foreground">
         <GraduationCap className="mx-auto mb-2 size-8 text-muted-foreground/50" />
         No students enrolled for this section.
       </div>
@@ -429,7 +429,7 @@ function SectionTable({
       <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
         Section {section}
       </p>
-      <div className="overflow-x-auto rounded-2xl border border-border">
+      <div className="overflow-x-auto rounded-xl border border-border shadow-sm">
         <table className="w-full min-w-[960px] text-left text-sm">
           <thead className="bg-muted text-foreground">
             <tr className="border-b border-border">

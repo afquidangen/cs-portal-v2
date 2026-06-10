@@ -105,6 +105,11 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
   )
   const totalSubjects = allTerms.reduce((sum, t) => sum + t.subjects.length, 0)
   const activeTerm = allTerms[activeTermIdx]
+  const curriculumYears = Array.from(new Set(allTerms.map((term) => term.year)))
+  const selectedYear = activeTerm?.year ?? curriculumYears[0] ?? ""
+  const semesterOptions = allTerms
+    .filter((term) => term.year === selectedYear)
+    .map((term) => term.semester)
 
   if (!enrolledCurriculum) {
     return (
@@ -158,24 +163,27 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
           <EmptyState text="No terms available for this curriculum." />
         ) : (
           <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {allTerms.map((term, i) => (
-                <button
-                  key={`${term.year}-${term.semester}`}
-                  type="button"
-                  onClick={() => setActiveTermIdx(i)}
-                  className={
-                    i === activeTermIdx
-                      ? "rounded-xl border border-primary bg-primary/10 px-4 py-2 text-sm font-medium text-primary shadow-sm"
-                      : "rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
-                  }
-                >
-                  {term.year} - {term.semester}
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    ({term.subjects.length} subj)
-                  </span>
-                </button>
-              ))}
+            <div className="edu-bg-soft-glacier grid gap-3 rounded-xl border border-[var(--edu-border-glacier)] p-4 sm:grid-cols-2">
+              <Select
+                label="Year Level"
+                value={selectedYear}
+                onChange={(year) => {
+                  const nextIndex = allTerms.findIndex((term) => term.year === year)
+                  if (nextIndex >= 0) setActiveTermIdx(nextIndex)
+                }}
+                options={curriculumYears}
+              />
+              <Select
+                label="Semester"
+                value={activeTerm?.semester ?? ""}
+                onChange={(semester) => {
+                  const nextIndex = allTerms.findIndex(
+                    (term) => term.year === selectedYear && term.semester === semester
+                  )
+                  if (nextIndex >= 0) setActiveTermIdx(nextIndex)
+                }}
+                options={semesterOptions}
+              />
             </div>
 
             {activeTerm ? (

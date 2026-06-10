@@ -31,7 +31,7 @@ export function InstructorsModule({ model }: PortalModuleProps) {
       title="Instructor Information"
       eyebrow="Faculty profiles"
       actions={role === "admin" ? (
-        <Button size="sm" variant="outline" onClick={syncFacultyFromUsers} className="rounded-2xl">
+        <Button size="sm" variant="outline" onClick={syncFacultyFromUsers} className="rounded-lg">
           <RefreshCw className="size-4" />
           Sync from Users
         </Button>
@@ -44,10 +44,10 @@ export function InstructorsModule({ model }: PortalModuleProps) {
           activeFaculty.map((member) => (
             <article
               key={member.id}
-              className="rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors"
+              className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md"
             >
               <div className="flex items-start gap-3">
-                <div className="flex size-11 items-center justify-center rounded-2xl bg-muted text-sm font-semibold text-foreground">
+                <div className="edu-lapis flex size-11 items-center justify-center rounded-xl text-sm font-semibold shadow-sm">
                   {member.name
                     .split(" ")
                     .map((part) => part[0])

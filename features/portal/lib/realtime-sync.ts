@@ -1,4 +1,4 @@
-const CHANNEL_NAME = "comsite-portal-sync"
+const CHANNEL_NAME = "comscite-portal-sync"
 const POLL_INTERVAL = 1500
 
 type SyncMessage = {

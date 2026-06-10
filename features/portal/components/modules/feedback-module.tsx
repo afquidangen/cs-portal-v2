@@ -36,7 +36,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
     return (
       <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
         <Panel title="Submission Console" eyebrow="Feedback and complaints">
-          <form onSubmit={handleFeedbackSubmit} className="space-y-3">
+          <form onSubmit={handleFeedbackSubmit} className="edu-bg-soft-glacier space-y-3 rounded-xl border border-[var(--edu-border-glacier)] p-4">
             <Select
               value={feedbackDraft.category}
               onChange={(value) =>
@@ -58,7 +58,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
                 }))
               }
               placeholder="Subject"
-              className="h-10 rounded-2xl"
+              className="h-10 rounded-lg"
             />
 
             <Textarea
@@ -72,7 +72,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
               placeholder="Describe the concern or suggestion"
             />
 
-            <Button type="submit" className="w-full rounded-2xl">
+            <Button type="submit" className="w-full rounded-lg">
               <SendIcon />
               Submit Ticket
             </Button>
@@ -93,7 +93,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
     <div className="space-y-5">
       {role === "faculty" ? (
         <Panel title="Submission Console" eyebrow="Feedback and complaints">
-          <form onSubmit={handleFeedbackSubmit} className="space-y-3">
+          <form onSubmit={handleFeedbackSubmit} className="edu-bg-soft-glacier space-y-3 rounded-xl border border-[var(--edu-border-glacier)] p-4">
             <Select
               value={feedbackDraft.category}
               onChange={(value) =>
@@ -115,7 +115,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
                 }))
               }
               placeholder="Subject"
-              className="h-10 rounded-2xl"
+              className="h-10 rounded-lg"
             />
 
             <Textarea
@@ -129,7 +129,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
               placeholder="Describe the concern or suggestion"
             />
 
-            <Button type="submit" className="w-full rounded-2xl">
+            <Button type="submit" className="w-full rounded-lg">
               <SendIcon />
               Submit Ticket
             </Button>
@@ -141,11 +141,23 @@ export function FeedbackModule({ model }: PortalModuleProps) {
         title={role === "admin" ? "Master Inbox" : "Feedback Inbox"}
         eyebrow="Ticket status management"
       >
+      <div className="mb-4 grid gap-3 md:grid-cols-3">
+        {[
+          { label: "Total Tickets", value: String(tickets.length) },
+          { label: "Open", value: String(tickets.filter((ticket) => ticket.status !== "Resolved").length) },
+          { label: "Resolved", value: String(tickets.filter((ticket) => ticket.status === "Resolved").length) },
+        ].map((item) => (
+          <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+            <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+          </div>
+        ))}
+      </div>
       <div className="space-y-3">
         {tickets.map((ticket) => (
           <div
             key={ticket.id}
-            className="rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors"
+            className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md"
           >
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div>
@@ -165,7 +177,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
                 </p>
 
                 {ticket.resolution ? (
-                  <p className="mt-3 rounded-2xl border border-border bg-muted p-3 text-sm text-foreground/80">
+                  <p className="mt-3 rounded-lg border border-border bg-white p-3 text-sm text-black dark:border-primary/30 dark:bg-[#071224] dark:text-white">
                     {ticket.resolution}
                   </p>
                 ) : null}
@@ -183,7 +195,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="rounded-2xl"
+                  className="rounded-lg"
                   onClick={() =>
                     updateTicketStatus(
                       ticket.id,
@@ -200,7 +212,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="rounded-2xl"
+                    className="rounded-lg"
                     onClick={() => undoTicketResolution(ticket.id)}
                   >
                     <RotateCcw className="size-4" />

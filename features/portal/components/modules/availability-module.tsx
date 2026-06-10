@@ -74,11 +74,11 @@ function FacultyCard({
   showSchedule?: boolean
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors">
+    <div className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-muted text-xs font-semibold text-foreground">
+            <div className="edu-lapis flex size-10 items-center justify-center rounded-xl text-xs font-semibold shadow-sm">
               {member.name
                 .split(" ")
             .map((p: string) => p[0])
@@ -122,7 +122,7 @@ function AdminStatusEditor({ model }: PortalModuleProps) {
         {faculty.map((member) => (
           <div
             key={member.id}
-            className="rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors"
+            className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md"
           >
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0 flex-1">
@@ -212,10 +212,10 @@ function StudentAvailabilityView({ model }: PortalModuleProps) {
               key={tab.value}
               onClick={() => setStatusFilter(tab.value)}
               className={cn(
-                "rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
+                "rounded-lg px-3.5 py-1.5 text-xs font-medium transition-colors",
                 statusFilter === tab.value
-                  ? "bg-foreground text-background"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-white text-black hover:bg-slate-100 dark:bg-[#0f1b2b] dark:text-white dark:hover:bg-secondary"
               )}
             >
               {tab.label}
@@ -251,8 +251,8 @@ export function FacultyAvailabilityPanel({ model }: PortalModuleProps) {
 
   return (
     <Panel title="Quick Status Control" eyebrow="My availability">
-      <div className="mb-4 flex items-center gap-3 rounded-2xl border border-border bg-muted/30 p-3">
-        <div className="flex size-10 items-center justify-center rounded-xl bg-muted text-sm font-semibold text-foreground">
+      <div className="edu-bg-soft-glacier mb-4 flex items-center gap-3 rounded-xl border border-[var(--edu-border-glacier)] p-3">
+        <div className="edu-lapis flex size-10 items-center justify-center rounded-xl text-sm font-semibold shadow-sm">
           {profile.name
             .split(" ")
             .map((p: string) => p[0])
@@ -282,7 +282,7 @@ export function FacultyAvailabilityPanel({ model }: PortalModuleProps) {
           rows={3}
         />
 
-        <Button type="submit" className="rounded-2xl">
+        <Button type="submit" className="rounded-lg">
           <Save className="size-4" />
           Save Status
         </Button>
@@ -322,10 +322,10 @@ export function FacultyDirectoryPanel({
               key={tab.value}
               onClick={() => setStatusFilter(tab.value)}
               className={cn(
-                "rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
+                "rounded-lg px-3.5 py-1.5 text-xs font-medium transition-colors",
                 statusFilter === tab.value
-                  ? "bg-foreground text-background"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-white text-black hover:bg-slate-100 dark:bg-[#0f1b2b] dark:text-white dark:hover:bg-secondary"
               )}
             >
               {tab.label}

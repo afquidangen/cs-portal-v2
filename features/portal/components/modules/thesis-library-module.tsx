@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Download, Loader2, Plus } from "lucide-react"
+import { BookOpen, Download, FileText, Loader2, Plus, Tags } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -101,13 +101,37 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-5">
+      <div className="grid gap-3 md:grid-cols-3">
+        {[
+          { label: "Repository Records", value: String(theses.length), note: "Total manuscripts", icon: BookOpen },
+          { label: "Visible Results", value: String(filteredTheses.length), note: "After search and filters", icon: FileText },
+          { label: "Categories", value: String(Math.max(0, categories.length - 1)), note: "Research groupings", icon: Tags },
+        ].map((item) => {
+          const Icon = item.icon
+          return (
+            <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+                  <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{item.note}</p>
+                </div>
+                <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                  <Icon className="size-5" />
+                </span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
       {role === "admin" && showThesisUploadForm ? (
         <Panel title="Upload Thesis PDF" eyebrow="Repository management">
-          <form onSubmit={handleSubmitThesis} className="relative grid gap-3 lg:grid-cols-2">
+          <form onSubmit={handleSubmitThesis} className="edu-bg-soft-glacier relative grid gap-3 rounded-xl border border-[var(--edu-border-glacier)] p-4 lg:grid-cols-2">
             {uploading && (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-2xl bg-background/80 backdrop-blur-sm">
                 <Loader2 className="size-8 animate-spin text-primary" />
-                <p className="text-sm font-medium text-foreground">Uploading PDF\u2026</p>
+                <p className="text-sm font-medium text-foreground">Uploading PDF...</p>
               </div>
             )}
 
@@ -120,7 +144,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                 }))
               }
               placeholder="Thesis title"
-              className="h-10 rounded-2xl"
+              className="h-10 rounded-lg"
             />
 
             <Input
@@ -132,7 +156,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                 }))
               }
               placeholder="Authors"
-              className="h-10 rounded-2xl"
+              className="h-10 rounded-lg"
             />
 
             <Input
@@ -144,7 +168,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                 }))
               }
               placeholder="Category"
-              className="h-10 rounded-2xl"
+              className="h-10 rounded-lg"
             />
 
             <Input
@@ -156,7 +180,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                 }))
               }
               placeholder="Adviser"
-              className="h-10 rounded-2xl"
+              className="h-10 rounded-lg"
             />
 
             <Input
@@ -168,14 +192,14 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                 }))
               }
               placeholder="Year"
-              className="h-10 rounded-2xl"
+              className="h-10 rounded-lg"
             />
 
             <div className="flex items-center gap-2">
 <Input
   type="file"
   accept="application/pdf,.pdf"
-  className="h-10 rounded-2xl"
+  className="h-10 rounded-lg"
   onChange={(event) => {
     const file = event.target.files?.[0]
 
@@ -197,13 +221,13 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
     reader.readAsDataURL(file)
   }}
 />
-              <Button type="submit" size="sm" className="rounded-2xl" disabled={uploading}>
+              <Button type="submit" size="sm" className="rounded-lg" disabled={uploading}>
                 {uploading ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
                   <Plus className="size-4" />
                 )}
-                {uploading ? "Uploading\u2026" : "Save"}
+                {uploading ? "Uploading..." : "Save"}
               </Button>
             </div>
 
@@ -233,7 +257,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                 type="button"
                 size="sm"
                 onClick={() => setShowThesisUploadForm((current) => !current)}
-                className="rounded-2xl"
+                className="rounded-lg"
               >
                 <Plus className="size-4" />
                 Upload Thesis
@@ -266,11 +290,11 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
           {filteredTheses.map((thesis) => (
             <article
               key={thesis.id}
-              className="rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors"
+              className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md"
             >
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h4 className="font-semibold text-foreground">
+                <div className="min-w-0">
+                  <h4 className="line-clamp-2 font-semibold tracking-tight text-foreground">
                     {thesis.title}
                   </h4>
                   <p className="mt-1 text-sm text-foreground/70">
@@ -288,7 +312,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                 {thesis.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-xl border border-border bg-muted px-2.5 py-1 text-xs font-medium text-foreground/80"
+                    className="rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground/80 dark:bg-secondary"
                   >
                     {tag}
                   </span>
@@ -298,7 +322,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
               <div className="mt-4 flex flex-wrap gap-2">
 <Button
   size="sm"
-  className="rounded-2xl"
+  className="rounded-lg"
   onClick={async () => {
     try {
       const res = await fetch(thesis.pdfUrl)
@@ -324,7 +348,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="rounded-2xl"
+                    className="rounded-lg"
                     onClick={() => confirmAndDeleteThesis(thesis.id)}
                   >
                     Delete

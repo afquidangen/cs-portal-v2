@@ -1,95 +1,120 @@
 "use client"
 
-import { CalendarDays, Camera, Heart, Users } from "lucide-react"
+import Image from "next/image"
+import { CalendarDays, Camera, Code2, Heart, ShieldCheck, Users } from "lucide-react"
 
 import { Panel } from "../shared/dashboard-ui"
-import Image from "next/image"
 
 const teamMembers = [
   {
-    name: "KYLA CABLAY",
+    name: "KYLA G. CABLAY",
     role: "Data Analyst",
     details: "Manages system logic, database flow, and backend integration.",
-    image: "/team/kyla.jpg"
+    image: "",
   },
   {
-    name: "ALYSSA FAYE QUIDANGEN",
+    name: "ALYSSA FAYE S. QUIDANGEN",
     role: "Project Manager",
     details: "Leads planning, coordination, and overall project execution.",
-    image: "/images/team/al.png",
+    image: "",
   },
   {
-    name: "HEZRON GAGARIN",
+    name: "HEZRON R. GAGARIN",
     role: "Tech Lead",
     details:  "Leads technical development and ensures system consistency.",
-    image: "/images/team/he.png",
+    image: "",
   },
   {
-    name: "CHRISTIAN GALINATO",
+    name: "CHRISTIAN M. GALINATO",
     role: "Quality Assurance Lead",
     details: "Leads testing and ensures the system works correctly.",
-    image: "/images/team/chr.png",
+    image: "",
   },
 ]
+
+const projectFacts = [
+  { label: "Portal focus", value: "Academic records, announcements, and student services", icon: Code2 },
+  { label: "Primary users", value: "Students, faculty, and administrators", icon: Users },
+  { label: "Development year", value: "2026", icon: CalendarDays },
+]
+
+const pastContributors = [
+  { name: "JEDRICK S. KARGANILLA", role: "System Architect", image: "/contributors/jedrick_karganilla.jpg" },
+  { name: "JOSE S. GIRONELLA", role: "Main Developer", image: "/contributors/jose_gironella.jpg" },
+  { name: "SEAN KELLY T. DAUSEN", role: "Project Manager", image: "/contributors/sean_dausen.jpg" },
+  { name: "ELLA SHANE R. PAGLINAWAN", role: "Main Developer", image: "/contributors/ella_paglinawan.jpg" },
+  { name: "BRIGITTE MAE E. IBENG", role: "QA Tester", image: "/contributors/brigitte_ibeng.jpg" },
+]
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+}
 
 export function AboutModule() {
   return (
     <div className="space-y-5">
-      <Panel title="About Us" eyebrow="Team profile">
-        <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
-          <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/70">
-              Team Name
-            </p>
-            <h3 className="mt-2 text-2xl font-semibold text-foreground">
-              Placeholder Team Name
-            </h3>
+      <Panel title="About ComScite Portal" eyebrow="Project profile">
+        <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
+          <div className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] p-6 shadow-sm">
+            <div className="flex items-start gap-4">
 
-            <p className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/70">
-              Team Description
-            </p>
-            <p className="mt-2 text-sm leading-7 text-foreground/80">
-              This section contains a short overview of the team, its purpose,
-              project contribution, and overall mission in developing the
-              ComSite Student Portal. Replace this placeholder text with your
-              actual team description.
-            </p>
-
-            <div className="mt-6 flex items-center gap-3 rounded-2xl border border-border bg-muted p-4">
-              <div className="flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-                <CalendarDays className="size-5" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  Date Developed
+              <div className="min-w-0 flex-1 text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+                  DEV TEAM 
                 </p>
-                <p className="text-sm text-foreground/80">Placeholder Date</p>
+                <h3 className="mx-auto mt-2 max-w-xl text-3xl font-semibold tracking-tight text-foreground">
+                  GIT LOST
+                </h3>
+                <p className="mx-auto mt-4 max-w-3xl text-sm leading-7 text-foreground/80">
+Developed by a team of incoming fourth-year student interns during the 2025–2026 academic year at ISPSC, the ComScite Portal was designed as a unified academic workspace. The platform streamlines student records, faculty workflows, official announcements, feedback collection, and administrative monitoring.                </p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/70">
-              Team Picture
-            </p>
-            <div className="flex min-h-[280px] items-center justify-center rounded-3xl border border-dashed border-border bg-muted text-center text-foreground/70">
-              <div>
-                <Camera className="mx-auto size-10 text-foreground/60" />
-                <p className="mt-3 text-sm font-medium">
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div className="edu-bg-soft-glacier flex min-h-[220px] items-center justify-center rounded-xl border border-dashed border-[var(--edu-border-glacier)] text-center">
+              <div className="px-6">
+                <div className="edu-lapis mx-auto flex size-14 items-center justify-center rounded-xl shadow-sm">
+                  <Camera className="size-7" />
+                </div>
+                <p className="mt-4 text-sm font-semibold text-foreground">
                   Team picture placeholder
                 </p>
-                <p className="mt-1 text-xs text-foreground/60">
-                  Replace with your actual team photo
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  Add the final group photo here when available.
                 </p>
               </div>
             </div>
           </div>
         </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-3">
+          {projectFacts.map((fact) => {
+            const Icon = fact.icon
+            return (
+              <div key={fact.label} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <span className="edu-bg-soft-glacier edu-ring-glacier flex size-10 shrink-0 items-center justify-center rounded-lg border text-primary">
+                    <Icon className="size-5" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{fact.label}</p>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{fact.value}</p>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+          </div>
       </Panel>
 
       <Panel title="Team Members and Roles" eyebrow="Member directory">
         <div className="mb-5 flex items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-muted text-foreground">
+          <div className="edu-bg-soft-glacier edu-ring-glacier flex size-11 items-center justify-center rounded-xl border text-primary">
             <Users className="size-5" />
           </div>
           <div>
@@ -97,7 +122,7 @@ export function AboutModule() {
               Member Profiles
             </h3>
             <p className="text-sm text-foreground/70">
-              Individual picture placeholders and role descriptions
+              Role ownership and contribution areas
             </p>
           </div>
         </div>
@@ -106,28 +131,33 @@ export function AboutModule() {
           {teamMembers.map((member) => (
             <article
               key={member.name}
-              className="rounded-3xl border border-border bg-card p-4 shadow-sm"
+              className="group overflow-hidden rounded-xl border border-[var(--edu-border-lapis)] bg-card shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg"
             >
-            <div className="mb-4 overflow-hidden rounded-2xl border border-border bg-muted">
-              <div className="relative h-[180px] w-full">
-                <Image
-                  src={member.image}
-                  alt={member.name}
-                  fill
-                  className="object-cover"
-                />
+              <div className="edu-bg-soft-glacier relative flex h-[220px] items-center justify-center overflow-hidden border-b border-border">
+                {member.image ? (
+                  <Image
+                    src={member.image}
+                    alt={member.name}
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                  />
+                ) : (
+                  <div className="edu-lapis flex size-24 items-center justify-center rounded-full text-2xl font-semibold shadow-sm">
+                    {initials(member.name)}
+                  </div>
+                )}
               </div>
-            </div>
-
-              <h4 className="text-base font-semibold text-foreground">
-                {member.name}
-              </h4>
-              <p className="mt-1 text-sm font-medium text-foreground/80">
-                {member.role}
-              </p>
-              <p className="mt-3 text-sm leading-6 text-foreground/75">
-                {member.details}
-              </p>
+              <div className="p-4">
+                <h4 className="text-base font-semibold text-foreground">
+                  {member.name}
+                </h4>
+                <p className="mt-1 text-sm font-medium text-primary">
+                  {member.role}
+                </p>
+                <p className="mt-3 text-sm leading-6 text-foreground/75">
+                  {member.details}
+                </p>
+              </div>
             </article>
           ))}
         </div>
@@ -135,7 +165,7 @@ export function AboutModule() {
 
       <Panel title="Acknowledgments" eyebrow="Initial contributors">
         <div className="mb-5 flex items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-muted text-foreground">
+          <div className="edu-bg-soft-glacier edu-ring-glacier flex size-11 items-center justify-center rounded-xl border text-primary">
             <Heart className="size-5" />
           </div>
           <div>
@@ -144,22 +174,32 @@ export function AboutModule() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] p-6 shadow-sm">
           <p className="text-sm leading-7 text-foreground/80">
-            We acknowledge the initial contributors for providing the project&apos;s early foundation and concept.
-          </p>
+This project stands on the foundation built by the initial contributors of CCIS Portal v1, whose early concepts made this portal possible.          </p>
         </div>
 
-        <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {["Team Member 1", "Team Member 2", "Team Member 3", "Team Member 4"].map((name) => (
+        <div className="mt-5 grid grid-cols-5 gap-3 overflow-x-auto pb-1">
+          {pastContributors.map((contributor, index) => (
             <article
-              key={name}
-              className="rounded-3xl border border-border bg-card p-4 text-center shadow-sm"
+              key={`${contributor.name}-${index}`}
+              className="min-w-[132px] rounded-xl border border-border bg-card p-3 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
             >
-              <div className="mx-auto mb-3 flex size-16 items-center justify-center rounded-full bg-muted">
-                <Users className="size-6 text-foreground/40" />
+              <div className="edu-bg-soft-glacier mx-auto mb-3 flex h-24 w-24 items-center justify-center rounded-xl border border-dashed border-[var(--edu-border-glacier)]">
+                {contributor.image ? (
+                  <Image
+                    src={contributor.image}
+                    alt={contributor.name}
+                    width={96}
+                    height={96}
+                    className="h-full w-full rounded-xl object-cover"
+                  />
+                ) : (
+                  <Camera className="size-7 text-primary" />
+                )}
               </div>
-              <h4 className="text-sm font-semibold text-foreground">{name}</h4>
+              <h4 className="text-sm font-semibold text-foreground">{contributor.name}</h4>
+              <p className="mt-1 text-xs font-medium text-primary">{contributor.role}</p>
             </article>
           ))}
         </div>
