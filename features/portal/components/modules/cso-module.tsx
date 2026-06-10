@@ -194,29 +194,29 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
 
       <Panel title="CSSO Constitution and By Laws" eyebrow="Governing document">
         {constitutionDoc ? (
-          <div className="edu-bg-soft-lapis flex items-center justify-between rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <FileText className="size-6 text-foreground/60" />
-              <div>
+          <div className="edu-bg-soft-lapis flex flex-col gap-4 rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <FileText className="size-6 shrink-0 text-foreground/60" />
+              <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground">Constitution and By Laws</p>
-                <p className="text-xs text-foreground/60">
+                <p className="truncate text-xs text-foreground/60">
                   {constitutionDoc.fileName ?? "PDF document"}
                   {constitutionDoc.fileSize ? ` \u00B7 ${(constitutionDoc.fileSize / 1024).toFixed(0)} KB` : ""}
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="rounded-lg" onClick={handleConstitutionDownload}>
+            <div className="flex w-full flex-col gap-2 min-[420px]:flex-row min-[420px]:flex-wrap sm:w-auto sm:justify-end">
+              <Button size="sm" variant="outline" className="w-full rounded-lg min-[420px]:w-auto" onClick={handleConstitutionDownload}>
                 <Download className="size-4" />
                 Download
               </Button>
               {isAdmin ? (
                 <>
-                  <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setShowConstitutionUpload(true)}>
+                  <Button size="sm" variant="outline" className="w-full rounded-lg min-[420px]:w-auto" onClick={() => setShowConstitutionUpload(true)}>
                     <Upload className="size-4" />
                     Replace
                   </Button>
-                  <Button size="sm" variant="destructive" className="rounded-lg" onClick={handleDeleteConstitution}>
+                  <Button size="sm" variant="destructive" className="w-full rounded-lg min-[420px]:w-auto" onClick={handleDeleteConstitution}>
                     <Trash2 className="size-4" />
                     Delete
                   </Button>

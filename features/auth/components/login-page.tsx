@@ -107,9 +107,6 @@ export function LoginPage() {
               Status: Online | Environment: Ready
             </span>
           </h1>
-          <p className="relative mt-3 max-w-full text-center text-sm font-semibold italic leading-6 text-[#225688] md:text-left lg:whitespace-nowrap">
-            Code Innovation. Connect Education. Conquer Excellence.
-          </p>
         </section>
 
         <Card className="relative w-full overflow-hidden rounded-2xl border border-[#d7e8fb] bg-white/95 shadow-[0_28px_80px_rgb(24_71_159_/_0.16)] backdrop-blur">
