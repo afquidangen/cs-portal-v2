@@ -450,7 +450,7 @@ export function RoleDashboard({ role }: { role: Role }) {
           className={cn(
             "edu-sidebar-shell fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col border-r border-sidebar-border text-sidebar-foreground shadow-2xl shadow-blue-950/10 transition-all duration-300 md:sticky md:top-0 md:h-screen md:translate-x-0",
             model.sidebarOpen ? "translate-x-0" : "-translate-x-full",
-            effectivelyCollapsed ? "w-[88px]" : "w-[282px] max-w-[85vw]"
+            effectivelyCollapsed ? "w-[88px]" : "w-[min(282px,92vw)]"
           )}
         >
           <div className="border-b border-sidebar-border px-4 py-4">
@@ -603,9 +603,9 @@ export function RoleDashboard({ role }: { role: Role }) {
           </div>
         </aside>
 
-        <div className="min-w-0 flex-1 bg-background">
+        <div className="min-w-0 flex-1 overflow-hidden bg-background">
           <header className="sticky top-0 z-30 border-b border-border/70 bg-background/88 backdrop-blur-xl">
-            <div className="flex h-[86px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+            <div className="flex min-h-[72px] items-center justify-between gap-3 px-3 py-3 sm:min-h-[86px] sm:gap-4 sm:px-6 lg:px-8">
               <div className="flex min-w-0 items-center gap-3">
                 <Button
                   variant="ghost"
@@ -623,7 +623,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                 <div className="relative hidden w-[260px] lg:block xl:w-[340px]">
                   <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <input
@@ -663,7 +663,7 @@ export function RoleDashboard({ role }: { role: Role }) {
 
                   {showNotifications ? (
                     <div
-                      className="fixed z-50 w-[24rem] max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-border bg-white text-black shadow-2xl shadow-blue-950/15 dark:border-[#1d3858] dark:bg-[#071224] dark:text-white dark:shadow-black/40"
+                      className="fixed left-2 right-2 z-50 overflow-hidden rounded-xl border border-border bg-white text-black shadow-2xl shadow-blue-950/15 sm:left-auto sm:w-[24rem] sm:max-w-[calc(100vw-1rem)] dark:border-[#1d3858] dark:bg-[#071224] dark:text-white dark:shadow-black/40"
                       style={{ top: notifPosition.top, right: notifPosition.right }}
                     >
                       <div className="flex items-center justify-between border-b border-border bg-primary px-4 py-3 text-primary-foreground">
@@ -785,7 +785,7 @@ export function RoleDashboard({ role }: { role: Role }) {
             </div>
           </header>
 
-          <section className="px-4 pb-6 sm:px-6 lg:px-8">
+          <section className="min-w-0 px-3 pb-6 sm:px-6 lg:px-8">
             {model.activeModule === "overview" ? (
               <div className="mb-8 space-y-5">
                 <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
@@ -903,7 +903,7 @@ export function RoleDashboard({ role }: { role: Role }) {
 
                         return (
                           <Card key={item.label} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                            <CardContent className="grid min-h-[116px] grid-cols-[minmax(0,1fr)_116px] gap-4 p-5">
+                            <CardContent className="grid min-h-[116px] gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_116px] sm:p-5">
                               <div className="min-w-0">
                                 <div className={cn("mb-3 flex size-11 items-center justify-center rounded-xl border shadow-sm", iconClass)}>
                                   <Icon className="size-5" strokeWidth={2.1} />
@@ -923,7 +923,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                                   {item.delta}
                                 </p>
                               </div>
-                              <svg viewBox="0 0 120 58" className="mt-auto h-16 w-full self-end opacity-90">
+                              <svg viewBox="0 0 120 58" className="hidden h-16 w-full self-end opacity-90 sm:block">
                                 <polyline
                                   fill="none"
                                   stroke={lineColor}
@@ -940,7 +940,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                     </div>
 
                     <Card className="rounded-xl border border-border bg-card shadow-sm">
-                      <CardHeader className="flex flex-col gap-4 border-b border-border px-5 py-5 lg:flex-row lg:items-start lg:justify-between">
+                      <CardHeader className="flex flex-col gap-4 border-b border-border px-4 py-5 sm:px-5 lg:flex-row lg:items-start lg:justify-between">
                         <div>
                           <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground">
                             <Users className="size-5 text-primary" />
@@ -950,7 +950,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                             Real-time insight into institutional activity, platform usage, and academic operations.
                           </CardDescription>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <div className="flex w-full flex-wrap items-center gap-2 text-xs sm:w-auto">
                           {["This Week", "This Month", "This Year"].map((label, index) => (
                             <button
                               key={label}
@@ -972,7 +972,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                         </div>
                       </CardHeader>
 
-                      <CardContent className="grid gap-6 p-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.55fr)_minmax(280px,0.65fr)]">
+                      <CardContent className="grid gap-6 p-4 sm:p-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.55fr)_minmax(280px,0.65fr)]">
                         <div>
                           <h3 className="text-base font-semibold text-foreground">Portal Performance</h3>
                           <div className="mt-4 grid gap-4 sm:grid-cols-4">

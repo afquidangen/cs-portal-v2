@@ -260,10 +260,28 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
+    overflow-x: hidden;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  main,
+  section,
+  article,
+  aside,
+  header,
+  footer,
+  div {
+    min-width: 0;
+  }
+
+  img,
+  svg,
+  video,
+  canvas {
+    max-width: 100%;
   }
 
   ::selection {

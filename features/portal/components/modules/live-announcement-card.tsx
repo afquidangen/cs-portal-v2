@@ -48,9 +48,9 @@ export function LiveAnnouncementCard({
 
         <div
           key={index}
-          className="grid min-h-[184px] grid-cols-[32px_minmax(0,1fr)_32px] items-center gap-3 px-5 py-5 animate-in fade-in-0 slide-in-from-bottom-2 duration-500"
+          className="grid min-h-[184px] grid-cols-[minmax(0,1fr)] items-center gap-3 px-4 py-5 animate-in fade-in-0 slide-in-from-bottom-2 duration-500 sm:grid-cols-[32px_minmax(0,1fr)_32px] sm:px-5"
         >
-          <button type="button" className="flex size-8 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition hover:bg-muted hover:text-foreground">
+          <button type="button" className="hidden size-8 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition hover:bg-muted hover:text-foreground sm:flex">
             <ChevronLeft className="size-4" />
           </button>
 
@@ -63,7 +63,7 @@ export function LiveAnnouncementCard({
               <Badge variant="outline" className="mb-3 rounded border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
                 {announcement.audience}
               </Badge>
-              <h3 className="text-xl font-bold tracking-tight text-foreground">
+              <h3 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
                 {announcement.title}
               </h3>
               <p className="mt-2 line-clamp-2 text-sm leading-6 text-foreground/78">
@@ -76,7 +76,7 @@ export function LiveAnnouncementCard({
             </div>
           </div>
 
-          <button type="button" className="flex size-8 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition hover:bg-muted hover:text-foreground">
+          <button type="button" className="hidden size-8 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition hover:bg-muted hover:text-foreground sm:flex">
             <ChevronRight className="size-4" />
           </button>
         </div>

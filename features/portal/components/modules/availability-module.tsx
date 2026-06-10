@@ -37,7 +37,7 @@ function StatusSummary({ faculty }: { faculty: PortalModuleProps["model"]["facul
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid gap-3 min-[420px]:grid-cols-2 sm:grid-cols-4">
       <Metric
         label="Available"
         value={String(counts.Available)}

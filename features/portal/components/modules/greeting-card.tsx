@@ -43,7 +43,7 @@ export function GreetingCard({
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:36px_36px] opacity-35" />
       <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,rgba(234,245,255,0.48),transparent_48%)]" />
 
-      <CardContent className="relative grid min-h-[250px] gap-8 px-7 py-8 sm:px-9 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
+      <CardContent className="relative grid min-h-[220px] gap-6 px-4 py-6 sm:min-h-[250px] sm:px-9 sm:py-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
         <div>
           <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/78">
             <span className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/12 px-2.5 py-1">
@@ -52,7 +52,7 @@ export function GreetingCard({
             </span>
           </div>
 
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+          <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white sm:text-4xl">
             {timeGreeting}, {firstName}
           </h1>
 
@@ -63,21 +63,21 @@ export function GreetingCard({
 
         {stats ? (
           <div className="grid gap-3 text-sm text-white/82">
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-white/14 bg-white/12 p-3 shadow-sm">
+            <div className="flex flex-col gap-2 rounded-lg border border-white/14 bg-white/12 p-3 shadow-sm min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
               <span className="inline-flex items-center gap-3">
                 <Users className="size-5 text-white/80" />
                 Total Users
               </span>
               <strong className="text-lg font-semibold text-white">{stats.totalUsers}</strong>
             </div>
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-white/14 bg-white/12 p-3 shadow-sm">
+            <div className="flex flex-col gap-2 rounded-lg border border-white/14 bg-white/12 p-3 shadow-sm min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
               <span className="inline-flex items-center gap-3">
                 <Activity className="size-5 text-white/80" />
                 Active Sessions
               </span>
               <strong className="text-lg font-semibold text-white">{stats.activeSessions}</strong>
             </div>
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-white/14 bg-white/12 p-3 shadow-sm">
+            <div className="flex flex-col gap-2 rounded-lg border border-white/14 bg-white/12 p-3 shadow-sm min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
               <span className="inline-flex items-center gap-3">
                 <ShieldCheck className="size-5 text-white/80" />
                 System Status

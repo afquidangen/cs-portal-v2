@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { CalendarDays, Camera, Code2, Heart, ShieldCheck, Users } from "lucide-react"
+import { CalendarDays, Camera, Code2, Heart, Users } from "lucide-react"
 
 import { Panel } from "../shared/dashboard-ui"
 
@@ -179,27 +179,27 @@ Developed by a team of incoming fourth-year student interns during the 2025–20
 This project stands on the foundation built by the initial contributors of CCIS Portal v1, whose early concepts made this portal possible.          </p>
         </div>
 
-        <div className="mt-5 grid grid-cols-5 gap-3 overflow-x-auto pb-1">
+        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {pastContributors.map((contributor, index) => (
             <article
               key={`${contributor.name}-${index}`}
-              className="min-w-[132px] rounded-xl border border-border bg-card p-3 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+              className="rounded-xl border border-border bg-card p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
             >
-              <div className="edu-bg-soft-glacier mx-auto mb-3 flex h-24 w-24 items-center justify-center rounded-xl border border-dashed border-[var(--edu-border-glacier)]">
+              <div className="edu-bg-soft-glacier mx-auto mb-3 flex aspect-square w-full max-w-[132px] items-center justify-center overflow-hidden rounded-xl border border-dashed border-[var(--edu-border-glacier)] sm:max-w-[116px] xl:max-w-[104px]">
                 {contributor.image ? (
                   <Image
                     src={contributor.image}
                     alt={contributor.name}
                     width={96}
                     height={96}
-                    className="h-full w-full rounded-xl object-cover"
+                    className="h-full w-full object-cover"
                   />
                 ) : (
                   <Camera className="size-7 text-primary" />
                 )}
               </div>
-              <h4 className="text-sm font-semibold text-foreground">{contributor.name}</h4>
-              <p className="mt-1 text-xs font-medium text-primary">{contributor.role}</p>
+              <h4 className="text-sm font-semibold leading-5 text-foreground">{contributor.name}</h4>
+              <p className="mt-1 text-xs font-medium leading-5 text-primary">{contributor.role}</p>
             </article>
           ))}
         </div>

@@ -49,7 +49,7 @@ export function Panel({
         className
       )}
     >
-      <div className="edu-bg-soft-glacier flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
+      <div className="edu-bg-soft-glacier flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5 lg:px-6">
         <div className="min-w-0">
           {eyebrow ? (
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
@@ -60,9 +60,9 @@ export function Panel({
             {title}
           </h3>
         </div>
-        {actions ? <div className="shrink-0">{actions}</div> : null}
+        {actions ? <div className="w-full shrink-0 sm:w-auto">{actions}</div> : null}
       </div>
-      <div className="p-5 lg:p-6">{children}</div>
+      <div className="p-4 sm:p-5 lg:p-6">{children}</div>
     </section>
   )
 }
@@ -106,7 +106,7 @@ export function Metric({
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-xl border bg-card p-5 shadow-[0_16px_44px_rgb(15_23_42_/_0.06)] ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_56px_rgb(15_23_42_/_0.1)] dark:ring-white/5",
+        "group relative overflow-hidden rounded-xl border bg-card p-4 shadow-[0_16px_44px_rgb(15_23_42_/_0.06)] ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_56px_rgb(15_23_42_/_0.1)] sm:p-5 dark:ring-white/5",
         current.shell
       )}
     >
@@ -117,23 +117,23 @@ export function Metric({
         )}
       />
 
-      <div className="relative flex items-start justify-between gap-4">
+      <div className="relative flex items-start justify-between gap-3 sm:gap-4">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          <p className="break-words text-xs font-semibold uppercase leading-4 tracking-[0.08em] text-muted-foreground sm:tracking-[0.14em]">
             {label}
           </p>
-          <p className="mt-3 truncate text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">
+          <p className="mt-3 truncate text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             {value}
           </p>
         </div>
 
         <span
           className={cn(
-            "flex size-12 shrink-0 items-center justify-center rounded-xl border shadow-sm ring-4 ring-white/50 dark:ring-white/5",
+            "flex size-10 shrink-0 items-center justify-center rounded-xl border shadow-sm ring-4 ring-white/50 sm:size-12 dark:ring-white/5",
             current.icon
           )}
         >
-          <Icon className="size-5" strokeWidth={2.1} />
+          <Icon className="size-4 sm:size-5" strokeWidth={2.1} />
         </span>
       </div>
     </div>
