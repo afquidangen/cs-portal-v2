@@ -1052,14 +1052,15 @@ export function usePortalDashboardModel(role: Role) {
     status: TicketStatus,
     resolution?: string
   ) {
+    const resolvedAt = status === "Resolved" ? new Date().toISOString() : null
     setTickets((current) =>
       current.map((ticket) =>
         ticket.id === ticketId
-          ? { ...ticket, status, resolution: resolution ?? ticket.resolution }
+          ? { ...ticket, status, resolution: resolution ?? ticket.resolution, resolvedAt: resolvedAt ?? undefined }
           : ticket
       )
     )
-    void syncApi("PUT", `/api/portal/feedback/${ticketId}`, { status, resolution })
+    void syncApi("PUT", `/api/portal/feedback/${ticketId}`, { status, resolution, resolvedAt })
     const ticket = tickets.find((t) => t.id === ticketId)
     if (ticket) addAuditLog(`Updated ticket "${ticket.subject}" to ${status}`)
   }
@@ -1560,10 +1561,13 @@ export function usePortalDashboardModel(role: Role) {
     setTickets((current) =>
       current.map((ticket) =>
         ticket.id === ticketId
-          ? { ...ticket, status: "In Progress", resolution: undefined }
+          ? { ...ticket, status: "In Progress", resolution: undefined, resolvedAt: undefined }
           : ticket
       )
     )
+    void syncApi("PUT", `/api/portal/feedback/${ticketId}`, { status: "In Progress", resolvedAt: null })
+    const ticket = tickets.find((t) => t.id === ticketId)
+    if (ticket) addAuditLog(`Reopened ticket "${ticket.subject}"`)
   }
 
   function handleProfilePhotoChange(event: ChangeEvent<HTMLInputElement>) {

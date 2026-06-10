@@ -1,10 +1,11 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { BookMarked, Pencil, Plus, Trash2, Users, X } from "lucide-react"
+import { BookMarked, Clock, Pencil, Plus, Trash2, Users, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { TimePicker, formatScheduleTime } from "@/components/ui/time-picker"
 import {
   Dialog,
   DialogClose,
@@ -490,7 +491,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                         <td className="max-w-[160px] truncate px-4 py-3 text-foreground/80">{item.subject}</td>
                         <td className="hidden lg:table-cell max-w-[160px] truncate px-4 py-3 text-foreground/80">{item.instructor}</td>
                         <td className="whitespace-nowrap px-4 py-3 text-foreground/80">{item.day}</td>
-                        <td className="hidden sm:table-cell px-4 py-3 text-foreground/80">{item.time}</td>
+                        <td className="hidden sm:table-cell px-4 py-3 text-foreground/80">{formatScheduleTime(item.time)}</td>
                         <td className="hidden sm:table-cell px-4 py-3 text-foreground/80">{item.room}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
@@ -621,23 +622,21 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <p className="mb-1.5 text-sm font-medium text-foreground">Start Time</p>
-                      <Input
-                        type="time"
+                      <TimePicker
                         value={scheduleDraft.time?.split(" - ")[0] ?? ""}
-                        onChange={(e) => {
+                        onChange={(val) => {
                           const end = scheduleDraft.time?.split(" - ")[1] ?? ""
-                          setScheduleDraft((c) => ({ ...c, time: end ? `${e.target.value} - ${end}` : e.target.value }))
+                          setScheduleDraft((c) => ({ ...c, time: end ? `${val} - ${end}` : val }))
                         }}
                       />
                     </div>
                     <div>
                       <p className="mb-1.5 text-sm font-medium text-foreground">End Time</p>
-                      <Input
-                        type="time"
+                      <TimePicker
                         value={scheduleDraft.time?.split(" - ")[1] ?? ""}
-                        onChange={(e) => {
+                        onChange={(val) => {
                           const start = scheduleDraft.time?.split(" - ")[0] ?? ""
-                          setScheduleDraft((c) => ({ ...c, time: start ? `${start} - ${e.target.value}` : e.target.value }))
+                          setScheduleDraft((c) => ({ ...c, time: start ? `${start} - ${val}` : val }))
                         }}
                       />
                     </div>
@@ -765,23 +764,21 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
                         <p className="mb-1.5 text-sm font-medium text-foreground">Start Time</p>
-                        <Input
-                          type="time"
+                        <TimePicker
                           value={editingSchedule.time?.split(" - ")[0] ?? ""}
-                          onChange={(e) => {
+                          onChange={(val) => {
                             const end = editingSchedule.time?.split(" - ")[1] ?? ""
-                            setEditingSchedule((c) => ({ ...c!, time: end ? `${e.target.value} - ${end}` : e.target.value }))
+                            setEditingSchedule((c) => ({ ...c!, time: end ? `${val} - ${end}` : val }))
                           }}
                         />
                       </div>
                       <div>
                         <p className="mb-1.5 text-sm font-medium text-foreground">End Time</p>
-                        <Input
-                          type="time"
+                        <TimePicker
                           value={editingSchedule.time?.split(" - ")[1] ?? ""}
-                          onChange={(e) => {
+                          onChange={(val) => {
                             const start = editingSchedule.time?.split(" - ")[0] ?? ""
-                            setEditingSchedule((c) => ({ ...c!, time: start ? `${start} - ${e.target.value}` : e.target.value }))
+                            setEditingSchedule((c) => ({ ...c!, time: start ? `${start} - ${val}` : val }))
                           }}
                         />
                       </div>

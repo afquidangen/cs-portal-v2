@@ -11,6 +11,7 @@ export interface IFeedback extends Document {
   submittedAt: string
   assignedTo: string
   resolution?: string
+  resolvedAt?: Date | null
   anonymous: boolean
 }
 
@@ -30,10 +31,13 @@ const FeedbackSchema = new Schema<IFeedback>(
     submittedAt: String,
     assignedTo: { type: String, default: "" },
     resolution: String,
+    resolvedAt: { type: Date, default: null },
     anonymous: { type: Boolean, default: false },
   },
   { timestamps: true }
 )
+
+FeedbackSchema.index({ resolvedAt: 1 }, { expireAfterSeconds: 259200 })
 
 export const FeedbackModel =
   (mongoose.models.Feedback as Model<IFeedback> | undefined) ??

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 
 import { Panel, Select } from "../shared/dashboard-ui"
+import { formatScheduleTime } from "@/components/ui/time-picker"
 import type { PortalModuleProps } from "./types"
 
 export function SchedulePanel({ model }: PortalModuleProps) {
@@ -86,7 +87,7 @@ export function SchedulePanel({ model }: PortalModuleProps) {
               filteredSchedules.map((item) => (
                 <tr key={item.id} className="transition-colors hover:bg-muted/50">
                   <td className="px-4 py-3 font-medium text-foreground">{item.day}</td>
-                  <td className="px-4 py-3 text-foreground/80">{item.time}</td>
+                  <td className="px-4 py-3 text-foreground/80">{formatScheduleTime(item.time)}</td>
                   <td className="px-4 py-3 text-foreground/80">{item.subject}</td>
                   <td className="px-4 py-3 text-foreground/80">{item.section}</td>
                   <td className="px-4 py-3 text-foreground/80">{item.room}</td>

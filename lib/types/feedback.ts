@@ -11,6 +11,7 @@ export type FeedbackTicket = {
   submittedAt: string
   assignedTo: string
   resolution?: string
+  resolvedAt?: string
   anonymous: boolean
   createdAt?: string
   updatedAt?: string
