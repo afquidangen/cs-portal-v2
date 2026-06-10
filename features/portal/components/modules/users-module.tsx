@@ -6,6 +6,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Edit,
+  Eye,
+  EyeOff,
   History,
   Pencil,
   Plus,
@@ -92,6 +94,7 @@ export function UsersModule({ model }: PortalModuleProps) {
     units: 3,
   })
   const [editGradeHistoryIndex, setEditGradeHistoryIndex] = useState<number | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
   const [page, setPage] = useState(1)
   const [addOpen, setAddOpen] = useState(false)
   const [addRole, setAddRole] = useState("student")
@@ -590,21 +593,6 @@ export function UsersModule({ model }: PortalModuleProps) {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className={addRole !== "student" ? "sm:col-span-2" : ""}>
-                  <p className="mb-1.5 text-sm font-medium text-foreground">Password *</p>
-                  <Input
-                    value={newUser.password}
-                    onChange={(e) =>
-                      setNewUser((current) => ({
-                        ...current,
-                        password: e.target.value,
-                      }))
-                    }
-                    placeholder="Enter password"
-                    type="text"
-                    required
-                  />
-                </div>
                 {addRole === "student" && (
                   <div>
                     <p className="mb-1.5 text-sm font-medium text-foreground">Section</p>
@@ -1310,14 +1298,25 @@ export function UsersModule({ model }: PortalModuleProps) {
 
               <div>
                 <p className="mb-1.5 text-sm font-medium text-foreground">Password</p>
-                <Input
-                  value={editUser.password ?? ""}
-                  onChange={(e) =>
-                    setEditUser({ ...editUser, password: e.target.value })
-                  }
-                  placeholder="Leave blank to keep current"
-                  type="text"
-                />
+                <div className="relative">
+                  <Input
+                    value={editUser.password ?? ""}
+                    onChange={(e) =>
+                      setEditUser({ ...editUser, password: e.target.value })
+                    }
+                    placeholder="Leave blank to keep current"
+                    type={showPassword ? "text" : "password"}
+                    minLength={8}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword((p) => !p)}
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">

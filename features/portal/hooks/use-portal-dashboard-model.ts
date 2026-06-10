@@ -1289,7 +1289,7 @@ export function usePortalDashboardModel(role: Role) {
         newUser.role === "faculty" ? newUser.academicTitle : undefined,
       position: newUser.role === "faculty" ? "Instructor" : undefined,
       status: "Active",
-      password: newUser.password || "password123",
+      password: newUser.role === "admin" ? "ispsc@admin2026" : newUser.role === "faculty" ? "ispsc@faculty2026" : "ispsc@student2026",
     }).catch((e) =>
       console.error(`Failed to sync user ${accountId}:`, e)
     )
@@ -1637,6 +1637,13 @@ export function usePortalDashboardModel(role: Role) {
         }
       }
     }
+  }
+
+  async function handleChangePassword(currentPassword: string, newPassword: string) {
+    await syncApi("PUT", `/api/portal/users/${profile.id}`, {
+      currentPassword,
+      password: newPassword,
+    })
   }
 
   function resetStudentDraft(section = activeClassSection) {
@@ -2567,6 +2574,7 @@ export function usePortalDashboardModel(role: Role) {
     confirmAndDeleteThesis,
     undoTicketResolution,
     handleSaveProfile,
+    handleChangePassword,
     handleProfilePhotoChange,
     resetStudentDraft,
     startEditStudent,

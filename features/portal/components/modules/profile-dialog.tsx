@@ -1,6 +1,6 @@
 "use client"
 
-import { Camera, Save, UserCircle } from "lucide-react"
+import { Camera, Eye, EyeOff, KeyRound, Save, UserCircle } from "lucide-react"
 import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 
 import { Select, StatusBadge } from "../shared/dashboard-ui"
+import { validatePassword } from "@/lib/validators"
 import type { PortalModuleProps } from "./types"
 import type { ProfileDetails } from "../../data/portal-data"
 
@@ -32,11 +33,17 @@ export function ProfileDialog({
     profileDetails,
     role,
     handleSaveProfile,
+    handleChangePassword,
   } = model
 
   const [draft, setDraft] = useState(profileDetails)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState(false)
+
+  const [passwordForm, setPasswordForm] = useState({ current: "", newPass: "", confirm: "" })
+  const [showPasswords, setShowPasswords] = useState(false)
+  const [passwordError, setPasswordError] = useState("")
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -64,6 +71,32 @@ export function ProfileDialog({
   }
 
   const hasChanges = JSON.stringify(draft) !== JSON.stringify(profileDetails)
+
+  async function handlePasswordSave() {
+    setPasswordError("")
+    setPasswordSuccess(false)
+    if (!passwordForm.current || !passwordForm.newPass || !passwordForm.confirm) {
+      setPasswordError("All fields are required.")
+      return
+    }
+    if (passwordForm.newPass !== passwordForm.confirm) {
+      setPasswordError("New password and confirm password do not match.")
+      return
+    }
+    const validationError = validatePassword(passwordForm.newPass)
+    if (validationError) {
+      setPasswordError(validationError)
+      return
+    }
+    try {
+      await handleChangePassword(passwordForm.current, passwordForm.newPass)
+      setPasswordSuccess(true)
+      setPasswordForm({ current: "", newPass: "", confirm: "" })
+      setTimeout(() => setPasswordSuccess(false), 3000)
+    } catch {
+      setPasswordError("Failed to update password. Check your current password.")
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={(o) => {
@@ -215,6 +248,60 @@ export function ProfileDialog({
                 />
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="border border-border bg-muted/30 p-4 sm:p-6 mx-4 sm:mx-8 mb-6">
+          <div className="mb-4">
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <KeyRound className="size-4" /> Change Password
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Update your account password (min 8 characters, must contain letter + number)
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Input
+              type={showPasswords ? "text" : "password"}
+              placeholder="Current password"
+              value={passwordForm.current}
+              onChange={(e) => setPasswordForm((p) => ({ ...p, current: e.target.value }))}
+              className="pr-10"
+            />
+            <Input
+              type={showPasswords ? "text" : "password"}
+              placeholder="New password"
+              value={passwordForm.newPass}
+              onChange={(e) => setPasswordForm((p) => ({ ...p, newPass: e.target.value }))}
+              minLength={8}
+              className="pr-10"
+            />
+            <Input
+              type={showPasswords ? "text" : "password"}
+              placeholder="Confirm new password"
+              value={passwordForm.confirm}
+              onChange={(e) => setPasswordForm((p) => ({ ...p, confirm: e.target.value }))}
+              minLength={8}
+              className="pr-10"
+            />
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <Button size="sm" onClick={handlePasswordSave}>
+              <KeyRound className="mr-1.5 size-4" /> Update Password
+            </Button>
+            <button
+              type="button"
+              className="text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => setShowPasswords((p) => !p)}
+            >
+              {showPasswords ? <EyeOff className="inline size-4 mr-1" /> : <Eye className="inline size-4 mr-1" />}
+              {showPasswords ? "Hide" : "Show"} passwords
+            </button>
+            {passwordError ? (
+              <span className="text-sm font-medium text-red-600 dark:text-red-400">{passwordError}</span>
+            ) : passwordSuccess ? (
+              <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Password updated successfully</span>
+            ) : null}
           </div>
         </div>
 
