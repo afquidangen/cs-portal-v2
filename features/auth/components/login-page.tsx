@@ -16,13 +16,13 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-
-
 export function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
+  const [forgotSent, setForgotSent] = useState(false)
+  const [forgotLoading, setForgotLoading] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -137,14 +137,32 @@ export function LoginPage() {
                 </label>
                 <button
                   type="button"
-                  className="font-medium text-[var(--edu-lapis)] hover:text-[var(--edu-abyss)]"
-                  onClick={() =>
-                    setMessage(
-                      "Password reset will be added with the MongoDB-backed auth flow."
-                    )
-                  }
+                  className="font-medium text-[var(--edu-lapis)] hover:text-[var(--edu-abyss)] disabled:opacity-50"
+                  disabled={forgotLoading || forgotSent}
+                  onClick={async () => {
+                    if (!email.trim()) {
+                      setMessage("Enter your email first.")
+                      return
+                    }
+                    setForgotLoading(true)
+                    setMessage("")
+                    try {
+                      const res = await fetch("/api/auth/forgot-password", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email }),
+                      })
+                      await res.json()
+                      setForgotSent(true)
+                      setMessage("If that email is registered, a reset link has been sent.")
+                    } catch {
+                      setMessage("Unable to send reset email. Please try again.")
+                    } finally {
+                      setForgotLoading(false)
+                    }
+                  }}
                 >
-                  Forgot password?
+                  {forgotLoading ? "Sending..." : forgotSent ? "Email sent" : "Forgot password?"}
                 </button>
               </div>
 

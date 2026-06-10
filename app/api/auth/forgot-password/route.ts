@@ -1,0 +1,35 @@
+import crypto from "crypto"
+import { UserModel, ResetTokenModel } from "@/lib/models"
+import { connectToDatabase } from "@/lib/mongodb"
+import { sendPasswordResetEmail } from "@/lib/email"
+import { success, error, badRequest } from "@/lib/api-response"
+
+export const runtime = "nodejs"
+
+export async function POST(request: Request) {
+  try {
+    const { email } = await request.json()
+    if (!email) return badRequest("Email is required.")
+
+    await connectToDatabase()
+
+    const user = await UserModel.findOne({ email: email.toLowerCase().trim() })
+    if (!user) return success({ sent: true })
+
+    const token = crypto.randomBytes(32).toString("hex")
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
+
+    await ResetTokenModel.create({ email: user.email, token, expiresAt, used: false })
+
+    const host = request.headers.get("host") ?? "localhost:3000"
+    const proto = request.headers.get("x-forwarded-proto") ?? "http"
+    const appUrl = `${proto}://${host}`
+
+    await sendPasswordResetEmail(user.email, user.name, token, appUrl)
+
+    return success({ sent: true })
+  } catch (err) {
+    console.error("[forgot-password]", err)
+    return error("Unable to send reset email.")
+  }
+}
