@@ -9,6 +9,7 @@ export type GradeHistoryEntry = {
   curriculumId: string
   yearLevel: string
   semester: string
+  section?: string
   units?: number
 }
 

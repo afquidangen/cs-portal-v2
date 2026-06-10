@@ -88,6 +88,7 @@ export function UsersModule({ model }: PortalModuleProps) {
     curriculumId: "",
     yearLevel: "",
     semester: "",
+    section: "",
     units: 3,
   })
   const [editGradeHistoryIndex, setEditGradeHistoryIndex] = useState<number | null>(null)
@@ -964,6 +965,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                             <th className="px-3 py-2 text-center">Trans. Grade</th>
                             <th className="px-3 py-2">Remarks</th>
                             <th className="px-3 py-2">Term</th>
+                            <th className="px-3 py-2">Section</th>
                             <th className="px-3 py-2 text-center w-10"></th>
                           </tr>
                         </thead>
@@ -976,6 +978,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                               <td className="px-3 py-2 text-center text-foreground">{entry.transmutedGrade}</td>
                               <td className="px-3 py-2 text-foreground/80">{entry.remarks}</td>
                               <td className="px-3 py-2 text-foreground/60 text-xs">{entry.yearLevel} — {entry.semester}</td>
+                              <td className="px-3 py-2 text-foreground/60 text-xs">{entry.section ?? "—"}</td>
                               <td className="px-3 py-2 text-center">
                                 <div className="flex justify-center gap-1">
                                   <button
@@ -990,6 +993,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                                         curriculumId: entry.curriculumId,
                                         yearLevel: entry.yearLevel,
                                         semester: entry.semester,
+                                        section: entry.section ?? "",
                                         units: entry.units ?? 3,
                                       })
                                       setEditGradeHistoryIndex(idx)
@@ -1105,6 +1109,14 @@ export function UsersModule({ model }: PortalModuleProps) {
                           options={semesterOptions}
                         />
                       </div>
+                      <div>
+                        <p className="mb-1 text-xs font-medium text-foreground/70">Section</p>
+                        <Select
+                          value={gradeHistoryEntry.section}
+                          onChange={(value) => setGradeHistoryEntry((prev) => ({ ...prev, section: value }))}
+                          options={yearSections.find((ys) => ys.year === gradeHistoryEntry.yearLevel)?.sections ?? []}
+                        />
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -1122,6 +1134,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                             curriculumId: gradeHistoryEntry.curriculumId || (student.curriculumId ?? ""),
                             yearLevel: gradeHistoryEntry.yearLevel,
                             semester: gradeHistoryEntry.semester,
+                            section: gradeHistoryEntry.section || undefined,
                             units: gradeHistoryEntry.units,
                           }
                           if (editGradeHistoryIndex !== null) {
@@ -1130,7 +1143,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                           } else {
                             handleAddGradeHistory(student.id, entry)
                           }
-                            setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: student.curriculumId ?? "", yearLevel: "", semester: "", units: 3 })
+                            setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: student.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 })
                         }}
                       >
                         {editGradeHistoryIndex !== null ? <Pencil className="mr-1 size-4" /> : <Plus className="mr-1 size-4" />}
@@ -1143,7 +1156,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                           className="rounded-xl"
                           onClick={() => {
                             setEditGradeHistoryIndex(null)
-                          setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: student.curriculumId ?? "", yearLevel: "", semester: "", units: 3 })
+                          setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: student.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 })
                           }}
                         >
                           Cancel

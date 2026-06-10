@@ -136,6 +136,9 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground/80">
                         Remarks
                       </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                        Section
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border bg-card">
@@ -155,6 +158,9 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
                         </td>
                         <td className="px-4 py-3">
                           <StatusBadge value={entry.remarks} />
+                        </td>
+                        <td className="px-4 py-3 text-foreground/60 text-xs">
+                          {entry.section ?? "—"}
                         </td>
                       </tr>
                     ))}

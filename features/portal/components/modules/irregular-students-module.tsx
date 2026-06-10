@@ -41,6 +41,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
   const {
     users,
     curricula,
+    yearSections,
     handleAddGradeHistory,
     handleUpdateGradeHistory,
     handleRemoveGradeHistory,
@@ -56,6 +57,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
     subjectName: string
     yearLevel: string
     semester: string
+    section?: string
     index?: number
   } | null>(null)
   const [customDialog, setCustomDialog] = useState(false)
@@ -64,6 +66,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
     subjectName: "",
     finalPercentile: "",
     remarks: "Passed",
+    section: "",
     units: 3,
   })
 
@@ -132,10 +135,11 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
         subjectName: entry.subjectName,
         finalPercentile: String(entry.finalPercentile ?? ""),
         remarks: entry.remarks ?? "Passed",
+        section: entry.section ?? "",
       })
-      setGradeDialog({ mode: "edit", subjectCode: code, subjectName: name, yearLevel: year, semester, index: existing })
+      setGradeDialog({ mode: "edit", subjectCode: code, subjectName: name, yearLevel: year, semester, section: entry.section ?? "", index: existing })
     } else {
-      setGradeForm({ subjectCode: code, subjectName: name, finalPercentile: "75", remarks: "Passed" })
+      setGradeForm({ subjectCode: code, subjectName: name, finalPercentile: "75", remarks: "Passed", section: "" })
       setGradeDialog({ mode: "add", subjectCode: code, subjectName: name, yearLevel: year, semester })
     }
   }
@@ -160,6 +164,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
       curriculumId: selectedStudent.curriculumId ?? "",
       yearLevel: gradeDialog?.yearLevel ?? "",
       semester: gradeDialog?.semester ?? "",
+      section: gradeForm.section || gradeDialog?.section || undefined,
       units: curriculumSubject?.total ?? gradeForm.units,
     }
 
@@ -180,7 +185,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
     )
 
     setGradeDialog(null)
-    setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "", remarks: "Passed", units: 3 })
+    setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "", remarks: "Passed", section: "", units: 3 })
   }
 
   function handleSaveCustom() {
@@ -200,6 +205,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
       curriculumId: selectedStudent.curriculumId ?? "",
       yearLevel: selectedStudent.currentYearLevel ?? "",
       semester: selectedStudent.currentSemester ?? "",
+      section: gradeForm.section || undefined,
       units: gradeForm.units,
     }
 
@@ -216,7 +222,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
     )
 
     setCustomDialog(false)
-    setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "", remarks: "Passed" })
+    setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "", remarks: "Passed", section: "", units: 3 })
   }
 
   function handleRemoveGrade(index: number) {
@@ -477,6 +483,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
                                       subjectName: entry.subjectName,
                                       finalPercentile: String(entry.finalPercentile ?? ""),
                                       remarks: entry.remarks ?? "Passed",
+                                      section: entry.section ?? "",
                                     })
                                     setGradeDialog({
                                       mode: "edit",
@@ -484,6 +491,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
                                       subjectName: entry.subjectName,
                                       yearLevel: entry.yearLevel,
                                       semester: entry.semester,
+                                      section: entry.section ?? "",
                                       index: idx,
                                     })
                                   }}
@@ -520,7 +528,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
       {/* Grade dialog */}
       <Dialog
         open={!!gradeDialog && !customDialog}
-        onOpenChange={(o) => { if (!o) { setGradeDialog(null); setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "", remarks: "Passed" }) } }}
+        onOpenChange={(o) => { if (!o) { setGradeDialog(null); setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "", remarks: "Passed", section: "" }) } }}
       >
         <DialogContent className="w-[95vw] sm:max-w-sm">
           <DialogHeader>
@@ -564,6 +572,14 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
                 options={["Passed", "Failed", "INC", "Dropped"]}
               />
             </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">Section</label>
+              <Select
+                value={gradeForm.section}
+                onChange={(v) => setGradeForm((c) => ({ ...c, section: v }))}
+                options={yearSections.find((ys) => ys.year === gradeDialog?.yearLevel)?.sections ?? []}
+              />
+            </div>
           </div>
           <DialogFooter className="mt-2 gap-2">
             <Button variant="ghost" onClick={() => setGradeDialog(null)}>Cancel</Button>
@@ -577,7 +593,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
       {/* Add custom subject dialog */}
       <Dialog
         open={customDialog}
-        onOpenChange={(o) => { if (!o) { setCustomDialog(false); setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "", remarks: "Passed", units: 3 }) } }}
+        onOpenChange={(o) => { if (!o) { setCustomDialog(false); setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "", remarks: "Passed", section: "", units: 3 }) } }}
       >
         <DialogContent className="w-[95vw] sm:max-w-sm">
           <DialogHeader>
@@ -629,6 +645,14 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
                 value={gradeForm.remarks}
                 onChange={(v) => setGradeForm((c) => ({ ...c, remarks: v }))}
                 options={["Passed", "Failed", "INC", "Dropped"]}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">Section</label>
+              <Select
+                value={gradeForm.section}
+                onChange={(v) => setGradeForm((c) => ({ ...c, section: v }))}
+                options={yearSections.find((ys) => ys.year === selectedStudent?.currentYearLevel)?.sections ?? []}
               />
             </div>
           </div>

@@ -82,6 +82,7 @@ const UserSchema = new Schema<IUser>(
         curriculumId: String,
         yearLevel: String,
         semester: String,
+        section: String,
         units: Number,
       },
     ],

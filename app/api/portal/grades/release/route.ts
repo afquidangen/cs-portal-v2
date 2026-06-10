@@ -71,6 +71,7 @@ export async function POST(request: Request) {
           finalPercentile,
           transmutedGrade,
           remarks: (grade as Record<string, unknown>).remarks ?? "Passed",
+          section: (grade as Record<string, unknown>).section,
         }
 
         if (existingIdx >= 0) {

@@ -1447,6 +1447,7 @@ export function usePortalDashboardModel(role: Role) {
                 curriculumId: oldCurriculum.id,
                 yearLevel: term.year,
                 semester: term.semester,
+                section: gradeRecord?.section ?? roster.find((r) => r.id === studentId)?.section ?? student.section,
                 units: subj.total,
               })
             }
