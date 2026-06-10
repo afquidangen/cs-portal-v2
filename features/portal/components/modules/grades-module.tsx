@@ -251,12 +251,17 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
   function handleReleaseAll() {
     if (subjectSections.length === 0 || !selectedSubject) return
     const label = `${selectedSubject} (${subjectSections.join(", ")})`
-    const approved = window.confirm(`Release all grades for ${label} to students?`)
-    if (!approved) return
-
-    for (const section of subjectSections) {
-      releaseGradesForSection(section, selectedSubject)
-    }
+    model.setPendingConfirm({
+      title: "Release All Grades",
+      description: `Release all grades for ${label} to students? This will make them visible to students.`,
+      variant: "default",
+      confirmLabel: "Release",
+      onConfirm: () => {
+        for (const section of subjectSections) {
+          releaseGradesForSection(section, selectedSubject)
+        }
+      },
+    })
   }
 
   return (

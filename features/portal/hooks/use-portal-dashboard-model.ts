@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react"
+import { toast } from "sonner"
 
 import { initialModule, roleNavigation } from "../config/navigation"
 import type { AuditLogRecord } from "@/lib/types/audit-log"
@@ -178,6 +179,14 @@ export function usePortalDashboardModel(role: Role) {
   const [selectedClassSection, setSelectedClassSection] = useState("")
   const [selectedGradeSection, setSelectedGradeSection] = useState("")
   const [selectedScheduleEntry, setSelectedScheduleEntry] = useState<ScheduleItem | null>(null)
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    title: string
+    description: string
+    variant?: "default" | "destructive"
+    confirmLabel?: string
+    cancelLabel?: string
+    onConfirm: () => void
+  } | null>(null)
   const [selectedCurriculumId, setSelectedCurriculumId] = useState("")
   const [curriculumFilter, setCurriculumFilter] = useState("All")
   const [showThesisUploadForm, setShowThesisUploadForm] = useState(false)
@@ -1043,7 +1052,12 @@ export function usePortalDashboardModel(role: Role) {
     )
     for (const grade of toRemove) {
       setGrades((current) => current.filter((g) => g.id !== grade.id))
-      void syncApi("DELETE", `/api/portal/grades/${grade.id}`, {})
+      syncApi("DELETE", `/api/portal/grades/${grade.id}`, {}).then(() =>
+        toast.success("Completed grade deleted.")
+      ).catch((e) => {
+        toast.error("Failed to delete completed grade.")
+        console.error(e)
+      })
     }
   }
 
@@ -1060,7 +1074,12 @@ export function usePortalDashboardModel(role: Role) {
           : ticket
       )
     )
-    void syncApi("PUT", `/api/portal/feedback/${ticketId}`, { status, resolution, resolvedAt })
+    syncApi("PUT", `/api/portal/feedback/${ticketId}`, { status, resolution, resolvedAt }).then(() =>
+      toast.success(`Ticket updated to ${status}.`)
+    ).catch((e) => {
+      toast.error("Failed to update ticket.")
+      console.error(e)
+    })
     const ticket = tickets.find((t) => t.id === ticketId)
     if (ticket) addAuditLog(`Updated ticket "${ticket.subject}" to ${status}`)
   }
@@ -1077,7 +1096,12 @@ export function usePortalDashboardModel(role: Role) {
           : member
       )
     )
-    void syncApi("PUT", `/api/portal/faculty/${facultyId}`, { status, notes })
+    syncApi("PUT", `/api/portal/faculty/${facultyId}`, { status, notes }).then(() =>
+      toast.success("Faculty status updated.")
+    ).catch((e) => {
+      toast.error("Failed to update faculty status.")
+      console.error(e)
+    })
     const member = faculty.find((f) => f.id === facultyId)
     if (member) addAuditLog(`Updated faculty status for "${member.name}" to ${status}`)
   }
@@ -1085,7 +1109,12 @@ export function usePortalDashboardModel(role: Role) {
   function deleteFacultyMember(facultyId: string) {
     const member = faculty.find((f) => f.id === facultyId)
     setFaculty((current) => current.filter((item) => item.id !== facultyId))
-    void syncApi("DELETE", `/api/portal/faculty/${facultyId}`)
+    syncApi("DELETE", `/api/portal/faculty/${facultyId}`).then(() =>
+      toast.success("Faculty member deleted.")
+    ).catch((e) => {
+      toast.error("Failed to delete faculty member.")
+      console.error(e)
+    })
     if (member) addAuditLog(`Deleted faculty account "${member.name}"`)
   }
 
@@ -1154,15 +1183,15 @@ export function usePortalDashboardModel(role: Role) {
       .join(" ")
     const accountId = newUser.idNumber.trim() || `USR-${String(users.length + 1).padStart(3, "0")}`
     if (users.some((u) => u.id === accountId)) {
-      alert(`An account with ID "${accountId}" already exists.`)
+      toast.error(`An account with ID "${accountId}" already exists.`)
       return
     }
     if (users.some((u) => u.email.toLowerCase() === newUser.email.trim().toLowerCase())) {
-      alert(`An account with email "${newUser.email.trim()}" already exists.`)
+      toast.error(`An account with email "${newUser.email.trim()}" already exists.`)
       return
     }
     if (newUser.role === "student" && roster.some((r) => r.id === accountId)) {
-      alert(`A roster entry with ID "${accountId}" already exists.`)
+      toast.error(`A roster entry with ID "${accountId}" already exists.`)
       return
     }
     setUsers((current) => [
@@ -1231,9 +1260,14 @@ export function usePortalDashboardModel(role: Role) {
         if (exists) return current
         return [{ id: accountId, name: fullName, section: newUser.section, enrolled: true }, ...current]
       })
-      syncApi("POST", "/api/portal/roster", { id: accountId, name: fullName, section: newUser.section, enrolled: true }).catch((e) =>
-        console.error(`Failed to sync roster for ${accountId}:`, e)
-      )
+      syncApi("POST", "/api/portal/roster", { id: accountId, name: fullName, section: newUser.section, enrolled: true }).then(() =>
+        toast.success(`User "${fullName}" created.`)
+      ).catch((e) => {
+        toast.error(`Failed to sync roster for ${fullName}.`)
+        console.error(e)
+      })
+    } else {
+      toast.success(`User "${fullName}" created.`)
     }
 
     if (newUser.role === "faculty") {
@@ -1297,16 +1331,13 @@ export function usePortalDashboardModel(role: Role) {
   }
 
   function confirmAndToggleUserStatus(userId: string) {
-    const approved = window.confirm(
-      "Are you sure you want to edit this account status?"
-    )
-    if (!approved) return
     toggleUserStatus(userId)
   }
 
   function toggleUserStatus(userId: string) {
     const user = users.find((u) => u.id === userId)
     const wasActive = user?.status === "Active"
+    const newStatus = wasActive ? "Inactive" : "Active"
     setUsers((current) =>
       current.map((item) =>
         item.id === userId
@@ -1325,16 +1356,12 @@ export function usePortalDashboardModel(role: Role) {
       )
     )
     if (user) {
-      const newStatus = wasActive ? "Inactive" : "Active"
       addAuditLog(`${newStatus === "Active" ? "Activated" : "Deactivated"} account "${user.name}"`)
     }
+    toast.success(user ? `Account "${user.name}" ${newStatus.toLowerCase()}.` : "Account updated.")
   }
 
   function confirmAndDeleteUser(userId: string) {
-    const approved = window.confirm(
-      "Are you sure you want to delete this account?"
-    )
-    if (!approved) return
     deleteUser(userId)
   }
 
@@ -1345,7 +1372,12 @@ export function usePortalDashboardModel(role: Role) {
     setGrades((current) =>
       current.filter((grade) => grade.studentId !== userId)
     )
-    void syncApi("DELETE", `/api/portal/users/${userId}`)
+    syncApi("DELETE", `/api/portal/users/${userId}`).then(() =>
+      toast.success(user ? `User "${user.name}" deleted.` : "User deleted.")
+    ).catch((e) => {
+      toast.error("Failed to delete user.")
+      console.error(e)
+    })
     if (user) {
       addAuditLog(`Deleted ${user.role} account "${user.name}"`)
     }
@@ -1387,9 +1419,12 @@ export function usePortalDashboardModel(role: Role) {
       }
     }
     addAuditLog(`Updated account "${updatedUser.name}"`)
-    syncApi("PUT", `/api/portal/users/${updatedUser.id}`, updatedUser).catch((e) =>
-      console.error(`Failed to sync user ${updatedUser.id}:`, e)
-    )
+    syncApi("PUT", `/api/portal/users/${updatedUser.id}`, updatedUser).then(() =>
+      toast.success(`User "${updatedUser.name}" updated.`)
+    ).catch((e) => {
+      toast.error("Failed to update user.")
+      console.error(e)
+    })
   }
 
   function handleChangeCurriculum(
@@ -1477,12 +1512,17 @@ export function usePortalDashboardModel(role: Role) {
     addAuditLog(
       `Changed curriculum for "${student.name}" from ${student.curriculum ?? "N/A"} to ${newCurriculumLabel}`
     )
-    void syncApi("PUT", `/api/portal/users/${studentId}`, {
+    syncApi("PUT", `/api/portal/users/${studentId}`, {
       curriculumId: newCurriculumId,
       curriculum: newCurriculumLabel,
       currentYearLevel: newYearLevel,
       currentSemester: newSemester,
       gradeHistory,
+    }).then(() =>
+      toast.success("Curriculum changed.")
+    ).catch((e) => {
+      toast.error("Failed to change curriculum.")
+      console.error(e)
     })
   }
 
@@ -1500,7 +1540,12 @@ export function usePortalDashboardModel(role: Role) {
         ...student,
         gradeHistory: [...(student.gradeHistory ?? []), entry],
       }
-      void syncApi("PUT", `/api/portal/users/${studentId}`, updated)
+      syncApi("PUT", `/api/portal/users/${studentId}`, updated).then(() =>
+        toast.success("Grade history added.")
+      ).catch((e) => {
+        toast.error("Failed to add grade history.")
+        console.error(e)
+      })
     }
   }
 
@@ -1518,7 +1563,12 @@ export function usePortalDashboardModel(role: Role) {
         ...student,
         gradeHistory: (student.gradeHistory ?? []).filter((_, i) => i !== index),
       }
-      void syncApi("PUT", `/api/portal/users/${studentId}`, updated)
+      syncApi("PUT", `/api/portal/users/${studentId}`, updated).then(() =>
+        toast.success("Grade history removed.")
+      ).catch((e) => {
+        toast.error("Failed to remove grade history.")
+        console.error(e)
+      })
     }
   }
 
@@ -1543,18 +1593,27 @@ export function usePortalDashboardModel(role: Role) {
           i === index ? entry : e
         ),
       }
-      void syncApi("PUT", `/api/portal/users/${studentId}`, updated)
+      syncApi("PUT", `/api/portal/users/${studentId}`, updated).then(() =>
+        toast.success("Grade history updated.")
+      ).catch((e) => {
+        toast.error("Failed to update grade history.")
+        console.error(e)
+      })
     }
   }
 
   function confirmAndDeleteThesis(thesisId: string) {
-    const approved = window.confirm(
-      "Are you sure you want to delete this thesis record?"
-    )
-    if (!approved) return
-    setTheses((current) => current.filter((item) => item.id !== thesisId))
-    void syncApi("DELETE", `/api/portal/theses/${thesisId}`)
-    addAuditLog(`Deleted thesis record "${thesisId}"`)
+    setPendingConfirm({
+      title: "Delete Thesis",
+      description: "Are you sure you want to delete this thesis record? This action cannot be undone.",
+      variant: "destructive",
+      onConfirm: () => {
+        setTheses((current) => current.filter((item) => item.id !== thesisId))
+        void syncApi("DELETE", `/api/portal/theses/${thesisId}`)
+        addAuditLog(`Deleted thesis record "${thesisId}"`)
+        setPendingConfirm(null)
+      },
+    })
   }
 
   function undoTicketResolution(ticketId: string) {
@@ -1565,7 +1624,12 @@ export function usePortalDashboardModel(role: Role) {
           : ticket
       )
     )
-    void syncApi("PUT", `/api/portal/feedback/${ticketId}`, { status: "In Progress", resolvedAt: null })
+    syncApi("PUT", `/api/portal/feedback/${ticketId}`, { status: "In Progress", resolvedAt: null }).then(() =>
+      toast.success("Ticket reopened.")
+    ).catch((e) => {
+      toast.error("Failed to reopen ticket.")
+      console.error(e)
+    })
     const ticket = tickets.find((t) => t.id === ticketId)
     if (ticket) addAuditLog(`Reopened ticket "${ticket.subject}"`)
   }
@@ -1739,7 +1803,12 @@ export function usePortalDashboardModel(role: Role) {
     const student = roster.find((s) => s.id === studentId)
     setRoster((current) => current.filter((s) => s.id !== studentId))
     setGrades((current) => current.filter((g) => g.studentId !== studentId))
-    void syncApi("DELETE", `/api/portal/roster/${studentId}`)
+    syncApi("DELETE", `/api/portal/roster/${studentId}`).then(() =>
+      toast.success(student ? `Student "${student.name}" removed from roster.` : "Student removed from roster.")
+    ).catch((e) => {
+      toast.error("Failed to remove student from roster.")
+      console.error(e)
+    })
     if (student) addAuditLog(`Removed student "${student.name}" from roster`)
   }
 
@@ -1756,7 +1825,12 @@ export function usePortalDashboardModel(role: Role) {
           : item
       )
     )
-    void syncApi("PUT", `/api/portal/roster/${studentId}`, { enrolled })
+    syncApi("PUT", `/api/portal/roster/${studentId}`, { enrolled }).then(() =>
+      toast.success(enrolled ? "Student enrolled." : "Student unenrolled.")
+    ).catch((e) => {
+      toast.error("Failed to update enrollment.")
+      console.error(e)
+    })
   }
 
   function handleAddClassSection(event: FormEvent<HTMLFormElement>) {
@@ -1776,6 +1850,7 @@ export function usePortalDashboardModel(role: Role) {
     )
     setNewSectionName("")
     addAuditLog(`Added class section "${newSectionName.trim()}" for ${selectedClassYear}`)
+    toast.success("Class section added.")
   }
 
   function handleCreateSchedule(event: FormEvent<HTMLFormElement>) {
@@ -1798,7 +1873,12 @@ export function usePortalDashboardModel(role: Role) {
       section: sectionStr,
     }
     setClassSchedules((current) => [newItem, ...current])
-    void syncApi("POST", "/api/portal/schedules", newItem)
+    syncApi("POST", "/api/portal/schedules", newItem).then(() =>
+      toast.success("Schedule created.")
+    ).catch((e) => {
+      toast.error("Failed to create schedule.")
+      console.error(e)
+    })
 
     for (const student of roster) {
       if (student.section === sectionStr && student.enrolled) {
@@ -1847,7 +1927,7 @@ export function usePortalDashboardModel(role: Role) {
     try {
       const importedRows = await parseScheduleWorkbook(file)
       if (!importedRows.length) {
-        window.alert("No schedule rows were found in the uploaded workbook.")
+        toast.error("No schedule rows were found in the uploaded workbook.")
         return
       }
 
@@ -1864,7 +1944,7 @@ export function usePortalDashboardModel(role: Role) {
       setUploadName(file.name)
       addAuditLog(`Uploaded schedule workbook "${file.name}"`)
     } catch (error) {
-      window.alert(
+      toast.error(
         error instanceof Error
           ? error.message
           : "Unable to read the uploaded schedule workbook."
@@ -1878,14 +1958,24 @@ export function usePortalDashboardModel(role: Role) {
     setClassSchedules((current) =>
       current.map((item) => (item.id === updated.id ? updated : item))
     )
-    void syncApi("PUT", `/api/portal/schedules/${updated.id}`, updated)
+    syncApi("PUT", `/api/portal/schedules/${updated.id}`, updated).then(() =>
+      toast.success("Schedule updated.")
+    ).catch((e) => {
+      toast.error("Failed to update schedule.")
+      console.error(e)
+    })
     addAuditLog(`Updated schedule for "${updated.subject}"`)
   }
 
   function handleDeleteSchedule(id: string) {
     const item = classSchedules.find((s) => s.id === id)
     setClassSchedules((current) => current.filter((item) => item.id !== id))
-    void syncApi("DELETE", `/api/portal/schedules/${id}`)
+    syncApi("DELETE", `/api/portal/schedules/${id}`).then(() =>
+      toast.success("Schedule deleted.")
+    ).catch((e) => {
+      toast.error("Failed to delete schedule.")
+      console.error(e)
+    })
     if (item) addAuditLog(`Deleted schedule for "${item.subject}" (${item.section})`)
   }
 
@@ -1896,7 +1986,7 @@ export function usePortalDashboardModel(role: Role) {
     try {
       const importedRows = await parseGradeWorkbook(file)
       if (!importedRows.length) {
-        window.alert("No grade rows were found in the uploaded workbook.")
+        toast.error("No grade rows were found in the uploaded workbook.")
         return
       }
 
@@ -1964,7 +2054,7 @@ export function usePortalDashboardModel(role: Role) {
       setUploadName(file.name)
       addAuditLog(`Uploaded grade workbook "${file.name}" (${importedRows.length} students)`)
     } catch (error) {
-      window.alert(
+      toast.error(
         error instanceof Error
           ? error.message
           : "Unable to read the uploaded grade workbook."
@@ -1992,21 +2082,36 @@ export function usePortalDashboardModel(role: Role) {
     })
     setShowAddSemesterForm(false)
     addAuditLog(`Created semester "${newSemester.semester}"`)
-    void syncApi("POST", "/api/portal/semesters", semesterData)
+    syncApi("POST", "/api/portal/semesters", semesterData).then(() =>
+      toast.success("Semester created.")
+    ).catch((e) => {
+      toast.error("Failed to create semester.")
+      console.error(e)
+    })
   }
 
   function handleUpdateSemester(updated: SemesterRecord) {
     setSemesters((current) =>
       current.map((item) => (item.id === updated.id ? updated : item))
     )
-    void syncApi("PUT", `/api/portal/semesters/${updated.id}`, updated)
+    syncApi("PUT", `/api/portal/semesters/${updated.id}`, updated).then(() =>
+      toast.success("Semester updated.")
+    ).catch((e) => {
+      toast.error("Failed to update semester.")
+      console.error(e)
+    })
     addAuditLog(`Updated semester "${updated.semester}"`)
   }
 
   function handleDeleteSemester(id: string) {
     const item = semesters.find((s) => s.id === id)
     setSemesters((current) => current.filter((s) => s.id !== id))
-    void syncApi("DELETE", `/api/portal/semesters/${id}`)
+    syncApi("DELETE", `/api/portal/semesters/${id}`).then(() =>
+      toast.success("Semester deleted.")
+    ).catch((e) => {
+      toast.error("Failed to delete semester.")
+      console.error(e)
+    })
     if (item) addAuditLog(`Deleted semester "${item.semester}"`)
   }
 
@@ -2039,21 +2144,36 @@ export function usePortalDashboardModel(role: Role) {
     })
     setShowAddSubjectForm(false)
     addAuditLog(`Created subject "${newSubject.name}"`)
-    void syncApi("POST", "/api/portal/subjects", subjectData)
+    syncApi("POST", "/api/portal/subjects", subjectData).then(() =>
+      toast.success("Subject created.")
+    ).catch((e) => {
+      toast.error("Failed to create subject.")
+      console.error(e)
+    })
   }
 
   function handleUpdateSubject(updated: SubjectRecord) {
     setSubjects((current) =>
       current.map((item) => (item.id === updated.id ? updated : item))
     )
-    void syncApi("PUT", `/api/portal/subjects/${updated.id}`, updated)
+    syncApi("PUT", `/api/portal/subjects/${updated.id}`, updated).then(() =>
+      toast.success("Subject updated.")
+    ).catch((e) => {
+      toast.error("Failed to update subject.")
+      console.error(e)
+    })
     addAuditLog(`Updated subject "${updated.name}"`)
   }
 
   function handleDeleteSubject(id: string) {
     const item = subjects.find((s) => s.id === id)
     setSubjects((current) => current.filter((s) => s.id !== id))
-    void syncApi("DELETE", `/api/portal/subjects/${id}`)
+    syncApi("DELETE", `/api/portal/subjects/${id}`).then(() =>
+      toast.success("Subject deleted.")
+    ).catch((e) => {
+      toast.error("Failed to delete subject.")
+      console.error(e)
+    })
     if (item) addAuditLog(`Deleted subject "${item.name}"`)
   }
 
@@ -2181,6 +2301,7 @@ export function usePortalDashboardModel(role: Role) {
     ])
     setNewCurriculum({ name: "", major: "", totalUnits: "0" })
     addAuditLog(`Created curriculum "${newCurriculum.name}" (${newCurriculum.major})`)
+    toast.success("Curriculum created.")
   }
 
   function handleFeedbackSubmit(event: FormEvent<HTMLFormElement>) {
@@ -2212,6 +2333,7 @@ export function usePortalDashboardModel(role: Role) {
       anonymous: false,
     })
     addAuditLog(`Submitted feedback ticket "${feedbackDraft.subject}"`)
+    toast.success("Feedback submitted.")
   }
 
   function handleCreateEvent(event: FormEvent<HTMLFormElement>) {
@@ -2230,7 +2352,12 @@ export function usePortalDashboardModel(role: Role) {
       status: "Active" as const,
     }
     setSeminars((current) => [newItem, ...current])
-    void syncApi("POST", "/api/portal/seminars", newItem)
+    syncApi("POST", "/api/portal/seminars", newItem).then(() =>
+      toast.success("Event created.")
+    ).catch((e) => {
+      toast.error("Failed to create event.")
+      console.error(e)
+    })
     setEventDraft({
       title: "",
       speaker: "",
@@ -2244,7 +2371,12 @@ export function usePortalDashboardModel(role: Role) {
   function handleDeleteCurriculum(id: string) {
     const item = curricula.find((c) => c.id === id)
     setCurricula((current) => current.filter((c) => c.id !== id))
-    void syncApi("DELETE", `/api/portal/curricula/${id}`)
+    syncApi("DELETE", `/api/portal/curricula/${id}`).then(() =>
+      toast.success("Curriculum deleted.")
+    ).catch((e) => {
+      toast.error("Failed to delete curriculum.")
+      console.error(e)
+    })
     if (item) addAuditLog(`Deleted curriculum "${item.name}"`)
   }
 
@@ -2252,7 +2384,12 @@ export function usePortalDashboardModel(role: Role) {
     setCurricula((current) =>
       current.map((item) => (item.id === updated.id ? updated : item))
     )
-    void syncApi("PUT", `/api/portal/curricula/${updated.id}`, updated)
+    syncApi("PUT", `/api/portal/curricula/${updated.id}`, updated).then(() =>
+      toast.success("Curriculum updated.")
+    ).catch((e) => {
+      toast.error("Failed to update curriculum.")
+      console.error(e)
+    })
     addAuditLog(`Updated curriculum "${updated.name}"`)
   }
 
@@ -2270,7 +2407,12 @@ export function usePortalDashboardModel(role: Role) {
       priority: announcementDraft.priority,
     }
     setAnnouncements((current) => [newItem, ...current])
-    void syncApi("POST", "/api/portal/announcements", newItem)
+    syncApi("POST", "/api/portal/announcements", newItem).then(() =>
+      toast.success("Announcement created.")
+    ).catch((e) => {
+      toast.error("Failed to create announcement.")
+      console.error(e)
+    })
     setAnnouncementDraft({
       title: "",
       content: "",
@@ -2279,20 +2421,31 @@ export function usePortalDashboardModel(role: Role) {
     })
     setShowAnnouncementForm(false)
     addAuditLog(`Created announcement "${announcementDraft.title}"`)
+    toast.success("Announcement created.")
   }
 
   function handleUpdateAnnouncement(updated: Announcement) {
     setAnnouncements((current) =>
       current.map((item) => (item.id === updated.id ? updated : item))
     )
-    void syncApi("PUT", `/api/portal/announcements/${updated.id}`, updated)
+    syncApi("PUT", `/api/portal/announcements/${updated.id}`, updated).then(() =>
+      toast.success("Announcement updated.")
+    ).catch((e) => {
+      toast.error("Failed to update announcement.")
+      console.error(e)
+    })
     addAuditLog(`Updated announcement "${updated.title}"`)
   }
 
   function handleDeleteAnnouncement(id: string) {
     const item = announcements.find((a) => a.id === id)
     setAnnouncements((current) => current.filter((item) => item.id !== id))
-    void syncApi("DELETE", `/api/portal/announcements/${id}`)
+    syncApi("DELETE", `/api/portal/announcements/${id}`).then(() =>
+      toast.success("Announcement deleted.")
+    ).catch((e) => {
+      toast.error("Failed to delete announcement.")
+      console.error(e)
+    })
     if (item) addAuditLog(`Deleted announcement "${item.title}"`)
   }
 
@@ -2318,27 +2471,43 @@ export function usePortalDashboardModel(role: Role) {
     setQuickLinkDraft({ label: "", href: "", type: "link", fileName: "", fileSize: 0, fileData: "" })
     setShowQuickLinkForm(false)
     addAuditLog(`Created quick link "${quickLinkDraft.label}"`)
+    toast.success("Quick link created.")
   }
 
   function handleUpdateQuickLink(updated: QuickLinkRecord) {
     setQuickLinks((current) =>
       current.map((item) => (item._id === updated._id ? updated : item))
     )
-    void syncApi("PUT", `/api/portal/quick-links/${updated._id}`, updated)
+    syncApi("PUT", `/api/portal/quick-links/${updated._id}`, updated).then(() =>
+      toast.success("Quick link updated.")
+    ).catch((e) => {
+      toast.error("Failed to update quick link.")
+      console.error(e)
+    })
     addAuditLog(`Updated quick link "${updated.label}"`)
   }
 
   function handleDeleteQuickLink(id: string) {
     const item = quickLinks.find((ql) => ql._id === id)
     setQuickLinks((current) => current.filter((ql) => ql._id !== id))
-    void syncApi("DELETE", `/api/portal/quick-links/${id}`)
+    syncApi("DELETE", `/api/portal/quick-links/${id}`).then(() =>
+      toast.success("Quick link deleted.")
+    ).catch((e) => {
+      toast.error("Failed to delete quick link.")
+      console.error(e)
+    })
     if (item) addAuditLog(`Deleted quick link "${item.label}"`)
   }
 
   function handleDeleteDownloadable(id: string) {
     const item = downloadables.find((d) => d._id === id)
     setDownloadables((current) => current.filter((d) => d._id !== id))
-    void syncApi("DELETE", `/api/portal/downloadables/${id}`)
+    syncApi("DELETE", `/api/portal/downloadables/${id}`).then(() =>
+      toast.success("Downloadable deleted.")
+    ).catch((e) => {
+      toast.error("Failed to delete downloadable.")
+      console.error(e)
+    })
     if (item) addAuditLog(`Deleted downloadable "${item.label}"`)
   }
 
@@ -2386,7 +2555,15 @@ export function usePortalDashboardModel(role: Role) {
         return { ...event, ...updatedEvent }
       })
     )
-    if (updatedEvent) void syncApi("PUT", `/api/portal/seminars/${eventId}`, updatedEvent)
+    if (updatedEvent) {
+      const isEnlisting = !seminars.find((e) => e.id === eventId)?.enlistedStudentIds.includes(profile.id)
+      syncApi("PUT", `/api/portal/seminars/${eventId}`, updatedEvent).then(() =>
+        toast.success(isEnlisting ? "Enlisted in event." : "Unenlisted from event.")
+      ).catch((e) => {
+        toast.error("Failed to update enlistment.")
+        console.error(e)
+      })
+    }
   }
 
   function handleFacultySelfStatus(event: FormEvent<HTMLFormElement>) {
@@ -2399,7 +2576,12 @@ export function usePortalDashboardModel(role: Role) {
 
   function handleCreateCsoReport(report: CsoReport) {
     setCsoReports((current) => [report, ...current])
-    void syncApi("POST", "/api/portal/cso-reports", report)
+    syncApi("POST", "/api/portal/cso-reports", report).then(() =>
+      toast.success("CSO report created.")
+    ).catch((e) => {
+      toast.error("Failed to create CSO report.")
+      console.error(e)
+    })
     addAuditLog(`Created CSO report "${report.title}"`)
   }
 
@@ -2407,14 +2589,24 @@ export function usePortalDashboardModel(role: Role) {
     setCsoReports((current) =>
       current.map((r) => (r.id === report.id ? report : r))
     )
-    void syncApi("PUT", `/api/portal/cso-reports/${report.id}`, report)
+    syncApi("PUT", `/api/portal/cso-reports/${report.id}`, report).then(() =>
+      toast.success("CSO report updated.")
+    ).catch((e) => {
+      toast.error("Failed to update CSO report.")
+      console.error(e)
+    })
     addAuditLog(`Updated CSO report "${report.title}"`)
   }
 
   function handleDeleteCsoReport(id: string) {
     const item = csoReports.find((r) => r.id === id)
     setCsoReports((current) => current.filter((r) => r.id !== id))
-    void syncApi("DELETE", `/api/portal/cso-reports/${id}`)
+    syncApi("DELETE", `/api/portal/cso-reports/${id}`).then(() =>
+      toast.success("CSO report deleted.")
+    ).catch((e) => {
+      toast.error("Failed to delete CSO report.")
+      console.error(e)
+    })
     if (item) addAuditLog(`Deleted CSO report "${item.title}"`)
   }
 
@@ -2570,6 +2762,8 @@ export function usePortalDashboardModel(role: Role) {
     updateFacultyStatus,
     deleteFacultyMember,
     syncFacultyFromUsers,
+    pendingConfirm,
+    setPendingConfirm,
     confirmAndToggleUserStatus,
     toggleUserStatus,
     confirmAndDeleteUser,

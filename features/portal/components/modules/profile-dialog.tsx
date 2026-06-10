@@ -3,6 +3,7 @@
 import { Camera, Eye, EyeOff, KeyRound, Save, UserCircle } from "lucide-react"
 import { useState } from "react"
 
+import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -298,22 +299,18 @@ export function ProfileDialog({
               {showPasswords ? "Hide" : "Show"} passwords
             </button>
             {passwordError ? (
-              <span className="text-sm font-medium text-red-600 dark:text-red-400">{passwordError}</span>
+              <Alert variant="error">{passwordError}</Alert>
             ) : passwordSuccess ? (
-              <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Password updated successfully</span>
+              <Alert variant="success">Password updated successfully</Alert>
             ) : null}
           </div>
         </div>
 
         <DialogFooter className="flex-col gap-2 border-t border-border px-4 py-4 sm:flex-row sm:px-8">
           {saveError ? (
-            <span className="text-sm font-medium text-red-600 dark:text-red-400">
-              Failed to save profile. Please try again.
-            </span>
+            <Alert variant="error">Failed to save profile. Please try again.</Alert>
           ) : saved ? (
-            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-              Profile saved successfully
-            </span>
+            <Alert variant="success">Profile saved successfully</Alert>
           ) : null}
           <DialogClose asChild>
             <Button variant="ghost" className="w-full sm:w-auto">

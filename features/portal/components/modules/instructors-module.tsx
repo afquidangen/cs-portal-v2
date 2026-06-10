@@ -16,9 +16,14 @@ export function InstructorsModule({ model }: PortalModuleProps) {
   )
 
   function handleDelete(id: string, name: string) {
-    if (window.confirm(`Delete faculty account "${name}"? This will permanently remove it from the database.`)) {
-      deleteFacultyMember(id)
-    }
+    model.setPendingConfirm({
+      title: "Delete Faculty",
+      description: `Delete faculty account "${name}"? This will permanently remove it from the database.`,
+      variant: "destructive",
+      onConfirm: () => {
+        deleteFacultyMember(id)
+      },
+    })
   }
 
   return (

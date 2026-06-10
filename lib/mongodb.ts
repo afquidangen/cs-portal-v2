@@ -18,13 +18,17 @@ if (!globalThis.mongooseCache) {
   globalThis.mongooseCache = cached
 }
 
+function buildUri(): string {
+  const base = process.env.MONGODB_URI
+  if (!base) throw new Error("MONGODB_URI is not configured.")
+  const separator = base.includes("?") ? "&" : "?"
+  return `${base}${separator}tlsAllowInvalidCertificates=true&tlsInsecure=true&serverSelectionTimeoutMS=15000`
+}
+
 export async function connectToDatabase() {
   if (cached.conn) return cached.conn
 
-  const uri = process.env.MONGODB_URI
-  if (!uri) {
-    throw new Error("MONGODB_URI is not configured.")
-  }
+  const uri = buildUri()
 
   cached.promise ??= mongoose.connect(uri, {
     bufferCommands: false,

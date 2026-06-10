@@ -3,6 +3,7 @@
 import Image from "next/image"
 import { Download, Eye, FileText, ImageIcon, Loader2, Pencil, Plus, Trash2, Upload, X } from "lucide-react"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -89,27 +90,32 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
       if (!res.ok) throw new Error(json.error ?? "Upload failed.")
       if (json.data) setConstitutionDoc(json.data)
     } catch {
-      window.alert("Failed to upload constitution.")
+      toast.error("Failed to upload constitution.")
       setConstitutionUploading(false)
       return
     }
     setShowConstitutionUpload(false)
     setConstitutionUploading(false)
-    window.alert("Constitution uploaded successfully.")
+    toast.success("Constitution uploaded successfully.")
   }
 
   async function handleDeleteConstitution() {
     if (!constitutionDoc) return
-    const approved = window.confirm("Delete the Constitution and By Laws PDF? This action cannot be undone.")
-    if (!approved) return
-    try {
-      const res = await fetch("/api/portal/governing-document", { method: "DELETE" })
-      if (!res.ok) throw new Error("Failed to delete.")
-      setConstitutionDoc(null)
-      window.alert("Constitution deleted successfully.")
-    } catch {
-      window.alert("Failed to delete constitution.")
-    }
+    model.setPendingConfirm({
+      title: "Delete Constitution",
+      description: "Delete the Constitution and By Laws PDF? This action cannot be undone.",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          const res = await fetch("/api/portal/governing-document", { method: "DELETE" })
+          if (!res.ok) throw new Error("Failed to delete.")
+          setConstitutionDoc(null)
+          toast.success("Constitution deleted successfully.")
+        } catch {
+          toast.error("Failed to delete constitution.")
+        }
+      },
+    })
   }
 
   return (

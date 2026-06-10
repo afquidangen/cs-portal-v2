@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState, type FormEvent } from "react"
 import { GraduationCap, Lock, Mail } from "lucide-react"
 
+import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -167,9 +168,7 @@ export function LoginPage() {
               </div>
 
               {message ? (
-                <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                  {message}
-                </p>
+                <Alert variant="warning">{message}</Alert>
               ) : null}
 
               <Button type="submit" className="h-10 w-full rounded-xl" disabled={loading}>

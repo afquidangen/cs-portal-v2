@@ -35,6 +35,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
   Dialog,
   DialogClose,
@@ -1035,6 +1036,17 @@ export function RoleDashboard({ role }: { role: Role }) {
           ) : null}
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!model.pendingConfirm}
+        onOpenChange={(o) => { if (!o) model.setPendingConfirm(null) }}
+        onConfirm={() => model.pendingConfirm?.onConfirm()}
+        title={model.pendingConfirm?.title ?? ""}
+        description={model.pendingConfirm?.description ?? ""}
+        variant={model.pendingConfirm?.variant}
+        confirmLabel={model.pendingConfirm?.confirmLabel}
+        cancelLabel={model.pendingConfirm?.cancelLabel}
+      />
 
       <footer className="border-t border-border bg-background px-4 py-3 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-[1720px] flex-col items-center gap-2 text-xs text-muted-foreground sm:flex-row sm:justify-between">
