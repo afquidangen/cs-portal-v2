@@ -1,4 +1,6 @@
 import { usersRepository } from "@/features/portal/repositories/users.repository"
+import { rosterRepository } from "@/features/portal/repositories/roster.repository"
+import { gradesRepository } from "@/features/portal/repositories/grades.repository"
 import { success, error, notFound } from "@/lib/api-response"
 import { uploadProfilePhoto } from "@/lib/cloudinary"
 
@@ -48,6 +50,10 @@ export async function DELETE(
     const { id } = await params
     const deleted = await usersRepository.delete({ id })
     if (!deleted) return notFound("User")
+    await Promise.all([
+      rosterRepository.delete({ id }).catch(() => {}),
+      gradesRepository.deleteMany({ studentId: id }).catch(() => {}),
+    ])
     return success({ deleted: true })
   } catch (err) {
     return error(err instanceof Error ? err.message : "Unable to delete user.")
