@@ -1,6 +1,6 @@
 "use client"
 
-import { Plus, X } from "lucide-react"
+import { BellPlus, Megaphone, Plus, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,13 +36,24 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
         <DialogContent className="max-w-xl">
           <form onSubmit={handleCreateAnnouncement}>
             <DialogHeader>
+              <div className="flex items-start gap-3">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-muted/35 text-foreground">
+                  <BellPlus className="size-5" />
+                </span>
+                <div>
               <DialogTitle className="text-xl text-foreground">Create Announcement</DialogTitle>
               <DialogDescription className="pt-1 text-muted-foreground">
                 Publish a new announcement visible to all users
               </DialogDescription>
+                </div>
+              </div>
             </DialogHeader>
 
-            <div className="space-y-4">
+            <div className="space-y-4 rounded-2xl border border-border bg-muted/20 p-4">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                <Megaphone className="size-4" />
+                Announcement Details
+              </div>
               <Input
                 value={announcementDraft.title}
                 onChange={(event) =>

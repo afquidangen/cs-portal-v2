@@ -1,7 +1,8 @@
 "use client"
 
+import Image from "next/image"
 import { useRef, useState } from "react"
-import { Download, FileText, Link as LinkIcon, Loader2, Plus, Trash2, Upload, X } from "lucide-react"
+import { Download, ExternalLink, FileText, Loader2, Plus, Trash2, Upload, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,18 +19,43 @@ import {
 import { Panel } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
+const facebookPageLinks = [
+  {
+    title: "Ilocos Sur Polytechnic State College",
+    href: "https://www.facebook.com/OfficialISPSCPage",
+    logo: "/quick-links/ispsc-facebook.svg",
+  },
+  {
+    title: "ISPSC Main Campus",
+    href: "https://www.facebook.com/ISPSCMainCampus",
+    logo: "/quick-links/ispsc-facebook.svg",
+  },
+  {
+    title: "Northern Collegian",
+    href: "https://www.facebook.com/profile.php?id=100076535291719",
+    logo: "/quick-links/northern-collegian.svg",
+  },
+  {
+    title: "Computing Studies Unit",
+    href: "https://www.facebook.com/ComputingStudiesISPSCMain",
+    logo: "/quick-links/computing-studies.svg",
+  },
+  {
+    title: "Computing Studies Students Organization",
+    href: "https://www.facebook.com/nlpsccssocandon",
+    logo: "/csso-logo.svg",
+  },
+]
+
 export function QuickLinksModule({ model }: PortalModuleProps) {
   const {
     role,
-    quickLinks,
     downloadables,
     setDownloadables,
     quickLinkDraft,
     setQuickLinkDraft,
     showQuickLinkForm,
     setShowQuickLinkForm,
-    handleCreateQuickLink,
-    handleDeleteQuickLink,
     handleDeleteDownloadable,
     setQuickLinks,
   } = model
@@ -140,38 +166,6 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
-  function renderQuickLink(link: typeof quickLinks[number]) {
-    return (
-      <div
-        key={link._id ?? link.label}
-        className="group relative flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:bg-muted"
-      >
-        <a
-          href={link.href}
-          target="_blank"
-          rel="noreferrer"
-          className="flex flex-1 items-center gap-3 text-sm font-medium text-foreground"
-        >
-          <LinkIcon className="size-4 shrink-0 text-foreground/80" />
-          <span className="min-w-0 truncate">{link.label}</span>
-        </a>
-
-        {isAdmin && (
-          <div className="ml-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-            <button
-              type="button"
-              onClick={() => handleDeleteQuickLink(link._id!)}
-              className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
-              title="Delete quick link"
-            >
-              <Trash2 className="size-4" />
-            </button>
-          </div>
-        )}
-      </div>
-    )
-  }
-
   async function handleFileDownload(link: typeof downloadables[number]) {
     try {
       const res = await fetch(link.href)
@@ -224,19 +218,44 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
     )
   }
 
+  function renderFacebookPageLink(link: typeof facebookPageLinks[number]) {
+    return (
+      <a
+        key={link.title}
+        href={link.href}
+        target="_blank"
+        rel="noreferrer"
+        className="group flex min-h-32 items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/45 hover:bg-muted/60 hover:shadow-md"
+      >
+        <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-background p-2 shadow-sm">
+          <Image
+            src={link.logo}
+            alt={`${link.title} logo placeholder`}
+            width={56}
+            height={56}
+            className="size-full rounded-xl object-contain"
+          />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold leading-snug text-foreground">
+            {link.title}
+          </span>
+          <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+            Open Facebook page
+            <ExternalLink className="size-3.5 transition group-hover:translate-x-0.5" />
+          </span>
+        </span>
+      </a>
+    )
+  }
+
   return (
     <>
     <div className="space-y-8">
-      <Panel title="Quick Links" eyebrow="Department resources">
-        {quickLinks.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            No quick links available.
-          </p>
-        ) : (
-          <div className="grid gap-3 md:grid-cols-3">
-            {quickLinks.map(renderQuickLink)}
-          </div>
-        )}
+      <Panel title="Facebook Pages" eyebrow="Official social links">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {facebookPageLinks.map(renderFacebookPageLink)}
+        </div>
       </Panel>
 
       <Panel title="Downloadables" eyebrow="ISPSC resources">

@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { Download, Eye, FileText, ImageIcon, Loader2, Pencil, Plus, Trash2, Upload, X } from "lucide-react"
+import { Download, ExternalLink, Eye, FileText, ImageIcon, Loader2, Megaphone, Pencil, Plus, Sparkles, Trash2, Upload, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
@@ -177,14 +177,59 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
 
   return (
     <div className="space-y-5">
+      <section className="relative overflow-hidden rounded-xl border border-primary/15 bg-[linear-gradient(120deg,#f8fbff_0%,#eef7ff_56%,#f7fbff_100%)] px-5 py-8 text-center shadow-sm dark:border-[#1d3858] dark:bg-[linear-gradient(120deg,#071224_0%,#0b2038_58%,#123768_100%)] sm:px-8">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(36,120,255,0.08)_1px,transparent_1px),linear-gradient(rgba(36,120,255,0.06)_1px,transparent_1px)] bg-[size:38px_38px] opacity-50 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)]" />
+        <div className="relative mx-auto max-w-3xl">
+          <div className="mx-auto mb-6 flex size-32 items-center justify-center rounded-3xl border border-primary/20 bg-white/80 p-1.5 shadow-md dark:border-[#8bd3ff]/25 dark:bg-white/10">
+            <Image
+              src="/csso-logo.svg"
+              alt="CSSO logo placeholder"
+              width={200}
+              height={250}
+              className="size-full rounded-xl object-contain"
+              priority={false}
+            />
+          </div>
+          <h2 className="font-heading text-[2.65rem] font-black uppercase leading-tight tracking-[0.03em] text-foreground sm:text-[3.35rem]">
+            COMPUTING STUDIES STUDENTS ORGANIZATION
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+            The Computer Science Student Organization is the student-led home for CS leadership, events, transparency records, and community initiatives across the department.
+          </p>
+          <a
+            href="https://www.facebook.com/nlpsccssocandon"
+            target="_blank"
+            rel="noreferrer"
+            className="mx-auto mt-5 inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-[#8bd3ff]/25 dark:bg-[#8bd3ff] dark:text-[#071224]"
+          >
+            Visit CSSO Facebook Page
+            <ExternalLink className="size-4" />
+          </a>
+          <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs font-semibold text-primary dark:text-[#8bd3ff]">
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/15 bg-white/70 px-3 py-1.5 dark:border-[#8bd3ff]/20 dark:bg-white/10">
+              <Sparkles className="size-3.5" />
+              Student leadership
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/15 bg-white/70 px-3 py-1.5 dark:border-[#8bd3ff]/20 dark:bg-white/10">
+              <Megaphone className="size-3.5" />
+              Events and reports
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/15 bg-white/70 px-3 py-1.5 dark:border-[#8bd3ff]/20 dark:bg-white/10">
+              <FileText className="size-3.5" />
+              Transparent records
+            </span>
+          </div>
+        </div>
+      </section>
+
       <div className="grid gap-3 md:grid-cols-3">
         {[
           { label: "Accomplishments", value: String(accomplishments.length) },
           { label: "Financial Reports", value: String(financials.length) },
           { label: "All Documents", value: String(model.csoReports.length) },
         ].map((item) => (
-          <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+          <div key={item.label} className="rounded-xl border border-primary/15 bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-[#1d3858]">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary dark:text-[#8bd3ff]">{item.label}</p>
             <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
           </div>
         ))}

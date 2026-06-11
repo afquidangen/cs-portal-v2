@@ -45,6 +45,8 @@ export function ProfileDialog({
   const [showPasswords, setShowPasswords] = useState(false)
   const [passwordError, setPasswordError] = useState("")
   const [passwordSuccess, setPasswordSuccess] = useState(false)
+  const passwordInputClass =
+    "pr-10 border-border bg-background text-foreground placeholder:text-muted-foreground focus-visible:border-primary dark:border-[#1d3858] dark:bg-[#071224] dark:text-white dark:placeholder:text-white/45"
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -252,7 +254,7 @@ export function ProfileDialog({
           </div>
         </div>
 
-        <div className="border border-border bg-muted/30 p-4 sm:p-6 mx-4 sm:mx-8 mb-6">
+        <div className="mx-4 mb-6 border border-border bg-muted/30 p-4 dark:border-[#1d3858] dark:bg-[#071224]/70 sm:mx-8 sm:p-6">
           <div className="mb-4">
             <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
               <KeyRound className="size-4" /> Change Password
@@ -267,7 +269,7 @@ export function ProfileDialog({
               placeholder="Current password"
               value={passwordForm.current}
               onChange={(e) => setPasswordForm((p) => ({ ...p, current: e.target.value }))}
-              className="pr-10"
+              className={passwordInputClass}
             />
             <Input
               type={showPasswords ? "text" : "password"}
@@ -275,7 +277,7 @@ export function ProfileDialog({
               value={passwordForm.newPass}
               onChange={(e) => setPasswordForm((p) => ({ ...p, newPass: e.target.value }))}
               minLength={8}
-              className="pr-10"
+              className={passwordInputClass}
             />
             <Input
               type={showPasswords ? "text" : "password"}
@@ -283,7 +285,7 @@ export function ProfileDialog({
               value={passwordForm.confirm}
               onChange={(e) => setPasswordForm((p) => ({ ...p, confirm: e.target.value }))}
               minLength={8}
-              className="pr-10"
+              className={passwordInputClass}
             />
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-3">

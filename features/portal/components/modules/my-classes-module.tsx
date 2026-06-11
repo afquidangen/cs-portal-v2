@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { CalendarDays, GraduationCap } from "lucide-react"
+import { BookOpen, CalendarDays, Clock, GraduationCap, Layers3 } from "lucide-react"
 
 import { Panel, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
@@ -40,6 +40,27 @@ export function MyClassesModule({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-5">
+      <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
+        <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-4 sm:flex-row sm:justify-center sm:text-left">
+          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+            <CalendarDays className="size-8" />
+          </div>
+          <div>
+            <p className="inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground sm:justify-start">
+              <Clock className="size-4" />
+              Weekly Class Planner
+            </p>
+            <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+              My Schedule
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              View your enrolled subjects, class times, instructors, and room assignments in one organized schedule.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {hasNoSection ? (
         /* ── No section assigned ── */
         <Panel title="Classes" eyebrow="Weekly schedule">
@@ -67,16 +88,37 @@ export function MyClassesModule({ model }: PortalModuleProps) {
           {/* Info Cards */}
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">My Section</p>
-              <p className="mt-2 text-lg font-semibold text-foreground">{section}</p>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">My Section</p>
+                  <p className="mt-2 text-lg font-semibold text-foreground">{section}</p>
+                </div>
+                <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                  <Layers3 className="size-5" />
+                </span>
+              </div>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Enrolled Subjects</p>
-              <p className="mt-2 text-lg font-semibold text-foreground">{enrolledSubjectNames.length}</p>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Enrolled Subjects</p>
+                  <p className="mt-2 text-lg font-semibold text-foreground">{enrolledSubjectNames.length}</p>
+                </div>
+                <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                  <BookOpen className="size-5" />
+                </span>
+              </div>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Weekly Classes</p>
-              <p className="mt-2 text-lg font-semibold text-foreground">{enrolledSchedules.length}</p>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Weekly Classes</p>
+                  <p className="mt-2 text-lg font-semibold text-foreground">{enrolledSchedules.length}</p>
+                </div>
+                <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                  <CalendarDays className="size-5" />
+                </span>
+              </div>
             </div>
           </div>
 

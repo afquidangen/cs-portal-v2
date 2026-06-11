@@ -635,7 +635,7 @@ export function usePortalDashboardModel(role: Role) {
   )
 
   const selectedNav = navigation.find((item) => item.id === activeModule)
-  const currentTitle = selectedNav?.label ?? "Dashboard"
+  const currentTitle = selectedNav?.label ?? "Home"
 
   function selectModule(moduleId: ModuleId) {
     setActiveModule(moduleId)

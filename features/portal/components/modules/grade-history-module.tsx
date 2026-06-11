@@ -77,7 +77,7 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
   }, [history, model.curricula])
 
   return (
-    <Panel title="Grades History" eyebrow="Grade History">
+    <Panel title="Grades Registry" eyebrow="Grades Registry">
       {grouped.length === 0 ? (
         <div className="rounded-[26px] border border-dashed border-border bg-muted/30 px-6 py-14 text-center shadow-sm">
           <BookOpen className="mx-auto mb-3 size-10 text-muted-foreground/40" />

@@ -8,6 +8,7 @@ import {
   Heart,
   Loader2,
   Pencil,
+  Sparkles,
   Trash2,
   Upload,
   Users,
@@ -248,28 +249,42 @@ export function AboutModule({ model }: PortalModuleProps) {
         onChange={handleFileSelected}
       />
 
-      <Panel title="About ComScite Portal" eyebrow="Project profile">
-        <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-          <div className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] p-6 shadow-sm">
-            <div className="flex items-start gap-4">
-              <div className="min-w-0 flex-1 text-center">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-                  DEV TEAM
-                </p>
-                <h3 className="mx-auto mt-2 max-w-xl text-3xl font-semibold tracking-tight text-foreground">
-                  {data.teamName}
-                </h3>
-                <p className="mx-auto mt-4 max-w-3xl text-sm leading-7 text-foreground/80">
-                  {data.description}
-                </p>
-              </div>
+      <section className="relative overflow-hidden rounded-xl border border-primary/15 bg-[linear-gradient(120deg,#f8fbff_0%,#eef7ff_56%,#f7fbff_100%)] p-5 shadow-sm dark:border-[#1d3858] dark:bg-[linear-gradient(120deg,#071224_0%,#0b2038_58%,#123768_100%)] sm:p-8">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(36,120,255,0.08)_1px,transparent_1px),linear-gradient(rgba(36,120,255,0.06)_1px,transparent_1px)] bg-[size:38px_38px] opacity-50 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)]" />
+
+        <div className="relative grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <div className="flex min-h-[260px] flex-col justify-center text-center xl:text-left">
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl border border-primary/20 bg-white/80 text-primary shadow-sm dark:border-[#8bd3ff]/25 dark:bg-white/10 dark:text-[#8bd3ff] xl:mx-0">
+              <Users className="size-7" />
+            </div>
+            <p className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-primary dark:text-[#8bd3ff]">
+              About ComScite Portal
+            </p>
+            <h2 className="mt-3 font-heading text-[2.6rem] font-black uppercase leading-tight tracking-[0.03em] text-foreground sm:text-[3.25rem]">
+              Meet the Team
+            </h2>
+            <p className="mt-2 text-lg font-semibold text-foreground/90 sm:text-xl">
+              {data.teamName}
+            </p>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base xl:mx-0">
+              {data.description}
+            </p>
+            <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs font-semibold text-primary dark:text-[#8bd3ff] xl:justify-start">
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/15 bg-white/70 px-3 py-1.5 dark:border-[#8bd3ff]/20 dark:bg-white/10">
+                <Sparkles className="size-3.5" />
+                Student-built portal
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/15 bg-white/70 px-3 py-1.5 dark:border-[#8bd3ff]/20 dark:bg-white/10">
+                <Code2 className="size-3.5" />
+                Academic workspace
+              </span>
             </div>
           </div>
 
-          <div className="relative rounded-xl border border-border bg-card p-4 shadow-sm">
-            <div className="edu-bg-soft-glacier flex min-h-[220px] items-center justify-center rounded-xl border border-dashed border-[var(--edu-border-glacier)] text-center">
+          <div className="relative rounded-xl border border-primary/15 bg-white/72 p-4 shadow-sm backdrop-blur dark:border-[#8bd3ff]/20 dark:bg-white/10">
+            <div className="edu-bg-soft-glacier flex min-h-[260px] items-center justify-center rounded-xl border border-dashed border-[var(--edu-border-glacier)] text-center">
               {data.teamPictureUrl ? (
-                <div className="relative h-full w-full">
+                <div className="relative h-full min-h-[260px] w-full">
                   <Image
                     src={data.teamPictureUrl}
                     alt="Team picture"
@@ -327,12 +342,12 @@ export function AboutModule({ model }: PortalModuleProps) {
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <div className="relative mt-5 grid gap-3 md:grid-cols-3">
           {data.projectFacts.map((fact) => {
             const icons = [Code2, Users, CalendarDays] as const
             const Icon = icons[data.projectFacts.indexOf(fact)] ?? Code2
             return (
-              <div key={fact.label} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <div key={fact.label} className="rounded-xl border border-primary/15 bg-white/72 p-4 shadow-sm backdrop-blur dark:border-[#8bd3ff]/20 dark:bg-white/10">
                 <div className="flex items-start gap-3">
                   <span className="edu-bg-soft-glacier edu-ring-glacier flex size-10 shrink-0 items-center justify-center rounded-lg border text-primary">
                     <Icon className="size-5" />
@@ -346,7 +361,7 @@ export function AboutModule({ model }: PortalModuleProps) {
             )
           })}
         </div>
-      </Panel>
+      </section>
 
       <Panel title="Team Members and Roles" eyebrow="Member directory">
         <div className="mb-5 flex items-center gap-3">

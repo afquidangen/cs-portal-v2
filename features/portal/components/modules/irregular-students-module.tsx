@@ -3,11 +3,14 @@
 import { useMemo, useState } from "react"
 import {
   BookMarked,
+  ClipboardList,
   GraduationCap,
+  Layers3,
   Pencil,
   Plus,
   Search,
   Trash2,
+  UserRoundSearch,
   Users,
 } from "lucide-react"
 
@@ -15,7 +18,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -31,9 +33,9 @@ import type { PortalModuleProps } from "./types"
 const irregularTypes = ["Irregular", "Transferee", "Shifter"]
 
 function getStudentTypeColor(type?: string) {
-  if (type === "Irregular") return "border-amber-200 bg-amber-50 text-amber-700"
-  if (type === "Transferee") return "border-sky-200 bg-sky-50 text-sky-700"
-  if (type === "Shifter") return "border-purple-200 bg-purple-50 text-purple-700"
+  if (type === "Irregular") return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-100"
+  if (type === "Transferee") return "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/25 dark:bg-sky-500/10 dark:text-sky-100"
+  if (type === "Shifter") return "border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-500/25 dark:bg-purple-500/10 dark:text-purple-100"
   return ""
 }
 
@@ -241,26 +243,50 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-5">
+      <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
+        <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-4 sm:flex-row sm:justify-center sm:text-left">
+          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+            <UserRoundSearch className="size-8" />
+          </div>
+          <div>
+            <p className="inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground sm:justify-start">
+              <GraduationCap className="size-4" />
+              Curriculum Progress Review
+            </p>
+            <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+              Irregular Students
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Review non-regular student records, track completed subjects, and manage curriculum progress by term.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Irregular Students</p>
-          <p className="mt-2 text-lg font-semibold text-foreground">
-            {irregularStudents.filter((s) => s.studentType === "Irregular").length}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Transferees</p>
-          <p className="mt-2 text-lg font-semibold text-foreground">
-            {irregularStudents.filter((s) => s.studentType === "Transferee").length}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Shifters</p>
-          <p className="mt-2 text-lg font-semibold text-foreground">
-            {irregularStudents.filter((s) => s.studentType === "Shifter").length}
-          </p>
-        </div>
+        {[
+          { label: "Irregular Students", value: irregularStudents.filter((s) => s.studentType === "Irregular").length, icon: ClipboardList, tone: "Irregular" },
+          { label: "Transferees", value: irregularStudents.filter((s) => s.studentType === "Transferee").length, icon: Users, tone: "Transferee" },
+          { label: "Shifters", value: irregularStudents.filter((s) => s.studentType === "Shifter").length, icon: Layers3, tone: "Shifter" },
+        ].map((item) => {
+          const Icon = item.icon
+
+          return (
+            <div key={item.label} className={`rounded-2xl border p-4 shadow-sm ${getStudentTypeColor(item.tone)}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide opacity-80">{item.label}</p>
+                  <p className="mt-2 text-2xl font-black tracking-tight">{item.value}</p>
+                </div>
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-current/20 bg-white/45 shadow-sm dark:bg-white/10">
+                  <Icon className="size-5" />
+                </span>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[380px_1fr]">
@@ -371,7 +397,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
               </div>
 
               {/* Curriculum terms */}
-              {studentCurriculum.terms.map((term, ti) => {
+              {studentCurriculum.terms.map((term) => {
                 const passedInTerm = gradeHistory.filter(
                   (g) => g.yearLevel === term.year && g.semester === term.semester && g.remarks?.toLowerCase() === "passed"
                 ).length

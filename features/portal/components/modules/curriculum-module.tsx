@@ -2,13 +2,17 @@
 
 import { useMemo, useState } from "react"
 import {
+  BookOpen,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
   Edit,
   GraduationCap,
   Layers3,
+  ListChecks,
   Plus,
   RefreshCw,
+  School,
   Trash2,
 } from "lucide-react"
 
@@ -126,24 +130,51 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
 
   return (
     <div className="space-y-5">
+      <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
+        <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-4 sm:flex-row sm:justify-center sm:text-left">
+          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+            <GraduationCap className="size-8" />
+          </div>
+          <div>
+            <p className="inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground sm:justify-start">
+              <BookOpen className="size-4" />
+              Academic Roadmap
+            </p>
+            <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+              My Curriculum
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Follow your program structure by year level and semester, with subject units and progress status.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Summary */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Curriculum</p>
-          <p className="mt-2 text-lg font-semibold text-foreground">{enrolledCurriculum.name}</p>
-        </article>
-        <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Major</p>
-          <p className="mt-2 text-lg font-semibold text-foreground">{enrolledCurriculum.major}</p>
-        </article>
-        <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Subjects</p>
-          <p className="mt-2 text-lg font-semibold text-foreground">{totalSubjects}</p>
-        </article>
-        <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Units</p>
-          <p className="mt-2 text-lg font-semibold text-foreground">{totalUnits}</p>
-        </article>
+        {[
+          { label: "Curriculum", value: enrolledCurriculum.name, icon: ClipboardList },
+          { label: "Major", value: enrolledCurriculum.major, icon: School },
+          { label: "Total Subjects", value: String(totalSubjects), icon: ListChecks },
+          { label: "Total Units", value: String(totalUnits), icon: Layers3 },
+        ].map((item) => {
+          const Icon = item.icon
+
+          return (
+            <article key={item.label} className="edu-bg-soft-glacier rounded-2xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+                  <p className="mt-2 truncate text-lg font-semibold text-foreground">{item.value}</p>
+                </div>
+                <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                  <Icon className="size-5" />
+                </span>
+              </div>
+            </article>
+          )
+        })}
       </div>
 
       {/* Term selector */}
@@ -345,6 +376,51 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
 
   return (
     <div key={selectedCurriculum?.id ?? "no-curriculum"} className="space-y-5">
+      <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
+        <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-4 sm:flex-row sm:justify-center sm:text-left">
+          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+            <ClipboardList className="size-8" />
+          </div>
+          <div>
+            <p className="inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground sm:justify-start">
+              <GraduationCap className="size-4" />
+              Curriculum Management
+            </p>
+            <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+              Curriculum
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Manage program structures, majors, year levels, terms, subjects, and total academic units.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        {[
+          { label: "Curricula", value: String(visibleCurricula.length), icon: ClipboardList },
+          { label: "Selected Subjects", value: String(selectedTotalSubjects), icon: ListChecks },
+          { label: "Year Levels", value: String(groupedYears.length), icon: Layers3 },
+        ].map((item) => {
+          const Icon = item.icon
+
+          return (
+            <article key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+                  <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+                </div>
+                <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                  <Icon className="size-5" />
+                </span>
+              </div>
+            </article>
+          )
+        })}
+      </div>
+
       {/* ── Add / List Curricula ── */}
       <Panel
         title={`Curriculum (${visibleCurricula.length})`}

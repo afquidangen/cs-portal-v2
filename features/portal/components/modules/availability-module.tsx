@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckCircle2, Clock, DoorOpen, Save, Users } from "lucide-react"
+import { CalendarCheck, CheckCircle2, Clock, DoorOpen, Mail, MessageSquareText, Save, SearchX, UserRoundCheck, Users } from "lucide-react"
 import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -27,6 +27,29 @@ const STATUS_TABS: { label: string; value: AvailabilityStatus | "All" }[] = [
   { label: "Consultation", value: "Consultation Only" },
   { label: "Out of Office", value: "Out of Office" },
 ]
+
+const STATUS_CONTROL_UI: Record<AvailabilityStatus, { icon: typeof CheckCircle2; helper: string; className: string }> = {
+  Available: {
+    icon: CheckCircle2,
+    helper: "Ready for walk-ins and student concerns.",
+    className: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-200",
+  },
+  "In Class": {
+    icon: Clock,
+    helper: "Currently teaching or handling a class.",
+    className: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/25 dark:bg-sky-500/10 dark:text-sky-200",
+  },
+  "Consultation Only": {
+    icon: Users,
+    helper: "Available for scheduled consultation.",
+    className: "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/25 dark:bg-violet-500/10 dark:text-violet-200",
+  },
+  "Out of Office": {
+    icon: DoorOpen,
+    helper: "Away from office or unavailable.",
+    className: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-100",
+  },
+}
 
 function StatusSummary({ faculty }: { faculty: PortalModuleProps["model"]["faculty"] }) {
   const counts = {
@@ -73,43 +96,63 @@ function FacultyCard({
   member: PortalModuleProps["model"]["faculty"][number]
   showSchedule?: boolean
 }) {
+  const statusUi = STATUS_CONTROL_UI[member.status]
+  const StatusIcon = statusUi.icon
+
   return (
-    <div className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="edu-lapis flex size-10 items-center justify-center rounded-xl text-xs font-semibold shadow-sm">
+    <article className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:border-primary/25 hover:shadow-md">
+      <div className="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:p-5">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="edu-lapis flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-semibold shadow-sm">
               {member.name
                 .split(" ")
-            .map((p: string) => p[0])
+                .map((p: string) => p[0])
                 .join("")
                 .slice(0, 2)}
             </div>
-            <div>
-              <h4 className="font-semibold text-foreground">{member.name}</h4>
-              <p className="text-sm text-foreground/70">
+            <div className="min-w-0">
+              <h4 className="truncate text-base font-semibold tracking-tight text-foreground">{member.name}</h4>
+              <p className="mt-0.5 truncate text-sm text-muted-foreground">
                 {member.position} &middot; {member.role}
+              </p>
+              <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                <Mail className="size-3.5 shrink-0" />
+                <span className="truncate">{member.email}</span>
               </p>
             </div>
           </div>
-          <p className="mt-2 text-sm text-foreground/80">{member.notes}</p>
+          <p className="mt-4 line-clamp-2 text-sm leading-6 text-foreground/78">{member.notes}</p>
         </div>
-        <StatusBadge value={member.status} />
+
+        <div className="flex items-start justify-between gap-3 sm:min-w-[190px] sm:flex-col sm:items-end">
+          <span className={cn("inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold", statusUi.className)}>
+            <StatusIcon className="size-4" />
+            {member.status}
+          </span>
+          <StatusBadge value={member.status} />
+        </div>
       </div>
 
       {showSchedule && member.schedule.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2 text-xs text-foreground/70">
+        <div className="border-t border-border bg-muted/20 px-4 py-3 sm:px-5">
+          <p className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            <CalendarCheck className="size-3.5" />
+            Schedule Blocks
+          </p>
+          <div className="flex flex-wrap gap-2 text-xs text-foreground/70">
           {member.schedule.map((slot) => (
             <span
               key={slot}
-              className="rounded-xl border border-border bg-muted px-2.5 py-1"
+              className="rounded-lg border border-border bg-card px-2.5 py-1 shadow-sm"
             >
               {slot}
             </span>
           ))}
+          </div>
         </div>
       )}
-    </div>
+    </article>
   )
 }
 
@@ -173,6 +216,26 @@ export function AvailabilityModule({ model }: PortalModuleProps) {
   if (role === "admin") {
     return (
       <div className="space-y-5">
+        <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
+          <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-4 sm:flex-row sm:justify-center sm:text-left">
+            <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+              <UserRoundCheck className="size-8" />
+            </div>
+            <div>
+              <p className="inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground sm:justify-start">
+                <Clock className="size-4" />
+                Faculty Availability Monitor
+              </p>
+              <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+                Teacher Status
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Track faculty availability, class presence, consultation status, and office updates in one dashboard.
+              </p>
+            </div>
+          </div>
+        </section>
         <StatusSummary faculty={faculty} />
         <AdminStatusEditor model={model} />
       </div>
@@ -193,6 +256,26 @@ function StudentAvailabilityView({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-5">
+      <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
+        <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-4 sm:flex-row sm:justify-center sm:text-left">
+          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+            <UserRoundCheck className="size-8" />
+          </div>
+          <div>
+            <p className="inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground sm:justify-start">
+              <Clock className="size-4" />
+              Faculty Availability
+            </p>
+            <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+              Teacher Status
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Check which instructors are available, in class, open for consultation, or out of office.
+            </p>
+          </div>
+        </div>
+      </section>
       <StatusSummary faculty={faculty} />
 
       <Panel
@@ -249,44 +332,127 @@ export function FacultyAvailabilityPanel({ model }: PortalModuleProps) {
     profile,
   } = model
 
+  const currentStatusUi = STATUS_CONTROL_UI[myFacultyStatus]
+  const CurrentStatusIcon = currentStatusUi.icon
+
   return (
-    <Panel title="Quick Status Control" eyebrow="My availability">
-      <div className="edu-bg-soft-glacier mb-4 flex items-center gap-3 rounded-xl border border-[var(--edu-border-glacier)] p-3">
-        <div className="edu-lapis flex size-10 items-center justify-center rounded-xl text-sm font-semibold shadow-sm">
-          {profile.name
-            .split(" ")
-            .map((p: string) => p[0])
-            .join("")
-            .slice(0, 2)}
+    <Panel title="Quick Status Control" className="[&>div:first-child]:hidden">
+      <div className="space-y-5">
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
+          <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-4 sm:flex-row sm:justify-center sm:text-left">
+            <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+              <CalendarCheck className="size-8" />
+            </div>
+            <div>
+              <p className="inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground sm:justify-start">
+                <UserRoundCheck className="size-4" />
+                My Availability
+              </p>
+              <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+                My Status
+              </h3>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Update your availability so students and staff can quickly see when you are reachable.
+              </p>
+            </div>
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-semibold text-foreground">
-            {profile.name}
-          </p>
-          <p className="text-xs text-foreground/60">{profile.title}</p>
+
+        <div className="grid gap-4 xl:grid-cols-[0.78fr_1.22fr]">
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="edu-lapis flex size-12 items-center justify-center rounded-2xl text-sm font-semibold shadow-sm">
+                {profile.name
+                  .split(" ")
+                  .map((p: string) => p[0])
+                  .join("")
+                  .slice(0, 2)}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-base font-bold text-foreground">
+                  {profile.name}
+                </p>
+                <p className="text-sm text-muted-foreground">{profile.title}</p>
+              </div>
+            </div>
+            <div className={`mt-4 rounded-2xl border p-4 ${currentStatusUi.className}`}>
+              <div className="flex items-start gap-3">
+                <CurrentStatusIcon className="mt-0.5 size-5 shrink-0" />
+                <div>
+                  <p className="text-sm font-bold">Current status</p>
+                  <p className="mt-1 text-2xl font-black leading-tight">{myFacultyStatus}</p>
+                  <p className="mt-2 text-sm leading-6 opacity-85">{currentStatusUi.helper}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleFacultySelfStatus} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <div className="mb-4">
+              <p className="text-sm font-bold text-foreground">Choose your availability</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Select the status that best matches your current schedule.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {availabilityOptions.map((status) => {
+                const statusUi = STATUS_CONTROL_UI[status]
+                const StatusIcon = statusUi.icon
+                const active = myFacultyStatus === status
+
+                return (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => setMyFacultyStatus(status)}
+                    className={cn(
+                      "rounded-2xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm",
+                      active ? statusUi.className : "border-border bg-muted/20 text-foreground hover:bg-muted/35"
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <StatusIcon className="mt-0.5 size-5 shrink-0" />
+                      <div>
+                        <p className="font-bold">{status}</p>
+                        <p className="mt-1 text-xs leading-5 opacity-80">{statusUi.helper}</p>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)]">
+              <Select
+                value={myFacultyStatus}
+                onChange={(value) => setMyFacultyStatus(value as AvailabilityStatus)}
+                options={availabilityOptions}
+                label="Status"
+              />
+
+              <div className="space-y-1.5">
+                <label className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+                  <MessageSquareText className="size-4 text-primary" />
+                  Daily note
+                </label>
+                <Textarea
+                  value={myFacultyNotes}
+                  onChange={setMyFacultyNotes}
+                  placeholder="Daily note"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <Button type="submit" className="mt-4 rounded-lg">
+              <Save className="size-4" />
+              Save Status
+            </Button>
+          </form>
         </div>
       </div>
-
-      <form onSubmit={handleFacultySelfStatus} className="space-y-3">
-        <Select
-          value={myFacultyStatus}
-          onChange={(value) => setMyFacultyStatus(value as AvailabilityStatus)}
-          options={availabilityOptions}
-          label="Status"
-        />
-
-        <Textarea
-          value={myFacultyNotes}
-          onChange={setMyFacultyNotes}
-          placeholder="Daily note"
-          rows={3}
-        />
-
-        <Button type="submit" className="rounded-lg">
-          <Save className="size-4" />
-          Save Status
-        </Button>
-      </form>
     </Panel>
   )
 }
@@ -316,29 +482,48 @@ export function FacultyDirectoryPanel({
       }
     >
       {showFilter && (
-        <div className="mb-4 flex flex-wrap gap-1.5">
+        <div className="mb-4 rounded-xl border border-border bg-muted/20 p-3">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground">Faculty availability board</p>
+              <p className="text-xs text-muted-foreground">
+                Showing {visibleFaculty.length} of {filteredFaculty.length} faculty profiles
+              </p>
+            </div>
+            <Users className="size-5 shrink-0 text-primary" />
+          </div>
+          <div className="grid gap-2 min-[420px]:grid-cols-2 lg:grid-cols-5">
           {STATUS_TABS.map((tab) => (
             <button
               key={tab.value}
               onClick={() => setStatusFilter(tab.value)}
               className={cn(
-                "rounded-lg px-3.5 py-1.5 text-xs font-medium transition-colors",
+                "min-h-10 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors",
                 statusFilter === tab.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-white text-black hover:bg-slate-100 dark:bg-[#0f1b2b] dark:text-white dark:hover:bg-secondary"
+                  ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                  : "border-border bg-card text-foreground hover:bg-muted"
               )}
             >
               {tab.label}
             </button>
           ))}
+          </div>
         </div>
       )}
 
-      <div className="space-y-3">
-        {visibleFaculty.map((member) => (
-          <FacultyCard key={member.id} member={member} />
-        ))}
-      </div>
+      {visibleFaculty.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
+          <SearchX className="mx-auto mb-3 size-10 text-muted-foreground/50" />
+          <p className="text-sm font-medium text-foreground">No faculty matched the current view.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Try another status or search keyword.</p>
+        </div>
+      ) : (
+        <div className="grid gap-3 xl:grid-cols-2">
+          {visibleFaculty.map((member) => (
+            <FacultyCard key={member.id} member={member} />
+          ))}
+        </div>
+      )}
     </Panel>
   )
 }

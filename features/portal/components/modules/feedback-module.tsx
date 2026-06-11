@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, RotateCcw } from "lucide-react"
+import { Check, Inbox, LifeBuoy, MailPlus, MessageSquareText, RotateCcw, Send, TicketCheck } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,7 +13,6 @@ import {
   EmptyState,
   Panel,
   Select,
-  SendIcon,
   StatusBadge,
   Textarea,
   TicketList,
@@ -35,7 +34,22 @@ export function FeedbackModule({ model }: PortalModuleProps) {
   if (role === "student") {
     return (
       <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
-        <Panel title="Submission Console" eyebrow="Feedback and complaints">
+        <Panel title="Submission Console" className="[&>div:first-child]:hidden">
+          <div className="mb-4 rounded-2xl border border-border bg-muted/20 px-4 py-5 text-center shadow-sm">
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+              <MailPlus className="size-7" />
+            </div>
+            <p className="mt-4 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+              Feedback and Complaints
+            </p>
+            <h3 className="mt-2 text-2xl font-black leading-tight tracking-tight text-foreground">
+              We would like to hear from you, CStizen
+            </h3>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+              Compose your concern, suggestion, or request here. 
+            </p>
+          </div>
+
           <form onSubmit={handleFeedbackSubmit} className="edu-bg-soft-glacier space-y-3 rounded-xl border border-[var(--edu-border-glacier)] p-4">
             <Select
               value={feedbackDraft.category}
@@ -73,7 +87,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
             />
 
             <Button type="submit" className="w-full rounded-lg">
-              <SendIcon />
+              <Send className="size-4" />
               Submit Ticket
             </Button>
           </form>
@@ -92,7 +106,22 @@ export function FeedbackModule({ model }: PortalModuleProps) {
   return (
     <div className="space-y-5">
       {role === "faculty" ? (
-        <Panel title="Submission Console" eyebrow="Feedback and complaints">
+        <Panel title="Submission Console" className="[&>div:first-child]:hidden">
+          <div className="mb-4 rounded-2xl border border-border bg-muted/20 px-4 py-5 text-center shadow-sm">
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+              <MailPlus className="size-7" />
+            </div>
+            <p className="mt-4 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+              Feedback and Complaints
+            </p>
+            <h3 className="mt-2 text-2xl font-black leading-tight tracking-tight text-foreground">
+              We would like to hear from you, CStizen.
+            </h3>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+              Compose your concern, suggestion, or request here.
+            </p>
+          </div>
+
           <form onSubmit={handleFeedbackSubmit} className="edu-bg-soft-glacier space-y-3 rounded-xl border border-[var(--edu-border-glacier)] p-4">
             <Select
               value={feedbackDraft.category}
@@ -130,7 +159,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
             />
 
             <Button type="submit" className="w-full rounded-lg">
-              <SendIcon />
+              <Send className="size-4" />
               Submit Ticket
             </Button>
           </form>
@@ -139,17 +168,40 @@ export function FeedbackModule({ model }: PortalModuleProps) {
 
       <Panel
         title={role === "admin" ? "Master Inbox" : "Feedback Inbox"}
-        eyebrow="Ticket status management"
+        className="[&>div:first-child]:hidden"
       >
+      <div className="mb-5 rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm">
+        <div className="mx-auto flex size-16 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+          <Inbox className="size-8" />
+        </div>
+        <p className="mt-4 inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+          <LifeBuoy className="size-4" />
+          Ticket Status Management
+        </p>
+        <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+          {role === "admin" ? "Master Inbox" : "Feedback Inbox"}
+        </h3>
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+          Review submitted concerns, monitor ticket progress, and keep resolutions organized in one place.
+        </p>
+      </div>
+
       <div className="mb-4 grid gap-3 md:grid-cols-3">
         {[
-          { label: "Total Tickets", value: String(tickets.length) },
-          { label: "Open", value: String(tickets.filter((ticket) => ticket.status !== "Resolved").length) },
-          { label: "Resolved", value: String(tickets.filter((ticket) => ticket.status === "Resolved").length) },
+          { label: "Total Tickets", value: String(tickets.length), icon: MessageSquareText },
+          { label: "Open", value: String(tickets.filter((ticket) => ticket.status !== "Resolved").length), icon: Inbox },
+          { label: "Resolved", value: String(tickets.filter((ticket) => ticket.status === "Resolved").length), icon: TicketCheck },
         ].map((item) => (
           <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
-            <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+              </div>
+              <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                <item.icon className="size-5" />
+              </span>
+            </div>
           </div>
         ))}
       </div>
@@ -160,9 +212,12 @@ export function FeedbackModule({ model }: PortalModuleProps) {
             className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md"
           >
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-              <div>
+              <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h4 className="font-semibold text-foreground">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-primary shadow-sm">
+                    <MessageSquareText className="size-5" />
+                  </span>
+                  <h4 className="text-lg font-bold tracking-tight text-foreground">
                     {ticket.subject}
                   </h4>
                   <StatusBadge value={ticket.status} />

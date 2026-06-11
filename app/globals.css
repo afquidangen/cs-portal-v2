@@ -93,8 +93,8 @@
 
   --destructive: #ef4444;
 
-  --border: #e5eaf2;
-  --input: #e5eaf2;
+  --border: #c8d5e6;
+  --input: #c8d5e6;
   --ring: #28a7f2;
 
   --chart-1: #18479f;
@@ -130,10 +130,10 @@
   --edu-icon-glacier-bg: #d9f0ff;
   --edu-icon-glacier-fg: #18479f;
 
-  --edu-border-abyss: rgb(24 71 159 / 0.18);
-  --edu-border-lapis: rgb(31 111 229 / 0.22);
-  --edu-border-slate: rgb(100 116 139 / 0.22);
-  --edu-border-glacier: rgb(40 167 242 / 0.26);
+  --edu-border-abyss: rgb(24 71 159 / 0.3);
+  --edu-border-lapis: rgb(31 111 229 / 0.34);
+  --edu-border-slate: rgb(100 116 139 / 0.32);
+  --edu-border-glacier: rgb(40 167 242 / 0.38);
 
   --edu-sidebar-bg:
     radial-gradient(circle at top left, rgb(84 181 255 / 0.28), transparent 30%),

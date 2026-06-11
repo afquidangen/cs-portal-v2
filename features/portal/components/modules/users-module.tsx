@@ -8,12 +8,16 @@ import {
   Edit,
   Eye,
   EyeOff,
+  Filter,
+  GraduationCap,
   History,
   Pencil,
   Plus,
+  Search,
   ShieldCheck,
   Trash2,
   UserCheck,
+  UserCog,
   UserX,
   Users,
 } from "lucide-react"
@@ -98,13 +102,9 @@ export function UsersModule({ model }: PortalModuleProps) {
   const [page, setPage] = useState(1)
   const [addOpen, setAddOpen] = useState(false)
   const [addRole, setAddRole] = useState("student")
-
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE))
-  const safePage = Math.min(page, totalPages)
-  const paginatedUsers = filteredUsers.slice(
-    (safePage - 1) * PAGE_SIZE,
-    safePage * PAGE_SIZE
-  )
+  const [studentYearFilter, setStudentYearFilter] = useState("All Years")
+  const [studentSectionFilter, setStudentSectionFilter] = useState("All Sections")
+  const [facultyFilter, setFacultyFilter] = useState("All Faculty")
 
   const curriculumOptions = curricula.map(
     (c) => `${c.id} - ${c.name} - ${c.major}`
@@ -131,6 +131,52 @@ export function UsersModule({ model }: PortalModuleProps) {
     const entry = yearSections.find((ys) => ys.year === label)
     return entry?.sections ?? []
   }, [newUser.year, yearSections])
+
+  const studentYearOptions = useMemo(
+    () => ["All Years", ...yearSections.map((item) => item.year)],
+    [yearSections]
+  )
+
+  const studentSectionOptions = useMemo(() => {
+    const sections =
+      studentYearFilter === "All Years"
+        ? yearSections.flatMap((item) => item.sections)
+        : yearSections.find((item) => item.year === studentYearFilter)?.sections ?? []
+    return ["All Sections", ...Array.from(new Set(sections))]
+  }, [studentYearFilter, yearSections])
+
+  const visibleUsers = useMemo(() => {
+    const hasStudentFilter =
+      studentYearFilter !== "All Years" || studentSectionFilter !== "All Sections"
+    const hasFacultyFilter = facultyFilter !== "All Faculty"
+
+    return filteredUsers.filter((user) => {
+      if (hasStudentFilter) {
+        if (user.role !== "student") return false
+        const yearLabel = user.currentYearLevel ?? YEAR_LABELS[String(user.year ?? "")]
+        const matchesYear = studentYearFilter === "All Years" || yearLabel === studentYearFilter
+        const matchesSection = studentSectionFilter === "All Sections" || user.section === studentSectionFilter
+        return matchesYear && matchesSection
+      }
+
+      if (hasFacultyFilter) {
+        if (user.role !== "faculty") return false
+        if (facultyFilter === "Regular Faculty") return user.employmentType === "Regular"
+        if (facultyFilter === "Part Time Faculty") return user.employmentType === "Part Time"
+        if (facultyFilter === "With Advisory") return Boolean(user.advisoryClass)
+        if (facultyFilter === "No Advisory") return !user.advisoryClass
+      }
+
+      return true
+    })
+  }, [facultyFilter, filteredUsers, studentSectionFilter, studentYearFilter])
+
+  const totalPages = Math.max(1, Math.ceil(visibleUsers.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const paginatedUsers = visibleUsers.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE
+  )
 
   const stats = useMemo(() => {
     return {
@@ -181,12 +227,33 @@ export function UsersModule({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-5">
+      <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
+        <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-4 sm:flex-row sm:justify-center sm:text-left">
+          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+            <UserCog className="size-8" />
+          </div>
+          <div>
+            <p className="inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground sm:justify-start">
+              <ShieldCheck className="size-4" />
+              Accounts and Access Control
+            </p>
+            <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+              User Management
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Manage portal accounts, roles, status, curriculum assignments, and student grade registry records.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         {[
           { label: "Total Accounts", value: stats.total, icon: Users },
           { label: "Active", value: stats.active, icon: UserCheck },
           { label: "Inactive", value: stats.inactive, icon: UserX },
-          { label: "Students", value: stats.students, icon: ShieldCheck },
+          { label: "Students", value: stats.students, icon: Search },
           { label: "Faculty", value: stats.faculty, icon: Users },
           { label: "Admins", value: stats.admins, icon: ShieldCheck },
         ].map((stat) => (
@@ -210,25 +277,63 @@ export function UsersModule({ model }: PortalModuleProps) {
       </div>
 
       <Panel
-        title={`Users (${filteredUsers.length})`}
+        title={`Users (${visibleUsers.length})`}
         eyebrow="Search and filter"
         actions={
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <SearchBox
-              value={query}
-              onChange={(v) => {
-                setQuery(v)
-                setPage(1)
-              }}
-              placeholder="Search name, email, or ID"
-            />
+          <div className="grid w-full max-w-full min-w-0 grid-cols-1 gap-2 rounded-xl border border-border bg-background/80 p-2 shadow-sm sm:grid-cols-2 lg:w-[720px] lg:grid-cols-3 xl:w-[960px] xl:grid-cols-[minmax(220px,1.5fr)_repeat(4,minmax(120px,1fr))_minmax(132px,auto)]">
+            <div className="min-w-0 sm:col-span-2 lg:col-span-3 xl:col-span-1 [&>div]:max-w-none">
+              <SearchBox
+                value={query}
+                onChange={(v) => {
+                  setQuery(v)
+                  setPage(1)
+                }}
+                placeholder="Search name, email, or ID"
+              />
+            </div>
             <Select
               value={roleFilter}
               onChange={(v) => {
                 setRoleFilter(v)
+                setStudentYearFilter("All Years")
+                setStudentSectionFilter("All Sections")
+                setFacultyFilter("All Faculty")
                 setPage(1)
               }}
               options={["All", "student", "faculty", "admin"]}
+              className="w-full min-w-0"
+            />
+            <Select
+              value={studentYearFilter}
+              onChange={(value) => {
+                setStudentYearFilter(value)
+                setStudentSectionFilter("All Sections")
+                setFacultyFilter("All Faculty")
+                setPage(1)
+              }}
+              options={studentYearOptions}
+              className="w-full min-w-0"
+            />
+            <Select
+              value={studentSectionFilter}
+              onChange={(value) => {
+                setStudentSectionFilter(value)
+                setFacultyFilter("All Faculty")
+                setPage(1)
+              }}
+              options={studentSectionOptions}
+              className="w-full min-w-0"
+            />
+            <Select
+              value={facultyFilter}
+              onChange={(value) => {
+                setFacultyFilter(value)
+                setStudentYearFilter("All Years")
+                setStudentSectionFilter("All Sections")
+                setPage(1)
+              }}
+              options={["All Faculty", "Regular Faculty", "Part Time Faculty", "With Advisory", "No Advisory"]}
+              className="w-full min-w-0"
             />
             <Button
               type="button"
@@ -236,7 +341,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                 setAddRole("student")
                 setAddOpen(true)
               }}
-              className="rounded-lg"
+              className="h-11 w-full whitespace-nowrap rounded-lg sm:col-span-2 lg:col-span-1 xl:col-span-1"
             >
               <Plus className="size-4" />
               Add Account
@@ -244,6 +349,36 @@ export function UsersModule({ model }: PortalModuleProps) {
           </div>
         }
       >
+        <div className="mb-4 grid gap-3 rounded-xl border border-border bg-muted/20 p-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+          <div className="flex h-[74px] min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 shadow-sm">
+            <Filter className="size-4 shrink-0 text-primary" />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Role View</p>
+              <p className="truncate font-medium text-foreground">{roleFilter === "All" ? "All account roles" : roleFilter}</p>
+            </div>
+          </div>
+          <div className="flex h-[74px] min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 shadow-sm">
+            <GraduationCap className="size-4 shrink-0 text-sky-600 dark:text-sky-300" />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Student Year</p>
+              <p className="truncate font-medium text-foreground">{studentYearFilter}</p>
+            </div>
+          </div>
+          <div className="flex h-[74px] min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 shadow-sm">
+            <Users className="size-4 shrink-0 text-emerald-600 dark:text-emerald-300" />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Section</p>
+              <p className="truncate font-medium text-foreground">{studentSectionFilter}</p>
+            </div>
+          </div>
+          <div className="flex h-[74px] min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 shadow-sm">
+            <UserCheck className="size-4 shrink-0 text-violet-600 dark:text-violet-300" />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Faculty</p>
+              <p className="truncate font-medium text-foreground">{facultyFilter}</p>
+            </div>
+          </div>
+        </div>
         {paginatedUsers.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Users className="mb-3 size-10 text-muted-foreground/50" />

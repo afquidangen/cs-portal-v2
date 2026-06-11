@@ -26,7 +26,7 @@ function computeTitle(user: {
     return `BSCS ${section} - ${user.studentType ?? "Regular"}`.trim()
   }
   if (user.role === "faculty") {
-    return `${user.position ?? "Faculty Member"} - Computer Science`
+    return `${user.position ?? "Faculty Member"} - BSCS`
   }
   return user.position ?? "System Administrator - CS Department"
 }

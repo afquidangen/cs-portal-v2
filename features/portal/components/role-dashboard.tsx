@@ -11,6 +11,7 @@ import {
   ClipboardList,
   Code2,
   Database,
+  DoorOpen,
   Download,
   GraduationCap,
   HardDrive,
@@ -65,7 +66,8 @@ type NewsItem = {
 import { cn } from "@/lib/utils"
 import { formatScheduleTime } from "@/components/ui/time-picker"
 
-import type { Announcement, Role } from "../data/portal-data"
+import type { Announcement, AvailabilityStatus, Role } from "../data/portal-data"
+import { availabilityOptions } from "../data/portal-data"
 import { usePortalDashboardModel } from "../hooks/use-portal-dashboard-model"
 import type { ModuleId } from "../types/navigation"
 import { AcademicModule } from "./modules/academic-module"
@@ -84,7 +86,6 @@ import { StudentRosterModule } from "./modules/student-roster-module"
 import { GreetingCard } from "./modules/greeting-card"
 import { InstructorsModule } from "./modules/instructors-module"
 import { LiveAnnouncementCard } from "./modules/live-announcement-card"
-import { Metric, StatusBadge } from "./shared/dashboard-ui"
 import { OverviewModule } from "./modules/overview-module"
 import { ProfileModule } from "./modules/profile-module"
 
@@ -293,39 +294,41 @@ export function RoleDashboard({ role }: { role: Role }) {
   const navigationGroups = useMemo(() => {
     const items = model.navigation
 
-    const overview = items.filter((item: { id: string }) => ["overview", "profile"].includes(item.id))
-    const academics = items.filter((item: { id: string }) =>
-      [
-        "grades",
-        "my-classes",
-        "classes",
-        "curriculum",
-        "grade-history",
-        "academic",
-        "instructors",
-        "schedule",
-        "availability",
-        "seminars",
-        "thesis",
-        "student-roster",
-      ].includes(item.id)
-    )
-    const management = items.filter((item: { id: string }) =>
-      ["announcements", "feedback", "templates", "users", "irregular-students", "audit"].includes(item.id)
-    )
-    const services = items.filter((item: { id: string }) => ["quick-links", "cso"].includes(item.id))
+    const pick = (ids: string[]) =>
+      items.filter((item: { id: string }) => ids.includes(item.id))
+
+    const roleGroups =
+      role === "admin"
+        ? [
+            { label: "Workspace", items: pick(["overview", "profile"]) },
+            { label: "Academic Setup", items: pick(["academic", "classes", "curriculum"]) },
+            { label: "People & Records", items: pick(["users", "irregular-students", "instructors", "availability", "audit"]) },
+            { label: "Communications", items: pick(["announcements", "feedback", "templates"]) },
+            { label: "Resources", items: pick(["thesis", "quick-links", "cso"]) },
+          ]
+        : role === "faculty"
+          ? [
+              { label: "Workspace", items: pick(["overview", "profile"]) },
+              { label: "Teaching", items: pick(["schedule", "student-roster", "grades", "availability"]) },
+              { label: "Academic Records", items: pick(["instructors", "thesis"]) },
+              { label: "Communications", items: pick(["announcements", "feedback"]) },
+              { label: "Resources", items: pick(["quick-links", "cso"]) },
+            ]
+          : [
+              { label: "Workspace", items: pick(["overview", "profile"]) },
+              { label: "My Academics", items: pick(["my-classes", "grades", "curriculum", "grade-history", "thesis"]) },
+              { label: "Campus Support", items: pick(["instructors", "availability", "announcements", "seminars", "feedback"]) },
+              { label: "Resources", items: pick(["quick-links", "cso"]) },
+            ]
 
     return [
-      { label: "Overview", items: overview },
-      { label: "Academic", items: academics },
-      { label: "Management", items: management },
-      { label: "Services", items: services },
+      ...roleGroups,
       {
         label: "Information",
         items: [{ id: "about", label: "About Us", icon: Info }],
       },
     ].filter((group) => group.items.length > 0)
-  }, [model.navigation])
+  }, [model.navigation, role])
 
   const adminStatusCards = [
     {
@@ -389,12 +392,13 @@ export function RoleDashboard({ role }: { role: Role }) {
     }
     return true
   })
-  const facultyPendingGrades = model.facultyGradeRecords.filter(
-    (grade: { released?: boolean; remarks?: string }) => !grade.released || !grade.remarks
-  )
   const facultyMember = model.faculty.find(
     (member: { email: string; name: string }) =>
       member.email === model.profile.email || member.name === model.profile.name
+  )
+  const facultyUser = model.users.find(
+    (user: { email: string; name: string; role: string }) =>
+      user.role === "faculty" && (user.email === model.profile.email || user.name === model.profile.name)
   )
   const todayLabel = new Date().toLocaleDateString("en-US", { weekday: "long" })
   const facultyTodaySchedules = model.visibleSchedules.filter(
@@ -413,6 +417,48 @@ export function RoleDashboard({ role }: { role: Role }) {
     day: "numeric",
   })
   const facultyStatus = facultyMember?.status ?? "Available"
+  const facultyAdvisoryClass = facultyUser?.advisoryClass || "No advisory class"
+  const facultyDepartment = "BSCS"
+  const availabilityStatusUi: Record<
+    AvailabilityStatus,
+    {
+      helper: string
+      icon: LucideIcon
+      accent: "emerald" | "sky" | "violet" | "amber"
+      activeClass: string
+      inactiveClass: string
+    }
+  > = {
+    Available: {
+      helper: "Open for student questions, walk-ins, and quick coordination.",
+      icon: CheckCircle2,
+      accent: "emerald",
+      activeClass: "border-emerald-500 bg-emerald-600 text-white shadow-sm dark:border-emerald-400 dark:bg-emerald-400 dark:text-emerald-950",
+      inactiveClass: "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 dark:border-emerald-800/60 dark:bg-emerald-950/35 dark:text-emerald-300 dark:hover:bg-emerald-900/50",
+    },
+    "In Class": {
+      helper: "Teaching in class right now; availability resumes after the session.",
+      icon: BookOpen,
+      accent: "sky",
+      activeClass: "border-sky-500 bg-sky-600 text-white shadow-sm dark:border-sky-400 dark:bg-sky-400 dark:text-sky-950",
+      inactiveClass: "border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-300 hover:bg-sky-100 dark:border-sky-800/60 dark:bg-sky-950/35 dark:text-sky-300 dark:hover:bg-sky-900/50",
+    },
+    "Consultation Only": {
+      helper: "Available for scheduled consultations and focused advising.",
+      icon: Users,
+      accent: "violet",
+      activeClass: "border-violet-500 bg-violet-600 text-white shadow-sm dark:border-violet-400 dark:bg-violet-400 dark:text-violet-950",
+      inactiveClass: "border-violet-200 bg-violet-50 text-violet-700 hover:border-violet-300 hover:bg-violet-100 dark:border-violet-800/60 dark:bg-violet-950/35 dark:text-violet-300 dark:hover:bg-violet-900/50",
+    },
+    "Out of Office": {
+      helper: "Away from the office; check back later for updated availability.",
+      icon: DoorOpen,
+      accent: "amber",
+      activeClass: "border-amber-500 bg-amber-500 text-amber-950 shadow-sm dark:border-amber-300 dark:bg-amber-300 dark:text-amber-950",
+      inactiveClass: "border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100 dark:border-amber-800/60 dark:bg-amber-950/35 dark:text-amber-300 dark:hover:bg-amber-900/50",
+    },
+  }
+  const facultyAvailabilityUi = availabilityStatusUi[facultyStatus]
   const facultyHeroStats = [
     {
       label: "Classes Today",
@@ -420,31 +466,33 @@ export function RoleDashboard({ role }: { role: Role }) {
       icon: CalendarDays,
     },
     {
-      label: "Pending Grades",
-      value: String(facultyPendingGrades.length),
-      icon: BarChart3,
+      label: "Handled Subjects",
+      value: String(model.facultySubjects.length),
+      icon: BookOpen,
     },
     {
-      label: "Students Advised",
-      value: String(facultyActiveStudents.length),
+      label: "Advisory Class",
+      value: facultyAdvisoryClass,
       icon: Users,
     },
-  ]
-  const facultyProfileFacts = [
     {
       label: "Department",
-      value: "Computer Science",
+      value: facultyDepartment,
       icon: GraduationCap,
-    },
-    {
-      label: "Rank",
-      value: model.profile.title?.split(" - ")[0] || facultyMember?.position || "Faculty",
-      icon: Users,
     },
   ]
   const facultyOverviewCards = [
     {
-      label: "Handled Classes",
+      label: "Availability",
+      value: facultyStatus,
+      helper: facultyAvailabilityUi.helper,
+      icon: facultyAvailabilityUi.icon,
+      accent: facultyAvailabilityUi.accent,
+      interactive: true,
+      sparkline: [14, 17, 20, 18, 19, 16, 15, 22],
+    },
+    {
+      label: "Schedule Blocks",
       value: String(model.visibleSchedules.length),
       helper: `${model.facultySubjects.length} subject${model.facultySubjects.length === 1 ? "" : "s"}`,
       icon: ClipboardList,
@@ -452,35 +500,28 @@ export function RoleDashboard({ role }: { role: Role }) {
       sparkline: [18, 22, 20, 24, 23, 27, 21, 30],
     },
     {
-      label: "Total Students",
+      label: "Roster Students",
       value: String(facultyActiveStudents.length),
-      helper: "Across handled sections",
+      helper: "Student roster",
       icon: Users,
       accent: "sky",
       sparkline: [22, 28, 26, 25, 29, 27, 31, 24],
     },
     {
-      label: "Pending Grades",
-      value: String(facultyPendingGrades.length),
-      helper: facultyPendingGrades.length > 0 ? "Needs attention" : "All caught up",
+      label: "Grade Records",
+      value: String(model.facultyGradeRecords.length),
+      helper: "Grades module",
       icon: BarChart3,
       accent: "violet",
       sparkline: [12, 18, 14, 16, 15, 19, 11, 22],
-    },
-    {
-      label: "My Next Office Hours",
-      value: facultyMember?.notes || "N/A",
-      helper: "Faculty availability",
-      icon: Clock,
-      accent: "amber",
-      sparkline: [14, 17, 20, 18, 19, 16, 15, 22],
     },
   ]
 
   const studentFirstName = model.profile.name.split(" ")[0] || model.profile.name
   const studentUser = model.users.find((u: { id: string }) => u.id === model.profile.id)
   const studentCourse = studentUser?.course ?? "BSCS"
-  const studentYearLevel = studentUser?.currentYearLevel ?? "—"
+  const studentYearLevel = studentUser?.currentYearLevel ?? (studentUser?.year ? `Year ${studentUser.year}` : "N/A")
+  const studentSection = model.profileSection || studentUser?.section || "N/A"
 
   const allStudentGrades = model.allStudentGrades ?? []
   const totalUnits = allStudentGrades.reduce((s: number, g: { units: number }) => s + (g.units ?? 0), 0)
@@ -490,10 +531,10 @@ export function RoleDashboard({ role }: { role: Role }) {
   const unitsDisplay = totalUnits > 0 ? `${passedUnits} / ${totalUnits}` : "N/A"
 
   const studentProfileFacts = [
-    { label: "Program", value: studentCourse, icon: GraduationCap },
-    { label: "Year Level", value: studentYearLevel, icon: Layers3 },
-    { label: "Section", value: model.profileSection || "—", icon: Users },
-    { label: "Student ID", value: model.profile.id, icon: Info },
+    { label: "Program", value: studentCourse, icon: BookOpen },
+    { label: "Year Level", value: studentYearLevel, icon: GraduationCap },
+    { label: "Section", value: studentSection, icon: Users },
+    { label: "Student ID", value: model.profile.id, icon: ClipboardList },
   ]
 
   const studentOverviewCards = [
@@ -536,7 +577,7 @@ export function RoleDashboard({ role }: { role: Role }) {
   )
 
   const studentQuickActions = [
-    { label: "Grades and Reports", module: "grade-history" as ModuleId, icon: BarChart3, color: "violet" },
+    { label: "Grades Registry", module: "grade-history" as ModuleId, icon: BarChart3, color: "violet" },
     { label: "Thesis Library", module: "thesis" as ModuleId, icon: BookOpen, color: "emerald" },
     { label: "Curriculum", module: "curriculum" as ModuleId, icon: GraduationCap, color: "amber" },
     { label: "Instructor Info", module: "instructors" as ModuleId, icon: Users, color: "sky" },
@@ -835,15 +876,15 @@ export function RoleDashboard({ role }: { role: Role }) {
                       className="fixed left-2 right-2 z-50 overflow-hidden rounded-xl border border-border bg-white text-black shadow-2xl shadow-blue-950/15 sm:left-auto sm:w-[24rem] sm:max-w-[calc(100vw-1rem)] dark:border-[#1d3858] dark:bg-[#071224] dark:text-white dark:shadow-black/40"
                       style={{ top: notifPosition.top, right: notifPosition.right }}
                     >
-                      <div className="flex items-center justify-between border-b border-border bg-primary px-4 py-3 text-primary-foreground">
+                      <div className="flex items-center justify-between border-b border-border bg-muted px-4 py-3 text-foreground dark:bg-[#0f1b2b] dark:text-white">
                         <div className="flex items-center gap-2">
-                          <span className="flex size-8 items-center justify-center rounded-lg border border-white/20 bg-white/15">
+                          <span className="flex size-8 items-center justify-center rounded-lg border border-border bg-background text-foreground dark:border-white/15 dark:bg-white/10 dark:text-white">
                             <Bell className="size-4" />
                           </span>
                           <p className="text-sm font-semibold">Notifications</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-white">
+                          <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-semibold text-black dark:border-white/15 dark:bg-white/10 dark:text-white">
                             {visibleAnnouncements.length} new
                           </span>
                           {visibleAnnouncements.length > 0 ? (
@@ -854,7 +895,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                                   new Set(visibleAnnouncements.map((a) => a.id))
                                 )
                               }
-                              className="rounded-lg px-2 py-0.5 text-[11px] font-semibold text-white/90 transition-colors hover:bg-white/15 hover:text-white"
+                              className="rounded-lg border border-border bg-background px-2 py-0.5 text-[11px] font-semibold text-black transition-colors hover:bg-muted dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
                             >
                               Mark all read
                             </button>
@@ -959,60 +1000,45 @@ export function RoleDashboard({ role }: { role: Role }) {
               <div className="mb-8 space-y-5">
                 <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
                   {role === "faculty" ? (
-                    <Card className="relative overflow-hidden rounded-xl border border-primary/20 bg-[linear-gradient(125deg,#12306d_0%,#1d57c7_55%,#2478ff_100%)] text-white shadow-[0_24px_70px_rgb(31_111_229_/_0.24)] dark:border-[#274d8d] dark:bg-[linear-gradient(125deg,#071224_0%,#12306d_50%,#1d57c7_100%)]">
-                      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.09)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:34px_34px] opacity-40" />
-                      <div className="pointer-events-none absolute inset-y-0 right-0 w-2/3 bg-[radial-gradient(circle_at_top_right,rgba(139,211,255,0.46),transparent_42%)]" />
-                      <CardContent className="relative grid min-h-[140px] gap-3 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_350px] lg:items-center">
+                    <Card className="relative overflow-hidden rounded-xl border-0 bg-[linear-gradient(115deg,#1551b8_0%,#1f6fe5_58%,#35b8f4_100%)] text-white shadow-[0_18px_45px_rgb(31_111_229_/_0.24)] dark:bg-[linear-gradient(115deg,#071224_0%,#1551b8_58%,#1f6fe5_100%)]">
+                      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.09)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:44px_44px] opacity-45" />
+                      <div className="pointer-events-none absolute inset-y-0 right-0 w-2/3 bg-[radial-gradient(circle_at_top_right,rgba(151,224,255,0.58),transparent_46%)]" />
+                      <CardContent className="relative grid min-h-[265px] gap-6 px-5 py-7 sm:px-8 sm:py-8 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-center">
                         <div className="min-w-0">
-                          <span className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/12 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/82 shadow-sm">
-                            <CalendarDays className="size-3.5" />
-                            {facultyTodayFull}
-                          </span>
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/86">
+                            <span className="inline-flex items-center gap-2 rounded-xl border border-white/16 bg-white/14 px-3 py-1 shadow-sm backdrop-blur">
+                              <CalendarDays className="size-3.5" />
+                              {facultyTodayFull}
+                            </span>
+                          </div>
 
-                          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-4xl">
+                          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-white">
                             {facultyGreeting}, {facultyFirstName}
                           </h1>
-                          <p className="mt-1 max-w-xl text-sm leading-5 text-white/82">
+                          <p className="mt-4 max-w-xl text-sm leading-6 text-white/86">
                             Here&apos;s what&apos;s happening with your classes today.
                           </p>
-
-                          <div className="mt-3 grid gap-3">
-                            {facultyProfileFacts.map((fact) => {
-                              const Icon = fact.icon
-                              return (
-                                <div key={fact.label} className="flex items-start gap-3">
-                                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-white/16 bg-white/10 text-white/90 shadow-sm">
-                                    <Icon className="size-4" />
-                                  </span>
-                                  <div>
-                                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/68">
-                                      {fact.label}
-                                    </p>
-                                    <p className="mt-1 whitespace-nowrap text-sm font-semibold text-white">
-                                      {fact.value}
-                                    </p>
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
                         </div>
 
-                        <div className="grid gap-3 text-sm text-white/86">
+                        <div className="grid gap-3 text-sm text-white/88 sm:grid-cols-2">
                           {facultyHeroStats.map((stat) => {
                             const Icon = stat.icon
                             return (
                               <div
                                 key={stat.label}
-                                className="flex items-center justify-between gap-3 rounded-lg border border-white/12 bg-white/12 px-4 py-3 shadow-sm backdrop-blur"
+                                className="flex min-w-0 items-center gap-3 rounded-xl border border-white/16 bg-white/16 px-4 py-3 shadow-sm backdrop-blur"
                               >
-                                <span className="inline-flex min-w-0 items-center gap-3">
-                                  <Icon className="size-4 shrink-0 text-white/78" />
-                                  <span className="truncate">{stat.label}</span>
+                                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-white/16 bg-white/14 text-white">
+                                  <Icon className="size-4" />
                                 </span>
-                                <strong className="shrink-0 text-sm font-semibold text-white">
-                                  {stat.value}
-                                </strong>
+                                <span className="min-w-0">
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/68">
+                                    {stat.label}
+                                  </p>
+                                  <p className="mt-1 truncate text-sm font-semibold text-white">
+                                    {stat.value}
+                                  </p>
+                                </span>
                               </div>
                             )
                           })}
@@ -1020,36 +1046,43 @@ export function RoleDashboard({ role }: { role: Role }) {
                       </CardContent>
                     </Card>
                   ) : role === "student" ? (
-                    <Card className="relative overflow-hidden rounded-xl border-0 bg-[linear-gradient(120deg,#18479f_0%,#1f6fe5_58%,#28a7f2_100%)] text-white shadow-[0_24px_70px_rgb(31_111_229_/_0.24)] dark:bg-[linear-gradient(120deg,#071224_0%,#18479f_58%,#1f6fe5_100%)]">
-                      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:36px_36px] opacity-35" />
-                      <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,rgba(234,245,255,0.48),transparent_48%)]" />
-                      <CardContent className="relative flex flex-col gap-5 px-4 py-4 sm:px-7 sm:py-5">
-                        <div className="flex flex-col items-start">
-                          <span className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/12 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/78">
-                            <CalendarDays className="size-3.5" />
-                            {facultyTodayFull}
-                          </span>
-                          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-4xl">
+                    <Card className="relative overflow-hidden rounded-xl border-0 bg-[linear-gradient(115deg,#1551b8_0%,#1f6fe5_58%,#35b8f4_100%)] text-white shadow-[0_18px_45px_rgb(31_111_229_/_0.24)] dark:bg-[linear-gradient(115deg,#071224_0%,#1551b8_58%,#1f6fe5_100%)]">
+                      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.09)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:44px_44px] opacity-45" />
+                      <div className="pointer-events-none absolute inset-y-0 right-0 w-2/3 bg-[radial-gradient(circle_at_top_right,rgba(151,224,255,0.58),transparent_46%)]" />
+                      <CardContent className="relative grid min-h-[265px] gap-6 px-5 py-7 sm:px-8 sm:py-8 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-center">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/86">
+                            <span className="inline-flex items-center gap-2 rounded-xl border border-white/16 bg-white/14 px-3 py-1 shadow-sm backdrop-blur">
+                              <CalendarDays className="size-3.5" />
+                              {facultyTodayFull}
+                            </span>
+                          </div>
+                          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-white">
                             {facultyGreeting}, {studentFirstName}
                           </h1>
-                          <p className="mt-2 max-w-xl text-sm leading-5 text-white/82">
+                          <p className="mt-4 max-w-xl text-sm leading-6 text-white/86">
                             {subtitle}
                           </p>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                        <div className="grid gap-3 text-sm text-white/88 sm:grid-cols-2">
                           {studentProfileFacts.map((fact) => {
                             const Icon = fact.icon
                             return (
-                              <div key={fact.label} className="flex flex-col items-center gap-1.5 text-center">
-                                <span className="flex size-9 items-center justify-center rounded-lg border border-white/16 bg-white/10 text-white/90 shadow-sm">
+                              <div
+                                key={fact.label}
+                                className="flex min-w-0 items-center gap-3 rounded-xl border border-white/16 bg-white/16 px-4 py-3 shadow-sm backdrop-blur"
+                              >
+                                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-white/16 bg-white/14 text-white">
                                   <Icon className="size-4" />
                                 </span>
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/65">
-                                  {fact.label}
-                                </p>
-                                <p className="text-sm font-semibold text-white">
-                                  {fact.value}
-                                </p>
+                                <span className="min-w-0">
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/68">
+                                    {fact.label}
+                                  </p>
+                                  <p className="mt-1 truncate text-sm font-semibold text-white">
+                                    {fact.value}
+                                  </p>
+                                </span>
                               </div>
                             )
                           })}
@@ -1099,7 +1132,9 @@ export function RoleDashboard({ role }: { role: Role }) {
                               ? "border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-300"
                               : item.accent === "amber"
                                 ? "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300"
-                                : "border-primary/20 bg-primary/10 text-primary"
+                                : item.accent === "emerald"
+                                  ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
+                                  : "border-primary/20 bg-primary/10 text-primary"
                         const stroke =
                           item.accent === "sky"
                             ? "#38bdf8"
@@ -1107,7 +1142,9 @@ export function RoleDashboard({ role }: { role: Role }) {
                               ? "#8b5cf6"
                               : item.accent === "amber"
                                 ? "#d7a11f"
-                                : "#2478ff"
+                                : item.accent === "emerald"
+                                  ? "#10b981"
+                                  : "#2478ff"
 
                         return (
                           <Card
@@ -1250,33 +1287,74 @@ export function RoleDashboard({ role }: { role: Role }) {
                             key={item.label}
                             className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                           >
-                            <CardContent className="grid min-h-[138px] grid-cols-[minmax(0,1fr)_86px] gap-3 p-4 sm:p-5">
+                            <CardContent
+                              className={cn(
+                                "grid min-h-[138px] gap-3 p-4 sm:p-5",
+                                item.interactive ? "grid-cols-1" : "grid-cols-[minmax(0,1fr)_86px]"
+                              )}
+                            >
                               <div className="min-w-0">
-                                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                                  {item.label}
-                                </p>
-                                <p className={cn("mt-5 truncate font-semibold tracking-tight text-foreground", item.label === "My Next Office Hours" ? "text-sm" : "text-3xl")}>
-                                  {item.value}
-                                </p>
-                                <p className="mt-3 truncate text-xs text-muted-foreground">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                      {item.label}
+                                    </p>
+                                    <p className={cn("mt-5 truncate font-semibold tracking-tight text-foreground", item.interactive ? "text-2xl" : "text-3xl")}>
+                                      {item.value}
+                                    </p>
+                                  </div>
+                                  {item.interactive ? (
+                                    <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-lg border shadow-sm", accentClass)}>
+                                      <Icon className="size-5" strokeWidth={2.1} />
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <p className={cn("mt-3 text-xs text-muted-foreground", item.interactive ? "line-clamp-2 leading-5" : "truncate")}>
                                   {item.helper}
                                 </p>
+                                {item.interactive ? (
+                                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                                    {availabilityOptions.map((status) => {
+                                      const optionUi = availabilityStatusUi[status]
+                                      return (
+                                        <button
+                                          key={status}
+                                          type="button"
+                                          onClick={() => {
+                                            model.setMyFacultyStatus(status)
+                                            if (facultyMember) {
+                                              model.updateFacultyStatus(facultyMember.id, status, model.myFacultyNotes)
+                                            }
+                                          }}
+                                          className={cn(
+                                            "rounded-lg border px-3 py-2 text-left text-xs font-semibold transition-colors",
+                                            facultyStatus === status ? optionUi.activeClass : optionUi.inactiveClass
+                                          )}
+                                        >
+                                          {status === "Consultation Only" ? "Consultation" : status}
+                                        </button>
+                                      )
+                                    })}
+                                  </div>
+                                ) : null}
                               </div>
-                              <div className="flex flex-col items-end justify-between gap-3">
-                                <span className={cn("flex size-11 items-center justify-center rounded-lg border shadow-sm", accentClass)}>
-                                  <Icon className="size-5" strokeWidth={2.1} />
-                                </span>
-                                <svg viewBox="0 0 92 42" className="h-11 w-full opacity-80">
-                                  <polyline
-                                    fill="none"
-                                    stroke={stroke}
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2.25"
-                                    points={item.sparkline.map((point, index) => `${index * 13},${40 - point}`).join(" ")}
-                                  />
-                                </svg>
-                              </div>
+                              {!item.interactive ? (
+                                <div className="flex flex-col items-end justify-between gap-3">
+                                  <span className={cn("flex size-11 items-center justify-center rounded-lg border shadow-sm", accentClass)}>
+                                    <Icon className="size-5" strokeWidth={2.1} />
+                                  </span>
+                                  <svg viewBox="0 0 92 42" className="h-11 w-full opacity-80">
+                                    <polyline
+                                      fill="none"
+                                      stroke={stroke}
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2.25"
+                                      points={item.sparkline.map((point, index) => `${index * 13},${40 - point}`).join(" ")}
+                                    />
+                                  </svg>
+                                </div>
+                              ) : null}
                             </CardContent>
                           </Card>
                         )
@@ -1327,29 +1405,6 @@ export function RoleDashboard({ role }: { role: Role }) {
                       <div className="flex flex-col gap-5">
                         <Card className="rounded-xl border border-border bg-card shadow-sm">
                           <CardHeader className="border-b border-border bg-muted/40 px-4 py-4 sm:px-5">
-                            <CardTitle className="flex items-center gap-2 text-base font-semibold tracking-tight text-foreground">
-                              <CheckCircle2 className="size-5 text-primary" />
-                              My Status
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="p-4 sm:p-5">
-                            <div className="flex items-center gap-3">
-                              <StatusBadge value={facultyStatus} />
-                              <span className="text-sm text-muted-foreground">
-                                {facultyStatus === "Available"
-                                  ? "You are currently available."
-                                  : facultyStatus === "In Class"
-                                    ? "You are currently in class."
-                                    : facultyStatus === "Consultation Only"
-                                      ? "Available for consultations only."
-                                      : "Currently out of office."}
-                              </span>
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        <Card className="rounded-xl border border-border bg-card shadow-sm">
-                          <CardHeader className="border-b border-border bg-muted/40 px-4 py-4 sm:px-5">
                             <CardTitle className="text-base font-semibold tracking-tight text-foreground">
                               Quick Actions
                             </CardTitle>
@@ -1359,7 +1414,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                               { label: "Schedule", module: "schedule", icon: CalendarDays, color: "sky" },
                               { label: "Roster", module: "student-roster", icon: Users, color: "violet" },
                               { label: "Grades", module: "grades", icon: BarChart3, color: "emerald" },
-                              { label: "Status", module: "availability", icon: CheckCircle2, color: "amber" },
+                              { label: "Availability", module: "availability", icon: Clock, color: "amber" },
                             ].map((action) => {
                               const Icon = action.icon
                               const colorMap: Record<string, string> = {

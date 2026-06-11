@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { CalendarDays, Clock, MapPinned } from "lucide-react"
 
 import { Panel, Select } from "../shared/dashboard-ui"
 import { formatScheduleTime } from "@/components/ui/time-picker"
@@ -40,9 +41,30 @@ export function SchedulePanel({ model }: PortalModuleProps) {
   }, [classSchedules, visibleSchedules, role, yearFilter, sectionFilter])
 
   return (
-    <Panel title="Weekly Schedule" eyebrow="Classes">
+    <Panel title="Weekly Schedule" className="[&>div:first-child]:hidden">
+      <div className="mb-5 rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
+        <div className="mx-auto flex size-16 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+          <CalendarDays className="size-8" />
+        </div>
+        <p className="mt-4 inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+          <Clock className="size-4" />
+          Classes and Room Assignments
+        </p>
+        <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+          Weekly Schedule
+        </h3>
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+          Review class blocks, assigned sections, meeting times, and rooms in a clean weekly schedule view.
+        </p>
+      </div>
+
       {role === "admin" ? (
-        <div className="mb-4 flex flex-wrap gap-3">
+        <div className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <MapPinned className="size-4" />
+            Schedule Filters
+          </p>
+        <div className="flex flex-wrap gap-3">
           <div className="w-44">
             <Select
               label="Year"
@@ -62,6 +84,7 @@ export function SchedulePanel({ model }: PortalModuleProps) {
               options={sectionOptions}
             />
           </div>
+        </div>
         </div>
       ) : null}
       <div className="overflow-x-auto rounded-2xl border border-border">

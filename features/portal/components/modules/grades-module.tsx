@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Download, GraduationCap, Send, Upload, Award } from "lucide-react"
+import { Award, BarChart3, BookMarked, ClipboardList, Download, FileSpreadsheet, GraduationCap, ListChecks, Send, Upload, UsersRound } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -49,16 +49,70 @@ export function GradesModule({ model }: PortalModuleProps) {
   return (
     <Panel
       title="Grades & Report"
-      eyebrow="Student records"
-      actions={
-        <Button size="sm" onClick={downloadGradeReport} className="rounded-lg">
+      className="[&>div:first-child]:hidden"
+    >
+      <div className="mb-5 rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
+        <div className="mx-auto flex size-16 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+          <BarChart3 className="size-8" />
+        </div>
+        <p className="mt-4 inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+          <GraduationCap className="size-4" />
+          Student Records
+        </p>
+        <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+          Grades & Report
+        </h3>
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+          Review your released grades, academic standing, equivalent marks, and downloadable grade report.
+        </p>
+        <Button size="sm" onClick={downloadGradeReport} className="mt-4 rounded-lg">
           <Download className="size-4" />
           Download CSV
         </Button>
-      }
-    >
+      </div>
+
+      <div className="mb-5 grid gap-3 md:grid-cols-3">
+        {[
+          {
+            label: "Visible Records",
+            value: String(visibleAllGrades.length),
+            note: "Current grade rows",
+            icon: ListChecks,
+          },
+          {
+            label: "Total Units",
+            value: gwaData ? String(gwaData.totalUnits) : "0",
+            note: "Released graded units",
+            icon: BookMarked,
+          },
+          {
+            label: "GWA Equivalent",
+            value: gwaData ? gwaData.equivalent.toFixed(2) : "N/A",
+            note: gwaData?.honors ?? "Awaiting complete grades",
+            icon: Award,
+          },
+        ].map((item) => {
+          const Icon = item.icon
+
+          return (
+            <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+                  <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{item.note}</p>
+                </div>
+                <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                  <Icon className="size-5" />
+                </span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
       {gwaData && (
-        <div className="mb-5 flex flex-wrap items-center gap-4">
+        <div className="mb-5 flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
           <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card px-5 py-3 shadow-sm">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               GWA
@@ -79,7 +133,14 @@ export function GradesModule({ model }: PortalModuleProps) {
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-border shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <h4 className="text-base font-bold text-foreground">Grade Records</h4>
+          <p className="text-sm text-muted-foreground">Released grades display full scores; active subjects remain in progress.</p>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto rounded-2xl border border-border shadow-sm">
         <table className="w-full min-w-[820px] text-left text-sm">
           <thead className="bg-muted text-foreground">
             <tr className="border-b border-border">
@@ -267,13 +328,23 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
   return (
     <Panel
       title="Manage Grades"
-      eyebrow={
-        selectedSubject && subjectSections.length > 0
-          ? `${selectedSubject} \u2022 ${subjectSections.join(", ")}`
-          : "Subject grade encoding"
-      }
-      actions={
-        <div className="flex flex-wrap gap-2">
+      className="[&>div:first-child]:hidden"
+    >
+      <div className="mb-5 rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
+        <div className="mx-auto flex size-16 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+          <ClipboardList className="size-8" />
+        </div>
+        <p className="mt-4 inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+          <GraduationCap className="size-4" />
+          Subject Grade Encoding
+        </p>
+        <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+          Manage Grades
+        </h3>
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+          Select a subject, encode student grades, upload grade sheets, and release finalized records to students.
+        </p>
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
           <Button size="sm" onClick={downloadGradeTemplate} className="rounded-lg">
             <Download className="size-4" />
             Template
@@ -282,17 +353,44 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
             size="sm"
             variant="outline"
             onClick={handleReleaseAll}
-            className="rounded-lg"
+            className="rounded-lg bg-card/80"
           >
             <Send className="size-4" />
             Release
           </Button>
         </div>
-      }
-    >
+      </div>
+
+      <div className="mb-5 grid gap-3 md:grid-cols-3">
+        {[
+          { label: "Assigned Subjects", value: String(facultySubjects.length), icon: BookMarked },
+          { label: "Active Sections", value: String(subjectSections.length), icon: UsersRound },
+          { label: "Students Listed", value: String(subjectRoster.length), icon: FileSpreadsheet },
+        ].map((item) => {
+          const Icon = item.icon
+
+          return (
+            <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+                  <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+                </div>
+                <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                  <Icon className="size-5" />
+                </span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
       {/* Subject selector */}
-      <div className="mb-4">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Subject</p>
+      <div className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <BookMarked className="size-4" />
+          Subject
+        </p>
         <div className="flex flex-wrap gap-2">
           {facultySubjects.length === 0 ? (
             <p className="text-sm text-muted-foreground">No subjects assigned.</p>
@@ -316,24 +414,33 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
       </div>
 
       {/* Upload */}
-      <div className="mb-4 grid gap-3 md:grid-cols-[1fr_auto]">
-        <Input
-          type="file"
-          accept=".xlsx"
-          onChange={handleGradeWorkbookUpload}
-          className="h-10 rounded-lg"
-        />
-        <Button type="button" variant="outline" className="rounded-lg">
+      <div className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           <Upload className="size-4" />
-          Upload Excel
-        </Button>
+          Workbook Upload
+        </p>
+        <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+          <Input
+            type="file"
+            accept=".xlsx"
+            onChange={handleGradeWorkbookUpload}
+            className="h-10 rounded-lg"
+          />
+          <Button type="button" variant="outline" className="rounded-lg">
+            <Upload className="size-4" />
+            Upload Excel
+          </Button>
+        </div>
+        <p className="mt-3 text-sm text-muted-foreground">{uploadName}</p>
       </div>
-      <p className="mb-4 text-sm text-muted-foreground">{uploadName}</p>
 
       {/* Section selector */}
       {selectedSubject && subjectSections.length > 0 && (
-        <div className="mb-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Section</p>
+        <div className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <UsersRound className="size-4" />
+            Section
+          </p>
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"

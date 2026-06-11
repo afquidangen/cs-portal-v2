@@ -1,6 +1,6 @@
 "use client"
 
-import { BellRing, CalendarDays, Megaphone, Radio } from "lucide-react"
+import { BellRing, CalendarDays, Radio } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -24,10 +24,10 @@ export function LiveAnnouncementCard({
       )}
     >
       <CardContent className="relative p-0">
-        <div className="edu-bg-soft-glacier flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-1.5 sm:px-5">
+        <div className="edu-bg-soft-glacier flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2 sm:px-5">
           <div className="flex items-center gap-2">
-            <div className="edu-lapis edu-ring-lapis flex size-6 items-center justify-center rounded-lg border shadow-sm">
-              <BellRing className="size-3" strokeWidth={2.2} />
+            <div className="edu-lapis edu-ring-lapis flex size-8 items-center justify-center rounded-lg border shadow-sm">
+              <BellRing className="size-4" strokeWidth={2.2} />
             </div>
 
             <div>
@@ -50,15 +50,11 @@ export function LiveAnnouncementCard({
           key={index}
           className="px-4 pb-8 pt-2.5 animate-in fade-in-0 slide-in-from-bottom-2 duration-500 sm:px-5"
         >
-          <div className="grid gap-2 sm:grid-cols-[40px_minmax(0,1fr)] sm:items-start">
-            <div className="edu-bg-soft-lapis edu-ring-lapis hidden size-9 items-center justify-center rounded-lg border text-primary shadow-inner sm:flex">
-              <Megaphone className="size-4" strokeWidth={2.1} />
-            </div>
-            <div className="min-w-0">
-              <Badge variant="outline" className="mb-1.5 rounded border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-primary">
+          <div className="min-w-0">
+              <Badge variant="outline" className="mx-auto mb-2 flex w-fit justify-center rounded-lg border-primary/25 bg-primary/10 px-3 py-1 text-center text-[11px] font-extrabold uppercase tracking-[0.12em] text-primary shadow-sm">
                 {announcement.audience}
               </Badge>
-              <h3 className="text-sm font-bold tracking-tight text-foreground sm:text-base">
+              <h3 className="text-lg font-extrabold leading-snug tracking-tight text-foreground sm:text-xl">
                 {announcement.title}
               </h3>
               <p className="mt-1 line-clamp-2 text-[13px] leading-5 text-foreground/78">
@@ -69,7 +65,6 @@ export function LiveAnnouncementCard({
                 {announcement.date}
               </p>
             </div>
-          </div>
         </div>
 
         <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 gap-2">

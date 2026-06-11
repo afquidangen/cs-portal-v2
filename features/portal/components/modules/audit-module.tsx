@@ -1,6 +1,6 @@
 "use client"
 
-import { Clock, Filter, RefreshCw, Search, User } from "lucide-react"
+import { Activity, Clock, FileClock, Filter, RefreshCw, Search, ShieldCheck, User, Users } from "lucide-react"
 import { useState } from "react"
 
 import { Input } from "@/components/ui/input"
@@ -32,36 +32,61 @@ export function AuditModule({ model }: PortalModuleProps) {
   return (
     <Panel
       title="Audit Trail"
-      eyebrow="System-wide activity log"
-      actions={
-        <div className="flex flex-wrap items-center gap-2">
+      className="[&>div:first-child]:hidden"
+    >
+      <div className="mb-5 rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
+        <div className="mx-auto flex size-16 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+          <FileClock className="size-8" />
+        </div>
+        <p className="mt-4 inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+          <ShieldCheck className="size-4" />
+          System-wide Activity Log
+        </p>
+        <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+          Audit Logs
+        </h3>
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+          Monitor account activity, portal changes, and administrative actions across the system.
+        </p>
+        <div className="mx-auto mt-4 flex max-w-xl flex-wrap justify-center gap-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search actions..."
-              className="h-8 w-44 rounded-xl pl-8 text-xs"
+              className="h-9 w-52 rounded-xl bg-card pl-8 text-xs"
             />
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground">
             <Clock className="size-3.5" />
             <span>{auditLogs.length} entries</span>
           </div>
         </div>
-      }
-    >
+      </div>
+
       <div className="mb-4 grid gap-3 md:grid-cols-3">
         {[
-          { label: "Total Entries", value: String(auditLogs.length) },
-          { label: "Visible Results", value: String(filtered.length) },
-          { label: "Actors", value: String(actors.length) },
-        ].map((item) => (
+          { label: "Total Entries", value: String(auditLogs.length), icon: FileClock },
+          { label: "Visible Results", value: String(filtered.length), icon: Activity },
+          { label: "Actors", value: String(actors.length), icon: Users },
+        ].map((item) => {
+          const Icon = item.icon
+
+          return (
           <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
-            <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+              </div>
+              <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                <Icon className="size-5" />
+              </span>
+            </div>
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {actors.length > 1 ? (

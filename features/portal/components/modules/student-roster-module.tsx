@@ -3,9 +3,11 @@
 import { useMemo, useState } from "react"
 import {
   BookMarked,
-  Plus,
+  ClipboardList,
+  Layers3,
   Search,
   Trash2,
+  UserPlus,
   Users,
 } from "lucide-react"
 
@@ -25,7 +27,6 @@ import type { PortalModuleProps } from "./types"
 export function StudentRosterModule({ model }: PortalModuleProps) {
   const {
     facultySubjects,
-    classSchedules,
     users,
     grades,
     roster,
@@ -46,7 +47,10 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
     [facultySubjects, selectedSubject]
   )
 
-  const sectionOptions = currentSubject?.sections ?? []
+  const sectionOptions = useMemo(
+    () => currentSubject?.sections ?? [],
+    [currentSubject]
+  )
 
   const [confirmUnenroll, setConfirmUnenroll] = useState<{ gradeId?: string; studentId: string; section: string } | null>(null)
 
@@ -184,21 +188,57 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-5">
+      <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
+        <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-4 sm:flex-row sm:justify-center sm:text-left">
+          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+            <ClipboardList className="size-8" />
+          </div>
+          <div>
+            <p className="inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground sm:justify-start">
+              <Users className="size-4" />
+              Class Enrollment Directory
+            </p>
+            <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+              Student Roster
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Select a subject and section to review enrolled students, draft grade status, and roster actions.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <div className="grid gap-3 md:grid-cols-3">
         {[
-          { label: "Subjects", value: String(subjectOptions.length) },
-          { label: "Sections", value: String(sectionOptions.length) },
-          { label: "Visible Students", value: String(rosterStudents.length) },
-        ].map((item) => (
+          { label: "Subjects", value: String(subjectOptions.length), icon: BookMarked },
+          { label: "Sections", value: String(sectionOptions.length), icon: Layers3 },
+          { label: "Visible Students", value: String(rosterStudents.length), icon: Users },
+        ].map((item) => {
+          const Icon = item.icon
+
+          return (
           <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
-            <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+              </div>
+              <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                <Icon className="size-5" />
+              </span>
+            </div>
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Subject selector */}
       <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+        <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <BookMarked className="size-4" />
+          Subject Selection
+        </p>
         {subjectOptions.length === 0 ? (
           <p className="px-3 py-2 text-sm text-muted-foreground">
             No subjects assigned to you yet.
@@ -221,6 +261,10 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
           {/* Section filter */}
           {sectionOptions.length > 1 ? (
             <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+              <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <Layers3 className="size-4" />
+                Section Filter
+              </p>
               <Select
                 label="Section"
                 value={selectedSection ?? "All Sections"}
@@ -245,7 +289,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
                   setAddDialog(true)
                 }}
               >
-                <Plus className="size-3.5 mr-1" /> Add Student
+                <UserPlus className="size-3.5 mr-1" /> Add Student
               </Button>
             </div>
             {rosterStudents.length === 0 ? (

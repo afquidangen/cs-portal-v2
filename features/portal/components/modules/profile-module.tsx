@@ -1,6 +1,6 @@
 "use client"
 
-import { Camera, Eye, EyeOff, KeyRound, Save, Undo2, UserCircle } from "lucide-react"
+import { Camera, Eye, EyeOff, IdCard, KeyRound, Save, ShieldCheck, Undo2, UserCircle, UserRoundCog } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -31,6 +31,8 @@ export function ProfileModule({ model }: PortalModuleProps) {
   const [showPasswords, setShowPasswords] = useState(false)
   const [passwordError, setPasswordError] = useState("")
   const [passwordSuccess, setPasswordSuccess] = useState(false)
+  const passwordInputClass =
+    "pr-10 border-border bg-background text-foreground placeholder:text-muted-foreground focus-visible:border-primary dark:border-[#1d3858] dark:bg-[#071224] dark:text-white dark:placeholder:text-white/45"
 
   const roleLabel =
     role === "admin"
@@ -99,6 +101,27 @@ export function ProfileModule({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-5">
+      <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
+        <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-4 sm:flex-row sm:justify-center sm:text-left">
+          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+            <UserRoundCog className="size-8" />
+          </div>
+          <div>
+            <p className="inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground sm:justify-start">
+              <IdCard className="size-4" />
+              Account Information
+            </p>
+            <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+              My Profile
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Manage your personal details, profile photo, and account security settings.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <div className="grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
         <div className="border border-border bg-muted/30 p-6">
           <div className="flex flex-col items-center text-center">
@@ -142,7 +165,8 @@ export function ProfileModule({ model }: PortalModuleProps) {
 
         <div className="border border-border bg-muted/30 p-4 sm:p-6">
           <div className="mb-5">
-            <h3 className="text-lg font-semibold text-foreground">
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <ShieldCheck className="size-5 text-primary" />
               Personal Information
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -236,7 +260,7 @@ export function ProfileModule({ model }: PortalModuleProps) {
         </div>
       </div>
 
-      <div className="border border-border bg-muted/30 p-4 sm:p-6">
+      <div className="border border-border bg-muted/30 p-4 dark:border-[#1d3858] dark:bg-[#071224]/70 sm:p-6">
         <div className="mb-4">
           <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
             <KeyRound className="size-4" /> Change Password
@@ -252,7 +276,7 @@ export function ProfileModule({ model }: PortalModuleProps) {
               placeholder="Current password"
               value={passwordForm.current}
               onChange={(e) => setPasswordForm((p) => ({ ...p, current: e.target.value }))}
-              className="pr-10"
+              className={passwordInputClass}
             />
           </div>
           <div className="relative">
@@ -262,7 +286,7 @@ export function ProfileModule({ model }: PortalModuleProps) {
               value={passwordForm.newPass}
               onChange={(e) => setPasswordForm((p) => ({ ...p, newPass: e.target.value }))}
               minLength={8}
-              className="pr-10"
+              className={passwordInputClass}
             />
           </div>
           <div className="relative">
@@ -272,7 +296,7 @@ export function ProfileModule({ model }: PortalModuleProps) {
               value={passwordForm.confirm}
               onChange={(e) => setPasswordForm((p) => ({ ...p, confirm: e.target.value }))}
               minLength={8}
-              className="pr-10"
+              className={passwordInputClass}
             />
           </div>
         </div>
