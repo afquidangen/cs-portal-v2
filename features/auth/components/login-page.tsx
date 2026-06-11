@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, type FormEvent } from "react"
-import { Lock, Mail } from "lucide-react"
+import { Eye, EyeOff, Lock, Mail } from "lucide-react"
 
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label"
 export function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
   const [forgotSent, setForgotSent] = useState(false)
@@ -103,6 +104,9 @@ export function LoginPage() {
             </span>
             <span className="login-terminal-line login-terminal-line-welcome">
               Welcome to ComScite Portal v26      </span>
+            <span className="login-terminal-line login-terminal-line-quote">
+              Code, Connect, Conquer
+            </span>
             <span className="login-terminal-line login-terminal-line-status">
               Status: Online | Environment: Ready
             </span>
@@ -141,7 +145,7 @@ export function LoginPage() {
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@ispsc.edu.ph"
+                    placeholder="you@gmail.com"
                     className="h-11 rounded-xl border-[#d7e8fb] bg-[#f8fbff] pl-9 font-mono text-sm text-[#071224] placeholder:text-[#7d94ab] focus-visible:border-[#1f6fe5] focus-visible:ring-[#1f6fe5]/20"
                     required
                   />
@@ -154,13 +158,21 @@ export function LoginPage() {
                   <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#5f7c99]" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     placeholder="Enter test password"
-                    className="h-11 rounded-xl border-[#d7e8fb] bg-[#f8fbff] pl-9 font-mono text-sm text-[#071224] placeholder:text-[#7d94ab] focus-visible:border-[#1f6fe5] focus-visible:ring-[#1f6fe5]/20"
+                    className="h-11 rounded-xl border-[#d7e8fb] bg-[#f8fbff] pl-9 pr-10 font-mono text-sm text-[#071224] placeholder:text-[#7d94ab] focus-visible:border-[#1f6fe5] focus-visible:ring-[#1f6fe5]/20"
                     required
                   />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5f7c99] hover:text-[#071224]"
+                    onClick={() => setShowPassword((p) => !p)}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
                 </div>
               </div>
 

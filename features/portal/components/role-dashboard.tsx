@@ -265,7 +265,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       audit: <AuditModule model={model} />,
       "irregular-students": <IrregularStudentsModule model={model} />,
       "student-roster": <StudentRosterModule model={model} />,
-      about: <AboutModule />,
+      about: <AboutModule model={model} />,
     }
 
     return moduleMap[model.activeModule] || <OverviewModule model={model} />

@@ -466,10 +466,19 @@
     font-size: 1.08em;
   }
 
+  .login-terminal-line-quote {
+    --login-terminal-steps: 22;
+    animation:
+      login-terminal-type 1.15s 2.25s steps(var(--login-terminal-steps)) forwards,
+      login-terminal-caret 0.8s 2.25s step-end infinite;
+    color: #18479f;
+    text-shadow: 0 0 8px rgba(24, 71, 159, 0.5), 0 0 20px rgba(31, 111, 229, 0.3);
+  }
+
   .login-terminal-line-status {
     --login-terminal-steps: 34;
     color: #225688;
-    animation-delay: 2.45s;
+    animation-delay: 3.4s;
   }
 
   .dashboard-loading-shell {

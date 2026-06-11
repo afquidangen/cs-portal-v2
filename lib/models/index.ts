@@ -1,3 +1,5 @@
+export { AboutModel } from "./about.model"
+export type { IAbout } from "./about.model"
 export { AnnouncementModel } from "./announcement.model"
 export type { IAnnouncement } from "./announcement.model"
 export { AuditLogModel } from "./audit-log.model"

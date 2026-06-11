@@ -1,3 +1,4 @@
+export { aboutRepository } from "./about.repository"
 export { announcementsRepository } from "./announcements.repository"
 export { auditLogsRepository } from "./audit-logs.repository"
 export { csoReportsRepository } from "./cso-reports.repository"
