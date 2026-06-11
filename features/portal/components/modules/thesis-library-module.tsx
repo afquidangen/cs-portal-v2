@@ -101,21 +101,21 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
+      <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left shadow-sm sm:px-6">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
-        <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-4">
-          <div className="flex size-16 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+        <div className="relative flex max-w-4xl flex-col items-start gap-4 sm:flex-row sm:items-center">
+          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
             <LibraryBig className="size-8" />
           </div>
           <div>
-            <p className="inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="inline-flex items-center justify-start gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
               <Search className="size-4" />
               Research Repository
             </p>
             <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
               Thesis Library
             </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
               Browse, search, and download Computing Studies thesis manuscripts by title, author, adviser, year, or research category.
             </p>
           </div>

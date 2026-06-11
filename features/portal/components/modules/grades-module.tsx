@@ -51,24 +51,26 @@ export function GradesModule({ model }: PortalModuleProps) {
       title="Grades & Report"
       className="[&>div:first-child]:hidden"
     >
-      <div className="mb-5 rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
-        <div className="mx-auto flex size-16 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+      <div className="mb-5 flex flex-col items-start gap-4 rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left shadow-sm sm:flex-row sm:items-center sm:px-6">
+        <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
           <BarChart3 className="size-8" />
         </div>
-        <p className="mt-4 inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-          <GraduationCap className="size-4" />
-          Student Records
-        </p>
-        <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-          Grades & Report
-        </h3>
-        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Review your released grades, academic standing, equivalent marks, and downloadable grade report.
-        </p>
-        <Button size="sm" onClick={downloadGradeReport} className="mt-4 rounded-lg">
-          <Download className="size-4" />
-          Download CSV
-        </Button>
+        <div>
+          <p className="inline-flex items-center justify-start gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+            <GraduationCap className="size-4" />
+            Student Records
+          </p>
+          <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+            Grades & Report
+          </h3>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Review your released grades, academic standing, equivalent marks, and downloadable grade report.
+          </p>
+          <Button size="sm" onClick={downloadGradeReport} className="mt-4 rounded-lg">
+            <Download className="size-4" />
+            Download CSV
+          </Button>
+        </div>
       </div>
 
       <div className="mb-5 grid gap-3 md:grid-cols-3">
@@ -330,34 +332,36 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
       title="Manage Grades"
       className="[&>div:first-child]:hidden"
     >
-      <div className="mb-5 rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm sm:px-6">
-        <div className="mx-auto flex size-16 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+      <div className="mb-5 flex flex-col items-start gap-4 rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left shadow-sm sm:flex-row sm:items-center sm:px-6">
+        <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
           <ClipboardList className="size-8" />
         </div>
-        <p className="mt-4 inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-          <GraduationCap className="size-4" />
-          Subject Grade Encoding
-        </p>
-        <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-          Manage Grades
-        </h3>
-        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Select a subject, encode student grades, upload grade sheets, and release finalized records to students.
-        </p>
-        <div className="mt-4 flex flex-wrap justify-center gap-2">
-          <Button size="sm" onClick={downloadGradeTemplate} className="rounded-lg">
-            <Download className="size-4" />
-            Template
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleReleaseAll}
-            className="rounded-lg bg-card/80"
-          >
-            <Send className="size-4" />
-            Release
-          </Button>
+        <div>
+          <p className="inline-flex items-center justify-start gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+            <GraduationCap className="size-4" />
+            Subject Grade Encoding
+          </p>
+          <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+            Manage Grades
+          </h3>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Select a subject, encode student grades, upload grade sheets, and release finalized records to students.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button size="sm" onClick={downloadGradeTemplate} className="rounded-lg">
+              <Download className="size-4" />
+              Template
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleReleaseAll}
+              className="rounded-lg bg-card/80"
+            >
+              <Send className="size-4" />
+              Release
+            </Button>
+          </div>
         </div>
       </div>
 
