@@ -1653,6 +1653,7 @@ export function usePortalDashboardModel(role: Role) {
     const fullName = getProfileFullName(draft)
 
     const body: Record<string, unknown> = {
+      name: fullName,
       firstName: draft.firstName,
       middleName: draft.middleName,
       lastName: draft.lastName,

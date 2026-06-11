@@ -1,7 +1,7 @@
 "use client"
 
 import { Camera, Eye, EyeOff, KeyRound, Save, Undo2, UserCircle } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,6 +21,9 @@ export function ProfileModule({ model }: PortalModuleProps) {
   } = model
 
   const [draft, setDraft] = useState(profileDetails)
+  useEffect(() => {
+    setDraft(profileDetails)
+  }, [profileDetails])
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState(false)
 
