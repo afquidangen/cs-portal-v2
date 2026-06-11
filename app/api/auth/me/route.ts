@@ -20,7 +20,10 @@ function computeTitle(user: {
   position?: string | null
 }) {
   if (user.role === "student") {
-    return `BSCS ${user.year ?? ""}${user.section ?? ""} - ${user.studentType ?? "Regular"} Student`
+    const year = user.year ?? ""
+    const cleaned = (user.section ?? "").replace(/^BSCS\s*/i, "").trim()
+    const section = cleaned.startsWith(String(year)) ? cleaned : `${year}${cleaned}`
+    return `BSCS ${section} - ${user.studentType ?? "Regular"}`.trim()
   }
   if (user.role === "faculty") {
     return `${user.position ?? "Faculty Member"} - Computer Science`
