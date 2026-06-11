@@ -50,6 +50,7 @@ export const roleNavigation: Record<Role, NavItem[]> = {
     { id: "feedback", label: "Feedback Inbox", icon: MessageSquareWarning },
     { id: "cso", label: "CSSO Records", icon: FileArchive },
     { id: "quick-links", label: "Quick Links", icon: LinkIcon },
+    { id: "profile", label: "Profile", icon: UserCircle },
   ],
   admin: [
     { id: "overview", label: "Overview", icon: LayoutDashboard },

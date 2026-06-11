@@ -1649,10 +1649,10 @@ export function usePortalDashboardModel(role: Role) {
   }
 
   async function handleSaveProfile(draft: ProfileDetails) {
-    setProfileDetails(draft)
+    const previousPhotoUrl = profileDetails.photoUrl
     const fullName = getProfileFullName(draft)
 
-    const result = await syncApi<{ data: { photoUrl?: string } }>("PUT", `/api/portal/users/${profile.id}`, {
+    const body: Record<string, unknown> = {
       firstName: draft.firstName,
       middleName: draft.middleName,
       lastName: draft.lastName,
@@ -1661,11 +1661,17 @@ export function usePortalDashboardModel(role: Role) {
       sex: draft.sex,
       birthday: draft.birthday,
       address: draft.address,
-      photoUrl: draft.photoUrl,
-    })
+    }
+    if (draft.photoUrl !== previousPhotoUrl) {
+      body.photoUrl = draft.photoUrl
+    }
 
-    const photoUrl = result.data?.photoUrl ?? draft.photoUrl
-    setProfileDetails((current) => ({ ...current, photoUrl }))
+    const result = await syncApi<{ data: { photoUrl?: string } }>("PUT", `/api/portal/users/${profile.id}`, body)
+
+    const photoUrl = result.data?.photoUrl ?? previousPhotoUrl
+    const savedProfile: ProfileDetails = { ...draft, photoUrl }
+
+    setProfileDetails(savedProfile)
 
     setUsers((current) =>
       current.map((user) =>
@@ -1705,6 +1711,16 @@ export function usePortalDashboardModel(role: Role) {
         }
       }
     }
+
+    if (authenticatedUser) {
+      setAuthenticatedUser({
+        ...authenticatedUser,
+        name: fullName || authenticatedUser.name,
+        email: draft.email || authenticatedUser.email,
+      })
+    }
+
+    return savedProfile
   }
 
   async function handleChangePassword(currentPassword: string, newPassword: string) {

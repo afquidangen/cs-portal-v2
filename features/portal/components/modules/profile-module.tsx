@@ -51,7 +51,8 @@ export function ProfileModule({ model }: PortalModuleProps) {
 
   async function handleSave() {
     try {
-      await handleSaveProfile(draft)
+      const result = await handleSaveProfile(draft)
+      if (result) setDraft(result)
       setSaved(true)
       setSaveError(false)
       setTimeout(() => setSaved(false), 2000)

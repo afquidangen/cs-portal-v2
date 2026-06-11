@@ -477,6 +477,71 @@ export function RoleDashboard({ role }: { role: Role }) {
     },
   ]
 
+  const studentFirstName = model.profile.name.split(" ")[0] || model.profile.name
+  const studentUser = model.users.find((u: { id: string }) => u.id === model.profile.id)
+  const studentCourse = studentUser?.course ?? "BSCS"
+  const studentYearLevel = studentUser?.currentYearLevel ?? "—"
+
+  const allStudentGrades = model.allStudentGrades ?? []
+  const totalUnits = allStudentGrades.reduce((s: number, g: { units: number }) => s + (g.units ?? 0), 0)
+  const passedUnits = allStudentGrades
+    .filter((g: { released?: boolean; remarks?: string }) => g.released && g.remarks === "Passed")
+    .reduce((s: number, g: { units: number }) => s + (g.units ?? 0), 0)
+  const unitsDisplay = totalUnits > 0 ? `${passedUnits} / ${totalUnits}` : "N/A"
+
+  const studentProfileFacts = [
+    { label: "Program", value: studentCourse, icon: GraduationCap },
+    { label: "Year Level", value: studentYearLevel, icon: Layers3 },
+    { label: "Section", value: model.profileSection || "—", icon: Users },
+    { label: "Student ID", value: model.profile.id, icon: Info },
+  ]
+
+  const studentOverviewCards = [
+    {
+      label: "Current GWA",
+      value: model.gradeAverage,
+      helper: "General weighted average",
+      icon: BarChart3,
+      accent: "blue",
+      sparkline: [18, 20, 16, 22, 19, 24, 21, 23],
+    },
+    {
+      label: "Enrolled Subjects",
+      value: String(new Set(model.visibleSchedules.map((s: { subject: string }) => s.subject)).size),
+      helper: "Currently enrolled this semester",
+      icon: BookOpen,
+      accent: "sky",
+      sparkline: [14, 16, 13, 18, 15, 20, 17, 19],
+    },
+    {
+      label: "Open Tickets",
+      value: String(model.studentTickets.filter((t: { status: string }) => t.status !== "Resolved").length),
+      helper: "Awaiting resolution",
+      icon: MessageSquareWarning,
+      accent: "amber",
+      sparkline: [8, 6, 10, 5, 7, 4, 9, 6],
+    },
+    {
+      label: "Units Taken",
+      value: unitsDisplay,
+      helper: "Passed / Total",
+      icon: Layers3,
+      accent: "emerald",
+      sparkline: [12, 14, 13, 18, 16, 23, 18, 15],
+    },
+  ]
+
+  const studentTodaySchedules = model.visibleSchedules.filter(
+    (item: { day: string }) => item.day === todayLabel
+  )
+
+  const studentQuickActions = [
+    { label: "Grades and Reports", module: "grade-history" as ModuleId, icon: BarChart3, color: "violet" },
+    { label: "Thesis Library", module: "thesis" as ModuleId, icon: BookOpen, color: "emerald" },
+    { label: "Curriculum", module: "curriculum" as ModuleId, icon: GraduationCap, color: "amber" },
+    { label: "Instructor Info", module: "instructors" as ModuleId, icon: Users, color: "sky" },
+  ]
+
   const recentActivity = [
     { label: "New user registered", time: "2 minutes ago", icon: Users },
     { label: "Thesis record updated", time: "15 minutes ago", icon: BookOpen },
@@ -954,19 +1019,52 @@ export function RoleDashboard({ role }: { role: Role }) {
                         </div>
                       </CardContent>
                     </Card>
+                  ) : role === "student" ? (
+                    <Card className="relative overflow-hidden rounded-xl border-0 bg-[linear-gradient(120deg,#18479f_0%,#1f6fe5_58%,#28a7f2_100%)] text-white shadow-[0_24px_70px_rgb(31_111_229_/_0.24)] dark:bg-[linear-gradient(120deg,#071224_0%,#18479f_58%,#1f6fe5_100%)]">
+                      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:36px_36px] opacity-35" />
+                      <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,rgba(234,245,255,0.48),transparent_48%)]" />
+                      <CardContent className="relative flex flex-col gap-5 px-4 py-4 sm:px-7 sm:py-5">
+                        <div className="flex flex-col items-start">
+                          <span className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/12 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/78">
+                            <CalendarDays className="size-3.5" />
+                            {facultyTodayFull}
+                          </span>
+                          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-4xl">
+                            {facultyGreeting}, {studentFirstName}
+                          </h1>
+                          <p className="mt-2 max-w-xl text-sm leading-5 text-white/82">
+                            {subtitle}
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                          {studentProfileFacts.map((fact) => {
+                            const Icon = fact.icon
+                            return (
+                              <div key={fact.label} className="flex flex-col items-center gap-1.5 text-center">
+                                <span className="flex size-9 items-center justify-center rounded-lg border border-white/16 bg-white/10 text-white/90 shadow-sm">
+                                  <Icon className="size-4" />
+                                </span>
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/65">
+                                  {fact.label}
+                                </p>
+                                <p className="text-sm font-semibold text-white">
+                                  {fact.value}
+                                </p>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
                   ) : (
                     <GreetingCard
                       name={model.profile.name}
                       subtitle={subtitle}
-                      stats={
-                        role === "admin"
-                          ? {
-                              totalUsers: String(totalUserCount),
-                              activeSessions: String(Math.max(18, Math.round(totalUserCount * 0.08))),
-                              systemStatus: "All Systems Operational",
-                            }
-                          : undefined
-                      }
+                      stats={{
+                        totalUsers: String(totalUserCount),
+                        activeSessions: String(Math.max(18, Math.round(totalUserCount * 0.08))),
+                        systemStatus: "All Systems Operational",
+                      }}
                     />
                   )}
                   {visibleAnnouncements.length > 0 ? (
@@ -990,29 +1088,138 @@ export function RoleDashboard({ role }: { role: Role }) {
                 </div>
 
                 {role === "student" ? (
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <Metric
-                      label="Current GWA"
-                      value={model.gradeAverage}
-                      icon={BarChart3}
-                      tone="abyss"
-                    />
-                    <Metric
-                      label="Enrolled Subjects"
-                      value={String(new Set(model.visibleSchedules.map((s: { subject: string }) => s.subject)).size)}
-                      icon={BookOpen}
-                      tone="lapis"
-                    />
-                    <Metric
-                      label="Open Tickets"
-                      value={String(
-                        model.studentTickets.filter(
-                          (t: { status: string }) => t.status !== "Resolved"
-                        ).length
-                      )}
-                      icon={MessageSquareWarning}
-                      tone="glacier"
-                    />
+                  <div className="space-y-5">
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                      {studentOverviewCards.map((item) => {
+                        const Icon = item.icon
+                        const accentClass =
+                          item.accent === "sky"
+                            ? "border-sky-500/20 bg-sky-500/10 text-sky-600 dark:text-sky-300"
+                            : item.accent === "violet"
+                              ? "border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-300"
+                              : item.accent === "amber"
+                                ? "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300"
+                                : "border-primary/20 bg-primary/10 text-primary"
+                        const stroke =
+                          item.accent === "sky"
+                            ? "#38bdf8"
+                            : item.accent === "violet"
+                              ? "#8b5cf6"
+                              : item.accent === "amber"
+                                ? "#d7a11f"
+                                : "#2478ff"
+
+                        return (
+                          <Card
+                            key={item.label}
+                            className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                          >
+                            <CardContent className="grid min-h-[138px] grid-cols-[minmax(0,1fr)_86px] gap-3 p-4 sm:p-5">
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                  {item.label}
+                                </p>
+                                <p className={cn("mt-5 truncate font-semibold tracking-tight text-foreground", item.label === "Units Taken" ? "text-xl" : "text-3xl")}>
+                                  {item.value}
+                                </p>
+                                <p className="mt-3 truncate text-xs text-muted-foreground">
+                                  {item.helper}
+                                </p>
+                              </div>
+                              <div className="flex flex-col items-end justify-between gap-3">
+                                <span className={cn("flex size-11 items-center justify-center rounded-lg border shadow-sm", accentClass)}>
+                                  <Icon className="size-5" strokeWidth={2.1} />
+                                </span>
+                                <svg viewBox="0 0 92 42" className="h-11 w-full opacity-80">
+                                  <polyline
+                                    fill="none"
+                                    stroke={stroke}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2.25"
+                                    points={item.sparkline.map((point, index) => `${index * 13},${40 - point}`).join(" ")}
+                                  />
+                                </svg>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )
+                      })}
+                    </div>
+
+                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.7fr)]">
+                      <Card className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                        <CardHeader className="border-b border-border bg-muted/40 px-4 py-4 sm:px-5">
+                          <CardTitle className="flex items-center gap-2 text-base font-semibold tracking-tight text-foreground">
+                            <CalendarDays className="size-5 text-primary" />
+                            Today&apos;s Schedule
+                          </CardTitle>
+                          <CardDescription>
+                            Classes pulled from your enrolled schedules.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                          {studentTodaySchedules.length === 0 ? (
+                            <div className="px-5 py-10 text-sm text-muted-foreground">
+                              No classes scheduled for today.
+                            </div>
+                          ) : (
+                            <div className="divide-y divide-border">
+                              {studentTodaySchedules.slice(0, 4).map((item: { id: string; time: string; subject: string; section: string; room: string }) => (
+                                <div key={item.id} className="grid gap-3 px-4 py-4 sm:grid-cols-[150px_minmax(0,1fr)_auto] sm:items-center sm:px-5">
+                                  <p className="text-sm font-semibold text-foreground">
+                                    {formatScheduleTime(item.time)}
+                                  </p>
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-medium text-foreground">
+                                      {item.subject}
+                                    </p>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                      {item.section} - {item.room}
+                                    </p>
+                                  </div>
+                                  <Badge variant="secondary" className="w-fit rounded-lg border-primary/15 bg-primary/10 text-primary">
+                                    {item.time.split(" - ")[0] ? "Today" : todayLabel}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      <Card className="rounded-xl border border-border bg-card shadow-sm">
+                        <CardHeader className="border-b border-border bg-muted/40 px-4 py-4 sm:px-5">
+                          <CardTitle className="text-base font-semibold tracking-tight text-foreground">
+                            Quick Actions
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-2 gap-3 p-4 sm:p-5">
+                          {studentQuickActions.map((action) => {
+                            const Icon = action.icon
+                            const colorMap: Record<string, string> = {
+                              sky: "border-sky-200 bg-sky-50 text-sky-600 dark:border-sky-800/50 dark:bg-sky-950/40 dark:text-sky-300",
+                              violet: "border-violet-200 bg-violet-50 text-violet-600 dark:border-violet-800/50 dark:bg-violet-950/40 dark:text-violet-300",
+                              emerald: "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-300",
+                              amber: "border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-300",
+                            }
+                            return (
+                              <button
+                                key={action.module}
+                                type="button"
+                                onClick={() => model.selectModule(action.module)}
+                                className="group flex flex-col items-center gap-3 rounded-xl border border-border bg-background p-4 text-center transition-all hover:-translate-y-0.5 hover:border-transparent hover:shadow-md"
+                              >
+                                <span className={cn("flex size-10 items-center justify-center rounded-xl border shadow-sm transition-transform group-hover:scale-105", colorMap[action.color])}>
+                                  <Icon className="size-5" />
+                                </span>
+                                <span className="text-xs font-semibold text-foreground">{action.label}</span>
+                              </button>
+                            )
+                          })}
+                          </CardContent>
+                        </Card>
+                    </div>
                   </div>
                 ) : null}
 
