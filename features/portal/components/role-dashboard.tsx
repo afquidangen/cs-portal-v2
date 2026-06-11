@@ -6,6 +6,8 @@ import {
   Bell,
   BookOpen,
   CalendarDays,
+  CheckCircle2,
+  Clock,
   ClipboardList,
   Code2,
   Database,
@@ -61,6 +63,7 @@ type NewsItem = {
   accent: string
 }
 import { cn } from "@/lib/utils"
+import { formatScheduleTime } from "@/components/ui/time-picker"
 
 import type { Announcement, Role } from "../data/portal-data"
 import { usePortalDashboardModel } from "../hooks/use-portal-dashboard-model"
@@ -371,6 +374,107 @@ export function RoleDashboard({ role }: { role: Role }) {
     { label: "Server", status: "Operational", icon: Server },
     { label: "Storage", status: "Operational", icon: HardDrive },
     { label: "API Services", status: "Operational", icon: Code2 },
+  ]
+
+  const facultyActiveStudents = model.facultyClassStudents.filter((s: { enrolled: boolean; id: string; section: string }) => {
+    if (!s.enrolled) return false
+    const studentUser = model.users.find((u: { id: string; studentType?: string }) => u.id === s.id)
+    if (studentUser?.studentType && ["Irregular", "Transferee", "Shifter", "Overstayed"].includes(studentUser.studentType)) {
+      const sectionGrades = model.grades.filter(
+        (g: { studentId: string; section: string; remarks?: string }) =>
+          g.studentId === s.id && g.section === model.selectedClassSection
+      )
+      if (sectionGrades.length > 0 && sectionGrades.every((g: { remarks?: string }) => g.remarks === "Passed")) return false
+      if (sectionGrades.length === 0) return false
+    }
+    return true
+  })
+  const facultyPendingGrades = model.facultyGradeRecords.filter(
+    (grade: { released?: boolean; remarks?: string }) => !grade.released || !grade.remarks
+  )
+  const facultyMember = model.faculty.find(
+    (member: { email: string; name: string }) =>
+      member.email === model.profile.email || member.name === model.profile.name
+  )
+  const todayLabel = new Date().toLocaleDateString("en-US", { weekday: "long" })
+  const facultyTodaySchedules = model.visibleSchedules.filter(
+    (item: { day: string }) => item.day === todayLabel
+  )
+  const facultyFirstName = model.profile.name.split(" ")[0] || model.profile.name
+  const facultyGreeting = (() => {
+    const hour = new Date().getHours()
+    if (hour < 12) return "Good morning"
+    if (hour < 18) return "Good afternoon"
+    return "Good evening"
+  })()
+  const facultyTodayFull = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  })
+  const facultyStatus = facultyMember?.status ?? "Available"
+  const facultyHeroStats = [
+    {
+      label: "Classes Today",
+      value: String(facultyTodaySchedules.length),
+      icon: CalendarDays,
+    },
+    {
+      label: "Pending Grades",
+      value: String(facultyPendingGrades.length),
+      icon: BarChart3,
+    },
+    {
+      label: "Students Advised",
+      value: String(facultyActiveStudents.length),
+      icon: Users,
+    },
+  ]
+  const facultyProfileFacts = [
+    {
+      label: "Department",
+      value: "Computer Science",
+      icon: GraduationCap,
+    },
+    {
+      label: "Rank",
+      value: model.profile.title?.split(" - ")[0] || facultyMember?.position || "Faculty",
+      icon: Users,
+    },
+  ]
+  const facultyOverviewCards = [
+    {
+      label: "Handled Classes",
+      value: String(model.visibleSchedules.length),
+      helper: `${model.facultySubjects.length} subject${model.facultySubjects.length === 1 ? "" : "s"}`,
+      icon: ClipboardList,
+      accent: "blue",
+      sparkline: [18, 22, 20, 24, 23, 27, 21, 30],
+    },
+    {
+      label: "Total Students",
+      value: String(facultyActiveStudents.length),
+      helper: "Across handled sections",
+      icon: Users,
+      accent: "sky",
+      sparkline: [22, 28, 26, 25, 29, 27, 31, 24],
+    },
+    {
+      label: "Pending Grades",
+      value: String(facultyPendingGrades.length),
+      helper: facultyPendingGrades.length > 0 ? "Needs attention" : "All caught up",
+      icon: BarChart3,
+      accent: "violet",
+      sparkline: [12, 18, 14, 16, 15, 19, 11, 22],
+    },
+    {
+      label: "My Next Office Hours",
+      value: facultyMember?.notes || "N/A",
+      helper: "Faculty availability",
+      icon: Clock,
+      accent: "amber",
+      sparkline: [14, 17, 20, 18, 19, 16, 15, 22],
+    },
   ]
 
   const recentActivity = [
@@ -789,19 +893,82 @@ export function RoleDashboard({ role }: { role: Role }) {
             {model.activeModule === "overview" ? (
               <div className="mb-8 space-y-5">
                 <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
-                  <GreetingCard
-                    name={model.profile.name}
-                    subtitle={subtitle}
-                    stats={
-                      role === "admin"
-                        ? {
-                            totalUsers: String(totalUserCount),
-                            activeSessions: String(Math.max(18, Math.round(totalUserCount * 0.08))),
-                            systemStatus: "All Systems Operational",
-                          }
-                        : undefined
-                    }
-                  />
+                  {role === "faculty" ? (
+                    <Card className="relative overflow-hidden rounded-xl border border-primary/20 bg-[linear-gradient(125deg,#12306d_0%,#1d57c7_55%,#2478ff_100%)] text-white shadow-[0_24px_70px_rgb(31_111_229_/_0.24)] dark:border-[#274d8d] dark:bg-[linear-gradient(125deg,#071224_0%,#12306d_50%,#1d57c7_100%)]">
+                      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.09)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:34px_34px] opacity-40" />
+                      <div className="pointer-events-none absolute inset-y-0 right-0 w-2/3 bg-[radial-gradient(circle_at_top_right,rgba(139,211,255,0.46),transparent_42%)]" />
+                      <CardContent className="relative grid min-h-[140px] gap-3 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_350px] lg:items-center">
+                        <div className="min-w-0">
+                          <span className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/12 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/82 shadow-sm">
+                            <CalendarDays className="size-3.5" />
+                            {facultyTodayFull}
+                          </span>
+
+                          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-4xl">
+                            {facultyGreeting}, {facultyFirstName}
+                          </h1>
+                          <p className="mt-1 max-w-xl text-sm leading-5 text-white/82">
+                            Here&apos;s what&apos;s happening with your classes today.
+                          </p>
+
+                          <div className="mt-3 grid gap-3">
+                            {facultyProfileFacts.map((fact) => {
+                              const Icon = fact.icon
+                              return (
+                                <div key={fact.label} className="flex items-start gap-3">
+                                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-white/16 bg-white/10 text-white/90 shadow-sm">
+                                    <Icon className="size-4" />
+                                  </span>
+                                  <div>
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/68">
+                                      {fact.label}
+                                    </p>
+                                    <p className="mt-1 whitespace-nowrap text-sm font-semibold text-white">
+                                      {fact.value}
+                                    </p>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="grid gap-3 text-sm text-white/86">
+                          {facultyHeroStats.map((stat) => {
+                            const Icon = stat.icon
+                            return (
+                              <div
+                                key={stat.label}
+                                className="flex items-center justify-between gap-3 rounded-lg border border-white/12 bg-white/12 px-4 py-3 shadow-sm backdrop-blur"
+                              >
+                                <span className="inline-flex min-w-0 items-center gap-3">
+                                  <Icon className="size-4 shrink-0 text-white/78" />
+                                  <span className="truncate">{stat.label}</span>
+                                </span>
+                                <strong className="shrink-0 text-sm font-semibold text-white">
+                                  {stat.value}
+                                </strong>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <GreetingCard
+                      name={model.profile.name}
+                      subtitle={subtitle}
+                      stats={
+                        role === "admin"
+                          ? {
+                              totalUsers: String(totalUserCount),
+                              activeSessions: String(Math.max(18, Math.round(totalUserCount * 0.08))),
+                              systemStatus: "All Systems Operational",
+                            }
+                          : undefined
+                      }
+                    />
+                  )}
                   {visibleAnnouncements.length > 0 ? (
                     <LiveAnnouncementCard
                       announcement={visibleAnnouncements[announcementIndex % visibleAnnouncements.length]}
@@ -850,37 +1017,144 @@ export function RoleDashboard({ role }: { role: Role }) {
                 ) : null}
 
                 {role === "faculty" ? (
-                  <>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <Metric
-                        label="Handled Classes"
-                        value={String(model.visibleSchedules.length)}
-                        icon={ClipboardList}
-                        tone="lapis"
-                      />
-                      <Metric
-                        label="Students Enrolled"
-                        value={String(
-                          model.facultyClassStudents.filter((s: { enrolled: boolean; id: string; section: string }) => {
-                            if (!s.enrolled) return false
-                            const studentUser = model.users.find((u: { id: string; studentType?: string }) => u.id === s.id)
-                            if (studentUser?.studentType && ["Irregular", "Transferee", "Shifter", "Overstayed"].includes(studentUser.studentType)) {
-                              const sectionGrades = model.grades.filter(
-                                (g: { studentId: string; section: string; remarks?: string }) =>
-                                  g.studentId === s.id && g.section === model.selectedClassSection
-                              )
-                              if (sectionGrades.length > 0 && sectionGrades.every((g: { remarks?: string }) => g.remarks === "Passed")) return false
-                              if (sectionGrades.length === 0) return false
-                            }
-                            return true
-                          }).length
-                        )}
-                        icon={Users}
-                        tone="abyss"
-                      />
+                  <div className="space-y-5">
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                      {facultyOverviewCards.map((item) => {
+                        const Icon = item.icon
+                        const accentClass =
+                          item.accent === "sky"
+                            ? "border-sky-500/20 bg-sky-500/10 text-sky-600 dark:text-sky-300"
+                            : item.accent === "violet"
+                              ? "border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-300"
+                              : item.accent === "amber"
+                                ? "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300"
+                                : "border-primary/20 bg-primary/10 text-primary"
+                        const stroke =
+                          item.accent === "sky"
+                            ? "#38bdf8"
+                            : item.accent === "violet"
+                              ? "#8b5cf6"
+                              : item.accent === "amber"
+                                ? "#d7a11f"
+                                : "#2478ff"
+
+                        return (
+                          <Card
+                            key={item.label}
+                            className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                          >
+                            <CardContent className="grid min-h-[138px] grid-cols-[minmax(0,1fr)_86px] gap-3 p-4 sm:p-5">
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                  {item.label}
+                                </p>
+                                <p className={cn("mt-5 truncate font-semibold tracking-tight text-foreground", item.label === "My Next Office Hours" ? "text-sm" : "text-3xl")}>
+                                  {item.value}
+                                </p>
+                                <p className="mt-3 truncate text-xs text-muted-foreground">
+                                  {item.helper}
+                                </p>
+                              </div>
+                              <div className="flex flex-col items-end justify-between gap-3">
+                                <span className={cn("flex size-11 items-center justify-center rounded-lg border shadow-sm", accentClass)}>
+                                  <Icon className="size-5" strokeWidth={2.1} />
+                                </span>
+                                <svg viewBox="0 0 92 42" className="h-11 w-full opacity-80">
+                                  <polyline
+                                    fill="none"
+                                    stroke={stroke}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2.25"
+                                    points={item.sparkline.map((point, index) => `${index * 13},${40 - point}`).join(" ")}
+                                  />
+                                </svg>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )
+                      })}
                     </div>
-                    <SchedulePanel model={model} />
-                  </>
+
+                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.7fr)]">
+                      <Card className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                        <CardHeader className="border-b border-border bg-muted/40 px-4 py-4 sm:px-5">
+                          <CardTitle className="flex items-center gap-2 text-base font-semibold tracking-tight text-foreground">
+                            <CalendarDays className="size-5 text-primary" />
+                            Today&apos;s Schedule
+                          </CardTitle>
+                          <CardDescription>
+                            Classes pulled from your assigned schedules.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                          {facultyTodaySchedules.length === 0 ? (
+                            <div className="px-5 py-10 text-sm text-muted-foreground">
+                              No classes scheduled for today.
+                            </div>
+                          ) : (
+                            <div className="divide-y divide-border">
+                              {facultyTodaySchedules.slice(0, 4).map((item: { id: string; time: string; subject: string; section: string; room: string }) => (
+                                <div key={item.id} className="grid gap-3 px-4 py-4 sm:grid-cols-[150px_minmax(0,1fr)_auto] sm:items-center sm:px-5">
+                                  <p className="text-sm font-semibold text-foreground">
+                                    {formatScheduleTime(item.time)}
+                                  </p>
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-medium text-foreground">
+                                      {item.subject}
+                                    </p>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                      {item.section} - {item.room}
+                                    </p>
+                                  </div>
+                                  <Badge variant="secondary" className="w-fit rounded-lg border-primary/15 bg-primary/10 text-primary">
+                                    {item.time.split(" - ")[0] ? "Today" : todayLabel}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      <Card className="rounded-xl border border-border bg-card shadow-sm">
+                        <CardHeader className="border-b border-border bg-muted/40 px-4 py-4 sm:px-5">
+                          <CardTitle className="text-base font-semibold tracking-tight text-foreground">
+                            Quick Actions
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-2 gap-3 p-4 sm:p-5">
+                          {[
+                            { label: "Schedule", module: "schedule", icon: CalendarDays, color: "sky" },
+                            { label: "Roster", module: "student-roster", icon: Users, color: "violet" },
+                            { label: "Grades", module: "grades", icon: BarChart3, color: "emerald" },
+                            { label: "Status", module: "availability", icon: CheckCircle2, color: "amber" },
+                          ].map((action) => {
+                            const Icon = action.icon
+                            const colorMap: Record<string, string> = {
+                              sky: "border-sky-200 bg-sky-50 text-sky-600 dark:border-sky-800/50 dark:bg-sky-950/40 dark:text-sky-300",
+                              violet: "border-violet-200 bg-violet-50 text-violet-600 dark:border-violet-800/50 dark:bg-violet-950/40 dark:text-violet-300",
+                              emerald: "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-300",
+                              amber: "border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-300",
+                            }
+                            return (
+                              <button
+                                key={action.module}
+                                type="button"
+                                onClick={() => model.selectModule(action.module as ModuleId)}
+                                className="group flex flex-col items-center gap-3 rounded-xl border border-border bg-background p-4 text-center transition-all hover:-translate-y-0.5 hover:border-transparent hover:shadow-md"
+                              >
+                                <span className={cn("flex size-10 items-center justify-center rounded-xl border shadow-sm transition-transform group-hover:scale-105", colorMap[action.color])}>
+                                  <Icon className="size-5" />
+                                </span>
+                                <span className="text-xs font-semibold text-foreground">{action.label}</span>
+                              </button>
+                            )
+                          })}
+                          </CardContent>
+                        </Card>
+                    </div>
+                  </div>
                 ) : null}
 
                 {role === "admin" ? (

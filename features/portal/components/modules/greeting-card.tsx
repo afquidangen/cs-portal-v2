@@ -43,7 +43,7 @@ export function GreetingCard({
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:36px_36px] opacity-35" />
       <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,rgba(234,245,255,0.48),transparent_48%)]" />
 
-      <CardContent className="relative grid min-h-[220px] gap-6 px-4 py-6 sm:min-h-[250px] sm:px-9 sm:py-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
+      <CardContent className="relative grid min-h-[120px] gap-3 px-4 py-4 sm:min-h-[140px] sm:px-7 sm:py-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
         <div>
           <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/78">
             <span className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/12 px-2.5 py-1">
@@ -52,11 +52,11 @@ export function GreetingCard({
             </span>
           </div>
 
-          <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white sm:text-4xl">
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-4xl">
             {timeGreeting}, {firstName}
           </h1>
 
-          <p className="mt-4 max-w-xl text-sm leading-6 text-white/82">
+          <p className="mt-2 max-w-xl text-sm leading-5 text-white/82">
             {subtitle}
           </p>
         </div>
