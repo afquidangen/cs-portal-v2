@@ -84,7 +84,7 @@ import { StudentRosterModule } from "./modules/student-roster-module"
 import { GreetingCard } from "./modules/greeting-card"
 import { InstructorsModule } from "./modules/instructors-module"
 import { LiveAnnouncementCard } from "./modules/live-announcement-card"
-import { Metric } from "./shared/dashboard-ui"
+import { Metric, StatusBadge } from "./shared/dashboard-ui"
 import { OverviewModule } from "./modules/overview-module"
 import { ProfileModule } from "./modules/profile-module"
 
@@ -1283,7 +1283,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                       })}
                     </div>
 
-                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.7fr)]">
+                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.85fr)]">
                       <Card className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
                         <CardHeader className="border-b border-border bg-muted/40 px-4 py-4 sm:px-5">
                           <CardTitle className="flex items-center gap-2 text-base font-semibold tracking-tight text-foreground">
@@ -1324,42 +1324,67 @@ export function RoleDashboard({ role }: { role: Role }) {
                         </CardContent>
                       </Card>
 
-                      <Card className="rounded-xl border border-border bg-card shadow-sm">
-                        <CardHeader className="border-b border-border bg-muted/40 px-4 py-4 sm:px-5">
-                          <CardTitle className="text-base font-semibold tracking-tight text-foreground">
-                            Quick Actions
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-2 gap-3 p-4 sm:p-5">
-                          {[
-                            { label: "Schedule", module: "schedule", icon: CalendarDays, color: "sky" },
-                            { label: "Roster", module: "student-roster", icon: Users, color: "violet" },
-                            { label: "Grades", module: "grades", icon: BarChart3, color: "emerald" },
-                            { label: "Status", module: "availability", icon: CheckCircle2, color: "amber" },
-                          ].map((action) => {
-                            const Icon = action.icon
-                            const colorMap: Record<string, string> = {
-                              sky: "border-sky-200 bg-sky-50 text-sky-600 dark:border-sky-800/50 dark:bg-sky-950/40 dark:text-sky-300",
-                              violet: "border-violet-200 bg-violet-50 text-violet-600 dark:border-violet-800/50 dark:bg-violet-950/40 dark:text-violet-300",
-                              emerald: "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-300",
-                              amber: "border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-300",
-                            }
-                            return (
-                              <button
-                                key={action.module}
-                                type="button"
-                                onClick={() => model.selectModule(action.module as ModuleId)}
-                                className="group flex flex-col items-center gap-3 rounded-xl border border-border bg-background p-4 text-center transition-all hover:-translate-y-0.5 hover:border-transparent hover:shadow-md"
-                              >
-                                <span className={cn("flex size-10 items-center justify-center rounded-xl border shadow-sm transition-transform group-hover:scale-105", colorMap[action.color])}>
-                                  <Icon className="size-5" />
-                                </span>
-                                <span className="text-xs font-semibold text-foreground">{action.label}</span>
-                              </button>
-                            )
-                          })}
+                      <div className="flex flex-col gap-5">
+                        <Card className="rounded-xl border border-border bg-card shadow-sm">
+                          <CardHeader className="border-b border-border bg-muted/40 px-4 py-4 sm:px-5">
+                            <CardTitle className="flex items-center gap-2 text-base font-semibold tracking-tight text-foreground">
+                              <CheckCircle2 className="size-5 text-primary" />
+                              My Status
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-4 sm:p-5">
+                            <div className="flex items-center gap-3">
+                              <StatusBadge value={facultyStatus} />
+                              <span className="text-sm text-muted-foreground">
+                                {facultyStatus === "Available"
+                                  ? "You are currently available."
+                                  : facultyStatus === "In Class"
+                                    ? "You are currently in class."
+                                    : facultyStatus === "Consultation Only"
+                                      ? "Available for consultations only."
+                                      : "Currently out of office."}
+                              </span>
+                            </div>
                           </CardContent>
                         </Card>
+
+                        <Card className="rounded-xl border border-border bg-card shadow-sm">
+                          <CardHeader className="border-b border-border bg-muted/40 px-4 py-4 sm:px-5">
+                            <CardTitle className="text-base font-semibold tracking-tight text-foreground">
+                              Quick Actions
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="grid grid-cols-2 gap-3 p-4 sm:p-5">
+                            {[
+                              { label: "Schedule", module: "schedule", icon: CalendarDays, color: "sky" },
+                              { label: "Roster", module: "student-roster", icon: Users, color: "violet" },
+                              { label: "Grades", module: "grades", icon: BarChart3, color: "emerald" },
+                              { label: "Status", module: "availability", icon: CheckCircle2, color: "amber" },
+                            ].map((action) => {
+                              const Icon = action.icon
+                              const colorMap: Record<string, string> = {
+                                sky: "border-sky-200 bg-sky-50 text-sky-600 dark:border-sky-800/50 dark:bg-sky-950/40 dark:text-sky-300",
+                                violet: "border-violet-200 bg-violet-50 text-violet-600 dark:border-violet-800/50 dark:bg-violet-950/40 dark:text-violet-300",
+                                emerald: "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-300",
+                                amber: "border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-300",
+                              }
+                              return (
+                                <button
+                                  key={action.module}
+                                  type="button"
+                                  onClick={() => model.selectModule(action.module as ModuleId)}
+                                  className="group flex flex-col items-center gap-3 rounded-xl border border-border bg-background p-4 text-center transition-all hover:-translate-y-0.5 hover:border-transparent hover:shadow-md"
+                                >
+                                  <span className={cn("flex size-10 items-center justify-center rounded-xl border shadow-sm transition-transform group-hover:scale-105", colorMap[action.color])}>
+                                    <Icon className="size-5" />
+                                  </span>
+                                  <span className="text-xs font-semibold text-foreground">{action.label}</span>
+                                </button>
+                              )
+                            })}
+                          </CardContent>
+                        </Card>
+                      </div>
                     </div>
                   </div>
                 ) : null}
