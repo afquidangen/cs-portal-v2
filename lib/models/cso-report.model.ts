@@ -8,6 +8,7 @@ export interface ICsoReport extends Document {
   summary: string
   total?: string
   image?: string
+  cloudinaryPublicId?: string
 }
 
 const CsoReportSchema = new Schema<ICsoReport>(
@@ -23,6 +24,7 @@ const CsoReportSchema = new Schema<ICsoReport>(
     summary: String,
     total: String,
     image: String,
+    cloudinaryPublicId: String,
   },
   { timestamps: true }
 )

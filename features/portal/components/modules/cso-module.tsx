@@ -28,12 +28,19 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
   const [constitutionUploading, setConstitutionUploading] = useState(false)
   const [showConstitutionUpload, setShowConstitutionUpload] = useState(false)
 
+  const [orgChartUrl, setOrgChartUrl] = useState<string | null>(null)
+  const [showOrgChartUpload, setShowOrgChartUpload] = useState(false)
+  const [orgChartUploading, setOrgChartUploading] = useState(false)
+
+  const [addReportType, setAddReportType] = useState<CsoReport["type"] | null>(null)
+
   const isAdmin = model.role === "admin"
 
   const accomplishments = model.csoReports.filter(
     (report: CsoReport) => report.type === "Accomplishment" || report.type === "Event"
   )
   const financials = model.csoReports.filter((report: CsoReport) => report.type === "Financial")
+  const records = model.csoReports.filter((report: CsoReport) => report.type === "Record")
 
   function handleSave(report: CsoReport) {
     const existing = model.csoReports.find((r: CsoReport) => r.id === report.id)
@@ -44,6 +51,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
     }
     setShowForm(false)
     setEditingReport(null)
+    setAddReportType(null)
   }
 
   function handleDelete(id: string) {
@@ -56,6 +64,15 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
         if (json?.data) setConstitutionDoc(json.data)
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetch("/api/portal/org-chart")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (json?.data?.imageUrl) setOrgChartUrl(json.data.imageUrl)
       })
       .catch(() => {})
   }, [])
@@ -118,6 +135,46 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
     })
   }
 
+  async function handleOrgChartUpload(base64: string) {
+    setOrgChartUploading(true)
+    try {
+      const res = await fetch("/api/portal/org-chart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl: base64 }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? "Upload failed.")
+      if (json.data?.imageUrl) setOrgChartUrl(json.data.imageUrl)
+    } catch {
+      toast.error("Failed to upload organizational chart.")
+      setOrgChartUploading(false)
+      return
+    }
+    setShowOrgChartUpload(false)
+    setOrgChartUploading(false)
+    toast.success("Organizational chart uploaded successfully.")
+  }
+
+  async function handleDeleteOrgChart() {
+    if (!orgChartUrl) return
+    model.setPendingConfirm({
+      title: "Delete Organizational Chart",
+      description: "Delete the organizational chart image? This action cannot be undone.",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          const res = await fetch("/api/portal/org-chart", { method: "DELETE" })
+          if (!res.ok) throw new Error("Failed to delete.")
+          setOrgChartUrl(null)
+          toast.success("Organizational chart deleted successfully.")
+        } catch {
+          toast.error("Failed to delete organizational chart.")
+        }
+      },
+    })
+  }
+
   return (
     <div className="space-y-5">
       <div className="grid gap-3 md:grid-cols-3">
@@ -134,14 +191,47 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
       </div>
 
       <Panel title="CSSO Organizational Chart" eyebrow="Officers and adviser">
-        <div className="edu-bg-soft-glacier flex min-h-56 items-center justify-center rounded-xl border border-dashed border-[var(--edu-border-glacier)] text-center text-foreground/70">
-          <div>
-            <ImageIcon className="mx-auto size-10 text-foreground/60" />
-            <p className="mt-3 text-sm font-medium">
-              Organizational chart picture placeholder
-            </p>
+        {orgChartUrl ? (
+          <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+            <div className="relative overflow-hidden rounded-lg">
+              <Image
+                src={orgChartUrl}
+                alt="CSSO Organizational Chart"
+                width={1200}
+                height={800}
+                className="w-full h-auto object-contain"
+                unoptimized
+              />
+            </div>
+            {isAdmin ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setShowOrgChartUpload(true)}>
+                  <Upload className="size-4" />
+                  Replace
+                </Button>
+                <Button size="sm" variant="destructive" className="rounded-lg" onClick={handleDeleteOrgChart}>
+                  <Trash2 className="size-4" />
+                  Delete
+                </Button>
+              </div>
+            ) : null}
           </div>
-        </div>
+        ) : (
+          <div className="edu-bg-soft-glacier flex min-h-56 items-center justify-center rounded-xl border border-dashed border-[var(--edu-border-glacier)] text-center text-foreground/70">
+            <div>
+              <ImageIcon className="mx-auto size-10 text-foreground/60" />
+              <p className="mt-3 text-sm font-medium">
+                Organizational chart picture placeholder
+              </p>
+              {isAdmin ? (
+                <Button size="sm" variant="outline" className="mt-4 rounded-lg" onClick={() => setShowOrgChartUpload(true)}>
+                  <Upload className="size-4" />
+                  Upload Image
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        )}
       </Panel>
 
       <ReportGrid
@@ -156,6 +246,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
         onView={(r) => setViewingReport(r)}
         onAdd={isAdmin ? () => {
           setEditingReport(null)
+          setAddReportType("Accomplishment")
           setShowForm(true)
         } : undefined}
       />
@@ -172,13 +263,14 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
         onView={(r) => setViewingReport(r)}
         onAdd={isAdmin ? () => {
           setEditingReport(null)
+          setAddReportType("Financial")
           setShowForm(true)
         } : undefined}
       />
 
       <ReportGrid
         title="Transparency Documents"
-        reports={model.csoReports}
+        reports={records}
         isAdmin={isAdmin}
         onEdit={(r) => {
           setEditingReport(r)
@@ -188,6 +280,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
         onView={(r) => setViewingReport(r)}
         onAdd={isAdmin ? () => {
           setEditingReport(null)
+          setAddReportType("Record")
           setShowForm(true)
         } : undefined}
       />
@@ -246,13 +339,23 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
         />
       ) : null}
 
+      {showOrgChartUpload ? (
+        <OrgChartUploadDialog
+          uploading={orgChartUploading}
+          onSave={(base64) => handleOrgChartUpload(base64)}
+          onClose={() => setShowOrgChartUpload(false)}
+        />
+      ) : null}
+
       {showForm ? (
         <ReportFormDialog
           report={editingReport}
+          defaultType={addReportType}
           onSave={handleSave}
           onClose={() => {
             setShowForm(false)
             setEditingReport(null)
+            setAddReportType(null)
           }}
         />
       ) : null}
@@ -302,7 +405,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
                       alt={viewingReport.title}
                       width={800}
                       height={450}
-                      className="w-full object-cover"
+                      className="w-full h-auto object-contain"
                       unoptimized
                     />
                   </div>
@@ -372,7 +475,7 @@ function ReportGrid({
                     alt={report.title}
                     width={400}
                     height={144}
-                    className="h-36 w-full object-cover"
+                    className="w-full h-auto object-contain"
                     unoptimized
                   />
                 </div>
@@ -504,17 +607,92 @@ function ConstitutionUploadDialog({
   )
 }
 
+function OrgChartUploadDialog({
+  uploading,
+  onSave,
+  onClose,
+}: {
+  uploading: boolean
+  onSave: (image: string) => void
+  onClose: () => void
+}) {
+  const [file, setFile] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setFile(f)
+    const reader = new FileReader()
+    reader.onload = () => setPreview(reader.result as string)
+    reader.readAsDataURL(f)
+  }
+
+  return (
+    <Dialog open onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-xl text-foreground">Upload Organizational Chart</DialogTitle>
+        </DialogHeader>
+        <div className="relative space-y-4">
+          {uploading && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-lg bg-background/80 backdrop-blur-sm">
+              <Loader2 className="size-8 animate-spin text-primary" />
+              <p className="text-sm font-medium text-foreground">Uploading image\u2026</p>
+            </div>
+          )}
+          <div className="grid gap-1.5">
+            <label className="text-sm font-medium text-foreground">Image File</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              disabled={uploading}
+              className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
+            />
+          </div>
+          {preview ? (
+            <div className="overflow-hidden rounded-lg border border-border">
+              <Image
+                src={preview}
+                alt="Preview"
+                width={400}
+                height={300}
+                className="w-full h-auto object-contain"
+                unoptimized
+              />
+            </div>
+          ) : null}
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="ghost" onClick={onClose} disabled={uploading}>Cancel</Button>
+          <Button onClick={() => preview && onSave(preview)} disabled={!preview || uploading}>
+            {uploading ? (
+              <Loader2 className="mr-1.5 size-4 animate-spin" />
+            ) : (
+              <Upload className="mr-1.5 size-4" />
+            )}
+            {uploading ? "Uploading\u2026" : "Upload"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function ReportFormDialog({
   report,
+  defaultType,
   onSave,
   onClose,
 }: {
   report: CsoReport | null
+  defaultType: CsoReport["type"] | null
   onSave: (report: CsoReport) => void
   onClose: () => void
 }) {
   const [title, setTitle] = useState(report?.title ?? "")
-  const [type, setType] = useState<CsoReport["type"]>(report?.type ?? "Event")
+  const [type, setType] = useState<CsoReport["type"]>(report?.type ?? defaultType ?? "Event")
   const [date, setDate] = useState(report?.date ?? "")
   const [summary, setSummary] = useState(report?.summary ?? "")
   const [total, setTotal] = useState(report?.total ?? "")

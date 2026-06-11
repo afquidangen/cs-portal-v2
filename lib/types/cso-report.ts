@@ -6,6 +6,7 @@ export type CsoReport = {
   summary: string
   total?: string
   image?: string
+  cloudinaryPublicId?: string
   createdAt?: string
   updatedAt?: string
 }

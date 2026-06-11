@@ -202,6 +202,7 @@ export type CsoReport = {
   summary: string
   total?: string
   image?: string
+  cloudinaryPublicId?: string
 }
 
 export const availabilityOptions: AvailabilityStatus[] = [
