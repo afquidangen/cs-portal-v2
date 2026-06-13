@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import {
+  AlertTriangle,
   ArrowLeftRight,
   ChevronLeft,
   ChevronRight,
@@ -13,6 +14,8 @@ import {
   History,
   Pencil,
   Plus,
+  RefreshCw,
+  RotateCcw,
   Search,
   ShieldCheck,
   Trash2,
@@ -57,6 +60,9 @@ export function UsersModule({ model }: PortalModuleProps) {
   const {
     curricula,
     filteredUsers,
+    deletedUsers,
+    trashView,
+    setTrashView,
     handleAddUser,
     handleChangeCurriculum,
     handleAddGradeHistory,
@@ -70,6 +76,9 @@ export function UsersModule({ model }: PortalModuleProps) {
     setRoleFilter,
     toggleUserStatus,
     deleteUser,
+    restoreUser,
+    permanentlyDeleteUser,
+    refreshDashboardData,
     handleUpdateUser,
     users,
     yearSections,
@@ -77,6 +86,8 @@ export function UsersModule({ model }: PortalModuleProps) {
 
   const [editUser, setEditUser] = useState<(UserRecord & { password?: string }) | null>(null)
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null)
+  const [restoreUserId, setRestoreUserId] = useState<string | null>(null)
+  const [permanentDeleteUserId, setPermanentDeleteUserId] = useState<string | null>(null)
   const [toggleUserId, setToggleUserId] = useState<string | null>(null)
   const [changeCurriculumUser, setChangeCurriculumUser] = useState<{
     user: UserRecord
@@ -180,14 +191,27 @@ export function UsersModule({ model }: PortalModuleProps) {
 
   const stats = useMemo(() => {
     return {
-      total: users.length,
-      active: users.filter((u) => u.status === "Active").length,
-      inactive: users.filter((u) => u.status === "Inactive").length,
-      students: users.filter((u) => u.role === "student").length,
-      faculty: users.filter((u) => u.role === "faculty").length,
-      admins: users.filter((u) => u.role === "admin").length,
+      total: users.filter((u) => !u.deletedAt).length,
+      active: users.filter((u) => u.status === "Active" && !u.deletedAt).length,
+      inactive: users.filter((u) => u.status === "Inactive" && !u.deletedAt).length,
+      students: users.filter((u) => u.role === "student" && !u.deletedAt).length,
+      faculty: users.filter((u) => u.role === "faculty" && !u.deletedAt).length,
+      admins: users.filter((u) => u.role === "admin" && !u.deletedAt).length,
+      trashed: users.filter((u) => u.deletedAt).length,
     }
   }, [users])
+
+  const formatDate = (dateStr?: string | null) => {
+    if (!dateStr) return "—"
+    return new Date(dateStr).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })
+  }
 
   const getInitials = (name: string) =>
     name
@@ -211,6 +235,18 @@ export function UsersModule({ model }: PortalModuleProps) {
     if (!deleteUserId) return
     deleteUser(deleteUserId)
     setDeleteUserId(null)
+  }
+
+  function handleRestoreConfirm() {
+    if (!restoreUserId) return
+    restoreUser(restoreUserId)
+    setRestoreUserId(null)
+  }
+
+  function handlePermanentDeleteConfirm() {
+    if (!permanentDeleteUserId) return
+    permanentlyDeleteUser(permanentDeleteUserId)
+    setPermanentDeleteUserId(null)
   }
 
   function handleToggleConfirm() {
@@ -248,7 +284,7 @@ export function UsersModule({ model }: PortalModuleProps) {
         </div>
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-7">
         {[
           { label: "Total Accounts", value: stats.total, icon: Users },
           { label: "Active", value: stats.active, icon: UserCheck },
@@ -256,6 +292,7 @@ export function UsersModule({ model }: PortalModuleProps) {
           { label: "Students", value: stats.students, icon: Search },
           { label: "Faculty", value: stats.faculty, icon: Users },
           { label: "Admins", value: stats.admins, icon: ShieldCheck },
+          { label: "Trashed", value: stats.trashed, icon: Trash2 },
         ].map((stat) => (
           <div
             key={stat.label}
@@ -277,10 +314,10 @@ export function UsersModule({ model }: PortalModuleProps) {
       </div>
 
       <Panel
-        title={`Users (${visibleUsers.length})`}
-        eyebrow="Search and filter"
+        title={trashView ? `Recycle Bin (${deletedUsers.length})` : `Active Users (${visibleUsers.length})`}
+        eyebrow={trashView ? "Deleted accounts" : "Search and filter"}
         actions={
-          <div className="grid w-full max-w-full min-w-0 grid-cols-1 gap-2 rounded-xl border border-border bg-background/80 p-2 shadow-sm sm:grid-cols-2 lg:w-[720px] lg:grid-cols-3 xl:w-[960px] xl:grid-cols-[minmax(220px,1.5fr)_repeat(4,minmax(120px,1fr))_minmax(132px,auto)]">
+          <div className="grid w-full max-w-full min-w-0 grid-cols-1 gap-2 rounded-xl border border-border bg-background/80 p-2 shadow-sm sm:grid-cols-2 lg:w-[780px] lg:grid-cols-3 xl:w-[1020px] xl:grid-cols-[minmax(220px,1.5fr)_repeat(4,minmax(120px,1fr))_minmax(100px,auto)_minmax(100px,auto)]">
             <div className="min-w-0 sm:col-span-2 lg:col-span-3 xl:col-span-1 [&>div]:max-w-none">
               <SearchBox
                 value={query}
@@ -337,278 +374,260 @@ export function UsersModule({ model }: PortalModuleProps) {
             />
             <Button
               type="button"
+              variant={trashView ? "default" : "outline"}
               onClick={() => {
-                setAddRole("student")
-                setAddOpen(true)
+                setTrashView(!trashView)
+                setPage(1)
               }}
               className="h-11 w-full whitespace-nowrap rounded-lg sm:col-span-2 lg:col-span-1 xl:col-span-1"
+              title={trashView ? "View active users" : "View recycle bin"}
             >
-              <Plus className="size-4" />
-              Add Account
+              <Trash2 className="size-4" />
+              {trashView ? "Active" : "Trash"}
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => refreshDashboardData()}
+              className="h-11 w-full whitespace-nowrap rounded-lg sm:col-span-2 lg:col-span-1 xl:col-span-1"
+              title="Refresh records"
+            >
+              <RefreshCw className="size-4" />
+              Refresh
+            </Button>
+            {!trashView ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  setAddRole("student")
+                  setAddOpen(true)
+                }}
+                className="h-11 w-full whitespace-nowrap rounded-lg sm:col-span-2 lg:col-span-1 xl:col-span-1"
+              >
+                <Plus className="size-4" />
+                Add Account
+              </Button>
+            ) : null}
           </div>
         }
       >
-        <div className="mb-4 grid gap-3 rounded-xl border border-border bg-muted/20 p-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
-          <div className="flex h-[74px] min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 shadow-sm">
-            <Filter className="size-4 shrink-0 text-primary" />
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Role View</p>
-              <p className="truncate font-medium text-foreground">{roleFilter === "All" ? "All account roles" : roleFilter}</p>
-            </div>
-          </div>
-          <div className="flex h-[74px] min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 shadow-sm">
-            <GraduationCap className="size-4 shrink-0 text-sky-600 dark:text-sky-300" />
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Student Year</p>
-              <p className="truncate font-medium text-foreground">{studentYearFilter}</p>
-            </div>
-          </div>
-          <div className="flex h-[74px] min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 shadow-sm">
-            <Users className="size-4 shrink-0 text-emerald-600 dark:text-emerald-300" />
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Section</p>
-              <p className="truncate font-medium text-foreground">{studentSectionFilter}</p>
-            </div>
-          </div>
-          <div className="flex h-[74px] min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 shadow-sm">
-            <UserCheck className="size-4 shrink-0 text-violet-600 dark:text-violet-300" />
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Faculty</p>
-              <p className="truncate font-medium text-foreground">{facultyFilter}</p>
-            </div>
-          </div>
-        </div>
-        {paginatedUsers.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Users className="mb-3 size-10 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">No users found</p>
-          </div>
-        ) : (
+        {!trashView ? (
           <>
-            {/* Mobile card view */}
-            <div className="grid gap-3 md:hidden">
-              {paginatedUsers.map((user) => (
-                <div key={user.id} className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <Avatar className="size-10 shrink-0 ring-1 ring-border">
-                        <AvatarFallback className="bg-muted text-xs text-foreground">
-                          {getInitials(user.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-foreground">{user.name}</p>
-                        <p className="truncate text-xs text-muted-foreground">{user.email}</p>
-                        <p className="truncate text-xs text-muted-foreground">{user.id}</p>
-                      </div>
-                    </div>
-                    <StatusBadge value={user.status} />
-                  </div>
-                  <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="capitalize rounded-md bg-muted px-2 py-0.5">{user.role}</span>
-                    {user.role === "student"
-                      ? `${user.year ?? "-"}${user.section ?? ""} \u00B7 ${user.studentType ?? "Regular"}`
-                      : user.academicTitle ? `${user.academicTitle} \u00B7 ${user.employmentType ?? "Regular"}` : null}
-                  </div>
-                  <div className="mt-3 flex gap-1.5">
-                    <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setEditUser(user)} title="Edit user">
-                      <Edit className="size-3.5" />
-                    </Button>
-                    {user.role === "student" ? (
-                      <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setChangeCurriculumUser({ user, newCurriculumId: user.curriculumId ?? "", newYearLevel: user.currentYearLevel ?? YEAR_LABELS[String(user.year ?? "1")], newSemester: user.currentSemester ?? "First Semester" })} title="Change curriculum">
-                        <ArrowLeftRight className="size-3.5" />
-                      </Button>
-                    ) : null}
-                    {user.role === "student" ? (
-                      <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "" }) }} title="Grade history">
-                        <History className="size-3.5" />
-                      </Button>
-                    ) : null}
-                    <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setToggleUserId(user.id)} title={user.status === "Active" ? "Deactivate" : "Activate"}>
-                      {user.status === "Active" ? <UserX className="size-3.5" /> : <UserCheck className="size-3.5" />}
-                    </Button>
-                    <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDeleteUserId(user.id)} title="Delete user">
-                      <Trash2 className="size-3.5" />
-                    </Button>
-                  </div>
+            <div className="mb-4 grid gap-3 rounded-xl border border-border bg-muted/20 p-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+              <div className="flex h-[74px] min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 shadow-sm">
+                <Filter className="size-4 shrink-0 text-primary" />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Role View</p>
+                  <p className="truncate font-medium text-foreground">{roleFilter === "All" ? "All account roles" : roleFilter}</p>
                 </div>
-              ))}
+              </div>
+              <div className="flex h-[74px] min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 shadow-sm">
+                <GraduationCap className="size-4 shrink-0 text-sky-600 dark:text-sky-300" />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Student Year</p>
+                  <p className="truncate font-medium text-foreground">{studentYearFilter}</p>
+                </div>
+              </div>
+              <div className="flex h-[74px] min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 shadow-sm">
+                <Users className="size-4 shrink-0 text-emerald-600 dark:text-emerald-300" />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Section</p>
+                  <p className="truncate font-medium text-foreground">{studentSectionFilter}</p>
+                </div>
+              </div>
+              <div className="flex h-[74px] min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 shadow-sm">
+                <UserCheck className="size-4 shrink-0 text-violet-600 dark:text-violet-300" />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Faculty</p>
+                  <p className="truncate font-medium text-foreground">{facultyFilter}</p>
+                </div>
+              </div>
             </div>
-
-            {/* Desktop table view */}
-            <div className="hidden overflow-x-auto rounded-xl border border-border shadow-sm md:block">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-muted text-foreground">
-                  <tr className="border-b border-border">
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                      Account
-                    </th>
-                    <th className="hidden lg:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                      Email
-                    </th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                      Role
-                    </th>
-                      <th className="hidden xl:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                        Details
-                      </th>
-                      <th className="hidden 2xl:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                        Created
-                      </th>
-                      <th className="hidden 2xl:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                        Last Login
-                      </th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                        Status
-                      </th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-border bg-card">
+            {paginatedUsers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Users className="mb-3 size-10 text-muted-foreground/50" />
+                <p className="text-sm text-muted-foreground">No active users found</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid gap-3 md:hidden">
                   {paginatedUsers.map((user) => (
-                    <tr
-                      key={user.id}
-                      className="transition-colors hover:bg-muted/50"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="size-8 shrink-0 ring-1 ring-border">
+                    <div key={user.id} className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Avatar className="size-10 shrink-0 ring-1 ring-border">
                             <AvatarFallback className="bg-muted text-xs text-foreground">
                               {getInitials(user.name)}
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0">
-                            <p className="truncate font-medium text-foreground">
-                              {user.name}
-                            </p>
-                            <p className="truncate text-xs text-muted-foreground">
-                              {user.id}
-                            </p>
+                            <p className="truncate font-medium text-foreground">{user.name}</p>
+                            <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                            <p className="truncate text-xs text-muted-foreground">{user.id}</p>
                           </div>
                         </div>
-                      </td>
-                      <td className="hidden lg:table-cell px-4 py-3 text-foreground/80">
-                        {user.email}
-                      </td>
-                      <td className="px-4 py-3 capitalize text-foreground/80">
-                        {user.role}
-                      </td>
-                      <td className="hidden xl:table-cell max-w-[200px] truncate px-4 py-3 text-foreground/80">
-                        {user.role === "student"
-                          ? `${user.year ?? "-"}${user.section ?? ""} \u00B7 ${user.studentType ?? "Regular"} \u00B7 ${user.curriculum ?? "N/A"}`
-                          : `${user.academicTitle ?? "N/A"} \u00B7 ${user.employmentType ?? "Regular"} \u00B7 ${user.advisoryClass ?? "No advisory"}`}
-                      </td>
-                      <td className="hidden 2xl:table-cell px-4 py-3 text-xs text-foreground/60">
-                        {user.createdAt ?? "—"}
-                      </td>
-                      <td className="hidden 2xl:table-cell px-4 py-3 text-xs text-foreground/60">
-                        {user.lastLogin ?? "—"}
-                      </td>
-                      <td className="px-4 py-3">
                         <StatusBadge value={user.status} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1.5">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-xl"
-                            onClick={() => setEditUser(user)}
-                            title="Edit user"
-                          >
-                            <Edit className="size-3.5" />
+                      </div>
+                      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className="capitalize rounded-md bg-muted px-2 py-0.5">{user.role}</span>
+                        {user.role === "student"
+                          ? `${user.section || user.year || "-"} \u00B7 ${user.studentType ?? "Regular"}`
+                          : user.role === "admin" ? "Regular" : user.academicTitle ? `${user.academicTitle} \u00B7 ${user.employmentType ?? "Regular"}` : null}
+                      </div>
+                      <div className="mt-3 flex gap-1.5">
+                        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setEditUser(user)} title="Edit user">
+                          <Edit className="size-3.5" />
+                        </Button>
+                        {user.role === "student" ? (
+                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setChangeCurriculumUser({ user, newCurriculumId: user.curriculumId ?? "", newYearLevel: user.currentYearLevel ?? YEAR_LABELS[String(user.year ?? "1")], newSemester: user.currentSemester ?? "First Semester" })} title="Change curriculum">
+                            <ArrowLeftRight className="size-3.5" />
                           </Button>
-                          {user.role === "student" ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="rounded-xl"
-                              onClick={() => setChangeCurriculumUser({ user, newCurriculumId: user.curriculumId ?? "", newYearLevel: user.currentYearLevel ?? YEAR_LABELS[String(user.year ?? "1")], newSemester: user.currentSemester ?? "First Semester" })}
-                              title="Change curriculum"
-                            >
-                              <ArrowLeftRight className="size-3.5" />
-                            </Button>
-                          ) : null}
-                          {user.role === "student" ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="rounded-xl"
-                              onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "" }) }}
-                              title="Grade history"
-                            >
-                              <History className="size-3.5" />
-                            </Button>
-                          ) : null}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-xl"
-                            onClick={() => setToggleUserId(user.id)}
-                            title={
-                              user.status === "Active"
-                                ? "Deactivate"
-                                : "Activate"
-                            }
-                          >
-                            {user.status === "Active" ? (
-                              <UserX className="size-3.5" />
-                            ) : (
-                              <UserCheck className="size-3.5" />
-                            )}
+                        ) : null}
+                        {user.role === "student" ? (
+                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 }) }} title="Grade history">
+                            <History className="size-3.5" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-xl"
-                            onClick={() => setDeleteUserId(user.id)}
-                            title="Delete user"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
+                        ) : null}
+                        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setToggleUserId(user.id)} title={user.status === "Active" ? "Deactivate" : "Activate"}>
+                          {user.status === "Active" ? <UserX className="size-3.5" /> : <UserCheck className="size-3.5" />}
+                        </Button>
+                        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDeleteUserId(user.id)} title="Move to trash">
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-
-            {totalPages > 1 ? (
-              <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-muted/20 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm font-medium text-foreground">
-                  Page {safePage} of {totalPages}
-                </p>
-                <div className="grid grid-cols-2 gap-2 sm:flex">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="justify-center rounded-xl border-border bg-card text-foreground shadow-sm hover:bg-muted"
-                    disabled={safePage <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    aria-label="Previous page"
-                  >
-                    <ChevronLeft className="size-4" />
-                    Previous
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="justify-center rounded-xl border-border bg-card text-foreground shadow-sm hover:bg-muted"
-                    disabled={safePage >= totalPages}
-                    onClick={() => setPage((p) => p + 1)}
-                    aria-label="Next page"
-                  >
-                    Next
-                    <ChevronRight className="size-4" />
-                  </Button>
                 </div>
+
+                <div className="hidden overflow-x-auto rounded-xl border border-border shadow-sm md:block">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-muted text-foreground">
+                      <tr className="border-b border-border">
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Account</th>
+                        <th className="hidden lg:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Email</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Role</th>
+                        <th className="hidden xl:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Details</th>
+                        <th className="hidden 2xl:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Created</th>
+                        <th className="hidden 2xl:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Last Login</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Status</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border bg-card">
+                      {paginatedUsers.map((user) => (
+                        <tr key={user.id} className="transition-colors hover:bg-muted/50">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="size-8 shrink-0 ring-1 ring-border">
+                                <AvatarFallback className="bg-muted text-xs text-foreground">{getInitials(user.name)}</AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <p className="truncate font-medium text-foreground">{user.name}</p>
+                                <p className="truncate text-xs text-muted-foreground">{user.id}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="hidden lg:table-cell px-4 py-3 text-foreground/80">{user.email}</td>
+                          <td className="px-4 py-3 capitalize text-foreground/80">{user.role}</td>
+                          <td className="hidden xl:table-cell max-w-[200px] truncate px-4 py-3 text-foreground/80">
+                            {user.role === "student"
+                              ? `${user.section || user.year || "-"} \u00B7 ${user.studentType ?? "Regular"} \u00B7 ${user.curriculum ?? "N/A"}`
+                              : user.role === "admin" ? "Regular" : `${user.academicTitle ?? "N/A"} \u00B7 ${user.employmentType ?? "Regular"} \u00B7 ${user.advisoryClass ?? "No advisory"}`}
+                          </td>
+                          <td className="hidden 2xl:table-cell px-4 py-3 text-xs text-foreground/60">{formatDate(user.createdAt)}</td>
+                          <td className="hidden 2xl:table-cell px-4 py-3 text-xs text-foreground/60">{formatDate(user.lastLogin)}</td>
+                          <td className="px-4 py-3"><StatusBadge value={user.status} /></td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap gap-1.5">
+                              <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setEditUser(user)} title="Edit user"><Edit className="size-3.5" /></Button>
+                              {user.role === "student" ? (
+                                <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setChangeCurriculumUser({ user, newCurriculumId: user.curriculumId ?? "", newYearLevel: user.currentYearLevel ?? YEAR_LABELS[String(user.year ?? "1")], newSemester: user.currentSemester ?? "First Semester" })} title="Change curriculum"><ArrowLeftRight className="size-3.5" /></Button>
+                              ) : null}
+                              {user.role === "student" ? (
+                                <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 }) }} title="Grade history"><History className="size-3.5" /></Button>
+                              ) : null}
+                              <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setToggleUserId(user.id)} title={user.status === "Active" ? "Deactivate" : "Activate"}>
+                                {user.status === "Active" ? <UserX className="size-3.5" /> : <UserCheck className="size-3.5" />}
+                              </Button>
+                              <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDeleteUserId(user.id)} title="Move to trash"><Trash2 className="size-3.5" /></Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {totalPages > 1 ? (
+                  <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-muted/20 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-medium text-foreground">Page {safePage} of {totalPages}</p>
+                    <div className="grid grid-cols-2 gap-2 sm:flex">
+                      <Button size="sm" variant="outline" className="justify-center rounded-xl border-border bg-card text-foreground shadow-sm hover:bg-muted" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} aria-label="Previous page">
+                        <ChevronLeft className="size-4" /> Previous
+                      </Button>
+                      <Button size="sm" variant="outline" className="justify-center rounded-xl border-border bg-card text-foreground shadow-sm hover:bg-muted" disabled={safePage >= totalPages} onClick={() => setPage((p) => p + 1)} aria-label="Next page">
+                        Next <ChevronRight className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            {deletedUsers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Trash2 className="mb-3 size-10 text-muted-foreground/50" />
+                <p className="text-sm text-muted-foreground">Recycle bin is empty</p>
               </div>
-            ) : null}
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-border shadow-sm">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-muted text-foreground">
+                    <tr className="border-b border-border">
+                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Account</th>
+                      <th className="hidden lg:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Email</th>
+                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Role</th>
+                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Deleted On</th>
+                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border bg-card">
+                    {deletedUsers.map((user) => (
+                      <tr key={user.id} className="transition-colors hover:bg-muted/50">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="size-8 shrink-0 ring-1 ring-border opacity-60">
+                              <AvatarFallback className="bg-muted text-xs text-muted-foreground">{getInitials(user.name)}</AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-foreground">{user.name}</p>
+                              <p className="truncate text-xs text-muted-foreground">{user.id}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="hidden lg:table-cell px-4 py-3 text-foreground/80">{user.email}</td>
+                        <td className="px-4 py-3 capitalize text-foreground/80">{user.role}</td>
+                        <td className="px-4 py-3 text-xs text-foreground/60">{user.deletedAt ? new Date(user.deletedAt).toLocaleString() : "—"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-1.5">
+                            <Button size="sm" variant="outline" className="rounded-xl border-amber-500/30 text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950" onClick={() => setRestoreUserId(user.id)} title="Restore user">
+                              <RotateCcw className="size-3.5" />
+                              Restore
+                            </Button>
+                            <Button size="sm" variant="outline" className="rounded-xl border-red-500/30 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950" onClick={() => setPermanentDeleteUserId(user.id)} title="Permanently delete">
+                              <Trash2 className="size-3.5" />
+                              Delete Forever
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </>
         )}
       </Panel>
@@ -684,8 +703,9 @@ export function UsersModule({ model }: PortalModuleProps) {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
+                {addRole !== "admin" && (
                 <div>
-                  <p className="mb-1.5 text-sm font-medium text-foreground">ID Number</p>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">ID Number *</p>
                   <Input
                     value={newUser.idNumber}
                     onChange={(e) =>
@@ -697,6 +717,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                     placeholder="IS-00-00000"
                   />
                 </div>
+                )}
                 <div>
                   <p className="mb-1.5 text-sm font-medium text-foreground">Sex</p>
                   <Select
@@ -731,27 +752,12 @@ export function UsersModule({ model }: PortalModuleProps) {
                 />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                {addRole === "student" && (
-                  <div>
-                    <p className="mb-1.5 text-sm font-medium text-foreground">Section</p>
-                    <Select
-                      value={newUser.section}
-                      onChange={(value) =>
-                        setNewUser((current) => ({ ...current, section: value }))
-                      }
-                      options={sectionOptions.length > 0 ? sectionOptions : ["A", "B", "C", "D"]}
-                    />
-                  </div>
-                )}
-              </div>
-
               {addRole === "student" ? (
                 <div className="space-y-4 border-t border-border pt-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Student Details</p>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <p className="mb-1.5 text-sm font-medium text-foreground">Year Level</p>
+                        <p className="mb-1.5 text-sm font-medium text-foreground">Year Level *</p>
                       <Select
                         value={newUser.currentYearLevel}
                         onChange={(value) => {
@@ -772,7 +778,17 @@ export function UsersModule({ model }: PortalModuleProps) {
                       />
                     </div>
                     <div>
-                      <p className="mb-1.5 text-sm font-medium text-foreground">Student type</p>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Section *</p>
+                      <Select
+                        value={newUser.section}
+                        onChange={(value) =>
+                          setNewUser((current) => ({ ...current, section: value }))
+                        }
+                        options={sectionOptions.length > 0 ? sectionOptions : ["A", "B", "C", "D"]}
+                      />
+                    </div>
+                    <div>
+                        <p className="mb-1.5 text-sm font-medium text-foreground">Student type *</p>
                       <Select
                         value={newUser.studentType}
                         onChange={(value) =>
@@ -791,9 +807,10 @@ export function UsersModule({ model }: PortalModuleProps) {
                       />
                     </div>
                     <div>
-                      <p className="mb-1.5 text-sm font-medium text-foreground">Curriculum</p>
+                        <p className="mb-1.5 text-sm font-medium text-foreground">Curriculum *</p>
                       <Select
                         value={newUser.curriculum}
+                        displayValue={newUser.curriculum.split(" - ")[0]}
                         onChange={(value) => {
                           const curr = curricula.find(
                             (c) => `${c.id} - ${c.name} - ${c.major}` === value
@@ -808,7 +825,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                       />
                     </div>
                     <div>
-                      <p className="mb-1.5 text-sm font-medium text-foreground">Semester</p>
+                        <p className="mb-1.5 text-sm font-medium text-foreground">Semester *</p>
                       <Select
                         value={newUser.currentSemester}
                         onChange={(value) =>
@@ -888,7 +905,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                             academicTitle: value,
                           }))
                         }
-                        options={["PhD", "MIT", "DIT", "LPT"]}
+                        options={["N/A", "PhD", "MIT", "DIT", "LPT"]}
                       />
                     </div>
                   </div>
@@ -957,6 +974,10 @@ export function UsersModule({ model }: PortalModuleProps) {
                     value={(() => {
                       const c = curricula.find((cr) => cr.id === changeCurriculumUser.newCurriculumId)
                       return c ? `${c.id} - ${c.name} - ${c.major}` : ""
+                    })()}
+                    displayValue={(() => {
+                      const c = curricula.find((cr) => cr.id === changeCurriculumUser.newCurriculumId)
+                      return c ? c.id : ""
                     })()}
                     onChange={(value) => {
                       const curr = curricula.find(
@@ -1462,13 +1483,13 @@ export function UsersModule({ model }: PortalModuleProps) {
                 <div>
                   <p className="mb-1.5 text-sm font-medium text-foreground">Account Created</p>
                   <p className="rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-sm text-foreground/80">
-                    {editUser.createdAt ?? "—"}
+                    {formatDate(editUser.createdAt)}
                   </p>
                 </div>
                 <div>
                   <p className="mb-1.5 text-sm font-medium text-foreground">Last Login</p>
                   <p className="rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-sm text-foreground/80">
-                    {editUser.lastLogin ?? "—"}
+                    {formatDate(editUser.lastLogin)}
                   </p>
                 </div>
               </div>
@@ -1499,7 +1520,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                       />
                     </div>
                     <div>
-                      <p className="mb-1.5 text-sm font-medium text-foreground">Section</p>
+                    <p className="mb-1.5 text-sm font-medium text-foreground">Section *</p>
                       <Select
                         value={editUser.section ?? ""}
                         onChange={(value) =>
@@ -1541,6 +1562,14 @@ export function UsersModule({ model }: PortalModuleProps) {
                                 return c ? `${c.id} - ${c.name} - ${c.major}` : editUser.curriculum ?? ""
                               })()
                             : editUser.curriculum ?? ""
+                        }
+                        displayValue={
+                          editUser.curriculumId
+                            ? (() => {
+                                const c = curricula.find((cr) => cr.id === editUser.curriculumId)
+                                return c ? c.id : ""
+                              })()
+                            : editUser.curriculum?.split(" - ")[0] ?? ""
                         }
                         onChange={(value) => {
                           const curr = curricula.find(
@@ -1602,7 +1631,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                         onChange={(value) =>
                           setEditUser({ ...editUser, academicTitle: value })
                         }
-                        options={["PhD", "MIT", "DIT", "LPT"]}
+                        options={["N/A", "PhD", "MIT", "DIT", "LPT"]}
                       />
                     </div>
                     <div>
@@ -1666,9 +1695,9 @@ export function UsersModule({ model }: PortalModuleProps) {
       >
         <DialogContent className="w-[95vw] sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl text-foreground">Delete Account</DialogTitle>
+            <DialogTitle className="text-xl text-foreground">Move to Trash?</DialogTitle>
             <DialogDescription className="pt-1 text-muted-foreground">
-              This action cannot be undone. The account will be permanently removed.
+              The account will be moved to the recycle bin. You can restore it later.
             </DialogDescription>
           </DialogHeader>
 
@@ -1683,7 +1712,68 @@ export function UsersModule({ model }: PortalModuleProps) {
               onClick={handleDeleteConfirm}
             >
               <Trash2 className="mr-1.5 size-4" />
-              Delete
+              Move to Trash
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!restoreUserId}
+        onOpenChange={(o) => !o && setRestoreUserId(null)}
+      >
+        <DialogContent className="w-[95vw] sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-foreground">Restore Account?</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">
+              This will restore the user account along with all associated grades and roster data.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-2 gap-2">
+            <DialogClose asChild>
+              <Button variant="ghost">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              variant="default"
+              onClick={handleRestoreConfirm}
+            >
+              <RotateCcw className="mr-1.5 size-4" />
+              Restore
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!permanentDeleteUserId}
+        onOpenChange={(o) => !o && setPermanentDeleteUserId(null)}
+      >
+        <DialogContent className="w-[95vw] sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-foreground">Permanently Delete?</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">
+              <span className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" />
+                This action cannot be undone. The user and all associated data (grades, roster, records) will be permanently removed.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-2 gap-2">
+            <DialogClose asChild>
+              <Button variant="ghost">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={handlePermanentDeleteConfirm}
+            >
+              <Trash2 className="mr-1.5 size-4" />
+              Permanently Delete
             </Button>
           </DialogFooter>
         </DialogContent>

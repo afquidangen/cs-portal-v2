@@ -111,7 +111,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
     const passedIrregularIds = new Set(
       users
         .filter((u) =>
-          irregularTypes.includes(u.studentType) &&
+          irregularTypes.includes(u.studentType ?? "") &&
           (u.gradeHistory ?? []).some(
             (h) =>
               normalize(h.subjectCode) === normalize(currentCode) &&

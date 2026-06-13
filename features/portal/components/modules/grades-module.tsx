@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Award, BarChart3, BookMarked, ClipboardList, Download, FileSpreadsheet, GraduationCap, ListChecks, Send, Upload, UsersRound } from "lucide-react"
+import { Award, BarChart3, BookMarked, ClipboardList, Download, FileSpreadsheet, GraduationCap, ListChecks, Search, Send, Upload, UsersRound } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -256,6 +256,7 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
 
   const [selectedSubject, setSelectedSubject] = useState("")
   const [selectedSection, setSelectedSection] = useState<string | null>(null)
+  const [studentQuery, setStudentQuery] = useState("")
 
   const facultySubjects = useMemo(() => {
     const seen = new Set<string>()
@@ -299,6 +300,33 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
     }
     return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]))
   }, [subjectRoster])
+
+  const filteredRosterBySection = useMemo(() => {
+    const q = studentQuery.toLowerCase().trim()
+    return rosterBySection
+      .map(([section, students]) => {
+        let filtered = students
+        if (q) {
+          filtered = students.filter((s) => {
+            const displayName = s.lastName
+              ? `${s.lastName}, ${s.firstName ?? ""}${s.middleName ? ` ${s.middleName}` : ""}`
+              : s.name
+            return displayName.toLowerCase().includes(q)
+          })
+        }
+        const sorted = [...filtered].sort((a, b) => {
+          const aLast = a.lastName ?? a.name.split(" ").pop() ?? ""
+          const bLast = b.lastName ?? b.name.split(" ").pop() ?? ""
+          const cmp = aLast.localeCompare(bLast)
+          if (cmp !== 0) return cmp
+          const aFirst = a.firstName ?? a.name
+          const bFirst = b.firstName ?? b.name
+          return aFirst.localeCompare(bFirst)
+        })
+        return [section, sorted] as [string, typeof subjectRoster]
+      })
+      .filter(([, students]) => students.length > 0)
+  }, [rosterBySection, studentQuery])
 
   const gradeMap = useMemo(() => {
     const map = new Map()
@@ -469,12 +497,27 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
         </div>
       )}
 
+      {/* Student search */}
+      {selectedSubject && subjectSections.length > 0 && (
+        <div className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={studentQuery}
+              onChange={(e) => setStudentQuery(e.target.value)}
+              placeholder="Search students by name..."
+              className="h-9 rounded-xl pl-9 text-sm"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Grade tables */}
-      {selectedSubject && rosterBySection.length > 0 ? (
+      {selectedSubject && filteredRosterBySection.length > 0 ? (
         selectedSection === null ? (
           /* All sections stacked */
           <div className="space-y-6">
-            {rosterBySection.map(([section, students]) => (
+            {filteredRosterBySection.map(([section, students]) => (
               <SectionTable
                 key={section}
                 section={section}
@@ -484,12 +527,11 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
                 updateGrade={updateGrade}
                 updateGradeRemarks={updateGradeRemarks}
                 setGrades={setGrades}
-                roster={roster}
               />
             ))}
           </div>
         ) : (() => {
-          const students = rosterBySection.find(([sec]) => sec === selectedSection)?.[1] ?? []
+          const students = filteredRosterBySection.find(([sec]) => sec === selectedSection)?.[1] ?? []
           return (
             <SectionTable
               section={selectedSection}
@@ -499,7 +541,6 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
               updateGrade={updateGrade}
               updateGradeRemarks={updateGradeRemarks}
               setGrades={setGrades}
-              roster={roster}
             />
           )
         })()
@@ -519,7 +560,7 @@ function SectionTable({
   section, students, gradeMap, selectedSubject, updateGrade, updateGradeRemarks, setGrades,
 }: {
   section: string
-  students: typeof roster
+  students: Array<{ id: string; name: string; section: string; enrolled?: boolean; firstName?: string; middleName?: string; lastName?: string }>
   gradeMap: Map<string, GradeRecord>
   selectedSubject: string
   updateGrade: (id: string, field: string, value: string) => void
@@ -544,7 +585,8 @@ function SectionTable({
         <table className="w-full min-w-[960px] text-left text-sm">
           <thead className="bg-muted text-foreground">
             <tr className="border-b border-border">
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Student</th>
+              <th className="w-12 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">No.</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Name</th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Midterm</th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Final</th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Grade %</th>
@@ -554,7 +596,7 @@ function SectionTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-border bg-card">
-            {students.map((student) => {
+            {students.map((student, index) => {
               const grade = gradeMap.get(student.id)
               const finalGrade = grade ? calculateGradePercentage(grade) : undefined
               const transmuted = finalGrade !== undefined ? transmutedToEquivalent(finalGrade) : undefined
@@ -602,9 +644,13 @@ function SectionTable({
 
               return (
                 <tr key={student.id} className="transition-colors hover:bg-muted/50">
+                  <td className="w-12 px-4 py-3 text-center text-sm text-muted-foreground">{index + 1}</td>
                   <td className="px-4 py-3">
-                    <p className="font-medium text-foreground">{student.name}</p>
-                    <p className="text-xs text-foreground/70">{student.id}</p>
+                    <p className="font-medium text-foreground">
+                      {student.lastName
+                        ? `${student.lastName}, ${student.firstName ?? ""}${student.middleName ? ` ${student.middleName}` : ""}`
+                        : student.name}
+                    </p>
                   </td>
 
                   <td className="px-4 py-3">

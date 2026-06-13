@@ -6,6 +6,8 @@ export interface IQuickLink extends Document {
   type: "link" | "file"
   fileName?: string
   fileSize?: number
+  imageUrl?: string
+  cloudinaryPublicId?: string
 }
 
 const QuickLinkSchema = new Schema<IQuickLink>(
@@ -15,6 +17,8 @@ const QuickLinkSchema = new Schema<IQuickLink>(
     type: { type: String, enum: ["link", "file"], default: "link" },
     fileName: String,
     fileSize: Number,
+    imageUrl: String,
+    cloudinaryPublicId: String,
   },
   { timestamps: true }
 )

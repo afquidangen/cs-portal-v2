@@ -68,11 +68,11 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const deleted = await usersRepository.delete({ id })
+    const deleted = await usersRepository.softDelete({ id })
     if (!deleted) return notFound("User")
     await Promise.all([
-      rosterRepository.delete({ id }).catch(() => {}),
-      gradesRepository.deleteMany({ studentId: id }).catch(() => {}),
+      rosterRepository.softDelete({ id }).catch(() => {}),
+      gradesRepository.softDelete({ studentId: id }).catch(() => {}),
     ])
     return success({ deleted: true })
   } catch (err) {

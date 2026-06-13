@@ -5,6 +5,7 @@ export interface IClassStudent extends Document {
   name: string
   section: string
   enrolled: boolean
+  deletedAt?: string | null
 }
 
 const ClassStudentSchema = new Schema<IClassStudent>(
@@ -13,6 +14,7 @@ const ClassStudentSchema = new Schema<IClassStudent>(
     name: { type: String, required: true },
     section: String,
     enrolled: { type: Boolean, default: true },
+    deletedAt: { type: String, default: null },
   },
   { timestamps: true }
 )

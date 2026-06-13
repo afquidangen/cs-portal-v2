@@ -16,6 +16,7 @@ export interface IGrade extends Document {
   remarks?: string
   released?: boolean
   updatedAt: string
+  deletedAt?: string | null
 }
 
 const GradeSchema = new Schema<IGrade>(
@@ -35,6 +36,7 @@ const GradeSchema = new Schema<IGrade>(
     remarks: String,
     released: { type: Boolean, default: false },
     updatedAt: String,
+    deletedAt: { type: String, default: null },
   },
   { timestamps: true }
 )

@@ -35,6 +35,12 @@ export async function POST(request: Request) {
       doc.type = "file"
     }
 
+    if (body.imageData && typeof body.imageData === "string" && body.imageData.startsWith("data:")) {
+      const result = await uploadFile(body.imageData, `quicklink-image-${Date.now()}`, "quick-links", "image")
+      doc.imageUrl = result.secureUrl
+      doc.cloudinaryPublicId = result.publicId
+    }
+
     const created = await quickLinksRepository.create(doc) as Record<string, unknown>
     const raw = "toObject" in created ? (created as { toObject: () => Record<string, unknown> }).toObject() : created
     const link = { ...raw, _id: String(raw._id) }

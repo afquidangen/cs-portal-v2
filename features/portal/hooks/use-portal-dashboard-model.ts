@@ -6,6 +6,7 @@ import {
   type FormEvent,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react"
 import { toast } from "sonner"
@@ -120,7 +121,7 @@ function buildGradeFromImport(
     gradePercentage,
     remarks: imported.remarks || "Passed",
     released: false,
-    updatedAt: new Date(),
+    updatedAt: new Date().toISOString(),
   }
 }
 
@@ -162,6 +163,35 @@ export function usePortalDashboardModel(role: Role) {
   const [csoReports, setCsoReports] = useState<CsoReport[]>([])
   const [quickLinks, setQuickLinks] = useState<QuickLinkRecord[]>([])
   const [downloadables, setDownloadables] = useState<DownloadableRecord[]>([])
+
+  const prevUsersRef = useRef<UserRecord[]>([])
+  useEffect(() => {
+    const prev = prevUsersRef.current
+    const updates: Array<{ scheduleId: string; newName: string }> = []
+    setClassSchedules((current) => {
+      let changed = false
+      const updated = current.map((s) => {
+        for (const prevUser of prev) {
+          if (prevUser.role !== "faculty") continue
+          const currentUser = users.find((u) => u.id === prevUser.id)
+          if (currentUser && prevUser.name === s.instructor && currentUser.name !== prevUser.name) {
+            changed = true
+            updates.push({ scheduleId: s.id, newName: currentUser.name })
+            return { ...s, instructor: currentUser.name }
+          }
+        }
+        return s
+      })
+      return changed ? updated : current
+    })
+    for (const { scheduleId, newName } of updates) {
+      syncApi("PUT", `/api/portal/schedules/${scheduleId}`, { instructor: newName })
+        .catch((e) => console.error(`Failed to sync schedule ${scheduleId}:`, e))
+    }
+    prevUsersRef.current = users
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [users])
+
   const [showQuickLinkForm, setShowQuickLinkForm] = useState(false)
   const [quickLinkDraft, setQuickLinkDraft] = useState({
     label: "",
@@ -170,9 +200,11 @@ export function usePortalDashboardModel(role: Role) {
     fileName: "",
     fileSize: 0,
     fileData: "",
+    imageData: "",
   })
 
   const [roleFilter, setRoleFilter] = useState("All")
+  const [trashView, setTrashView] = useState(false)
   const [selectedAcademicSection, setSelectedAcademicSection] =
     useState("Semesters")
   const [selectedClassYear, setSelectedClassYear] = useState("First Year")
@@ -299,6 +331,7 @@ export function usePortalDashboardModel(role: Role) {
     content: "",
     audience: "All Users",
     priority: "Medium" as Announcement["priority"],
+    classSection: "",
   })
   const [myFacultyStatus, setMyFacultyStatus] =
     useState<AvailabilityStatus>("Available")
@@ -330,7 +363,11 @@ export function usePortalDashboardModel(role: Role) {
         const newName = user.name
         if (entry.section !== newSection || entry.name !== newName) {
           changed = true
-          return { ...entry, name: newName, section: newSection }
+          return { ...entry, name: newName, section: newSection, firstName: user.firstName, middleName: user.middleName, lastName: user.lastName }
+        }
+        if (entry.firstName !== user.firstName || entry.middleName !== user.middleName || entry.lastName !== user.lastName) {
+          changed = true
+          return { ...entry, firstName: user.firstName, middleName: user.middleName, lastName: user.lastName }
         }
         return entry
       })
@@ -341,7 +378,8 @@ export function usePortalDashboardModel(role: Role) {
       if (missing.length > 0) {
         changed = true
         const newEntries = missing.map((u) => ({
-          id: u.id, name: u.name, section: u.section ?? "", enrolled: u.status === "Active"
+          id: u.id, name: u.name, section: u.section ?? "", enrolled: u.status === "Active",
+          firstName: u.firstName, middleName: u.middleName, lastName: u.lastName
         }))
         return [...newEntries, ...updated]
       }
@@ -619,6 +657,23 @@ export function usePortalDashboardModel(role: Role) {
     return users.filter((user) => {
       if (seen.has(user.id)) return false
       seen.add(user.id)
+      if (user.deletedAt) return false
+      const matchesSearch = [user.name, user.email, user.id, user.role]
+        .join(" ")
+        .toLowerCase()
+        .includes(search)
+      const matchesRole = roleFilter === "All" || user.role === roleFilter
+      return matchesSearch && matchesRole
+    })
+  }, [query, roleFilter, users])
+
+  const deletedUsers = useMemo(() => {
+    const search = query.toLowerCase()
+    const seen = new Set<string>()
+    return users.filter((user) => {
+      if (seen.has(user.id)) return false
+      seen.add(user.id)
+      if (!user.deletedAt) return false
       const matchesSearch = [user.name, user.email, user.id, user.role]
         .join(" ")
         .toLowerCase()
@@ -728,7 +783,7 @@ export function usePortalDashboardModel(role: Role) {
 
   function updateGrade(
     id: string,
-    field: "midterm" | "finalTerm",
+    field: string,
     value: string
   ) {
     const percentile = Number(value)
@@ -856,7 +911,7 @@ export function usePortalDashboardModel(role: Role) {
       finalTransmuted: undefined,
       finalTerm: 0,
       released: false,
-      updatedAt: new Date(),
+    updatedAt: new Date().toISOString(),
     }
     setGrades((current) => [newGrade, ...current])
     void syncApi("POST", "/api/portal/grades", newGrade)
@@ -1355,6 +1410,9 @@ export function usePortalDashboardModel(role: Role) {
           : item
       )
     )
+    syncApi("PUT", `/api/portal/users/${userId}`, { status: newStatus }).catch((e) =>
+      console.error("Failed to sync status:", e)
+    )
     if (user) {
       addAuditLog(`${newStatus === "Active" ? "Activated" : "Deactivated"} account "${user.name}"`)
     }
@@ -1367,23 +1425,83 @@ export function usePortalDashboardModel(role: Role) {
 
   function deleteUser(userId: string) {
     const user = users.find((u) => u.id === userId)
+    const now = new Date().toISOString()
+    setUsers((current) =>
+      current.map((item) =>
+        item.id === userId ? { ...item, deletedAt: now } : item
+      )
+    )
+    setRoster((current) =>
+      current.map((item) =>
+        item.id === userId ? { ...item, deletedAt: now } : item
+      )
+    )
+    setGrades((current) =>
+      current.map((grade) =>
+        grade.studentId === userId ? { ...grade, deletedAt: now } : grade
+      )
+    )
+    syncApi("DELETE", `/api/portal/users/${userId}`).then(() =>
+      toast.success(user ? `User "${user.name}" moved to trash.` : "User moved to trash.")
+    ).catch((e) => {
+      toast.error("Failed to move user to trash.")
+      console.error(e)
+    })
+    if (user) {
+      addAuditLog(`Moved ${user.role} account "${user.name}" to trash`)
+    }
+  }
+
+  function restoreUser(userId: string) {
+    const user = users.find((u) => u.id === userId)
+    setUsers((current) =>
+      current.map((item) =>
+        item.id === userId ? { ...item, deletedAt: null } : item
+      )
+    )
+    setRoster((current) =>
+      current.map((item) =>
+        item.id === userId ? { ...item, deletedAt: null } : item
+      )
+    )
+    setGrades((current) =>
+      current.map((grade) =>
+        grade.studentId === userId ? { ...grade, deletedAt: null } : grade
+      )
+    )
+    syncApi("POST", `/api/portal/users/${userId}/restore`).then(() =>
+      toast.success(user ? `User "${user.name}" restored.` : "User restored.")
+    ).catch((e) => {
+      toast.error("Failed to restore user.")
+      console.error(e)
+    })
+    if (user) {
+      addAuditLog(`Restored ${user.role} account "${user.name}" from trash`)
+    }
+  }
+
+  function permanentlyDeleteUser(userId: string) {
+    const user = users.find((u) => u.id === userId)
     setUsers((current) => current.filter((item) => item.id !== userId))
     setRoster((current) => current.filter((item) => item.id !== userId))
     setGrades((current) =>
       current.filter((grade) => grade.studentId !== userId)
     )
-    syncApi("DELETE", `/api/portal/users/${userId}`).then(() =>
-      toast.success(user ? `User "${user.name}" deleted.` : "User deleted.")
+    syncApi("DELETE", `/api/portal/users/${userId}/permanent`).then(() =>
+      toast.success(user ? `User "${user.name}" permanently deleted.` : "User permanently deleted.")
     ).catch((e) => {
-      toast.error("Failed to delete user.")
+      toast.error("Failed to permanently delete user.")
       console.error(e)
     })
     if (user) {
-      addAuditLog(`Deleted ${user.role} account "${user.name}"`)
+      addAuditLog(`Permanently deleted ${user.role} account "${user.name}"`)
     }
   }
 
   function handleUpdateUser(updatedUser: UserRecord) {
+    const oldUser = users.find((u) => u.id === updatedUser.id)
+    const oldName = oldUser?.name
+
     setUsers((current) =>
       current.map((item) => (item.id === updatedUser.id ? updatedUser : item))
     )
@@ -1396,7 +1514,7 @@ export function usePortalDashboardModel(role: Role) {
         }
         return current.map((item) =>
           item.id === updatedUser.id
-            ? { ...item, name: updatedUser.name, section }
+            ? { ...item, name: updatedUser.name, section, firstName: updatedUser.firstName, middleName: updatedUser.middleName, lastName: updatedUser.lastName }
             : item
         )
       })
@@ -1414,6 +1532,20 @@ export function usePortalDashboardModel(role: Role) {
         if (grade.studentId === updatedUser.id) {
           syncApi("PUT", `/api/portal/grades/${grade.id}`, { student: updatedUser.name, section }).catch((e) =>
             console.error(`Failed to sync grade ${grade.id}:`, e)
+          )
+        }
+      }
+    }
+    if (updatedUser.role === "faculty" && oldName && oldName !== updatedUser.name) {
+      setClassSchedules((current) =>
+        current.map((s) =>
+          s.instructor === oldName ? { ...s, instructor: updatedUser.name } : s
+        )
+      )
+      for (const schedule of classSchedules) {
+        if (schedule.instructor === oldName) {
+          syncApi("PUT", `/api/portal/schedules/${schedule.id}`, { instructor: updatedUser.name }).catch((e) =>
+            console.error(`Failed to sync schedule ${schedule.id}:`, e)
           )
         }
       }
@@ -1651,6 +1783,7 @@ export function usePortalDashboardModel(role: Role) {
   async function handleSaveProfile(draft: ProfileDetails) {
     const previousPhotoUrl = profileDetails.photoUrl
     const fullName = getProfileFullName(draft)
+    const oldName = getProfileFullName(profileDetails)
 
     const body: Record<string, unknown> = {
       name: fullName,
@@ -1697,7 +1830,7 @@ export function usePortalDashboardModel(role: Role) {
     if (fullName) {
       setRoster((current) =>
         current.map((s) =>
-          s.id === profile.id ? { ...s, name: fullName } : s
+          s.id === profile.id ? { ...s, name: fullName, firstName: draft.firstName, middleName: draft.middleName, lastName: draft.lastName } : s
         )
       )
       setGrades((current) =>
@@ -1709,6 +1842,19 @@ export function usePortalDashboardModel(role: Role) {
       for (const grade of grades) {
         if (grade.studentId === profile.id) {
           void syncApi("PUT", `/api/portal/grades/${grade.id}`, { student: fullName })
+        }
+      }
+      if (oldName && oldName !== fullName) {
+        setClassSchedules((current) =>
+          current.map((s) =>
+            s.instructor === oldName ? { ...s, instructor: fullName } : s
+          )
+        )
+        for (const schedule of classSchedules) {
+          if (schedule.instructor === oldName) {
+            syncApi("PUT", `/api/portal/schedules/${schedule.id}`, { instructor: fullName })
+              .catch((e) => console.error(`Failed to sync schedule ${schedule.id}:`, e))
+          }
         }
       }
     }
@@ -2410,7 +2556,7 @@ export function usePortalDashboardModel(role: Role) {
     addAuditLog(`Updated curriculum "${updated.name}"`)
   }
 
-  function handleCreateAnnouncement(event: FormEvent<HTMLFormElement>) {
+  async function handleCreateAnnouncement(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!announcementDraft.title.trim() || !announcementDraft.content.trim()) {
       return
@@ -2422,23 +2568,27 @@ export function usePortalDashboardModel(role: Role) {
       date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
       audience: announcementDraft.audience,
       priority: announcementDraft.priority,
+      classSection: announcementDraft.classSection || undefined,
+      createdBy: profile.name,
     }
-    setAnnouncements((current) => [newItem, ...current])
-    syncApi("POST", "/api/portal/announcements", newItem).then(() =>
+    try {
+      await syncApi("POST", "/api/portal/announcements", newItem)
+      setAnnouncements((current) => [newItem, ...current])
       toast.success("Announcement created.")
-    ).catch((e) => {
+    } catch (e) {
       toast.error("Failed to create announcement.")
       console.error(e)
-    })
+      return
+    }
     setAnnouncementDraft({
       title: "",
       content: "",
       audience: "All Users",
       priority: "Medium",
+      classSection: "",
     })
     setShowAnnouncementForm(false)
     addAuditLog(`Created announcement "${announcementDraft.title}"`)
-    toast.success("Announcement created.")
   }
 
   function handleUpdateAnnouncement(updated: Announcement) {
@@ -2478,6 +2628,7 @@ export function usePortalDashboardModel(role: Role) {
       type: quickLinkDraft.type,
       fileName: quickLinkDraft.fileName || undefined,
       fileSize: quickLinkDraft.fileSize || undefined,
+      imageData: quickLinkDraft.imageData || undefined,
     }
 
     const result = await syncApi<{ data: QuickLinkRecord }>("POST", "/api/portal/quick-links", payload)
@@ -2485,17 +2636,23 @@ export function usePortalDashboardModel(role: Role) {
       setQuickLinks((current) => [result.data, ...current])
     }
 
-    setQuickLinkDraft({ label: "", href: "", type: "link", fileName: "", fileSize: 0, fileData: "" })
+    setQuickLinkDraft({ label: "", href: "", type: "link", fileName: "", fileSize: 0, fileData: "", imageData: "" })
     setShowQuickLinkForm(false)
     addAuditLog(`Created quick link "${quickLinkDraft.label}"`)
     toast.success("Quick link created.")
   }
 
-  function handleUpdateQuickLink(updated: QuickLinkRecord) {
+  function handleUpdateQuickLink(updated: QuickLinkRecord & { imageData?: string; removeImage?: boolean }) {
     setQuickLinks((current) =>
-      current.map((item) => (item._id === updated._id ? updated : item))
+      current.map((item) => (item._id === updated._id ? { ...item, ...updated } : item))
     )
-    syncApi("PUT", `/api/portal/quick-links/${updated._id}`, updated).then(() =>
+    const payload: Record<string, unknown> = {
+      label: updated.label,
+      href: updated.href,
+      imageData: updated.imageData || undefined,
+      removeImage: updated.removeImage || undefined,
+    }
+    syncApi("PUT", `/api/portal/quick-links/${updated._id}`, payload).then(() =>
       toast.success("Quick link updated.")
     ).catch((e) => {
       toast.error("Failed to update quick link.")
@@ -2740,6 +2897,9 @@ export function usePortalDashboardModel(role: Role) {
     filteredTheses,
     filteredFaculty,
     filteredUsers,
+    deletedUsers,
+    trashView,
+    setTrashView,
     studentTickets,
     auditLogs,
     csoReports,
@@ -2785,6 +2945,8 @@ export function usePortalDashboardModel(role: Role) {
     toggleUserStatus,
     confirmAndDeleteUser,
     deleteUser,
+    restoreUser,
+    permanentlyDeleteUser,
     handleUpdateUser,
     confirmAndDeleteThesis,
     undoTicketResolution,

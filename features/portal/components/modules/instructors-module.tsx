@@ -99,7 +99,7 @@ export function InstructorsModule({ model }: PortalModuleProps) {
                         {member.position}
                       </p>
                     </div>
-                    <StatusBadge value={member.status} className="shrink-0" />
+                    <StatusBadge value={member.status} />
                   </div>
 
                   <div className="mt-4 grid gap-2 text-sm text-foreground/80">

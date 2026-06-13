@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils"
 
 import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import type { GradeHistoryEntry } from "../../data/portal-data"
-import type { PortalModuleProps } from "./types"
+import type { PortalModuleProps } from "./types"  
 
 const irregularTypes = ["Irregular", "Transferee", "Shifter"]
 
@@ -52,6 +52,8 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
   } = model
 
   const [search, setSearch] = useState("")
+  const [filterYear, setFilterYear] = useState("All Years")
+  const [filterSection, setFilterSection] = useState("All Sections")
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [gradeDialog, setGradeDialog] = useState<{
     mode: "add" | "edit"
@@ -72,6 +74,14 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
     units: 3,
   })
 
+  const yearOptions = useMemo(() => ["All Years", ...yearSections.map((ys) => ys.year)], [yearSections])
+
+  const sectionOptions = useMemo(() => {
+    if (filterYear === "All Years") return ["All Sections", ...yearSections.flatMap((ys) => ys.sections)]
+    const found = yearSections.find((ys) => ys.year === filterYear)
+    return ["All Sections", ...(found?.sections ?? [])]
+  }, [filterYear, yearSections])
+
   const irregularStudents = useMemo(
     () =>
       users.filter(
@@ -85,12 +95,13 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
 
   const filteredStudents = useMemo(() => {
     const q = search.toLowerCase()
-    return irregularStudents.filter(
-      (s) =>
-        s.name.toLowerCase().includes(q) ||
-        s.id.toLowerCase().includes(q)
-    )
-  }, [irregularStudents, search])
+    return irregularStudents.filter((s) => {
+      if (!s.name.toLowerCase().includes(q) && !s.id.toLowerCase().includes(q)) return false
+      if (filterYear !== "All Years" && s.currentYearLevel !== filterYear) return false
+      if (filterSection !== "All Sections" && s.section !== filterSection) return false
+      return true
+    })
+  }, [irregularStudents, search, filterYear, filterSection])
 
   const selectedStudent = useMemo(
     () => users.find((u) => u.id === selectedStudentId) ?? null,
@@ -138,10 +149,11 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
         finalPercentile: String(entry.finalPercentile ?? ""),
         remarks: entry.remarks ?? "Passed",
         section: entry.section ?? "",
+        units: entry.units ?? 3,
       })
       setGradeDialog({ mode: "edit", subjectCode: code, subjectName: name, yearLevel: year, semester, section: entry.section ?? "", index: existing })
     } else {
-      setGradeForm({ subjectCode: code, subjectName: name, finalPercentile: "75", remarks: "Passed", section: "" })
+      setGradeForm({ subjectCode: code, subjectName: name, finalPercentile: "75", remarks: "Passed", section: "", units: 3 })
       setGradeDialog({ mode: "add", subjectCode: code, subjectName: name, yearLevel: year, semester })
     }
   }
@@ -237,7 +249,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
   }
 
   function openAddCustom() {
-    setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "75", remarks: "Passed", units: 3 })
+    setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "75", remarks: "Passed", section: "", units: 3 })
     setCustomDialog(true)
   }
 
@@ -307,6 +319,20 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
             </div>
           }
         >
+          <div className="flex flex-wrap gap-2 pb-2">
+            <Select
+              value={filterYear}
+              onChange={(v) => { setFilterYear(v); setFilterSection("All Sections") }}
+              options={yearOptions}
+              className="w-36"
+            />
+            <Select
+              value={filterSection}
+              onChange={setFilterSection}
+              options={sectionOptions}
+              className="w-36"
+            />
+          </div>
           <div className="space-y-2">
             {filteredStudents.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-center">
@@ -504,13 +530,14 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
                                   variant="outline"
                                   className="rounded-xl"
                                   onClick={() => {
-                                    setGradeForm({
-                                      subjectCode: entry.subjectCode,
-                                      subjectName: entry.subjectName,
-                                      finalPercentile: String(entry.finalPercentile ?? ""),
-                                      remarks: entry.remarks ?? "Passed",
-                                      section: entry.section ?? "",
-                                    })
+                                     setGradeForm({
+                                       subjectCode: entry.subjectCode,
+                                       subjectName: entry.subjectName,
+                                       finalPercentile: String(entry.finalPercentile ?? ""),
+                                       remarks: entry.remarks ?? "Passed",
+                                       section: entry.section ?? "",
+                                       units: entry.units ?? 3,
+                                     })
                                     setGradeDialog({
                                       mode: "edit",
                                       subjectCode: entry.subjectCode,
@@ -554,7 +581,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
       {/* Grade dialog */}
       <Dialog
         open={!!gradeDialog && !customDialog}
-        onOpenChange={(o) => { if (!o) { setGradeDialog(null); setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "", remarks: "Passed", section: "" }) } }}
+        onOpenChange={(o) => { if (!o) { setGradeDialog(null); setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "", remarks: "Passed", section: "", units: 3 }) } }}
       >
         <DialogContent className="w-[95vw] sm:max-w-sm">
           <DialogHeader>

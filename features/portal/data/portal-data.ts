@@ -50,6 +50,7 @@ export type UserRecord = {
   status: "Active" | "Inactive"
   createdAt?: string
   lastLogin?: string
+  deletedAt?: string | null
 }
 
 export type FacultyRecord = {
@@ -143,6 +144,8 @@ export type Announcement = {
   date: string
   audience: string
   priority: "High" | "Medium" | "Low"
+  classSection?: string
+  createdBy?: string
 }
 
 export type ScheduleItem = {
@@ -192,6 +195,9 @@ export type ClassStudent = {
   name: string
   section: string
   enrolled: boolean
+  firstName?: string
+  middleName?: string
+  lastName?: string
 }
 
 export type CsoReport = {

@@ -5,6 +5,8 @@ export type QuickLinkRecord = {
   type?: "link" | "file"
   fileName?: string
   fileSize?: number
+  imageUrl?: string
+  cloudinaryPublicId?: string
   createdAt?: string
   updatedAt?: string
 }

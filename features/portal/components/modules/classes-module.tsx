@@ -173,6 +173,9 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
   const [rosterDraft, setRosterDraft] = useState({ id: "", name: "", section: "" })
   const [editingRosterId, setEditingRosterId] = useState<string | null>(null)
   const [deleteRosterId, setDeleteRosterId] = useState<string | null>(null)
+  const [selectedRosterSection, setSelectedRosterSection] = useState("All Sections")
+  const [selectedScheduleYear, setSelectedScheduleYear] = useState("All Years")
+  const [selectedScheduleSection, setSelectedScheduleSection] = useState("All Sections")
   const [addScheduleOpen, setAddScheduleOpen] = useState(false)
   const [addScheduleYear, setAddScheduleYear] = useState("")
 
@@ -187,6 +190,16 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
     const found = yearSections.find((y) => y.year === addScheduleYear)
     return found?.sections ?? []
   }, [addScheduleYear, yearSections])
+  const scheduleYearOptions = useMemo(
+    () => ["All Years", ...yearSections.map((y) => y.year)],
+    [yearSections]
+  )
+  const scheduleSectionOptions = useMemo(() => {
+    if (selectedScheduleYear === "All Years")
+      return ["All Sections", ...yearSections.flatMap((y) => y.sections)]
+    const found = yearSections.find((y) => y.year === selectedScheduleYear)
+    return ["All Sections", ...(found?.sections ?? [])]
+  }, [selectedScheduleYear, yearSections])
   const curriculumSubjectOptions = useMemo(() => {
     return curricula.flatMap((c) =>
       c.terms.flatMap((t) =>
@@ -225,13 +238,27 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
   const sectionRoster = useMemo(() => {
     if (!selectedYear) return []
     const sections = selectedYear.sections
-    return roster.filter((s) => sections.includes(s.section))
-  }, [roster, selectedYear])
+    return roster.filter((s) => {
+      if (!sections.includes(s.section)) return false
+      if (selectedRosterSection !== "All Sections" && s.section !== selectedRosterSection) return false
+      return true
+    })
+  }, [roster, selectedYear, selectedRosterSection])
 
   const filteredSchedules = useMemo(() => {
-    if (!selectedSemesterId) return classSchedules
-    return classSchedules.filter((s) => s.semesterId === selectedSemesterId)
-  }, [classSchedules, selectedSemesterId])
+    let result = classSchedules
+    if (selectedSemesterId) {
+      result = result.filter((s) => s.semesterId === selectedSemesterId)
+    }
+    if (selectedScheduleYear !== "All Years") {
+      const sectionsInYear = yearSections.find((y) => y.year === selectedScheduleYear)?.sections ?? []
+      result = result.filter((s) => sectionsInYear.includes(s.section))
+    }
+    if (selectedScheduleSection !== "All Sections") {
+      result = result.filter((s) => s.section === selectedScheduleSection)
+    }
+    return result
+  }, [classSchedules, selectedSemesterId, selectedScheduleYear, selectedScheduleSection, yearSections])
 
   return (
     <div className="space-y-5">
@@ -351,12 +378,12 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
           title="Student Roster"
           eyebrow={`${selectedClassYear} \u2022 ${sectionRoster.length} students`}
           actions={
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {yearSections.map((item) => (
                 <button
                   key={item.year}
                   type="button"
-                  onClick={() => setSelectedClassYear(item.year)}
+                  onClick={() => { setSelectedClassYear(item.year); setSelectedRosterSection("All Sections") }}
                   className={
                     selectedClassYear === item.year
                       ? "rounded-lg border border-primary bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
@@ -366,6 +393,12 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                   {item.year}
                 </button>
               ))}
+              <Select
+                value={selectedRosterSection}
+                onChange={setSelectedRosterSection}
+                options={["All Sections", ...(selectedYear?.sections ?? [])]}
+                className="w-40"
+              />
             </div>
           }
         >
@@ -515,6 +548,21 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                   }
                 }}
                 options={semesterLabels}
+              />
+              <Select
+                value={selectedScheduleYear}
+                onChange={(v) => {
+                  setSelectedScheduleYear(v)
+                  setSelectedScheduleSection("All Sections")
+                }}
+                options={scheduleYearOptions}
+                className="min-w-[120px]"
+              />
+              <Select
+                value={selectedScheduleSection}
+                onChange={setSelectedScheduleSection}
+                options={scheduleSectionOptions}
+                className="min-w-[140px]"
               />
               <Button onClick={() => {
                 setScheduleDraft((c) => ({ ...c, semesterId: selectedSemesterId }))

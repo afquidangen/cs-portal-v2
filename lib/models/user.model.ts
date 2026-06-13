@@ -41,6 +41,7 @@ export interface IUser extends Document {
   status: "Active" | "Inactive"
   createdAt?: string
   lastLogin?: string
+  deletedAt?: string | null
   comparePassword(candidate: string): Promise<boolean>
 }
 
@@ -96,6 +97,7 @@ const UserSchema = new Schema<IUser>(
     status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
     createdAt: String,
     lastLogin: String,
+    deletedAt: { type: String, default: null },
   },
   { timestamps: true }
 )

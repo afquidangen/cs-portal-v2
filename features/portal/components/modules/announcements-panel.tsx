@@ -56,14 +56,16 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
     handleUpdateAnnouncement,
     role,
     setShowAnnouncementForm,
+    facultyClassSections,
+    profileSection,
+    profile,
   } = model
 
-  const filtered = role === "admin"
-    ? announcements
-    : announcements.filter((a) => {
-        if (role === "student") return a.audience === "All Users" || a.audience === "Students"
-        return a.audience === "All Users" || a.audience === "Faculty"
-      })
+  const filtered = announcements.filter((a) => {
+    if (role === "admin") return (a.audience === "All Users" || a.audience === "Students" || a.audience === "Faculty") && !a.classSection
+    if (role === "student") return a.audience === "All Users" || a.audience === "Students" || (a.classSection && a.classSection === profileSection)
+    return a.audience === "All Users" || a.audience === "Faculty" || (a.classSection && facultyClassSections.includes(a.classSection)) || a.createdBy === profile.name
+  })
 
   const [editingAnn, setEditingAnn] = useState<Announcement | null>(null)
   const [deletingAnnId, setDeletingAnnId] = useState<string | null>(null)
@@ -130,7 +132,7 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
             </div>
           ) : (
             <>
-              {role === "admin" ? (
+              {role !== "student" ? (
                 <button
                   type="button"
                   onClick={() => setShowAnnouncementForm(true)}
@@ -179,10 +181,16 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
                               <Users className="size-3.5" />
                               {leadAnnouncement.audience}
                             </span>
+                            {leadAnnouncement.classSection ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-primary">
+                                <Megaphone className="size-3.5" />
+                                {leadAnnouncement.classSection}
+                              </span>
+                            ) : null}
                           </div>
                         </div>
                       </div>
-                      {role === "admin" ? (
+                      {role === "admin" || (role === "faculty" && leadAnnouncement.classSection && facultyClassSections.includes(leadAnnouncement.classSection)) ? (
                         <div className="flex shrink-0 items-center gap-2 self-start">
                           <Button
                             size="sm"
@@ -250,9 +258,15 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
                                   <Users className="size-3.5" />
                                   {announcement.audience}
                                 </span>
+                                {announcement.classSection ? (
+                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary">
+                                    <Megaphone className="size-3" />
+                                    {announcement.classSection}
+                                  </span>
+                                ) : null}
                               </div>
                             </div>
-                            {role === "admin" ? (
+                            {role === "admin" || (role === "faculty" && announcement.classSection && facultyClassSections.includes(announcement.classSection)) ? (
                               <div className="flex shrink-0 items-center gap-2">
                                 <Button
                                   size="sm"
@@ -322,11 +336,17 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-foreground">Audience</label>
-                    <Select
-                      value={editingAnn.audience}
-                      onChange={(value) => setEditingAnn({ ...editingAnn, audience: value })}
-                      options={["All Users", "Students", "Faculty"]}
-                    />
+                    {role === "faculty" && editingAnn.classSection ? (
+                      <div className="flex h-11 items-center rounded-lg border border-border bg-muted/30 px-3 text-sm text-muted-foreground">
+                        {editingAnn.audience} — {editingAnn.classSection}
+                      </div>
+                    ) : (
+                      <Select
+                        value={editingAnn.audience}
+                        onChange={(value) => setEditingAnn({ ...editingAnn, audience: value })}
+                        options={["All Users", "Students", "Faculty"]}
+                      />
+                    )}
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-foreground">Priority</label>

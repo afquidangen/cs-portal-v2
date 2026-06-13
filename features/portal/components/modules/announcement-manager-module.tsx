@@ -26,6 +26,8 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
     setAnnouncementDraft,
     showAnnouncementForm,
     setShowAnnouncementForm,
+    role,
+    facultyClassSections,
   } = model
 
   return (
@@ -43,7 +45,7 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
                 <div>
               <DialogTitle className="text-xl text-foreground">Create Announcement</DialogTitle>
               <DialogDescription className="pt-1 text-muted-foreground">
-                Publish a new announcement visible to all users
+                {role === "faculty" ? "Send an announcement to your class section" : "Publish a new announcement visible to all users"}
               </DialogDescription>
                 </div>
               </div>
@@ -68,16 +70,30 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-foreground">Audience</label>
-                  <Select
-                    value={announcementDraft.audience}
-                    onChange={(value) =>
-                      setAnnouncementDraft((current) => ({
-                        ...current,
-                        audience: value,
-                      }))
-                    }
-                    options={["All Users", "Students", "Faculty"]}
-                  />
+                  {role === "faculty" ? (
+                    <Select
+                      value={announcementDraft.audience}
+                      onChange={(value) =>
+                        setAnnouncementDraft((current) => ({
+                          ...current,
+                          audience: value,
+                          classSection: value,
+                        }))
+                      }
+                      options={facultyClassSections}
+                    />
+                  ) : (
+                    <Select
+                      value={announcementDraft.audience}
+                      onChange={(value) =>
+                        setAnnouncementDraft((current) => ({
+                          ...current,
+                          audience: value,
+                        }))
+                      }
+                      options={["All Users", "Students", "Faculty"]}
+                    />
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-foreground">Priority</label>

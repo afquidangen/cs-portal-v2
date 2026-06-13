@@ -4,9 +4,36 @@ export class BaseRepository {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(protected model: any) {}
 
-  async findAll(filter: Record<string, unknown> = {}): Promise<unknown[]> {
+  async findAll(
+    filter: Record<string, unknown> = {},
+    includeDeleted = false
+  ): Promise<unknown[]> {
     await connectToDatabase()
-    return this.model.find(filter).lean()
+    const query = includeDeleted
+      ? filter
+      : { ...filter, deletedAt: null }
+    return this.model.find(query).lean()
+  }
+
+  async findDeleted(): Promise<unknown[]> {
+    await connectToDatabase()
+    return this.model.find({ deletedAt: { $ne: null } }).lean()
+  }
+
+  async softDelete(filter: Record<string, unknown>): Promise<boolean> {
+    await connectToDatabase()
+    const result = await this.model.updateMany(filter, {
+      $set: { deletedAt: new Date().toISOString() },
+    })
+    return result.modifiedCount > 0
+  }
+
+  async restore(filter: Record<string, unknown>): Promise<boolean> {
+    await connectToDatabase()
+    const result = await this.model.updateMany(filter, {
+      $set: { deletedAt: null },
+    })
+    return result.modifiedCount > 0
   }
 
   async findById(id: string): Promise<unknown | null> {

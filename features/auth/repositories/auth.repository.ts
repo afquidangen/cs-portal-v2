@@ -45,6 +45,11 @@ export async function authenticateAccount(
   const isMatch = await user.comparePassword(password)
   if (!isMatch) return null
 
+  await UserModel.updateOne(
+    { email: normalizedEmail },
+    { $set: { lastLogin: new Date().toISOString() } }
+  )
+
   return {
     email: user.email,
     role: user.role,

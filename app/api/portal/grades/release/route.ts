@@ -49,9 +49,10 @@ export async function POST(request: Request) {
       let changed = false
 
       for (const grade of studentGrades) {
-        const midtermPct = (grade as Record<string, unknown>).midtermTransmuted as number ?? 0
-        const finalPct = (grade as Record<string, unknown>).finalTransmuted as number ?? 0
-        const gradePct = (grade as Record<string, unknown>).gradePercentage as number | undefined
+        const g = grade as any
+        const midtermPct = g.midtermTransmuted ?? 0
+        const finalPct = g.finalTransmuted ?? 0
+        const gradePct = g.gradePercentage
         const finalPercentile = midtermPct || finalPct
           ? Number(((midtermPct + finalPct) / 2).toFixed(2))
           : 0
@@ -62,27 +63,26 @@ export async function POST(request: Request) {
             : 0
 
         const existingIdx = history.findIndex(
-          (h: Record<string, unknown>) => h.subjectCode === grade.code
+          (h: any) => h.subjectCode === grade.code
         )
 
-        const entry: Record<string, unknown> = {
+        const entry: any = {
           subjectCode: grade.code,
           subjectName: grade.subject,
           finalPercentile,
           transmutedGrade,
-          remarks: (grade as Record<string, unknown>).remarks ?? "Passed",
-          section: (grade as Record<string, unknown>).section,
+          remarks: g.remarks ?? "Passed",
+          section: g.section,
         }
 
         if (existingIdx >= 0) {
-          history[existingIdx] = { ...history[existingIdx] as Record<string, unknown>, ...entry }
+          history[existingIdx] = { ...history[existingIdx] as any, ...entry }
         } else {
-          history.push({
-            ...entry,
-            curriculumId: (user as Record<string, unknown>).curriculumId ?? "",
-            yearLevel: (user as Record<string, unknown>).currentYearLevel ?? "",
-            semester: (user as Record<string, unknown>).currentSemester ?? "",
-          })
+          const u = user as any
+          entry.curriculumId = u.curriculumId ?? ""
+          entry.yearLevel = u.currentYearLevel ?? ""
+          entry.semester = u.currentSemester ?? ""
+          history.push(entry)
         }
         changed = true
       }
