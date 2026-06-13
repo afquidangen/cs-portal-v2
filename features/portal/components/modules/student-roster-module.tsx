@@ -159,6 +159,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
       gradeId?: string
       released: boolean
       enrolled: boolean
+      deletedAt?: string | null
     }[] = []
 
     const seen = new Set<string>()
@@ -176,6 +177,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
         gradeId: grade?.id,
         released: grade?.released ?? false,
         enrolled: r.enrolled,
+        deletedAt: r.deletedAt,
       })
       seen.add(r.id)
     }
@@ -193,7 +195,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
       }
     }
 
-    return result.filter((e) => e.enrolled)
+    return result.filter((e) => e.enrolled && !e.deletedAt)
   }, [grades, roster, users, selectedSubject, selectedSection, sectionOptions, currentSubject?.code])
 
   return (

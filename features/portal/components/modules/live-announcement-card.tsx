@@ -11,10 +11,12 @@ export function LiveAnnouncementCard({
   announcement,
   index,
   className,
+  onViewAll,
 }: {
   announcement: Announcement
   index: number
   className?: string
+  onViewAll?: () => void
 }) {
   return (
     <Card
@@ -41,7 +43,7 @@ export function LiveAnnouncementCard({
             </div>
           </div>
 
-          <button type="button" className="rounded px-1.5 py-0.5 text-[11px] font-medium text-primary transition hover:bg-primary/10">
+          <button type="button" className="rounded px-1.5 py-0.5 text-[11px] font-medium text-primary transition hover:bg-primary/10" onClick={onViewAll}>
             View All
           </button>
         </div>

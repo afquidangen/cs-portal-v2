@@ -642,15 +642,34 @@ export function usePortalDashboardModel(role: Role) {
     })
   }, [query, theses, thesisCategoryFilter, thesisYearFilter])
 
+  const userByFacultyEmail = useMemo(() => {
+    const map = new Map<string, (typeof users)[number]>()
+    for (const u of users) {
+      if (u.role === "faculty" && !u.deletedAt) {
+        map.set(u.email.toLowerCase().trim(), u)
+      }
+    }
+    return map
+  }, [users])
+
   const filteredFaculty = useMemo(() => {
     const search = query.toLowerCase()
-    return faculty.filter((member) =>
-      [member.name, member.position, member.role, member.status, member.notes]
-        .join(" ")
-        .toLowerCase()
-        .includes(search)
-    )
-  }, [faculty, query])
+    const activeFacultyEmails = new Set(userByFacultyEmail.keys())
+    return faculty
+      .filter((member) => activeFacultyEmails.has(member.email.toLowerCase().trim()))
+      .map((member) => {
+        const user = userByFacultyEmail.get(member.email.toLowerCase().trim())
+        return user
+          ? { ...member, name: user.name ?? member.name, photoUrl: user.photoUrl }
+          : member
+      })
+      .filter((member) =>
+        [member.name, member.position, member.role, member.status, member.notes, member.email]
+          .join(" ")
+          .toLowerCase()
+          .includes(search)
+      )
+  }, [faculty, userByFacultyEmail, query])
 
   const filteredUsers = useMemo(() => {
     const search = query.toLowerCase()
@@ -1221,7 +1240,7 @@ export function usePortalDashboardModel(role: Role) {
     })
     setAuditLogs((current) => [
       {
-        id: `LOG-${String(current.length + 1).padStart(3, "0")}`,
+        id: `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         actor: profileName || profile.name,
         action,
         time,
@@ -1237,7 +1256,7 @@ export function usePortalDashboardModel(role: Role) {
       .map((part) => part.trim())
       .filter(Boolean)
       .join(" ")
-    const accountId = newUser.idNumber.trim() || `USR-${String(users.length + 1).padStart(3, "0")}`
+    const accountId = newUser.idNumber.trim() || `USR-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     if (users.some((u) => u.id === accountId)) {
       toast.error(`An account with ID "${accountId}" already exists.`)
       return
@@ -2238,7 +2257,7 @@ export function usePortalDashboardModel(role: Role) {
   function handleAddSemester(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const semesterData = {
-      id: `SEM-${String(semesters.length + 1).padStart(3, "0")}`,
+      id: `SEM-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       semester: newSemester.semester,
       schoolYearStart: newSemester.schoolYearStart,
       schoolYearEnd: newSemester.schoolYearEnd,
@@ -2290,7 +2309,7 @@ export function usePortalDashboardModel(role: Role) {
     event.preventDefault()
     if (!newSubject.code.trim() || !newSubject.name.trim()) return
     const subjectData: SubjectRecord = {
-      id: `SUBJ-${String(subjects.length + 1).padStart(3, "0")}`,
+      id: `SUBJ-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       curriculumId: newSubject.curriculumId,
       yearLevel: newSubject.yearLevel,
       semester: newSubject.semester,
@@ -2461,7 +2480,7 @@ export function usePortalDashboardModel(role: Role) {
     if (!newCurriculum.name.trim() || !newCurriculum.major.trim()) return
     setCurricula((current) => [
       {
-        id: `CURR-${String(current.length + 1).padStart(3, "0")}`,
+        id: `CURR-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         name: newCurriculum.name.trim(),
         major: newCurriculum.major.trim(),
         totalUnits: Number(newCurriculum.totalUnits) || 0,
@@ -2511,7 +2530,7 @@ export function usePortalDashboardModel(role: Role) {
     event.preventDefault()
     if (!eventDraft.title.trim() || !eventDraft.date.trim()) return
     const newItem = {
-      id: `SEM-${String(seminars.length + 1).padStart(3, "0")}`,
+      id: `SEM-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       title: eventDraft.title.trim(),
       speaker: eventDraft.speaker.trim() || "To be announced",
       date: eventDraft.date.trim(),
@@ -2570,7 +2589,7 @@ export function usePortalDashboardModel(role: Role) {
       return
     }
     const newItem = {
-      id: `ANN-${String(announcements.length + 1).padStart(3, "0")}`,
+      id: `ANN-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       title: announcementDraft.title.trim(),
       content: announcementDraft.content.trim(),
       date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),

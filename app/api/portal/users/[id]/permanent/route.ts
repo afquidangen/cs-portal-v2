@@ -1,6 +1,7 @@
 import { usersRepository } from "@/features/portal/repositories/users.repository"
 import { rosterRepository } from "@/features/portal/repositories/roster.repository"
 import { gradesRepository } from "@/features/portal/repositories/grades.repository"
+import { facultyRepository } from "@/features/portal/repositories/faculty.repository"
 import { success, error, notFound } from "@/lib/api-response"
 
 export const runtime = "nodejs"
@@ -16,6 +17,7 @@ export async function DELETE(
     await Promise.all([
       rosterRepository.delete({ id }).catch(() => {}),
       gradesRepository.deleteMany({ studentId: id }).catch(() => {}),
+      facultyRepository.delete({ id }).catch(() => {}),
     ])
     return success({ deleted: true })
   } catch (err) {

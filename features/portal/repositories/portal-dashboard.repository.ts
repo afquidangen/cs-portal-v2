@@ -49,16 +49,16 @@ export async function getPortalDashboardData(): Promise<PortalDashboardData> {
   const { auditLogsRepository } = await import("./audit-logs.repository")
 
   const results = await Promise.all([
-    usersRepository.findAll(),
+    usersRepository.findAll({}, true),
     facultyRepository.findAll(),
-    gradesRepository.findAll(),
+    gradesRepository.findAll({}, true),
     thesesRepository.findAll(),
     seminarsRepository.findAll(),
     feedbackRepository.findAll(),
     announcementsRepository.findAll(),
     schedulesRepository.findAll(),
     curriculaRepository.findAll(),
-    rosterRepository.findAll(),
+    rosterRepository.findAll({}, true),
     csoReportsRepository.findAll(),
     semestersRepository.findAll(),
     subjectsRepository.findAll(),

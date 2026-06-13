@@ -64,6 +64,7 @@ export type FacultyRecord = {
   status: AvailabilityStatus
   notes: string
   schedule: string[]
+  photoUrl?: string
 }
 
 export type GradeRecord = {
@@ -198,6 +199,7 @@ export type ClassStudent = {
   name: string
   section: string
   enrolled: boolean
+  deletedAt?: string | null
   firstName?: string
   middleName?: string
   lastName?: string

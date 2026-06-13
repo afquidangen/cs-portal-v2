@@ -32,7 +32,7 @@ import {
   X,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -99,6 +99,31 @@ import { UsersModule } from "./modules/users-module"
 
 export function RoleDashboard({ role }: { role: Role }) {
   const model = usePortalDashboardModel(role)
+
+  const adminSparklineData = useMemo(() => [
+    model.users.length,
+    model.tickets.length,
+    model.grades.length,
+    model.theses.length,
+    model.announcements.length,
+    model.seminars.length,
+    model.auditLogs.length,
+  ], [model.users.length, model.tickets.length, model.grades.length, model.theses.length, model.announcements.length, model.seminars.length, model.auditLogs.length])
+
+  const chartLabels = ["Users", "Tickets", "Grades", "Theses", "Announce.", "Seminars", "Audit"]
+
+  const activityIcon = useCallback((action: string): LucideIcon => {
+    const a = action.toLowerCase()
+    if (a.includes("user") || a.includes("account") || a.includes("student") || a.includes("faculty")) return Users
+    if (a.includes("thesis")) return BookOpen
+    if (a.includes("announcement")) return Bell
+    if (a.includes("ticket") || a.includes("feedback")) return MessageSquareWarning
+    if (a.includes("grade") || a.includes("roster")) return ClipboardList
+    if (a.includes("seminar") || a.includes("event")) return CalendarDays
+    if (a.includes("schedule") || a.includes("class")) return Clock
+    return Database
+  }, [])
+
   const [dataLoading, setDataLoading] = useState(true)
   const [dataError, setDataError] = useState<string | null>(null)
   const [darkMode, setDarkMode] = useState(false)
@@ -330,47 +355,43 @@ export function RoleDashboard({ role }: { role: Role }) {
     ].filter((group) => group.items.length > 0)
   }, [model.navigation, role])
 
-  const adminStatusCards = [
+  const adminStatusCards = useMemo(() => [
     {
       label: "Students",
       value: String(model.userStats.students),
       icon: GraduationCap,
-      delta: "+2 this week",
       accent: "blue",
-      sparkline: [18, 24, 22, 30, 27, 43, 35, 31],
+      sparkline: adminSparklineData,
     },
     {
       label: "Faculty",
       value: String(model.userStats.faculty),
       icon: Layers3,
-      delta: "No change",
       accent: "blue",
-      sparkline: [16, 18, 15, 23, 17, 19, 18, 20],
+      sparkline: adminSparklineData,
     },
     {
       label: "Thesis Records",
       value: String(model.theses.length),
       icon: BookOpen,
-      delta: "+1 this week",
       accent: "green",
-      sparkline: [14, 17, 18, 24, 31, 19, 21, 20],
+      sparkline: adminSparklineData,
     },
     {
       label: "Open Tickets",
       value: String(model.tickets.filter((t: { status: string }) => t.status !== "Resolved").length),
       icon: Bell,
-      delta: "+1 this week",
       accent: "amber",
-      sparkline: [12, 14, 13, 18, 16, 23, 18, 15],
+      sparkline: adminSparklineData,
     },
-  ]
+  ], [model.userStats.students, model.userStats.faculty, model.theses.length, model.tickets, adminSparklineData])
 
-  const performanceMetrics = [
-    { label: "Page Views", value: "1,248", trend: "18.2%" },
-    { label: "Users", value: String(totalUserCount), trend: "9.3%" },
-    { label: "Sessions", value: String(Math.max(18, totalUserCount * 3)), trend: "12.5%" },
-    { label: "Bounce Rate", value: "24.6%", trend: "-4.1%" },
-  ]
+  const performanceMetrics = useMemo(() => [
+    { label: "Audit Entries", value: model.auditLogs.length.toLocaleString(), trend: "System log" },
+    { label: "Users", value: totalUserCount.toLocaleString(), trend: "Registered accounts" },
+    { label: "Theses", value: model.theses.length.toLocaleString(), trend: "Library records" },
+    { label: "Tickets", value: String(model.tickets.filter((t: { status: string }) => t.status !== "Resolved").length), trend: "Open tickets" },
+  ], [model.auditLogs.length, totalUserCount, model.theses.length, model.tickets])
 
   const systemHealth = [
     { label: "Database", status: "Operational", icon: Database },
@@ -481,7 +502,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       icon: GraduationCap,
     },
   ]
-  const facultyOverviewCards = [
+  const facultyOverviewCards = useMemo(() => [
     {
       label: "Availability",
       value: facultyStatus,
@@ -489,7 +510,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       icon: facultyAvailabilityUi.icon,
       accent: facultyAvailabilityUi.accent,
       interactive: true,
-      sparkline: [14, 17, 20, 18, 19, 16, 15, 22],
+      sparkline: adminSparklineData,
     },
     {
       label: "Schedule Blocks",
@@ -497,7 +518,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       helper: `${model.facultySubjects.length} subject${model.facultySubjects.length === 1 ? "" : "s"}`,
       icon: ClipboardList,
       accent: "blue",
-      sparkline: [18, 22, 20, 24, 23, 27, 21, 30],
+      sparkline: adminSparklineData,
     },
     {
       label: "Roster Students",
@@ -505,7 +526,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       helper: "Student roster",
       icon: Users,
       accent: "sky",
-      sparkline: [22, 28, 26, 25, 29, 27, 31, 24],
+      sparkline: adminSparklineData,
     },
     {
       label: "Grade Records",
@@ -513,9 +534,9 @@ export function RoleDashboard({ role }: { role: Role }) {
       helper: "Grades module",
       icon: BarChart3,
       accent: "violet",
-      sparkline: [12, 18, 14, 16, 15, 19, 11, 22],
+      sparkline: adminSparklineData,
     },
-  ]
+  ], [facultyStatus, facultyAvailabilityUi.helper, facultyAvailabilityUi.icon, facultyAvailabilityUi.accent, model.visibleSchedules.length, model.facultySubjects.length, facultyActiveStudents.length, model.facultyGradeRecords.length, adminSparklineData])
 
   const studentFirstName = model.profile.name.split(" ")[0] || model.profile.name
   const studentUser = model.users.find((u: { id: string }) => u.id === model.profile.id)
@@ -537,14 +558,14 @@ export function RoleDashboard({ role }: { role: Role }) {
     { label: "Student ID", value: model.profile.id, icon: ClipboardList },
   ]
 
-  const studentOverviewCards = [
+  const studentOverviewCards = useMemo(() => [
     {
       label: "Current GWA",
       value: model.gradeAverage,
       helper: "General weighted average",
       icon: BarChart3,
       accent: "blue",
-      sparkline: [18, 20, 16, 22, 19, 24, 21, 23],
+      sparkline: adminSparklineData,
     },
     {
       label: "Enrolled Subjects",
@@ -552,7 +573,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       helper: "Currently enrolled this semester",
       icon: BookOpen,
       accent: "sky",
-      sparkline: [14, 16, 13, 18, 15, 20, 17, 19],
+      sparkline: adminSparklineData,
     },
     {
       label: "Open Tickets",
@@ -560,7 +581,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       helper: "Awaiting resolution",
       icon: MessageSquareWarning,
       accent: "amber",
-      sparkline: [8, 6, 10, 5, 7, 4, 9, 6],
+      sparkline: adminSparklineData,
     },
     {
       label: "Units Taken",
@@ -568,9 +589,9 @@ export function RoleDashboard({ role }: { role: Role }) {
       helper: "Passed / Total",
       icon: Layers3,
       accent: "emerald",
-      sparkline: [12, 14, 13, 18, 16, 23, 18, 15],
+      sparkline: adminSparklineData,
     },
-  ]
+  ], [model.gradeAverage, model.visibleSchedules, model.studentTickets, unitsDisplay, adminSparklineData])
 
   const studentTodaySchedules = model.visibleSchedules.filter(
     (item: { day: string }) => item.day === todayLabel
@@ -583,13 +604,41 @@ export function RoleDashboard({ role }: { role: Role }) {
     { label: "Instructor Info", module: "instructors" as ModuleId, icon: Users, color: "sky" },
   ]
 
-  const recentActivity = [
-    { label: "New user registered", time: "2 minutes ago", icon: Users },
-    { label: "Thesis record updated", time: "15 minutes ago", icon: BookOpen },
-    { label: "Announcement published", time: "1 hour ago", icon: Bell },
-    { label: "System backup completed", time: "2 hours ago", icon: Database },
-    { label: "New ticket created", time: "3 hours ago", icon: MessageSquareWarning },
-  ]
+  const timeAgo = useCallback((timeStr: string): string => {
+    const months: Record<string, number> = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 }
+    const parts = timeStr.split(/[, ]+/)
+    if (parts.length < 4) return timeStr
+    const month = months[parts[0]]
+    if (month === undefined) return timeStr
+    const day = parseInt(parts[1], 10)
+    const year = parseInt(parts[2], 10)
+    const timeParts = parts[3].split(":")
+    const hour = parseInt(timeParts[0], 10)
+    const minute = parseInt(timeParts[1], 10)
+    const ampm = parts[4]?.toUpperCase()
+    let hours = hour
+    if (ampm === "PM" && hour !== 12) hours += 12
+    if (ampm === "AM" && hour === 12) hours = 0
+    const logDate = new Date(year, month, day, hours, minute)
+    const diffMs = Date.now() - logDate.getTime()
+    const diffMin = Math.floor(diffMs / 60000)
+    if (diffMin < 1) return "Just now"
+    if (diffMin < 60) return `${diffMin} minute${diffMin === 1 ? "" : "s"} ago`
+    const diffHrs = Math.floor(diffMin / 60)
+    if (diffHrs < 24) return `${diffHrs} hour${diffHrs === 1 ? "" : "s"} ago`
+    const diffDays = Math.floor(diffHrs / 24)
+    if (diffDays < 30) return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`
+    return timeStr
+  }, [])
+
+  const recentActivity = useMemo(() =>
+    model.auditLogs.slice(0, 5).map((log) => ({
+      id: log.id,
+      label: `${log.action} — ${log.actor}`,
+      time: timeAgo(log.time),
+      icon: activityIcon(log.action),
+    })),
+  [model.auditLogs, timeAgo, activityIcon])
 
   if (dataLoading) {
     return (
@@ -1111,6 +1160,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                     <LiveAnnouncementCard
                       announcement={visibleAnnouncements[announcementIndex % visibleAnnouncements.length]}
                       index={announcementIndex}
+                      onViewAll={() => model.selectModule("announcements")}
                     />
                   ) : (
                     <LiveAnnouncementCard
@@ -1123,6 +1173,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                         priority: "Low",
                       }}
                       index={0}
+                      onViewAll={() => model.selectModule("announcements")}
                     />
                   )}
                 </div>
@@ -1482,14 +1533,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                                 <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
                                   {item.value}
                                 </p>
-                                <p
-                                  className={cn(
-                                    "mt-3 text-xs font-medium",
-                                    item.accent === "amber" ? "text-amber-600 dark:text-amber-300" : item.accent === "green" ? "text-emerald-600 dark:text-emerald-300" : "text-primary"
-                                  )}
-                                >
-                                  {item.delta}
-                                </p>
+
                               </div>
                               <svg viewBox="0 0 120 58" className="hidden h-16 w-full self-end opacity-90 sm:block">
                                 <polyline
@@ -1498,7 +1542,11 @@ export function RoleDashboard({ role }: { role: Role }) {
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
                                   strokeWidth="2"
-                                  points={item.sparkline.map((point, index) => `${index * 17},${56 - point}`).join(" ")}
+                                  points={(() => {
+                                    const data = item.sparkline
+                                    const m = Math.max(1, ...data)
+                                    return data.map((p, i) => `${i * 17},${56 - (p / m) * 50}`).join(" ")
+                                  })()}
                                 />
                               </svg>
                             </CardContent>
@@ -1558,14 +1606,30 @@ export function RoleDashboard({ role }: { role: Role }) {
                                 <line key={line} x1="0" x2="680" y1={line * 42 + 8} y2={line * 42 + 8} stroke="currentColor" className="text-border" />
                               ))}
                               <path
-                                d="M10 116 C70 76, 115 78, 155 66 S235 36, 275 75 S350 126, 405 82 S475 49, 528 114 S610 122, 670 78"
+                                d={(() => {
+                                  const max = Math.max(1, ...adminSparklineData)
+                                  const pts = adminSparklineData.map((v: number, i: number) => {
+                                    const x = 10 + i * (660 / (adminSparklineData.length - 1 || 1))
+                                    const y = 160 - (v / max) * 150
+                                    return `${x},${y}`
+                                  }).join(" L")
+                                  return `M${pts}`
+                                })()}
                                 fill="none"
                                 stroke="var(--primary)"
                                 strokeWidth="3"
                                 strokeLinecap="round"
                               />
                               <path
-                                d="M10 116 C70 76, 115 78, 155 66 S235 36, 275 75 S350 126, 405 82 S475 49, 528 114 S610 122, 670 78 L670 170 L10 170 Z"
+                                d={(() => {
+                                  const max = Math.max(1, ...adminSparklineData)
+                                  const pts = adminSparklineData.map((v: number, i: number) => {
+                                    const x = 10 + i * (660 / (adminSparklineData.length - 1 || 1))
+                                    const y = 160 - (v / max) * 150
+                                    return `${x},${y}`
+                                  }).join(" L")
+                                  return `M${pts} L670 170 L10 170 Z`
+                                })()}
                                 fill="url(#portalLineFill)"
                               />
                               <defs>
@@ -1577,8 +1641,8 @@ export function RoleDashboard({ role }: { role: Role }) {
                             </svg>
                           </div>
                           <div className="mt-2 grid grid-cols-7 text-center text-xs text-muted-foreground">
-                            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-                              <span key={day}>{day}</span>
+                            {chartLabels.map((label) => (
+                              <span key={label}>{label}</span>
                             ))}
                           </div>
                         </div>
@@ -1606,7 +1670,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                         <div>
                           <div className="flex items-center justify-between gap-3">
                             <h3 className="text-base font-semibold text-foreground">Recent Activity</h3>
-                            <button type="button" className="text-xs font-medium text-muted-foreground hover:text-foreground">
+                            <button type="button" className="text-xs font-medium text-muted-foreground hover:text-foreground" onClick={() => model.selectModule("audit")}>
                               View All
                             </button>
                           </div>
@@ -1614,7 +1678,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                             {recentActivity.map((item) => {
                               const Icon = item.icon
                               return (
-                                <div key={item.label} className="flex gap-3">
+                                <div key={item.id} className="flex gap-3">
                                   <span className="edu-bg-soft-lapis edu-ring-lapis flex size-9 items-center justify-center rounded-lg border text-primary">
                                     <Icon className="size-4" />
                                   </span>

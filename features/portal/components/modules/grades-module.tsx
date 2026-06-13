@@ -246,6 +246,7 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
     grades,
     setGrades,
     roster,
+    users,
     handleGradeWorkbookUpload,
     releaseGradesForSection,
     updateGrade,
@@ -288,7 +289,10 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
         .filter((g) => g.subject === selectedSubject && g.remarks === "Passed" && g.released)
         .map((g) => g.studentId)
     )
-    return roster.filter((s) => sectionSet.has(s.section) && s.enrolled && !passedIds.has(s.id))
+    return roster.filter((s) => {
+      const userExists = users.some((u) => u.id === s.id && u.role === "student" && !u.deletedAt)
+      return sectionSet.has(s.section) && s.enrolled && userExists && !passedIds.has(s.id)
+    })
   }, [roster, subjectSections, grades, selectedSubject])
 
   const rosterBySection = useMemo(() => {

@@ -1,7 +1,10 @@
 "use client"
 
 import { CalendarCheck, CheckCircle2, Clock, DoorOpen, Mail, MessageSquareText, Save, SearchX, UserRoundCheck, Users } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -104,13 +107,16 @@ function FacultyCard({
       <div className="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:p-5">
         <div className="min-w-0">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="edu-lapis flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-semibold shadow-sm">
-              {member.name
-                .split(" ")
-                .map((p: string) => p[0])
-                .join("")
-                .slice(0, 2)}
-            </div>
+            <Avatar className="size-12 shrink-0 ring-1 ring-border">
+              <AvatarImage src={member.photoUrl} alt={member.name} className="object-cover" />
+              <AvatarFallback className="edu-lapis rounded-xl text-sm font-semibold shadow-sm">
+                {member.name
+                  .split(" ")
+                  .map((p: string) => p[0])
+                  .join("")
+                  .slice(0, 2)}
+              </AvatarFallback>
+            </Avatar>
             <div className="min-w-0">
               <h4 className="truncate text-base font-semibold tracking-tight text-foreground">{member.name}</h4>
               <p className="mt-0.5 truncate text-sm text-muted-foreground">
@@ -157,45 +163,90 @@ function FacultyCard({
 }
 
 function AdminStatusEditor({ model }: PortalModuleProps) {
-  const { faculty } = model
+  const { faculty, setFaculty, users } = model
+
+  const userByEmail = useMemo(() => {
+    const map = new Map<string, (typeof users)[number]>()
+    for (const u of users) {
+      if (u.role === "faculty" && !u.deletedAt) {
+        map.set(u.email.toLowerCase().trim(), u)
+      }
+    }
+    return map
+  }, [users])
+
+  const visibleFaculty = useMemo(() => {
+    const activeEmails = new Set(userByEmail.keys())
+    return faculty
+      .filter((fr) => activeEmails.has(fr.email.toLowerCase().trim()))
+      .map((fr) => {
+        const user = userByEmail.get(fr.email.toLowerCase().trim())
+        return {
+          ...fr,
+          name: user?.name ?? fr.name,
+          email: user?.email ?? fr.email,
+        }
+      })
+  }, [faculty, userByEmail])
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch("/api/portal/faculty")
+        if (res.ok) {
+          const data = await res.json()
+          setFaculty(data.data ?? data ?? [])
+        }
+      } catch {
+        // silent
+      }
+    }, 15000)
+    return () => clearInterval(interval)
+  }, [setFaculty])
 
   return (
-    <Panel title="Manage Faculty Status" eyebrow="Admin control panel">
+    <Panel title="FACULTY STATUS" eyebrow="Admin control panel">
       <div className="space-y-3">
-        {faculty.map((member) => (
-          <div
-            key={member.id}
-            className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md"
-          >
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0 flex-1">
-                <h4 className="font-semibold text-foreground">{member.name}</h4>
-                <p className="text-sm text-foreground/70">
-                  {member.position} &middot; {member.role}
-                </p>
-                <p className="mt-1 text-xs text-foreground/50">{member.email}</p>
-                <p className="mt-2 text-sm text-foreground/80">{member.notes}</p>
+        {visibleFaculty.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            No faculty members found.
+          </p>
+        ) : (
+          visibleFaculty.map((member) => (
+            <div
+              key={member.id}
+              className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md"
+            >
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-semibold text-foreground">{member.name}</h4>
+                  <p className="text-sm text-foreground/70">
+                    {member.position} &middot; {member.role}
+                  </p>
+                  <p className="mt-1 text-xs text-foreground/50">{member.email}</p>
+                  <p className="mt-2 text-sm text-foreground/80">{member.notes}</p>
 
-                {member.schedule.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-foreground/70">
-                    {member.schedule.map((slot) => (
-                      <span
-                        key={slot}
-                        className="rounded-xl border border-border bg-muted px-2.5 py-1"
-                      >
-                        {slot}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
+                  {member.schedule.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-foreground/70">
+                      {member.schedule.map((slot) => (
+                        <span
+                          key={slot}
+                          className="rounded-xl border border-border bg-muted px-2.5 py-1"
+                        >
+                          {slot}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-              <div className="flex items-start gap-3 lg:flex-col">
-                <StatusBadge value={member.status} />
+                <div className="flex items-start gap-3 lg:flex-col">
+                  <StatusBadge value={member.status} />
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </Panel>
   )

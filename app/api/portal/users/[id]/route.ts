@@ -1,6 +1,7 @@
 import { usersRepository } from "@/features/portal/repositories/users.repository"
 import { rosterRepository } from "@/features/portal/repositories/roster.repository"
 import { gradesRepository } from "@/features/portal/repositories/grades.repository"
+import { facultyRepository } from "@/features/portal/repositories/faculty.repository"
 import { UserModel } from "@/lib/models"
 import { success, error, notFound } from "@/lib/api-response"
 import { uploadProfilePhoto, destroyFile } from "@/lib/cloudinary"
@@ -89,6 +90,7 @@ export async function DELETE(
     await Promise.all([
       rosterRepository.softDelete({ id }).catch(() => {}),
       gradesRepository.softDelete({ studentId: id }).catch(() => {}),
+      facultyRepository.delete({ id }).catch(() => {}),
     ])
     return success({ deleted: true })
   } catch (err) {

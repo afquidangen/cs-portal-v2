@@ -18,6 +18,11 @@ export async function POST(request: Request) {
     if (!body.id || !body.email) {
       return badRequest("User id and email are required.")
     }
+    const existing = await usersRepository.findOne({ $or: [{ id: body.id }, { email: body.email.toLowerCase() }] })
+    if (existing) {
+      const field = (existing as Record<string, unknown>).id === body.id ? "id" : "email"
+      return badRequest(`A user with this ${field} already exists.`)
+    }
     const user = await usersRepository.create(body)
     return success(user, 201)
   } catch (err) {

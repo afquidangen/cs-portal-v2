@@ -55,7 +55,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
     setUploading(true)
     try {
       const newItem = {
-        id: `TH-${String(theses.length + 1).padStart(3, "0")}`,
+        id: `TH-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         title: thesisDraft.title.trim(),
         authors: thesisDraft.authors.trim(),
         year: Number(thesisDraft.year) || 2026,
