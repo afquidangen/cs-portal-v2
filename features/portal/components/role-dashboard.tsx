@@ -720,14 +720,15 @@ export function RoleDashboard({ role }: { role: Role }) {
               <Card className="border-0 bg-transparent text-sidebar-foreground shadow-none">
                 <CardContent
                   className={cn(
-                    "flex items-center gap-3",
-                    effectivelyCollapsed ? "justify-center p-2" : "p-4"
+                    "flex items-center",
+                    effectivelyCollapsed ? "justify-center gap-3 p-2" : "gap-4 p-4"
                   )}
                 >
-                  <Avatar className="size-10 ring-1 ring-white/15">
+                  <Avatar className={cn("ring-1 ring-white/15", effectivelyCollapsed ? "size-10" : "size-16")}>
                     <AvatarImage
                       src={model.profilePhotoUrl || "/avatars/01.png"}
                       alt={model.profile.name}
+                      className="object-cover"
                     />
                     <AvatarFallback className="bg-white/10 text-white">
                       {getInitials(model.profile.name)}
@@ -736,10 +737,10 @@ export function RoleDashboard({ role }: { role: Role }) {
 
                   {!effectivelyCollapsed ? (
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-white">
+                      <p className="truncate text-base font-medium text-white">
                         {model.profile.name}
                       </p>
-                      <p className="truncate text-xs text-white/80">
+                      <p className="truncate text-sm text-white/80">
                         {model.profile.title}
                       </p>
                     </div>

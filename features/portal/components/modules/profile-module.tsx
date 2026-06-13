@@ -1,12 +1,13 @@
 "use client"
 
-import { Camera, Eye, EyeOff, IdCard, KeyRound, Save, ShieldCheck, Trash2, Undo2, UserCircle, UserRoundCog } from "lucide-react"
-import { useEffect, useState } from "react"
+import { Camera, Crop, Eye, EyeOff, IdCard, KeyRound, Save, ShieldCheck, Trash2, Undo2, UserCircle, UserRoundCog } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 import { Select, StatusBadge } from "../shared/dashboard-ui"
+import { ImageCropDialog } from "../shared/image-crop-dialog"
 import { validatePassword } from "@/lib/validators"
 import type { PortalModuleProps } from "./types"
 import type { ProfileDetails } from "../../data/portal-data"
@@ -27,6 +28,10 @@ export function ProfileModule({ model }: PortalModuleProps) {
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState(false)
 
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
+  const [cropDialogOpen, setCropDialogOpen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const [passwordForm, setPasswordForm] = useState({ current: "", newPass: "", confirm: "" })
   const [showPasswords, setShowPasswords] = useState(false)
   const [passwordError, setPasswordError] = useState("")
@@ -46,12 +51,29 @@ export function ProfileModule({ model }: PortalModuleProps) {
     if (!file) return
     const reader = new FileReader()
     reader.onload = () => {
-      setDraft((prev: typeof profileDetails) => ({
-        ...prev,
-        photoUrl: typeof reader.result === "string" ? reader.result : prev.photoUrl,
-      }))
+      const dataUrl = typeof reader.result === "string" ? reader.result : ""
+      if (dataUrl) {
+        setCropImageSrc(dataUrl)
+        setCropDialogOpen(true)
+      }
     }
     reader.readAsDataURL(file)
+  }
+
+  function handleCropConfirm(croppedDataUrl: string) {
+    setDraft((prev: typeof profileDetails) => ({
+      ...prev,
+      photoUrl: croppedDataUrl,
+    }))
+    setCropDialogOpen(false)
+    setCropImageSrc(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
+  function handleCropCancel() {
+    setCropDialogOpen(false)
+    setCropImageSrc(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
   async function handleSave() {
@@ -100,6 +122,7 @@ export function ProfileModule({ model }: PortalModuleProps) {
   }
 
   return (
+    <>
     <div className="space-y-5">
       <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left shadow-sm sm:px-6">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
@@ -143,6 +166,7 @@ export function ProfileModule({ model }: PortalModuleProps) {
               <Camera className="size-4" />
               Upload Photo
               <input
+                ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 onChange={handlePhotoChange}
@@ -361,5 +385,15 @@ export function ProfileModule({ model }: PortalModuleProps) {
         </div>
       </div>
     </div>
+
+      {cropImageSrc ? (
+        <ImageCropDialog
+          imageSrc={cropImageSrc}
+          open={cropDialogOpen}
+          onConfirm={handleCropConfirm}
+          onCancel={handleCropCancel}
+        />
+      ) : null}
+    </>
   )
 }
