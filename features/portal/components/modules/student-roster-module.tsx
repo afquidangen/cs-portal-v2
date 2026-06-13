@@ -11,6 +11,7 @@ import {
   Users,
 } from "lucide-react"
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -23,6 +24,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2)
+}
 
 export function StudentRosterModule({ model }: PortalModuleProps) {
   const {
@@ -304,8 +314,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
                 <table className="w-full text-left text-sm">
                   <thead className="sticky top-0 z-10 bg-muted text-foreground">
                     <tr className="border-b border-border">
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Student ID</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Name</th>
+                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Student</th>
                       <th className="hidden sm:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Section</th>
                       <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Status</th>
                       <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Actions</th>
@@ -317,15 +326,19 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
                       const studentType = user?.studentType
                       return (
                         <tr key={entry.studentId} className="transition-colors hover:bg-muted/50">
-                          <td className="max-w-[120px] truncate px-4 py-3 font-medium text-foreground">
-                            {entry.studentId}
-                          </td>
-                          <td className="max-w-[200px] truncate px-4 py-3 text-foreground/80">
-                            <div className="flex items-center gap-2">
-                              <span>{entry.student}</span>
-                              {studentType && irregularTypes.includes(studentType) ? (
-                                <StatusBadge value={studentType} />
-                              ) : null}
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="size-10 shrink-0 ring-1 ring-border">
+                                <AvatarImage src={user?.photoUrl} alt={entry.student} className="object-cover" />
+                                <AvatarFallback className="bg-muted text-xs text-foreground">{getInitials(entry.student)}</AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <p className="truncate font-medium text-foreground">{entry.student}</p>
+                                <p className="truncate text-xs text-muted-foreground">{entry.studentId}</p>
+                                {studentType && irregularTypes.includes(studentType) ? (
+                                  <StatusBadge value={studentType} />
+                                ) : null}
+                              </div>
                             </div>
                           </td>
                           <td className="hidden sm:table-cell px-4 py-3 text-foreground/80">

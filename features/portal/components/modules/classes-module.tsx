@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { BookMarked, CalendarDays, ClipboardList, Layers3, Pencil, Plus, School, Trash2, Users, X } from "lucide-react"
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { TimePicker, formatScheduleTime } from "@/components/ui/time-picker"
@@ -20,6 +21,15 @@ import type { ScheduleItem } from "../../data/portal-data"
 import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2)
+}
+
 /* ──────────────────────────────────────────────
    Faculty view
    ────────────────────────────────────────────── */
@@ -29,7 +39,7 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
     handleDeleteRosterStudent, handleToggleEnrolled, handleSaveStudent, resetStudentDraft,
     selectedClassSection, setSelectedClassSection,
     setStudentDraft, startEditStudent, studentDraft,
-    setUsers,
+    users, setUsers,
   } = model
 
   const [facultyDeleteId, setFacultyDeleteId] = useState<string | null>(null)
@@ -98,11 +108,21 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
           </div>
         ) : (
           <div className="space-y-2">
-            {facultyClassStudents.map((student) => (
+            {facultyClassStudents.map((student) => {
+              const user = users.find((u) => u.id === student.id)
+              return (
               <div key={student.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm transition-colors hover:border-primary/25 hover:shadow-md">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-foreground">{student.name}</p>
-                  <p className="truncate text-sm text-foreground/70">{student.id}</p>
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <Avatar className="size-12 shrink-0 ring-1 ring-border">
+                    <AvatarImage src={user?.photoUrl} alt={student.name} className="object-cover" />
+                    <AvatarFallback className="bg-muted text-xs text-foreground">
+                      {getInitials(student.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">{student.name}</p>
+                    <p className="truncate text-sm text-foreground/70">{student.id}</p>
+                  </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <Button type="button" size="sm" variant="outline" className="rounded-xl" onClick={() => startEditStudent(student)}>
@@ -122,7 +142,7 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
                   </label>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
 
@@ -412,18 +432,29 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
               <table className="w-full text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-muted text-foreground">
                   <tr className="border-b border-border">
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">ID</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Name</th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Student</th>
                     <th className="hidden sm:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Section</th>
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Status</th>
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border bg-card">
-                  {sectionRoster.map((student) => (
+                  {sectionRoster.map((student) => {
+                    const user = users.find((u) => u.id === student.id)
+                    return (
                     <tr key={student.id} className="transition-colors hover:bg-muted/50">
-                      <td className="max-w-[120px] truncate px-4 py-3 font-medium text-foreground">{student.id}</td>
-                      <td className="max-w-[200px] truncate px-4 py-3 text-foreground/80">{student.name}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="size-10 shrink-0 ring-1 ring-border">
+                            <AvatarImage src={user?.photoUrl} alt={student.name} className="object-cover" />
+                            <AvatarFallback className="bg-muted text-xs text-foreground">{getInitials(student.name)}</AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-foreground">{student.name}</p>
+                            <p className="truncate text-xs text-muted-foreground">{student.id}</p>
+                          </div>
+                        </div>
+                      </td>
                       <td className="hidden sm:table-cell px-4 py-3 text-foreground/80">{student.section}</td>
                       <td className="px-4 py-3">
                         <label className="flex cursor-pointer items-center gap-2">
@@ -450,7 +481,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>

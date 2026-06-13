@@ -25,7 +25,7 @@ import {
   Users,
 } from "lucide-react"
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -455,7 +455,8 @@ export function UsersModule({ model }: PortalModuleProps) {
                     <div key={user.id} className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0">
-                          <Avatar className="size-10 shrink-0 ring-1 ring-border">
+                          <Avatar className="size-16 shrink-0 ring-1 ring-border">
+                            <AvatarImage src={user.photoUrl} alt={user.name} className="object-cover" />
                             <AvatarFallback className="bg-muted text-xs text-foreground">
                               {getInitials(user.name)}
                             </AvatarFallback>
@@ -518,7 +519,8 @@ export function UsersModule({ model }: PortalModuleProps) {
                         <tr key={user.id} className="transition-colors hover:bg-muted/50">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
-                              <Avatar className="size-8 shrink-0 ring-1 ring-border">
+                              <Avatar className="size-14 shrink-0 ring-1 ring-border">
+                                <AvatarImage src={user.photoUrl} alt={user.name} className="object-cover" />
                                 <AvatarFallback className="bg-muted text-xs text-foreground">{getInitials(user.name)}</AvatarFallback>
                               </Avatar>
                               <div className="min-w-0">
@@ -598,7 +600,8 @@ export function UsersModule({ model }: PortalModuleProps) {
                       <tr key={user.id} className="transition-colors hover:bg-muted/50">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <Avatar className="size-8 shrink-0 ring-1 ring-border opacity-60">
+                            <Avatar className="size-14 shrink-0 ring-1 ring-border opacity-60">
+                              <AvatarImage src={user.photoUrl} alt={user.name} className="object-cover" />
                               <AvatarFallback className="bg-muted text-xs text-muted-foreground">{getInitials(user.name)}</AvatarFallback>
                             </Avatar>
                             <div className="min-w-0">

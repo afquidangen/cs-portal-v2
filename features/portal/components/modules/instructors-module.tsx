@@ -1,19 +1,51 @@
 "use client"
 
+import { useMemo } from "react"
 import { BookOpen, GraduationCap, Mail, RefreshCw, ShieldCheck, Trash2, UserRoundCheck, Users } from "lucide-react"
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Panel, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2)
+}
+
 export function InstructorsModule({ model }: PortalModuleProps) {
   const { faculty, users, deleteFacultyMember, syncFacultyFromUsers, role } = model
-  const facultyUserNames = new Set(
-    users.filter((u) => u.role === "faculty").map((u) => u.name.toLowerCase().trim())
-  )
-  const activeFaculty = faculty.filter((m) =>
-    facultyUserNames.has(m.name.toLowerCase().trim())
-  )
+
+  const userByEmail = useMemo(() => {
+    const map = new Map<string, (typeof users)[number]>()
+    for (const u of users) {
+      if (u.role === "faculty") {
+        map.set(u.email.toLowerCase().trim(), u)
+      }
+    }
+    return map
+  }, [users])
+
+  const mergedFaculty = useMemo(() => {
+    return faculty.map((fr) => {
+      const user = userByEmail.get(fr.email.toLowerCase().trim())
+      return {
+        id: fr.id,
+        name: user?.name ?? fr.name,
+        position: fr.position,
+        email: user?.email ?? fr.email,
+        education: fr.education,
+        status: fr.status,
+        notes: fr.notes,
+        schedule: fr.schedule,
+        photoUrl: user?.photoUrl,
+      }
+    })
+  }, [faculty, userByEmail])
 
   function handleDelete(id: string, name: string) {
     model.setPendingConfirm({
@@ -65,7 +97,7 @@ export function InstructorsModule({ model }: PortalModuleProps) {
         </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {activeFaculty.length === 0 ? (
+        {mergedFaculty.length === 0 ? (
           <div className="col-span-full rounded-2xl border border-dashed border-border bg-muted/20 py-10 text-center">
             <UserRoundCheck className="mx-auto size-8 text-muted-foreground" />
             <p className="mt-3 text-sm font-medium text-foreground">No faculty accounts found.</p>
@@ -74,19 +106,19 @@ export function InstructorsModule({ model }: PortalModuleProps) {
             </p>
           </div>
         ) : (
-          activeFaculty.map((member) => (
+          mergedFaculty.map((member) => {
+            return (
             <article
               key={member.id}
               className="rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:border-primary/25 hover:shadow-md"
             >
               <div className="flex items-start gap-4">
-                <div className="edu-lapis flex size-14 shrink-0 items-center justify-center rounded-2xl text-base font-bold shadow-sm">
-                  {member.name
-                    .split(" ")
-                    .map((part) => part[0])
-                    .join("")
-                    .slice(0, 2)}
-                </div>
+                <Avatar className="size-14 shrink-0 ring-1 ring-border">
+                  <AvatarImage src={member.photoUrl} alt={member.name} className="object-cover" />
+                  <AvatarFallback className="bg-muted text-base font-bold text-foreground">
+                    {getInitials(member.name)}
+                  </AvatarFallback>
+                </Avatar>
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -133,7 +165,7 @@ export function InstructorsModule({ model }: PortalModuleProps) {
                 )}
               </div>
             </article>
-          ))
+          )})
         )}
       </div>
       </div>
