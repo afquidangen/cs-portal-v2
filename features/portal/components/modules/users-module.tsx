@@ -337,8 +337,9 @@ export function UsersModule({ model }: PortalModuleProps) {
       <Panel
         title={trashView ? `Recycle Bin (${deletedUsers.length})` : `Active Users (${visibleUsers.length})`}
         eyebrow={trashView ? "Deleted accounts" : "Search and filter"}
+        className="[&>div:first-child]:border-b-0 [&>div:first-child]:bg-transparent [&>div:first-child]:pb-2 [&>div:first-child>div:first-child]:hidden [&>div:first-child>div:nth-child(2)]:w-full [&>div:first-child>div:nth-child(2)]:sm:w-full"
         actions={
-          <div className="grid w-full max-w-full min-w-0 grid-cols-1 gap-2 rounded-xl border border-border bg-background/80 p-2 shadow-sm sm:grid-cols-2 lg:w-[780px] lg:grid-cols-3 xl:w-[1020px] xl:grid-cols-[minmax(220px,1.5fr)_repeat(4,minmax(120px,1fr))_minmax(100px,auto)_minmax(100px,auto)]">
+          <div className="grid w-full max-w-full min-w-0 grid-cols-1 gap-2 rounded-xl bg-muted/20 p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(240px,1.45fr)_repeat(4,minmax(125px,1fr))_repeat(3,minmax(112px,auto))]">
             <div className="min-w-0 sm:col-span-2 lg:col-span-3 xl:col-span-1 [&>div]:max-w-none">
               <SearchBox
                 value={query}
@@ -426,7 +427,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                 className="h-11 w-full whitespace-nowrap rounded-lg sm:col-span-2 lg:col-span-1 xl:col-span-1"
               >
                 <Plus className="size-4" />
-                Add Account
+                Add User
               </Button>
             ) : null}
           </div>
@@ -521,24 +522,24 @@ export function UsersModule({ model }: PortalModuleProps) {
                   ))}
                 </div>
 
-                <div className="hidden overflow-x-auto rounded-xl border border-border shadow-sm md:block">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-muted text-foreground">
+                <div className="hidden overflow-x-auto rounded-xl border border-border bg-card shadow-sm md:block">
+                  <table className="min-w-[1280px] w-full table-fixed text-left text-sm">
+                    <thead className="bg-muted/80 text-foreground">
                       <tr className="border-b border-border">
-                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Account</th>
-                        <th className="hidden lg:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Email</th>
-                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Role</th>
-                        <th className="hidden xl:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Details</th>
-                        <th className="hidden 2xl:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Created</th>
-                        <th className="hidden 2xl:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Last Login</th>
-                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Status</th>
-                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Actions</th>
+                        <th className="w-[250px] px-5 py-4 text-xs font-semibold uppercase tracking-wide text-foreground/80">Account</th>
+                        <th className="w-[230px] px-5 py-4 text-xs font-semibold uppercase tracking-wide text-foreground/80">Email</th>
+                        <th className="w-[120px] px-5 py-4 text-xs font-semibold uppercase tracking-wide text-foreground/80">Role</th>
+                        <th className="w-[270px] px-5 py-4 text-xs font-semibold uppercase tracking-wide text-foreground/80">Details</th>
+                        <th className="w-[145px] px-5 py-4 text-xs font-semibold uppercase tracking-wide text-foreground/80">Created</th>
+                        <th className="w-[145px] px-5 py-4 text-xs font-semibold uppercase tracking-wide text-foreground/80">Last Login</th>
+                        <th className="w-[120px] px-5 py-4 text-xs font-semibold uppercase tracking-wide text-foreground/80">Status</th>
+                        <th className="w-[230px] px-5 py-4 text-right text-xs font-semibold uppercase tracking-wide text-foreground/80">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border bg-card">
+                    <tbody className="divide-y divide-border">
                       {paginatedUsers.map((user) => (
                         <tr key={user.id} className="transition-colors hover:bg-muted/50">
-                          <td className="px-4 py-3">
+                          <td className="px-5 py-4 align-middle">
                             <div className="flex items-center gap-3">
                               <Avatar className="size-14 shrink-0 ring-1 ring-border">
                                 <AvatarImage src={user.photoUrl} alt={user.name} className="object-cover" />
@@ -550,29 +551,37 @@ export function UsersModule({ model }: PortalModuleProps) {
                               </div>
                             </div>
                           </td>
-                          <td className="hidden lg:table-cell px-4 py-3 text-foreground/80">{user.email}</td>
-                          <td className="px-4 py-3 capitalize text-foreground/80">{user.role}</td>
-                          <td className="hidden xl:table-cell max-w-[200px] truncate px-4 py-3 text-foreground/80">
-                            {user.role === "student"
-                              ? `${user.section || user.year || "-"} \u00B7 ${user.studentType ?? "Regular"} \u00B7 ${user.curriculum ?? "N/A"}`
-                              : user.role === "admin" ? "Regular" : `${user.academicTitle ?? "N/A"} \u00B7 ${user.employmentType ?? "Regular"} \u00B7 ${user.advisoryClass ?? "No advisory"}`}
+                          <td className="px-5 py-4 align-middle text-foreground/80">
+                            <p className="truncate">{user.email}</p>
                           </td>
-                          <td className="hidden 2xl:table-cell px-4 py-3 text-xs text-foreground/60">{formatDate(user.createdAt)}</td>
-                          <td className="hidden 2xl:table-cell px-4 py-3 text-xs text-foreground/60">{formatDate(user.lastLogin)}</td>
-                          <td className="px-4 py-3"><StatusBadge value={user.status} /></td>
-                          <td className="px-4 py-3">
-                            <div className="flex flex-wrap gap-1.5">
-                              <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setEditUser(user)} title="Edit user"><Edit className="size-3.5" /></Button>
+                          <td className="px-5 py-4 align-middle">
+                            <span className="inline-flex rounded-lg bg-muted px-2.5 py-1 text-xs font-semibold capitalize text-foreground/80">
+                              {user.role}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4 align-middle text-foreground/80">
+                            <p className="line-clamp-2 leading-5">
+                              {user.role === "student"
+                                ? `${user.section || user.year || "-"} \u00B7 ${user.studentType ?? "Regular"} \u00B7 ${user.curriculumId ?? "N/A"}`
+                                : user.role === "admin" ? "Regular" : `${user.academicTitle ?? "N/A"} \u00B7 ${user.employmentType ?? "Regular"} \u00B7 ${user.advisoryClass ?? "No advisory"}`}
+                            </p>
+                          </td>
+                          <td className="px-5 py-4 align-middle text-xs leading-5 text-foreground/60">{formatDate(user.createdAt)}</td>
+                          <td className="px-5 py-4 align-middle text-xs leading-5 text-foreground/60">{formatDate(user.lastLogin)}</td>
+                          <td className="px-5 py-4 align-middle"><StatusBadge value={user.status} /></td>
+                          <td className="px-5 py-4 align-middle">
+                            <div className="flex flex-wrap justify-end gap-2">
+                              <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => setEditUser(user)} title="Edit user" aria-label="Edit user"><Edit className="size-4" /></Button>
                               {user.role === "student" ? (
-                                <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setChangeCurriculumUser({ user, newCurriculumId: user.curriculumId ?? "", newYearLevel: user.currentYearLevel ?? YEAR_LABELS[String(user.year ?? "1")], newSemester: user.currentSemester ?? "First Semester" })} title="Change curriculum"><ArrowLeftRight className="size-3.5" /></Button>
+                                <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => setChangeCurriculumUser({ user, newCurriculumId: user.curriculumId ?? "", newYearLevel: user.currentYearLevel ?? YEAR_LABELS[String(user.year ?? "1")], newSemester: user.currentSemester ?? "First Semester" })} title="Change curriculum" aria-label="Change curriculum"><ArrowLeftRight className="size-4" /></Button>
                               ) : null}
                               {user.role === "student" ? (
-                                <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 }) }} title="Grade history"><History className="size-3.5" /></Button>
+                                <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 }) }} title="Grade history" aria-label="Grade history"><History className="size-4" /></Button>
                               ) : null}
-                              <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setToggleUserId(user.id)} title={user.status === "Active" ? "Deactivate" : "Activate"}>
-                                {user.status === "Active" ? <UserX className="size-3.5" /> : <UserCheck className="size-3.5" />}
+                              <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => setToggleUserId(user.id)} title={user.status === "Active" ? "Deactivate" : "Activate"} aria-label={user.status === "Active" ? "Deactivate user" : "Activate user"}>
+                                {user.status === "Active" ? <UserX className="size-4" /> : <UserCheck className="size-4" />}
                               </Button>
-                              <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDeleteUserId(user.id)} title="Move to trash"><Trash2 className="size-3.5" /></Button>
+                              <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => setDeleteUserId(user.id)} title="Move to trash" aria-label="Move to trash"><Trash2 className="size-4" /></Button>
                             </div>
                           </td>
                         </tr>

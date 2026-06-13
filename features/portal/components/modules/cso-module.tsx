@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { Download, ExternalLink, Eye, FileText, ImageIcon, Loader2, Megaphone, Pencil, Plus, Sparkles, Trash2, Upload, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Download, ExternalLink, Eye, FileText, ImageIcon, Loader2, Megaphone, Pencil, Plus, Sparkles, Trash2, Upload, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
@@ -234,6 +234,8 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
           </div>
         ))}
       </div>
+
+      <CsoMiniGallery reports={model.csoReports} />
 
       <Panel title="CSSO Organizational Chart" eyebrow="Officers and adviser">
         {orgChartUrl ? (
@@ -472,6 +474,161 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
       </Dialog>
     </div>
   )
+}
+
+function CsoMiniGallery({ reports }: { reports: CsoReport[] }) {
+  const reportSlides = reports
+    .filter((report) => report.image || report.summary)
+    .slice(0, 10)
+    .map((report) => ({
+      title: report.title,
+      description: report.summary,
+      image: report.image,
+      meta: `${report.type} | ${report.date}`,
+    }))
+
+  const slides = [
+    ...reportSlides,
+    ...CSSO_GALLERY_FALLBACK_SLIDES.slice(reportSlides.length),
+  ].slice(0, 10)
+
+  const [activeIndex, setActiveIndex] = useState(0)
+  const normalizedIndex = activeIndex % slides.length
+  const activeSlide = slides[normalizedIndex] ?? slides[0]
+
+  function showPrevious() {
+    setActiveIndex((current) => (current - 1 + slides.length) % slides.length)
+  }
+
+  function showNext() {
+    setActiveIndex((current) => (current + 1) % slides.length)
+  }
+
+  return (
+    <section className="overflow-hidden rounded-xl border border-primary/15 bg-card shadow-sm dark:border-[#1d3858]">
+      <div className="grid gap-0 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
+        <div className="relative aspect-[4/3] bg-muted">
+          <Image
+            src={activeSlide.image || "/csso-logo.svg"}
+            alt={activeSlide.title}
+            fill
+            sizes="(max-width: 1024px) 100vw, 58vw"
+            className={activeSlide.image ? "object-cover" : "object-contain p-10"}
+            unoptimized
+          />
+          <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 bg-gradient-to-t from-black/65 via-black/25 to-transparent p-4">
+            <Button
+              type="button"
+              size="icon"
+              variant="secondary"
+              className="size-9 rounded-full bg-white/90 text-foreground shadow-sm hover:bg-white"
+              onClick={showPrevious}
+              aria-label="Show previous CSSO gallery item"
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <div className="flex gap-1.5" aria-hidden="true">
+              {slides.map((slide, index) => (
+                <span
+                  key={`${slide.title}-${index}`}
+                  className={`h-1.5 rounded-full transition-all ${index === normalizedIndex ? "w-6 bg-white" : "w-1.5 bg-white/60"}`}
+                />
+              ))}
+            </div>
+            <Button
+              type="button"
+              size="icon"
+              variant="secondary"
+              className="size-9 rounded-full bg-white/90 text-foreground shadow-sm hover:bg-white"
+              onClick={showNext}
+              aria-label="Show next CSSO gallery item"
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-col justify-center p-5 sm:p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary dark:text-[#8bd3ff]">
+            {activeSlide.meta}
+          </p>
+          <h3 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+            {activeSlide.title}
+          </h3>
+          <p className="mt-3 text-sm leading-7 text-foreground/75">
+            {activeSlide.description}
+          </p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+const CSSO_GALLERY_FALLBACK_SLIDES = [
+  {
+    title: "CSSO Community Highlights",
+    description: "A quick look at student leadership, academic support, and department activities led by the Computing Studies Students Organization.",
+    image: createCsoGalleryImage("#1f6fe5", "#8bd3ff", "CS"),
+    meta: "Student organization",
+  },
+  {
+    title: "Events and Initiatives",
+    description: "CSSO helps organize programs that bring students together for collaboration, service, and professional growth.",
+    image: createCsoGalleryImage("#0f766e", "#99f6e4", "EV"),
+    meta: "Campus engagement",
+  },
+  {
+    title: "Transparent Records",
+    description: "Reports and documents keep the organization accountable while making important updates easier for students to follow.",
+    image: createCsoGalleryImage("#7c3aed", "#ddd6fe", "TR"),
+    meta: "Transparency",
+  },
+  {
+    title: "Academic Support",
+    description: "Student-led activities help classmates find guidance, prepare for academic work, and stay connected with department opportunities.",
+    image: createCsoGalleryImage("#dc2626", "#fecaca", "AC"),
+    meta: "Learning support",
+  },
+  {
+    title: "Leadership Development",
+    description: "CSSO gives students space to practice planning, communication, accountability, and service through real organization work.",
+    image: createCsoGalleryImage("#ca8a04", "#fef08a", "LD"),
+    meta: "Leadership",
+  },
+  {
+    title: "Digital Skills",
+    description: "Programs and activities encourage students to build technical confidence through collaboration and hands-on computing experiences.",
+    image: createCsoGalleryImage("#2563eb", "#bfdbfe", "DS"),
+    meta: "Skills building",
+  },
+  {
+    title: "Student Service",
+    description: "The organization supports department needs through coordinated student service, communication, and volunteer participation.",
+    image: createCsoGalleryImage("#16a34a", "#bbf7d0", "SS"),
+    meta: "Service",
+  },
+  {
+    title: "Project Collaboration",
+    description: "CSSO activities create practical chances for students to coordinate, share ideas, and contribute to meaningful department work.",
+    image: createCsoGalleryImage("#0891b2", "#a5f3fc", "PC"),
+    meta: "Collaboration",
+  },
+  {
+    title: "Campus Connection",
+    description: "The section keeps students closer to announcements, events, reports, and opportunities across the Computing Studies community.",
+    image: createCsoGalleryImage("#9333ea", "#f5d0fe", "CC"),
+    meta: "Community",
+  },
+  {
+    title: "Organization Updates",
+    description: "Gallery highlights make it easier to scan CSSO work before reading the detailed records and reports below.",
+    image: createCsoGalleryImage("#475569", "#cbd5e1", "OU"),
+    meta: "Updates",
+  },
+]
+
+function createCsoGalleryImage(primary: string, secondary: string, label: string) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="1536" viewBox="0 0 2048 1536"><rect width="2048" height="1536" fill="${primary}"/><circle cx="1685" cy="270" r="360" fill="${secondary}" opacity=".55"/><circle cx="285" cy="1248" r="330" fill="${secondary}" opacity=".35"/><path d="M320 1000h1408v160H320zM448 760h1152v152H448zM576 520h896v152H576z" fill="#fff" opacity=".85"/><text x="1024" y="360" text-anchor="middle" font-family="Arial, sans-serif" font-size="190" font-weight="800" fill="#fff">${label}</text></svg>`
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
 function ReportGrid({

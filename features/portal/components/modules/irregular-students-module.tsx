@@ -267,7 +267,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
               Curriculum Progress Review
             </p>
             <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-              Irregular Students
+              Non-Regular Students
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
               Review non-regular student records, track completed subjects, and manage curriculum progress by term.
