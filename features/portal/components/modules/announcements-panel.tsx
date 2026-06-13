@@ -102,7 +102,7 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
               </div>
               <div className="min-w-0">
                 <h3 className="text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-                  THE SOURCE CODE
+                  The Source Code
                 </h3>
                 <p className="mt-2 inline-flex items-center justify-center gap-2 text-sm font-semibold text-muted-foreground sm:justify-start">
                   <Bell className="size-4" />

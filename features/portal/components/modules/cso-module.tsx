@@ -177,10 +177,10 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
 
   return (
     <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-xl border border-primary/15 bg-[linear-gradient(120deg,#f8fbff_0%,#eef7ff_56%,#f7fbff_100%)] px-5 py-8 text-center shadow-sm dark:border-[#1d3858] dark:bg-[linear-gradient(120deg,#071224_0%,#0b2038_58%,#123768_100%)] sm:px-8">
+      <section className="relative overflow-hidden rounded-xl border border-primary/15 bg-[linear-gradient(120deg,#f8fbff_0%,#eef7ff_56%,#f7fbff_100%)] px-4 py-6 text-center shadow-sm dark:border-[#1d3858] dark:bg-[linear-gradient(120deg,#071224_0%,#0b2038_58%,#123768_100%)] sm:px-8 sm:py-8">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(36,120,255,0.08)_1px,transparent_1px),linear-gradient(rgba(36,120,255,0.06)_1px,transparent_1px)] bg-[size:38px_38px] opacity-50 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)]" />
         <div className="relative mx-auto max-w-3xl">
-          <div className="mx-auto mb-6 flex size-32 items-center justify-center rounded-3xl border border-primary/20 bg-white/80 p-1.5 shadow-md dark:border-[#8bd3ff]/25 dark:bg-white/10">
+          <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-2xl border border-primary/20 bg-white/80 p-1.5 shadow-md dark:border-[#8bd3ff]/25 dark:bg-white/10 sm:mb-6 sm:size-32 sm:rounded-3xl">
             <Image
               src="/csso-logo.svg"
               alt="CSSO logo placeholder"
@@ -190,7 +190,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
               priority={false}
             />
           </div>
-          <h2 className="font-heading text-[2.65rem] font-black uppercase leading-tight tracking-[0.03em] text-foreground sm:text-[3.35rem]">
+          <h2 className="font-heading text-[1.4rem] font-black uppercase leading-tight tracking-[0.03em] text-foreground sm:text-[3.35rem]">
             COMPUTING STUDIES STUDENTS ORGANIZATION
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
@@ -228,9 +228,9 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
           { label: "Financial Reports", value: String(financials.length) },
           { label: "All Documents", value: String(model.csoReports.length) },
         ].map((item) => (
-          <div key={item.label} className="rounded-xl border border-primary/15 bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-[#1d3858]">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary dark:text-[#8bd3ff]">{item.label}</p>
-            <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+          <div key={item.label} className="rounded-xl border border-primary/15 bg-card p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-[#1d3858] sm:p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary dark:text-[#8bd3ff] sm:text-xs">{item.label}</p>
+            <p className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:mt-2 sm:text-2xl">{item.value}</p>
           </div>
         ))}
       </div>

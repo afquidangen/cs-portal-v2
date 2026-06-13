@@ -1,12 +1,33 @@
 "use client"
 
 import { useMemo } from "react"
-import { BookOpen, GraduationCap, Mail, RefreshCw, ShieldCheck, Trash2, UserRoundCheck, Users } from "lucide-react"
+import { BookOpen, CheckCircle2, Clock, DoorOpen, GraduationCap, Mail, RefreshCw, ShieldCheck, Trash2, UserRoundCheck, Users } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Panel, StatusBadge } from "../shared/dashboard-ui"
+import { cn } from "@/lib/utils"
+import { Panel } from "../shared/dashboard-ui"
+import type { FacultyRecord } from "../../data/portal-data"
 import type { PortalModuleProps } from "./types"
+
+const STATUS_COLORS: Record<string, { icon: typeof CheckCircle2; className: string }> = {
+  Available: {
+    icon: CheckCircle2,
+    className: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-200",
+  },
+  "In Class": {
+    icon: Clock,
+    className: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/25 dark:bg-sky-500/10 dark:text-sky-200",
+  },
+  "Consultation Only": {
+    icon: Users,
+    className: "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/25 dark:bg-violet-500/10 dark:text-violet-200",
+  },
+  "Out of Office": {
+    icon: DoorOpen,
+    className: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-100",
+  },
+}
 
 function getInitials(name: string) {
   return name
@@ -115,46 +136,51 @@ export function InstructorsModule({ model }: PortalModuleProps) {
           </div>
         ) : (
           mergedFaculty.map((member) => {
+            const statusColor = STATUS_COLORS[member.status] ?? STATUS_COLORS["Out of Office"]
+            const StatusIcon = statusColor.icon
             return (
             <article
               key={member.id}
-              className="rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:border-primary/25 hover:shadow-md"
+              className="rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/30 hover:shadow-md"
             >
-              <div className="flex items-start gap-4">
-                <Avatar className="size-14 shrink-0 ring-1 ring-border">
+              <div className="flex gap-4">
+                <Avatar className="mt-1 size-16 shrink-0 ring-2 ring-border">
                   <AvatarImage src={member.photoUrl} alt={member.name} className="object-cover" />
-                  <AvatarFallback className="bg-muted text-base font-bold text-foreground">
+                  <AvatarFallback className="bg-primary/10 text-lg font-bold text-primary">
                     {getInitials(member.name)}
                   </AvatarFallback>
                 </Avatar>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 flex-1 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <h4 className="truncate text-lg font-bold tracking-tight text-foreground">
+                      <h4 className="truncate text-xl font-black tracking-tight text-foreground">
                         {member.name}
                       </h4>
-                      <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                      <p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-primary">
                         <ShieldCheck className="size-4" />
                         {member.position}
                       </p>
                     </div>
-                    <StatusBadge value={member.status} />
+                    <span className={cn("shrink-0 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold", statusColor.className)}>
+                      <StatusIcon className="size-3.5" />
+                      {member.status}
+                    </span>
                   </div>
 
-                  <div className="mt-4 grid gap-2 text-sm text-foreground/80">
-                    <p className="flex items-start gap-2 rounded-xl border border-border bg-muted/20 px-3 py-2">
-                      <BookOpen className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <div className="space-y-1.5 text-sm text-foreground/80">
+                    <p className="flex items-start gap-2">
+                      <BookOpen className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                       <span className="min-w-0">{member.education}</span>
                     </p>
-                    <p className="flex items-center gap-2 rounded-xl border border-border bg-muted/20 px-3 py-2">
-                      <Mail className="size-4 shrink-0 text-primary" />
+                    <p className="flex items-center gap-2">
+                      <Mail className="size-4 shrink-0 text-muted-foreground" />
                       <span className="min-w-0 truncate">{member.email}</span>
                     </p>
                   </div>
 
                   {member.notes && (
-                    <p className="mt-2 text-sm italic text-foreground/60">
+                    <p className="border-l-2 border-muted-foreground/20 pl-3 text-sm leading-6 text-foreground/60">
                       {member.notes}
                     </p>
                   )}

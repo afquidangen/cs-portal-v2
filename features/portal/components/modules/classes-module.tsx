@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { BookMarked, CalendarDays, ClipboardList, Layers3, Pencil, Plus, School, Trash2, Users, X } from "lucide-react"
+import { Award, BookMarked, BookOpen, CalendarDays, ClipboardList, GraduationCap, Layers3, Library, Pencil, Plus, School, Trash2, Users, X } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -198,6 +198,8 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
   const [selectedScheduleSection, setSelectedScheduleSection] = useState("All Sections")
   const [addScheduleOpen, setAddScheduleOpen] = useState(false)
   const [addScheduleYear, setAddScheduleYear] = useState("")
+  const [expandedYearForSections, setExpandedYearForSections] = useState<string | null>(null)
+  const [addSectionDialogOpen, setAddSectionDialogOpen] = useState(false)
 
   const activeSemester = semesters.find((s) => s.id === selectedSemesterId)
 
@@ -264,6 +266,35 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
       return true
     })
   }, [roster, selectedYear, selectedRosterSection])
+
+  const studentsByYearLevel = useMemo(() => {
+    const studentUsers = users.filter((u) => u.role === "student")
+    const counts: Record<string, number> = {
+      "First Year": 0,
+      "Second Year": 0,
+      "Third Year": 0,
+      "Fourth Year": 0,
+    }
+    for (const u of studentUsers) {
+      if (u.currentYearLevel && counts[u.currentYearLevel] !== undefined) {
+        counts[u.currentYearLevel]++
+      }
+    }
+    return counts
+  }, [users])
+
+  const studentsBySection = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const section of sectionOptions) {
+      counts[section] = roster.filter((r) => r.section === section).length
+    }
+    return counts
+  }, [roster, sectionOptions])
+
+  const expandedYearSections = useMemo(() => {
+    if (!expandedYearForSections) return []
+    return yearSections.find((y) => y.year === expandedYearForSections)?.sections ?? []
+  }, [expandedYearForSections, yearSections])
 
   const filteredSchedules = useMemo(() => {
     let result = classSchedules
@@ -357,21 +388,42 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
       {/* ── Year Sections ── */}
       {adminTab === "Sections" ? (
         <Panel title="Year Sections" eyebrow="Manage year levels and sections">
-          <div className="flex flex-wrap gap-2">
-            {yearSections.map((item) => (
-              <button
-                key={item.year}
-                type="button"
-                onClick={() => setSelectedClassYear(item.year)}
-                className={
-                  selectedClassYear === item.year
-                    ? "rounded-lg border border-primary bg-primary/10 px-4 py-2 text-sm font-medium text-primary shadow-sm"
-                    : "rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
-                }
-              >
-                {item.year}
-              </button>
-            ))}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { label: "First Year", icon: GraduationCap },
+              { label: "Second Year", icon: Library },
+              { label: "Third Year", icon: BookOpen },
+              { label: "Fourth Year", icon: Award },
+            ].map(({ label, icon: Icon }) => {
+              const year = yearSections.find((y) => y.year === label)
+              const count = year?.sections.length ?? 0
+              const active = selectedClassYear === label
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => setSelectedClassYear(label)}
+                  className={`edu-bg-soft-glacier rounded-xl border bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                    active
+                      ? "border-primary ring-2 ring-primary/30"
+                      : "border-[var(--edu-border-glacier)]"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{label}</p>
+                      <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">{count}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{count === 1 ? "section" : "sections"}</p>
+                    </div>
+                    <span className={`flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm ${
+                      active ? "bg-primary text-primary-foreground" : "edu-lapis"
+                    }`}>
+                      <Icon className="size-5" />
+                    </span>
+                  </div>
+                </button>
+              )
+            })}
           </div>
 
           <div className="mt-4">
@@ -380,15 +432,58 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
             </p>
             <div className="flex flex-wrap gap-2">
               {selectedYear?.sections.map((section) => (
-                <StatusBadge key={section} value={section} />
+                <div
+                  key={section}
+                  className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm"
+                >
+                  <Users className="size-4 text-muted-foreground" />
+                  {section}
+                </div>
               ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setNewSectionName("")
+                  setAddSectionDialogOpen(true)
+                }}
+                className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-card px-4 py-2.5 text-sm font-medium text-muted-foreground transition hover:border-primary hover:text-primary hover:shadow-sm"
+              >
+                <Plus className="size-4" />
+                Add Section
+              </button>
             </div>
           </div>
 
-          <form onSubmit={handleAddClassSection} className="edu-bg-soft-glacier mt-5 flex max-w-md gap-2 rounded-xl border border-[var(--edu-border-glacier)] p-3">
-            <Input value={newSectionName} onChange={(e) => setNewSectionName(e.target.value)} placeholder="Add section, e.g. BSCS 1E" className="h-10 rounded-lg" />
-            <Button type="submit" className="rounded-lg"><Plus className="size-4" /> Add</Button>
-          </form>
+          <Dialog open={addSectionDialogOpen} onOpenChange={setAddSectionDialogOpen}>
+            <DialogContent className="w-[95vw] sm:max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Add Section</DialogTitle>
+                <DialogDescription>Add a new section under {selectedClassYear}</DialogDescription>
+              </DialogHeader>
+              <form
+                onSubmit={(e) => {
+                  handleAddClassSection(e)
+                  setAddSectionDialogOpen(false)
+                }}
+                className="space-y-4"
+              >
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Section name</label>
+                  <Input
+                    value={newSectionName}
+                    onChange={(e) => setNewSectionName(e.target.value)}
+                    placeholder="e.g. BSCS 1E"
+                    className="h-10 rounded-lg"
+                    autoFocus
+                  />
+                </div>
+                <DialogFooter className="gap-2">
+                  <Button type="button" variant="ghost" onClick={() => setAddSectionDialogOpen(false)}>Cancel</Button>
+                  <Button type="submit"><Plus className="size-4" /> Add</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </Panel>
       ) : null}
 
@@ -397,31 +492,101 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
         <Panel
           title="Student Roster"
           eyebrow={`${selectedClassYear} \u2022 ${sectionRoster.length} students`}
-          actions={
-            <div className="flex flex-wrap items-center gap-2">
-              {yearSections.map((item) => (
-                <button
-                  key={item.year}
-                  type="button"
-                  onClick={() => { setSelectedClassYear(item.year); setSelectedRosterSection("All Sections") }}
-                  className={
-                    selectedClassYear === item.year
-                      ? "rounded-lg border border-primary bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
-                      : "rounded-lg border border-border bg-card px-3 py-1 text-xs font-medium text-foreground transition hover:bg-muted"
-                  }
-                >
-                  {item.year}
-                </button>
-              ))}
-              <Select
-                value={selectedRosterSection}
-                onChange={setSelectedRosterSection}
-                options={["All Sections", ...(selectedYear?.sections ?? [])]}
-                className="w-40"
-              />
-            </div>
-          }
         >
+          <div className="mb-5 grid gap-3 md:grid-cols-4">
+            {[
+              { label: "First Year", count: studentsByYearLevel["First Year"], icon: GraduationCap },
+              { label: "Second Year", count: studentsByYearLevel["Second Year"], icon: Library },
+              { label: "Third Year", count: studentsByYearLevel["Third Year"], icon: BookOpen },
+              { label: "Fourth Year", count: studentsByYearLevel["Fourth Year"], icon: Award },
+            ].map((item) => {
+              const Icon = item.icon
+              const active = expandedYearForSections === item.label
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => {
+                    if (active) {
+                      setExpandedYearForSections(null)
+                    } else {
+                      setExpandedYearForSections(item.label)
+                      setSelectedClassYear(item.label)
+                      setSelectedRosterSection("All Sections")
+                    }
+                  }}
+                  className={`edu-bg-soft-glacier rounded-xl border bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                    active
+                      ? "border-primary ring-2 ring-primary/30"
+                      : "border-[var(--edu-border-glacier)]"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
+                      <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">{item.count}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {active ? "Click to hide sections" : "Click to show sections"}
+                      </p>
+                    </div>
+                    <span className={`flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm ${
+                      active ? "bg-primary text-primary-foreground" : "edu-lapis"
+                    }`}>
+                      <Icon className="size-5" />
+                    </span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          {expandedYearForSections ? (
+            <div className="mb-5">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Sections under {expandedYearForSections}
+              </p>
+              <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-6">
+                {[
+                  { section: "All Sections" },
+                  ...expandedYearSections.map((s) => ({ section: s })),
+                ].map(({ section }) => {
+                  const count = section === "All Sections"
+                    ? (studentsByYearLevel[expandedYearForSections] ?? 0)
+                    : (studentsBySection[section] ?? 0)
+                  const active = section === "All Sections"
+                    ? selectedRosterSection === "All Sections"
+                    : selectedRosterSection === section
+                  return (
+                    <button
+                      key={section}
+                      type="button"
+                      onClick={() => {
+                        setSelectedClassYear(expandedYearForSections)
+                        setSelectedRosterSection(section)
+                      }}
+                      className={`edu-bg-soft-glacier rounded-xl border bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                        active
+                          ? "border-primary ring-2 ring-primary/30"
+                          : "border-[var(--edu-border-glacier)]"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Section</p>
+                          <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">{count}</p>
+                          <p className="mt-1 truncate text-sm text-muted-foreground">{section}</p>
+                        </div>
+                        <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                          <Users className="size-5" />
+                        </span>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null}
+
           {sectionRoster.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-14 text-center">
               <Users className="mb-3 size-10 text-muted-foreground/50" />

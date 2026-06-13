@@ -102,13 +102,13 @@ function FacultyCard({
   const StatusIcon = statusUi.icon
 
   return (
-    <article className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:border-primary/25 hover:shadow-md">
-      <div className="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:p-5">
-        <div className="min-w-0">
+    <article className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:border-primary/30 hover:shadow-md">
+      <div className="p-3 sm:p-4">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
-            <Avatar className="size-12 shrink-0 ring-1 ring-border">
+            <Avatar className="size-11 shrink-0 ring-1 ring-border">
               <AvatarImage src={member.photoUrl} alt={member.name} className="object-cover" />
-              <AvatarFallback className="edu-lapis rounded-xl text-sm font-semibold shadow-sm">
+              <AvatarFallback className="edu-lapis rounded-xl text-xs font-semibold shadow-sm">
                 {member.name
                   .split(" ")
                   .map((p: string) => p[0])
@@ -117,45 +117,37 @@ function FacultyCard({
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <h4 className="truncate text-base font-semibold tracking-tight text-foreground">{member.name}</h4>
-              <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                {member.position} &middot; {member.role}
+              <h4 className="truncate text-sm font-semibold tracking-tight text-foreground">{member.name}</h4>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                {member.position}
               </p>
-              <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-                <Mail className="size-3.5 shrink-0" />
+              <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground/70">
+                <Mail className="size-3 shrink-0" />
                 <span className="truncate">{member.email}</span>
               </p>
             </div>
           </div>
-          <p className="mt-4 line-clamp-2 text-sm leading-6 text-foreground/78">{member.notes}</p>
-        </div>
-
-        <div className="flex items-start justify-between gap-3 sm:min-w-[190px] sm:flex-col sm:items-end">
-          <span className={cn("inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold", statusUi.className)}>
-            <StatusIcon className="size-4" />
+          <span className={cn("shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-bold", statusUi.className)}>
+            <StatusIcon className="mr-1 inline-block size-3.5" />
             {member.status}
           </span>
         </div>
-      </div>
-
-      {showSchedule && member.schedule.length > 0 && (
-        <div className="border-t border-border bg-muted/20 px-4 py-3 sm:px-5">
-          <p className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            <CalendarCheck className="size-3.5" />
-            Schedule Blocks
-          </p>
-          <div className="flex flex-wrap gap-2 text-xs text-foreground/70">
-          {member.schedule.map((slot) => (
-            <span
-              key={slot}
-              className="rounded-lg border border-border bg-card px-2.5 py-1 shadow-sm"
-            >
-              {slot}
-            </span>
-          ))}
+        {member.notes ? (
+          <p className="mt-2 line-clamp-2 text-xs leading-5 text-foreground/70">{member.notes}</p>
+        ) : null}
+        {showSchedule && member.schedule.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {member.schedule.map((slot) => (
+              <span
+                key={slot}
+                className="rounded-md border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground/60"
+              >
+                {slot}
+              </span>
+            ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </article>
   )
 }
@@ -204,46 +196,53 @@ function AdminStatusEditor({ model }: PortalModuleProps) {
 
   return (
     <Panel title="FACULTY STATUS" eyebrow="Admin control panel">
-      <div className="space-y-3">
+      <div className="space-y-2">
         {visibleFaculty.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             No faculty members found.
           </p>
         ) : (
-          visibleFaculty.map((member) => (
-            <div
-              key={member.id}
-              className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md"
-            >
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div className="min-w-0 flex-1">
-                  <h4 className="font-semibold text-foreground">{member.name}</h4>
-                  <p className="text-sm text-foreground/70">
-                    {member.position} &middot; {member.role}
-                  </p>
-                  <p className="mt-1 text-xs text-foreground/50">{member.email}</p>
-                  <p className="mt-2 text-sm text-foreground/80">{member.notes}</p>
-
-                  {member.schedule.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-foreground/70">
-                      {member.schedule.map((slot) => (
-                        <span
-                          key={slot}
-                          className="rounded-xl border border-border bg-muted px-2.5 py-1"
-                        >
-                          {slot}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+          visibleFaculty.map((member) => {
+            const statusUi = STATUS_CONTROL_UI[member.status]
+            const StatusIcon = statusUi.icon
+            return (
+              <div
+                key={member.id}
+                className="flex items-stretch gap-0 overflow-hidden rounded-xl border border-border bg-card shadow-sm"
+              >
+                <div className={cn("flex w-10 shrink-0 items-center justify-center", statusUi.className.replace(/border-\S+/g, "").trim())}>
+                  <StatusIcon className="size-4" />
                 </div>
-
-                <div className="flex items-start gap-3 lg:flex-col">
-                  <StatusBadge value={member.status} />
+                <div className="flex flex-1 flex-wrap items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-sm font-semibold text-foreground">{member.name}</h4>
+                    <p className="mt-0.5 text-xs text-foreground/60">
+                      {member.position} &middot; {member.email}
+                    </p>
+                    {member.notes ? (
+                      <p className="mt-1 text-xs text-foreground/70 line-clamp-1">{member.notes}</p>
+                    ) : null}
+                    {member.schedule.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {member.schedule.map((slot) => (
+                          <span
+                            key={slot}
+                            className="rounded-md border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground/60"
+                          >
+                            {slot}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <span className={cn("shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold", statusUi.className)}>
+                    <StatusIcon className="mr-1.5 inline-block size-3.5" />
+                    {member.status}
+                  </span>
                 </div>
               </div>
-            </div>
-          ))
+            )
+          })
         )}
       </div>
     </Panel>

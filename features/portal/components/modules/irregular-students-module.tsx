@@ -54,6 +54,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
   const [search, setSearch] = useState("")
   const [filterYear, setFilterYear] = useState("All Years")
   const [filterSection, setFilterSection] = useState("All Sections")
+  const [filterType, setFilterType] = useState("All Types")
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [gradeDialog, setGradeDialog] = useState<{
     mode: "add" | "edit"
@@ -82,6 +83,8 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
     return ["All Sections", ...(found?.sections ?? [])]
   }, [filterYear, yearSections])
 
+  const typeOptions = useMemo(() => ["All Types", ...irregularTypes], [])
+
   const irregularStudents = useMemo(
     () =>
       users.filter(
@@ -99,9 +102,10 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
       if (!s.name.toLowerCase().includes(q) && !s.id.toLowerCase().includes(q)) return false
       if (filterYear !== "All Years" && s.currentYearLevel !== filterYear) return false
       if (filterSection !== "All Sections" && s.section !== filterSection) return false
+      if (filterType !== "All Types" && s.studentType !== filterType) return false
       return true
     })
-  }, [irregularStudents, search, filterYear, filterSection])
+  }, [irregularStudents, search, filterYear, filterSection, filterType])
 
   const selectedStudent = useMemo(
     () => users.find((u) => u.id === selectedStudentId) ?? null,
@@ -320,6 +324,12 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
           }
         >
           <div className="flex flex-wrap gap-2 pb-2">
+            <Select
+              value={filterType}
+              onChange={(v) => setFilterType(v)}
+              options={typeOptions}
+              className="w-40"
+            />
             <Select
               value={filterYear}
               onChange={(v) => { setFilterYear(v); setFilterSection("All Sections") }}

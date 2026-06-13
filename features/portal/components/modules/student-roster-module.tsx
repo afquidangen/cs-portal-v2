@@ -277,12 +277,25 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
                 <Layers3 className="size-4" />
                 Section Filter
               </p>
-              <Select
-                label="Section"
-                value={selectedSection ?? "All Sections"}
-                onChange={(value) => setSelectedSection(value === "All Sections" ? null : value)}
-                options={["All Sections", ...sectionOptions]}
-              />
+              <div className="flex flex-wrap gap-1.5">
+                {["All Sections", ...sectionOptions].map((sec) => {
+                  const active = sec === "All Sections" ? !selectedSection : selectedSection === sec
+                  return (
+                    <button
+                      key={sec}
+                      type="button"
+                      onClick={() => setSelectedSection(sec === "All Sections" ? null : sec)}
+                      className={
+                        active
+                          ? "rounded-lg border border-primary bg-primary/10 px-3 py-1 text-xs font-medium text-primary shadow-sm"
+                          : "rounded-lg border border-border bg-card px-3 py-1 text-xs font-medium text-foreground transition hover:bg-muted"
+                      }
+                    >
+                      {sec}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           ) : null}
 

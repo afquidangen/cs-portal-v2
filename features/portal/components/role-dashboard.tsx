@@ -715,7 +715,7 @@ export function RoleDashboard({ role }: { role: Role }) {
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="h-dvh overflow-hidden bg-background text-foreground">
       {model.sidebarOpen ? (
         <button
           type="button"
@@ -725,7 +725,7 @@ export function RoleDashboard({ role }: { role: Role }) {
         />
       ) : null}
 
-      <div className="mx-auto flex min-h-screen w-full">
+      <div className="mx-auto flex h-full w-full">
         <aside
           className={cn(
             "edu-sidebar-shell fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col border-r border-sidebar-border text-sidebar-foreground shadow-2xl shadow-blue-950/10 transition-all duration-300 md:sticky md:top-0 md:h-screen md:translate-x-0",
@@ -884,7 +884,7 @@ export function RoleDashboard({ role }: { role: Role }) {
           </div>
         </aside>
 
-        <div className="min-w-0 flex-1 overflow-hidden bg-background">
+        <div className="min-w-0 flex-1 overflow-y-auto bg-background">
           <header className="sticky top-0 z-30 border-b border-border/70 bg-background/88 backdrop-blur-xl">
             <div className="flex min-h-[72px] items-center justify-between gap-3 px-3 py-3 sm:min-h-[86px] sm:gap-4 sm:px-6 lg:px-8">
               <div className="flex min-w-0 items-center gap-3">
@@ -1750,6 +1750,23 @@ export function RoleDashboard({ role }: { role: Role }) {
 
             {renderModule()}
           </section>
+
+          <footer className="border-t border-border bg-background px-4 py-3 sm:px-6 lg:px-8">
+            <div className="mx-auto flex max-w-[1720px] flex-col items-center gap-2 text-xs text-muted-foreground sm:flex-row sm:justify-between">
+              <span>&copy; 2026 ComScite Portal &mdash; ISPSC Computing Studies Unit</span>
+              <span className="inline-flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+                <span className="inline-flex items-center gap-1.5">
+                  <Mail className="size-3.5" />
+                  comscite@ispsc.edu.ph
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Phone className="size-3.5" />
+                  077 000 0000
+                </span>
+                <span className="hidden sm:inline">San Nicolas, Candon City, Ilocos Sur</span>
+              </span>
+            </div>
+          </footer>
         </div>
       </div>
 
@@ -1876,22 +1893,6 @@ export function RoleDashboard({ role }: { role: Role }) {
         cancelLabel={model.pendingConfirm?.cancelLabel}
       />
 
-      <footer className="border-t border-border bg-background px-4 py-3 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-[1720px] flex-col items-center gap-2 text-xs text-muted-foreground sm:flex-row sm:justify-between">
-          <span>&copy; 2026 ComScite Portal &mdash; ISPSC Computing Studies Unit</span>
-          <span className="inline-flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-            <span className="inline-flex items-center gap-1.5">
-              <Mail className="size-3.5" />
-              comscite@ispsc.edu.ph
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Phone className="size-3.5" />
-              077 000 0000
-            </span>
-            <span className="hidden sm:inline">San Nicolas, Candon City, Ilocos Sur</span>
-          </span>
-        </div>
-      </footer>
     </main>
   )
 }

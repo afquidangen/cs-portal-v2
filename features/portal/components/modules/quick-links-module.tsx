@@ -172,7 +172,7 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
     return (
       <div
         key={link._id ?? link.label}
-        className="group relative flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:bg-muted"
+        className="group relative flex items-center justify-between rounded-xl border border-border bg-card p-3 shadow-sm transition hover:bg-muted sm:p-4"
       >
         <button
           type="button"
@@ -187,18 +187,18 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
           </span>
         </button>
 
-        {isAdmin && (
-          <div className="ml-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-            <button
-              type="button"
-              onClick={() => handleDeleteDownloadable(link._id!)}
-              className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
-              title="Delete file"
-            >
-              <Trash2 className="size-4" />
-            </button>
-          </div>
-        )}
+            {isAdmin && (
+              <div className="ml-2 flex gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+                <button
+                  type="button"
+                  onClick={() => handleDeleteDownloadable(link._id!)}
+                  className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                  title="Delete file"
+                >
+                  <Trash2 className="size-4" />
+                </button>
+              </div>
+            )}
       </div>
     )
   }
@@ -207,7 +207,7 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
     return (
       <div
         key={link._id ?? link.label}
-        className="group relative flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:bg-muted"
+        className="group relative flex items-center justify-between rounded-xl border border-border bg-card p-3 shadow-sm transition hover:bg-muted sm:p-4"
       >
         <a
           href={link.href}
@@ -230,7 +230,7 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
         </a>
 
         {isAdmin && (
-          <div className="ml-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="ml-2 flex gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
             <button
               type="button"
               onClick={() => {
@@ -266,9 +266,9 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
             <button
               type="button"
               onClick={() => setShowQuickLinkForm(true)}
-              className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-5 text-sm text-muted-foreground transition hover:border-primary/50 hover:text-primary"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border p-3 text-sm text-muted-foreground transition hover:border-primary/50 hover:text-primary sm:gap-3 sm:p-5"
             >
-              <Plus className="size-5" />
+              <Plus className="size-4 sm:size-5" />
               <span className="font-medium">Add Quick Link</span>
             </button>
           </div>
@@ -290,9 +290,9 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
             <button
               type="button"
               onClick={() => setShowDownloadableForm(true)}
-              className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-5 text-sm text-muted-foreground transition hover:border-primary/50 hover:text-primary"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border p-3 text-sm text-muted-foreground transition hover:border-primary/50 hover:text-primary sm:gap-3 sm:p-5"
             >
-              <Upload className="size-5" />
+              <Upload className="size-4 sm:size-5" />
               <span className="font-medium">Upload PDF</span>
             </button>
           </div>
