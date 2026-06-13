@@ -1,5 +1,6 @@
 export type ProfileDetails = {
   photoUrl: string
+  cloudinaryPublicId?: string
   firstName: string
   middleName: string
   lastName: string

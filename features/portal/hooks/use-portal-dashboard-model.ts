@@ -331,7 +331,7 @@ export function usePortalDashboardModel(role: Role) {
     content: "",
     audience: "All Users",
     priority: "Medium" as Announcement["priority"],
-    classSection: "",
+    classSections: [] as string[],
   })
   const [myFacultyStatus, setMyFacultyStatus] =
     useState<AvailabilityStatus>("Available")
@@ -436,6 +436,7 @@ export function usePortalDashboardModel(role: Role) {
     queueMicrotask(() =>
       setProfileDetails({
         photoUrl: profileUser?.photoUrl ?? "",
+        cloudinaryPublicId: profileUser?.cloudinaryPublicId,
         firstName: profileUser?.firstName ?? nameParts.firstName,
         middleName: profileUser?.middleName ?? nameParts.middleName,
         lastName: profileUser?.lastName ?? nameParts.lastName,
@@ -1775,6 +1776,7 @@ export function usePortalDashboardModel(role: Role) {
       setProfileDetails((current) => ({
         ...current,
         photoUrl: typeof reader.result === "string" ? reader.result : "",
+        cloudinaryPublicId: "",
       }))
     }
     reader.readAsDataURL(file)
@@ -1797,13 +1799,18 @@ export function usePortalDashboardModel(role: Role) {
       address: draft.address,
     }
     if (draft.photoUrl !== previousPhotoUrl) {
-      body.photoUrl = draft.photoUrl
+      if (draft.photoUrl === "" && previousPhotoUrl) {
+        body.removePhoto = true
+      } else {
+        body.photoUrl = draft.photoUrl
+      }
     }
 
-    const result = await syncApi<{ data: { photoUrl?: string } }>("PUT", `/api/portal/users/${profile.id}`, body)
+    const result = await syncApi<{ data: { photoUrl?: string; cloudinaryPublicId?: string } }>("PUT", `/api/portal/users/${profile.id}`, body)
 
     const photoUrl = result.data?.photoUrl ?? previousPhotoUrl
-    const savedProfile: ProfileDetails = { ...draft, photoUrl }
+    const cloudinaryPublicId = result.data?.cloudinaryPublicId
+    const savedProfile: ProfileDetails = { ...draft, photoUrl, cloudinaryPublicId }
 
     setProfileDetails(savedProfile)
 
@@ -1822,6 +1829,7 @@ export function usePortalDashboardModel(role: Role) {
               birthday: draft.birthday,
               address: draft.address,
               photoUrl,
+              cloudinaryPublicId,
             }
           : user
       )
@@ -2568,7 +2576,8 @@ export function usePortalDashboardModel(role: Role) {
       date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
       audience: announcementDraft.audience,
       priority: announcementDraft.priority,
-      classSection: announcementDraft.classSection || undefined,
+      classSection: announcementDraft.classSections[0] || undefined,
+      classSections: announcementDraft.classSections,
       createdBy: profile.name,
     }
     try {
@@ -2585,7 +2594,7 @@ export function usePortalDashboardModel(role: Role) {
       content: "",
       audience: "All Users",
       priority: "Medium",
-      classSection: "",
+      classSections: [],
     })
     setShowAnnouncementForm(false)
     addAuditLog(`Created announcement "${announcementDraft.title}"`)

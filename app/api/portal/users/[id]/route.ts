@@ -3,7 +3,7 @@ import { rosterRepository } from "@/features/portal/repositories/roster.reposito
 import { gradesRepository } from "@/features/portal/repositories/grades.repository"
 import { UserModel } from "@/lib/models"
 import { success, error, notFound } from "@/lib/api-response"
-import { uploadProfilePhoto } from "@/lib/cloudinary"
+import { uploadProfilePhoto, destroyFile } from "@/lib/cloudinary"
 import { validatePassword } from "@/lib/validators"
 
 export const runtime = "nodejs"
@@ -30,10 +30,26 @@ export async function PUT(
     const { id } = await params
     const body = await request.json() as Record<string, unknown>
 
+    if (body.removePhoto) {
+      const existingUser = (await usersRepository.findById(id)) as Record<string, unknown> | null
+      const oldPublicId = existingUser?.cloudinaryPublicId
+      if (oldPublicId) {
+        await destroyFile(oldPublicId as string, "image").catch(() => {})
+      }
+      delete body.removePhoto
+      body.photoUrl = ""
+      body.cloudinaryPublicId = ""
+    }
+
     if (typeof body.photoUrl === "string" && body.photoUrl.startsWith("data:image")) {
-      console.log(`[profile] Uploading photo for user ${id} to Cloudinary...`)
-      body.photoUrl = await uploadProfilePhoto(body.photoUrl, id)
-      console.log(`[profile] Cloudinary URL: ${body.photoUrl}`)
+      const existingUser = (await usersRepository.findById(id)) as Record<string, unknown> | null
+      const oldPublicId = existingUser?.cloudinaryPublicId
+      if (oldPublicId) {
+        await destroyFile(oldPublicId as string, "image").catch(() => {})
+      }
+      const result = await uploadProfilePhoto(body.photoUrl, id)
+      body.photoUrl = result.secureUrl
+      body.cloudinaryPublicId = result.publicId
     }
 
     if (typeof body.password === "string" && body.password.length > 0) {

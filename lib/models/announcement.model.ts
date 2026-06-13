@@ -8,6 +8,7 @@ export interface IAnnouncement extends Document {
   audience: string
   priority: "High" | "Medium" | "Low"
   classSection?: string
+  classSections?: string[]
   createdBy?: string
 }
 
@@ -24,6 +25,7 @@ const AnnouncementSchema = new Schema<IAnnouncement>(
       default: "Medium",
     },
     classSection: String,
+    classSections: [String],
     createdBy: String,
   },
   { timestamps: true }

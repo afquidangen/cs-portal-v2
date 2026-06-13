@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { AlertTriangle, Bell, CalendarDays, Edit, Megaphone, Plus, Radio, Trash2, Users, X } from "lucide-react"
+import { AlertTriangle, Bell, CalendarDays, Edit, Megaphone, Plus, Radio, Trash2, User, Users, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -61,10 +61,19 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
     profile,
   } = model
 
+  function getAudienceLabel(a: Announcement): string {
+    const standard = ["All Users", "Students", "Faculty"]
+    if (standard.includes(a.audience)) return a.audience
+    const sections = a.classSections?.length ? a.classSections : a.classSection ? [a.classSection] : a.audience?.split(", ") ?? []
+    const filtered = sections.filter((s) => !standard.includes(s))
+    if (filtered.length <= 1) return filtered[0] ?? a.audience
+    return `${filtered.length} Sections`
+  }
+
   const filtered = announcements.filter((a) => {
-    if (role === "admin") return (a.audience === "All Users" || a.audience === "Students" || a.audience === "Faculty") && !a.classSection
-    if (role === "student") return a.audience === "All Users" || a.audience === "Students" || (a.classSection && a.classSection === profileSection)
-    return a.audience === "All Users" || a.audience === "Faculty" || (a.classSection && facultyClassSections.includes(a.classSection)) || a.createdBy === profile.name
+    if (role === "admin") return (a.audience === "All Users" || a.audience === "Students" || a.audience === "Faculty") && !a.classSection && (!a.classSections?.length)
+    if (role === "student") return a.audience === "All Users" || a.audience === "Students" || a.audience?.split(", ").includes(profileSection) || (a.classSections?.includes(profileSection) ?? false) || a.classSection === profileSection
+    return a.audience === "All Users" || a.audience === "Faculty" || a.audience?.split(", ").some((s) => facultyClassSections.includes(s)) || (a.classSections?.some((s) => facultyClassSections.includes(s)) ?? false) || (a.classSection && facultyClassSections.includes(a.classSection)) || a.createdBy === profile.name
   })
 
   const [editingAnn, setEditingAnn] = useState<Announcement | null>(null)
@@ -177,20 +186,26 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
                               <CalendarDays className="size-3.5" />
                               {leadAnnouncement.date}
                             </span>
-                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/25 px-2.5 py-1.5">
-                              <Users className="size-3.5" />
-                              {leadAnnouncement.audience}
-                            </span>
-                            {leadAnnouncement.classSection ? (
-                              <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-primary">
-                                <Megaphone className="size-3.5" />
-                                {leadAnnouncement.classSection}
+                            {leadAnnouncement.createdBy ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/25 px-2.5 py-1.5">
+                                <User className="size-3.5" />
+                                {leadAnnouncement.createdBy} - Faculty
                               </span>
                             ) : null}
+                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/25 px-2.5 py-1.5">
+                              <Users className="size-3.5" />
+                              {getAudienceLabel(leadAnnouncement)}
+                            </span>
+                            {(leadAnnouncement.classSections?.length ? leadAnnouncement.classSections : leadAnnouncement.classSection ? [leadAnnouncement.classSection] : leadAnnouncement.audience?.split(", ") ?? []).filter((s) => s !== "All Users" && s !== "Students" && s !== "Faculty").map((s) => (
+                              <span key={s} className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-primary">
+                                <Megaphone className="size-3.5" />
+                                {s}
+                              </span>
+                            ))}
                           </div>
                         </div>
                       </div>
-                      {role === "admin" || (role === "faculty" && leadAnnouncement.classSection && facultyClassSections.includes(leadAnnouncement.classSection)) ? (
+                      {role === "admin" || (role === "faculty" && ((leadAnnouncement.classSections?.some((s) => facultyClassSections.includes(s)) ?? false) || (leadAnnouncement.classSection && facultyClassSections.includes(leadAnnouncement.classSection)))) ? (
                         <div className="flex shrink-0 items-center gap-2 self-start">
                           <Button
                             size="sm"
@@ -256,17 +271,17 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
                                 </span>
                                 <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs font-medium text-muted-foreground">
                                   <Users className="size-3.5" />
-                                  {announcement.audience}
+                                  {getAudienceLabel(announcement)}
                                 </span>
-                                {announcement.classSection ? (
-                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary">
+                                {(announcement.classSections?.length ? announcement.classSections : announcement.classSection ? [announcement.classSection] : announcement.audience?.split(", ") ?? []).filter((s) => s !== "All Users" && s !== "Students" && s !== "Faculty").map((s) => (
+                                  <span key={s} className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary">
                                     <Megaphone className="size-3" />
-                                    {announcement.classSection}
+                                    {s}
                                   </span>
-                                ) : null}
+                                ))}
                               </div>
                             </div>
-                            {role === "admin" || (role === "faculty" && announcement.classSection && facultyClassSections.includes(announcement.classSection)) ? (
+                            {role === "admin" || (role === "faculty" && ((announcement.classSections?.some((s) => facultyClassSections.includes(s)) ?? false) || (announcement.classSection && facultyClassSections.includes(announcement.classSection)))) ? (
                               <div className="flex shrink-0 items-center gap-2">
                                 <Button
                                   size="sm"
@@ -294,6 +309,12 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
                             <CalendarDays className="size-3.5" />
                             {announcement.date}
                           </p>
+                          {announcement.createdBy ? (
+                            <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                              <User className="size-3.5" />
+                              {announcement.createdBy} - Faculty
+                            </p>
+                          ) : null}
                         </div>
                       </div>
                     </article>
@@ -336,9 +357,13 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-foreground">Audience</label>
-                    {role === "faculty" && editingAnn.classSection ? (
-                      <div className="flex h-11 items-center rounded-lg border border-border bg-muted/30 px-3 text-sm text-muted-foreground">
-                        {editingAnn.audience} — {editingAnn.classSection}
+                    {role === "faculty" && (editingAnn.classSections?.length || editingAnn.classSection || (editingAnn.audience && editingAnn.audience !== "All Users" && editingAnn.audience !== "Students" && editingAnn.audience !== "Faculty")) ? (
+                      <div className="flex min-h-11 flex-wrap items-center gap-1.5 rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                        {(editingAnn.classSections?.length ? editingAnn.classSections : editingAnn.classSection ? [editingAnn.classSection] : editingAnn.audience?.split(", ") ?? []).filter((s) => s !== "All Users" && s !== "Students" && s !== "Faculty").map((s) => (
+                          <span key={s} className="inline-flex items-center gap-1 rounded-md border border-primary/20 bg-primary/5 px-2 py-0.5 text-xs font-medium text-primary">
+                            {s}
+                          </span>
+                        ))}
                       </div>
                     ) : (
                       <Select

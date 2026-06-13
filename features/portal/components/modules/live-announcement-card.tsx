@@ -1,6 +1,6 @@
 "use client"
 
-import { BellRing, CalendarDays, Radio } from "lucide-react"
+import { BellRing, CalendarDays, Radio, User } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -63,6 +63,13 @@ export function LiveAnnouncementCard({
               <p className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <CalendarDays className="size-3" />
                 {announcement.date}
+                {announcement.createdBy ? (
+                  <>
+                    <span className="mx-1 text-muted-foreground/40">|</span>
+                    <User className="size-3" />
+                    {announcement.createdBy} - Faculty
+                  </>
+                ) : null}
               </p>
             </div>
         </div>

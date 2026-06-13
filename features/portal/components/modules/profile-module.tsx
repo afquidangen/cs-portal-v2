@@ -1,6 +1,6 @@
 "use client"
 
-import { Camera, Eye, EyeOff, IdCard, KeyRound, Save, ShieldCheck, Undo2, UserCircle, UserRoundCog } from "lucide-react"
+import { Camera, Eye, EyeOff, IdCard, KeyRound, Save, ShieldCheck, Trash2, Undo2, UserCircle, UserRoundCog } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -149,6 +149,17 @@ export function ProfileModule({ model }: PortalModuleProps) {
                 className="hidden"
               />
             </label>
+
+            {draft.photoUrl ? (
+              <button
+                type="button"
+                onClick={() => setDraft((prev: typeof profileDetails) => ({ ...prev, photoUrl: "" }))}
+                className="mt-2 inline-flex cursor-pointer items-center gap-2 border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-950/50"
+              >
+                <Trash2 className="size-4" />
+                Remove Photo
+              </button>
+            ) : null}
 
             <h4 className="mt-4 text-lg font-semibold text-foreground">
               {profile.name}

@@ -6,6 +6,7 @@ export type Announcement = {
   audience: string
   priority: "High" | "Medium" | "Low"
   classSection?: string
+  classSections?: string[]
   createdBy?: string
   createdAt?: string
   updatedAt?: string

@@ -9,7 +9,7 @@ cloudinary.config({
 export async function uploadProfilePhoto(
   dataUrl: string,
   userId: string
-): Promise<string> {
+): Promise<{ secureUrl: string; publicId: string }> {
   const result = await cloudinary.uploader.upload(dataUrl, {
     folder: "cs-portal/profiles",
     public_id: `${userId}-${Date.now()}`,
@@ -17,7 +17,7 @@ export async function uploadProfilePhoto(
     resource_type: "image",
   })
 
-  return result.secure_url
+  return { secureUrl: result.secure_url, publicId: result.public_id }
 }
 
 export async function deleteFile(cloudinaryUrl: string): Promise<void> {

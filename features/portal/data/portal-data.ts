@@ -34,6 +34,7 @@ export type UserRecord = {
   birthday?: string
   address?: string
   photoUrl?: string
+  cloudinaryPublicId?: string
   studentType?: "Irregular" | "Regular" | "Overstayed" | "Transferee" | "Shifter"
   curriculum?: string
   curriculumId?: string
@@ -99,6 +100,7 @@ export type ThesisRecord = {
 
 export type ProfileDetails = {
   photoUrl: string
+  cloudinaryPublicId?: string
   firstName: string
   middleName: string
   lastName: string
@@ -145,6 +147,7 @@ export type Announcement = {
   audience: string
   priority: "High" | "Medium" | "Low"
   classSection?: string
+  classSections?: string[]
   createdBy?: string
 }
 

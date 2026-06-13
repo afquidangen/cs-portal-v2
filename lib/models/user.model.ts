@@ -15,6 +15,7 @@ export interface IUser extends Document {
   birthday?: string
   address?: string
   photoUrl?: string
+  cloudinaryPublicId?: string
   studentType?: string
   curriculum?: string
   curriculumId?: string
@@ -68,6 +69,7 @@ const UserSchema = new Schema<IUser>(
     birthday: String,
     address: String,
     photoUrl: String,
+    cloudinaryPublicId: String,
     studentType: String,
     curriculum: String,
     curriculumId: String,

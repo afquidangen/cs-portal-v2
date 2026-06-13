@@ -3,6 +3,7 @@
 import { BellPlus, Megaphone, Plus, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import {
   Dialog,
@@ -71,17 +72,34 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-foreground">Audience</label>
                   {role === "faculty" ? (
-                    <Select
-                      value={announcementDraft.audience}
-                      onChange={(value) =>
-                        setAnnouncementDraft((current) => ({
-                          ...current,
-                          audience: value,
-                          classSection: value,
-                        }))
-                      }
-                      options={facultyClassSections}
-                    />
+                    <div className="space-y-2">
+                      {facultyClassSections.map((section) => (
+                        <label
+                          key={section}
+                          className="flex cursor-pointer items-center gap-3 rounded-lg border border-border px-3 py-2.5 text-sm transition hover:bg-muted/30"
+                        >
+                          <Checkbox
+                            checked={announcementDraft.classSections.includes(section)}
+                            onCheckedChange={() =>
+                              setAnnouncementDraft((current) => {
+                                const next = current.classSections.includes(section)
+                                  ? current.classSections.filter((s) => s !== section)
+                                  : [...current.classSections, section]
+                                return {
+                                  ...current,
+                                  audience: next.length > 0 ? next.join(", ") : "All Users",
+                                  classSections: next,
+                                }
+                              })
+                            }
+                          />
+                          <span className="font-medium">{section}</span>
+                        </label>
+                      ))}
+                      {facultyClassSections.length === 0 && (
+                        <p className="text-sm text-muted-foreground">No class sections assigned.</p>
+                      )}
+                    </div>
                   ) : (
                     <Select
                       value={announcementDraft.audience}

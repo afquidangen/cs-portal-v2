@@ -211,11 +211,11 @@ export function RoleDashboard({ role }: { role: Role }) {
 
   const visibleAnnouncements = useMemo(
     () => model.announcements.filter((a) => {
-      if (role === "admin") return true
-      if (role === "student") return a.audience === "All Users" || a.audience === "Students"
-      return a.audience === "All Users" || a.audience === "Faculty"
+      if (role === "admin") return (a.audience === "All Users" || a.audience === "Students" || a.audience === "Faculty") && !a.classSection && (!a.classSections?.length)
+      if (role === "student") return a.audience === "All Users" || a.audience === "Students" || a.audience?.split(", ").includes(model.profileSection) || (a.classSections?.includes(model.profileSection) ?? false) || a.classSection === model.profileSection
+      return a.audience === "All Users" || a.audience === "Faculty" || a.audience?.split(", ").some((s) => model.facultyClassSections.includes(s)) || (a.classSections?.some((s) => model.facultyClassSections.includes(s)) ?? false) || (a.classSection && model.facultyClassSections.includes(a.classSection)) || a.createdBy === model.profile.name
     }),
-    [model.announcements, role]
+    [model.announcements, role, model.profileSection, model.facultyClassSections, model.profile.name]
   )
 
   useEffect(() => {
@@ -965,8 +965,14 @@ export function RoleDashboard({ role }: { role: Role }) {
                                 <p className={"mt-1 line-clamp-2 text-xs leading-relaxed " + (isRead ? "text-slate-600 dark:text-white/65" : "text-black/85 dark:text-white/80")}>
                                   {ann.content}
                                 </p>
-                                <div className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-600 dark:text-white/60">
+                                  <div className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-600 dark:text-white/60">
                                   <span>{ann.date}</span>
+                                  {ann.createdBy ? (
+                                    <>
+                                      <span className="size-1 rounded-full bg-muted-foreground/30" />
+                                      <span className="text-[11px]">{ann.createdBy} - Faculty</span>
+                                    </>
+                                  ) : null}
                                   <span className="size-1 rounded-full bg-muted-foreground/30" />
                                   <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700 dark:bg-[#8bd3ff] dark:text-[#071224]">{ann.audience}</span>
                                 </div>
@@ -1731,7 +1737,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                   </span>
                 </div>
                 <DialogDescription className="pt-1 text-muted-foreground">
-                  Published on {viewingAnnouncement.date} &middot; For {viewingAnnouncement.audience}
+                  Published on {viewingAnnouncement.date} &middot; For {viewingAnnouncement.audience}{viewingAnnouncement.createdBy ? ` · By ${viewingAnnouncement.createdBy} - Faculty` : ""}
                 </DialogDescription>
               </DialogHeader>
               <div>
