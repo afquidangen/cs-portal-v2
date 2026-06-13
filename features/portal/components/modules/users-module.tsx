@@ -12,6 +12,7 @@ import {
   Filter,
   GraduationCap,
   History,
+  Loader2,
   Pencil,
   Plus,
   RefreshCw,
@@ -27,6 +28,7 @@ import {
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogClose,
@@ -78,6 +80,8 @@ export function UsersModule({ model }: PortalModuleProps) {
     deleteUser,
     restoreUser,
     permanentlyDeleteUser,
+    restoreAllUsers,
+    deleteAllUsersPermanently,
     refreshDashboardData,
     handleUpdateUser,
     users,
@@ -89,6 +93,8 @@ export function UsersModule({ model }: PortalModuleProps) {
   const [restoreUserId, setRestoreUserId] = useState<string | null>(null)
   const [permanentDeleteUserId, setPermanentDeleteUserId] = useState<string | null>(null)
   const [toggleUserId, setToggleUserId] = useState<string | null>(null)
+  const [deleteAllConfirm, setDeleteAllConfirm] = useState(false)
+  const [batchLoading, setBatchLoading] = useState<string | null>(null)
   const [changeCurriculumUser, setChangeCurriculumUser] = useState<{
     user: UserRecord
     newCurriculumId: string
@@ -247,6 +253,21 @@ export function UsersModule({ model }: PortalModuleProps) {
     if (!permanentDeleteUserId) return
     permanentlyDeleteUser(permanentDeleteUserId)
     setPermanentDeleteUserId(null)
+  }
+
+  async function handleRestoreAll() {
+    setBatchLoading("restoring")
+    await restoreAllUsers()
+    setBatchLoading(null)
+    toast.success("ALL USERS RESTORED")
+  }
+
+  async function handleDeleteAll() {
+    setDeleteAllConfirm(false)
+    setBatchLoading("deleting")
+    await deleteAllUsersPermanently()
+    setBatchLoading(null)
+    toast.success("ALL USERS DELETED")
   }
 
   function handleToggleConfirm() {
@@ -584,6 +605,27 @@ export function UsersModule({ model }: PortalModuleProps) {
                 <p className="text-sm text-muted-foreground">Recycle bin is empty</p>
               </div>
             ) : (
+              <>
+              <div className="mb-3 flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl border-amber-500/30 text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950"
+                  onClick={handleRestoreAll}
+                >
+                  <RotateCcw className="size-3.5" />
+                  RESTORE ALL USERS
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl border-red-500/30 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
+                  onClick={() => setDeleteAllConfirm(true)}
+                >
+                  <Trash2 className="size-3.5" />
+                  DELETE ALL USERS
+                </Button>
+              </div>
               <div className="overflow-x-auto rounded-xl border border-border shadow-sm">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-muted text-foreground">
@@ -630,6 +672,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                   </tbody>
                 </table>
               </div>
+            </>
             )}
           </>
         )}
@@ -717,7 +760,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                         idNumber: e.target.value,
                       }))
                     }
-                    placeholder="IS-00-00000"
+                    placeholder={addRole === "faculty" ? "FAC-00-00000" : "IS-00-00000"}
                   />
                 </div>
                 )}
@@ -1818,6 +1861,47 @@ export function UsersModule({ model }: PortalModuleProps) {
               Confirm
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Delete All Users Confirmation ── */}
+      <Dialog
+        open={deleteAllConfirm}
+        onOpenChange={(o) => !o && setDeleteAllConfirm(false)}
+      >
+        <DialogContent className="w-[95vw] sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-foreground">ARE YOU SURE YOU WANT TO DELETE ALL USERS PERMANENTLY?</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">
+              <span className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" />
+                This action cannot be undone. All trashed users and their associated data will be permanently removed.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-2 gap-2">
+            <DialogClose asChild>
+              <Button variant="ghost">No</Button>
+            </DialogClose>
+            <Button variant="destructive" onClick={handleDeleteAll}>
+              <Trash2 className="mr-1.5 size-4" />
+              Yes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Batch Operation Loading ── */}
+      <Dialog open={!!batchLoading}>
+        <DialogContent className="w-[95vw] sm:max-w-sm" hideClose>
+          <DialogHeader>
+            <DialogTitle className="text-xl text-center text-foreground">
+              {batchLoading === "restoring" ? "RESTORING ALL USERS" : "DELETING ALL USERS"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center py-6">
+            <Loader2 className="size-10 animate-spin text-primary" />
+          </div>
         </DialogContent>
       </Dialog>
     </div>

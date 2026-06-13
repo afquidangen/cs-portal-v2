@@ -13,6 +13,7 @@ export type GradeRecord = {
   gradePercentage?: number
   remarks?: string
   released?: boolean
+  deletedAt?: string | null
   updatedAt: string
   createdAt?: string
 }

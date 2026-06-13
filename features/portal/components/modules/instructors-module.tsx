@@ -32,22 +32,27 @@ export function InstructorsModule({ model }: PortalModuleProps) {
 
   const mergedFaculty = useMemo(() => {
     const activeEmails = new Set(userByEmail.keys())
-    return faculty
-      .filter((fr) => activeEmails.has(fr.email.toLowerCase().trim()))
-      .map((fr) => {
-        const user = userByEmail.get(fr.email.toLowerCase().trim())
-        return {
-          id: fr.id,
-          name: user?.name ?? fr.name,
-          position: fr.position,
-          email: user?.email ?? fr.email,
-          education: fr.education,
-          status: fr.status,
-          notes: fr.notes,
-          schedule: fr.schedule,
-          photoUrl: user?.photoUrl,
-        }
-      })
+    const seen = new Map<string, FacultyRecord>()
+    for (const fr of faculty) {
+      const email = fr.email?.toLowerCase().trim() ?? ""
+      if (!activeEmails.has(email)) continue
+      const key = fr.name.toLowerCase().trim()
+      seen.set(key, fr)
+    }
+    return Array.from(seen.values()).map((fr) => {
+      const user = userByEmail.get(fr.email?.toLowerCase().trim() ?? "")
+      return {
+        id: fr.id,
+        name: user?.name ?? fr.name,
+        position: fr.position,
+        email: user?.email ?? fr.email,
+        education: fr.education,
+        status: fr.status,
+        notes: fr.notes,
+        schedule: fr.schedule,
+        photoUrl: user?.photoUrl,
+      }
+    })
   }, [faculty, userByEmail])
 
   function handleDelete(id: string, name: string) {

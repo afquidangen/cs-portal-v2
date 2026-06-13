@@ -47,7 +47,7 @@ export const roleNavigation: Record<Role, NavItem[]> = {
     { id: "availability", label: "My Status", icon: CheckCircle2 },
     { id: "instructors", label: "Instructor Info", icon: Network },
     { id: "announcements", label: "Announcements", icon: Bell },
-    { id: "feedback", label: "Feedback Inbox", icon: MessageSquareWarning },
+    { id: "feedback", label: "Feedback Tickets", icon: MessageSquareWarning },
     { id: "cso", label: "CSSO Section", icon: FileArchive },
     { id: "quick-links", label: "Quick Links", icon: LinkIcon },
     { id: "profile", label: "Profile", icon: UserCircle },

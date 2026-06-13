@@ -155,6 +155,7 @@ export function RoleDashboard({ role }: { role: Role }) {
         model.setCsoReports(d.csoReports ?? model.csoReports)
         model.setQuickLinks(d.quickLinks ?? model.quickLinks)
         model.setDownloadables(d.downloadables ?? model.downloadables)
+        model.setAuditLogs(d.auditLogs ?? model.auditLogs)
         setDataLoading(false)
       } catch (err) {
         if (!cancelled) {
@@ -193,6 +194,7 @@ export function RoleDashboard({ role }: { role: Role }) {
           model.setCsoReports(d.csoReports ?? model.csoReports)
           model.setQuickLinks(d.quickLinks ?? model.quickLinks)
           model.setDownloadables(d.downloadables ?? model.downloadables)
+          model.setAuditLogs(d.auditLogs ?? model.auditLogs)
         })
         .catch(() => {})
     }
@@ -241,6 +243,25 @@ export function RoleDashboard({ role }: { role: Role }) {
       return a.audience === "All Users" || a.audience === "Faculty" || a.audience?.split(", ").some((s) => model.facultyClassSections.includes(s)) || (a.classSections?.some((s) => model.facultyClassSections.includes(s)) ?? false) || (a.classSection && model.facultyClassSections.includes(a.classSection)) || a.createdBy === model.profile.name
     }),
     [model.announcements, role, model.profileSection, model.facultyClassSections, model.profile.name]
+  )
+
+  const serverReadIds = useMemo(() => {
+    const userId = model.profile.id
+    if (!userId) return new Set<string>()
+    return new Set(
+      model.announcements
+        .filter((a) => a.readBy?.includes(userId))
+        .map((a) => a.id)
+    )
+  }, [model.announcements, model.profile.id])
+
+  useEffect(() => {
+    setReadAnnouncementIds(serverReadIds)
+  }, [serverReadIds])
+
+  const unreadCount = useMemo(
+    () => visibleAnnouncements.filter((a) => !readAnnouncementIds.has(a.id)).length,
+    [visibleAnnouncements, readAnnouncementIds]
   )
 
   useEffect(() => {
@@ -914,9 +935,9 @@ export function RoleDashboard({ role }: { role: Role }) {
                     }}
                   >
                     <Bell className="size-5" />
-                    {visibleAnnouncements.length > 0 ? (
+                    {unreadCount > 0 ? (
                       <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold leading-none text-primary-foreground shadow-sm">
-                        {visibleAnnouncements.length > 9 ? "9+" : visibleAnnouncements.length}
+                        {unreadCount > 9 ? "9+" : unreadCount}
                       </span>
                     ) : null}
                   </Button>
@@ -935,16 +956,31 @@ export function RoleDashboard({ role }: { role: Role }) {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-semibold text-black dark:border-white/15 dark:bg-white/10 dark:text-white">
-                            {visibleAnnouncements.length} new
+                            {unreadCount} new
                           </span>
-                          {visibleAnnouncements.length > 0 ? (
+                          {unreadCount > 0 ? (
                             <button
                               type="button"
-                              onClick={() =>
-                                setReadAnnouncementIds(
-                                  new Set(visibleAnnouncements.map((a) => a.id))
+                              onClick={async () => {
+                                const ids = visibleAnnouncements.map((a) => a.id)
+                                setReadAnnouncementIds(new Set(ids))
+                                const results = await Promise.allSettled(
+                                  ids.map((id) =>
+                                    fetch(`/api/portal/announcements/${id}`, {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ userId: model.profile.id }),
+                                    }).then((r) => {
+                                      if (!r.ok) console.error("[read-sync] PATCH failed:", id, r.status)
+                                    })
+                                  )
                                 )
-                              }
+                                for (const r of results) {
+                                  if (r.status === "rejected") {
+                                    console.error("[read-sync] PATCH rejected:", r.reason)
+                                  }
+                                }
+                              }}
                               className="rounded-lg border border-border bg-background px-2 py-0.5 text-[11px] font-semibold text-black transition-colors hover:bg-muted dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
                             >
                               Mark all read
@@ -973,12 +1009,26 @@ export function RoleDashboard({ role }: { role: Role }) {
                                 tabIndex={0}
                                 onClick={() => {
                                   setReadAnnouncementIds((prev) => new Set(prev).add(ann.id))
+                                  fetch(`/api/portal/announcements/${ann.id}`, {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ userId: model.profile.id }),
+                                  }).then((r) => {
+                                    if (!r.ok) console.error("[read-sync] PATCH failed:", ann.id, r.status)
+                                  }).catch((e) => console.error("[read-sync] PATCH network error:", e))
                                   setViewingAnnouncement(ann)
                                   setShowNotifications(false)
                                 }}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" || e.key === " ") {
                                     setReadAnnouncementIds((prev) => new Set(prev).add(ann.id))
+                                    fetch(`/api/portal/announcements/${ann.id}`, {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ userId: model.profile.id }),
+                                    }).then((r) => {
+                                      if (!r.ok) console.error("[read-sync] PATCH failed:", ann.id, r.status)
+                                    }).catch((e) => console.error("[read-sync] PATCH network error:", e))
                                     setViewingAnnouncement(ann)
                                     setShowNotifications(false)
                                   }

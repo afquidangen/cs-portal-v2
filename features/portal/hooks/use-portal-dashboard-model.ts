@@ -655,20 +655,20 @@ export function usePortalDashboardModel(role: Role) {
   const filteredFaculty = useMemo(() => {
     const search = query.toLowerCase()
     const activeFacultyEmails = new Set(userByFacultyEmail.keys())
-    return faculty
-      .filter((member) => activeFacultyEmails.has(member.email.toLowerCase().trim()))
-      .map((member) => {
-        const user = userByFacultyEmail.get(member.email.toLowerCase().trim())
-        return user
-          ? { ...member, name: user.name ?? member.name, photoUrl: user.photoUrl }
-          : member
-      })
-      .filter((member) =>
-        [member.name, member.position, member.role, member.status, member.notes, member.email]
-          .join(" ")
-          .toLowerCase()
-          .includes(search)
-      )
+    const seen = new Map<string, (typeof faculty)[number]>()
+    for (const member of faculty) {
+      const email = member.email?.toLowerCase().trim() ?? ""
+      if (!activeFacultyEmails.has(email)) continue
+      const key = member.name.toLowerCase().trim()
+      const user = userByFacultyEmail.get(email)
+      seen.set(key, user ? { ...member, name: user.name ?? member.name, photoUrl: user.photoUrl } : member)
+    }
+    return Array.from(seen.values()).filter((member) =>
+      [member.name, member.position, member.role, member.status, member.notes, member.email]
+        .join(" ")
+        .toLowerCase()
+        .includes(search)
+    )
   }, [faculty, userByFacultyEmail, query])
 
   const filteredUsers = useMemo(() => {
@@ -885,6 +885,7 @@ export function usePortalDashboardModel(role: Role) {
       setCsoReports(d.csoReports ?? csoReports)
       setQuickLinks(d.quickLinks ?? quickLinks)
       setDownloadables(d.downloadables ?? downloadables)
+      setAuditLogs(d.auditLogs ?? auditLogs)
     } catch {
       // Silently fail
     }
@@ -1238,15 +1239,14 @@ export function usePortalDashboardModel(role: Role) {
     }) + " " + now.toLocaleTimeString("en-US", {
       hour: "numeric", minute: "2-digit", hour12: true,
     })
-    setAuditLogs((current) => [
-      {
-        id: `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        actor: profileName || profile.name,
-        action,
-        time,
-      },
-      ...current,
-    ])
+    const entry = {
+      id: `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      actor: profileName || profile.name,
+      action,
+      time,
+    }
+    setAuditLogs((current) => [entry, ...current])
+    syncApi("POST", "/api/portal/audit-logs", entry).catch(() => {})
   }
 
   function handleAddUser(event: FormEvent<HTMLFormElement>) {
@@ -1516,6 +1516,36 @@ export function usePortalDashboardModel(role: Role) {
     if (user) {
       addAuditLog(`Permanently deleted ${user.role} account "${user.name}"`)
     }
+  }
+
+  async function restoreAllUsers() {
+    const trashed = users.filter((u) => u.deletedAt)
+    const ids = trashed.map((u) => u.id)
+    setUsers((current) =>
+      current.map((u) => (u.deletedAt ? { ...u, deletedAt: null } : u))
+    )
+    setRoster((current) =>
+      current.map((r) => (r.deletedAt ? { ...r, deletedAt: null } : r))
+    )
+    setGrades((current) =>
+      current.map((g) => (g.deletedAt ? { ...g, deletedAt: null } : g))
+    )
+    await Promise.allSettled(
+      ids.map((id) => syncApi("POST", `/api/portal/users/${id}/restore`))
+    )
+    addAuditLog("Restored all users from trash")
+  }
+
+  async function deleteAllUsersPermanently() {
+    const trashed = users.filter((u) => u.deletedAt)
+    const ids = trashed.map((u) => u.id)
+    setUsers((current) => current.filter((u) => !u.deletedAt))
+    setRoster((current) => current.filter((r) => !r.deletedAt))
+    setGrades((current) => current.filter((g) => !g.deletedAt))
+    await Promise.allSettled(
+      ids.map((id) => syncApi("DELETE", `/api/portal/users/${id}/permanent`))
+    )
+    addAuditLog("Permanently deleted all users from trash")
   }
 
   function handleUpdateUser(updatedUser: UserRecord) {
@@ -2930,6 +2960,7 @@ export function usePortalDashboardModel(role: Role) {
     setTrashView,
     studentTickets,
     auditLogs,
+    setAuditLogs,
     csoReports,
     setCsoReports,
     quickLinks,
@@ -2975,6 +3006,8 @@ export function usePortalDashboardModel(role: Role) {
     deleteUser,
     restoreUser,
     permanentlyDeleteUser,
+    restoreAllUsers,
+    deleteAllUsersPermanently,
     handleUpdateUser,
     confirmAndDeleteThesis,
     undoTicketResolution,

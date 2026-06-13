@@ -16,7 +16,6 @@ import {
 import {
   Panel,
   SearchBox,
-  Select,
   StatusBadge,
   Textarea,
   Metric,
@@ -136,7 +135,6 @@ function FacultyCard({
             <StatusIcon className="size-4" />
             {member.status}
           </span>
-          <StatusBadge value={member.status} />
         </div>
       </div>
 
@@ -475,14 +473,7 @@ export function FacultyAvailabilityPanel({ model }: PortalModuleProps) {
               })}
             </div>
 
-            <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)]">
-              <Select
-                value={myFacultyStatus}
-                onChange={(value) => setMyFacultyStatus(value as AvailabilityStatus)}
-                options={availabilityOptions}
-                label="Status"
-              />
-
+            <div className="mt-4">
               <div className="space-y-1.5">
                 <label className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
                   <MessageSquareText className="size-4 text-primary" />

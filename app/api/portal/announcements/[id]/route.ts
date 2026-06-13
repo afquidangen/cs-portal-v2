@@ -1,5 +1,7 @@
 import { announcementsRepository } from "@/features/portal/repositories/announcements.repository"
-import { success, error, notFound } from "@/lib/api-response"
+import { connectToDatabase } from "@/lib/mongodb"
+import { AnnouncementModel } from "@/lib/models"
+import { success, error, notFound, badRequest } from "@/lib/api-response"
 
 export const runtime = "nodejs"
 
@@ -29,6 +31,26 @@ export async function PUT(
     return success(announcement)
   } catch (err) {
     return error(err instanceof Error ? err.message : "Unable to update announcement.")
+  }
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const { userId } = await request.json()
+    if (!userId) return badRequest("userId is required.")
+    await connectToDatabase()
+    const result = await AnnouncementModel.collection.updateOne(
+      { id },
+      { $addToSet: { readBy: userId } }
+    )
+    if (result.matchedCount === 0) return notFound("Announcement")
+    return success({ updated: true })
+  } catch (err) {
+    return error(err instanceof Error ? err.message : "Unable to mark announcement as read.")
   }
 }
 

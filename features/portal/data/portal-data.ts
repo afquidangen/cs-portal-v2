@@ -82,6 +82,7 @@ export type GradeRecord = {
   gradePercentage?: number
   remarks?: string
   released?: boolean
+  deletedAt?: string | null
   updatedAt: string
 }
 
@@ -150,6 +151,7 @@ export type Announcement = {
   classSection?: string
   classSections?: string[]
   createdBy?: string
+  readBy?: string[]
 }
 
 export type ScheduleItem = {

@@ -103,9 +103,9 @@ export function FeedbackModule({ model }: PortalModuleProps) {
     )
   }
 
-  return (
-    <div className="space-y-5">
-      {role === "faculty" ? (
+  if (role === "faculty") {
+    return (
+      <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
         <Panel title="Submission Console" className="[&>div:first-child]:hidden">
           <div className="mb-4 rounded-2xl border border-border bg-muted/20 px-4 py-5 text-center shadow-sm">
             <div className="mx-auto flex size-14 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
@@ -164,10 +164,21 @@ export function FeedbackModule({ model }: PortalModuleProps) {
             </Button>
           </form>
         </Panel>
-      ) : null}
 
+        <Panel title="Personal Ticket Tracker" eyebrow="Status updates">
+          <TicketList
+            tickets={studentTickets}
+            empty="No submitted tickets yet."
+          />
+        </Panel>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-5">
       <Panel
-        title={role === "admin" ? "Master Inbox" : "Feedback Inbox"}
+        title="Master Inbox"
         className="[&>div:first-child]:hidden"
       >
       <div className="mb-5 rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm">
@@ -179,7 +190,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
           Ticket Status Management
         </p>
         <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-          {role === "admin" ? "Master Inbox" : "Feedback Inbox"}
+          Master Inbox
         </h3>
         <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
           Review submitted concerns, monitor ticket progress, and keep resolutions organized in one place.

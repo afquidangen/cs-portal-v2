@@ -8,6 +8,7 @@ export type Announcement = {
   classSection?: string
   classSections?: string[]
   createdBy?: string
+  readBy?: string[]
   createdAt?: string
   updatedAt?: string
 }

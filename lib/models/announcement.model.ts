@@ -10,6 +10,7 @@ export interface IAnnouncement extends Document {
   classSection?: string
   classSections?: string[]
   createdBy?: string
+  readBy?: string[]
 }
 
 const AnnouncementSchema = new Schema<IAnnouncement>(
@@ -27,6 +28,7 @@ const AnnouncementSchema = new Schema<IAnnouncement>(
     classSection: String,
     classSections: [String],
     createdBy: String,
+    readBy: [{ type: String }],
   },
   { timestamps: true }
 )
