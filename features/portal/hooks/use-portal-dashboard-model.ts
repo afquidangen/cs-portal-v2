@@ -35,7 +35,7 @@ import {
   type TicketStatus,
   type UserRecord,
 } from "../data/portal-data"
-import type { SemesterRecord, SubjectRecord } from "@/lib/types"
+import type { CsoInfoRecord, SemesterRecord, SubjectRecord } from "@/lib/types"
 import { csvEscape, downloadFile } from "../lib/downloads"
 import { calculateFinalGrade, transmutedToEquivalent } from "../lib/grades"
 import { parseGradeWorkbook, parseScheduleWorkbook } from "../lib/xlsx"
@@ -161,6 +161,7 @@ export function usePortalDashboardModel(role: Role) {
   const [yearSections, setYearSections] = useState<YearSectionRecord[]>([])
   const [classSchedules, setClassSchedules] = useState<ScheduleItem[]>([])
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([])
+  const [csoInfo, setCsoInfo] = useState<CsoInfoRecord | null>(null)
   const [csoReports, setCsoReports] = useState<CsoReport[]>([])
   const [quickLinks, setQuickLinks] = useState<QuickLinkRecord[]>([])
   const [downloadables, setDownloadables] = useState<DownloadableRecord[]>([])
@@ -924,6 +925,7 @@ export function usePortalDashboardModel(role: Role) {
       setCurricula(d.curricula ?? curricula)
       setYearSections(d.yearSections ?? yearSections)
       setClassSchedules(d.classSchedules ?? classSchedules)
+      setCsoInfo(d.csoInfo ?? csoInfo)
       setCsoReports(d.csoReports ?? csoReports)
       setQuickLinks(d.quickLinks ?? quickLinks)
       setDownloadables(d.downloadables ?? downloadables)
@@ -2875,6 +2877,26 @@ export function usePortalDashboardModel(role: Role) {
     if (item) addAuditLog(`Deleted CSO report "${item.title}"`)
   }
 
+  async function handleUpdateCsoInfo(data: CsoInfoRecord) {
+    const existing = csoInfo
+    try {
+      const res = await fetch("/api/portal/cso-info", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? "Failed to update CSO info.")
+      setCsoInfo(json.data as CsoInfoRecord)
+      toast.success("CSO info updated.")
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update CSO info.")
+      if (existing) setCsoInfo(existing)
+      console.error(e)
+    }
+    addAuditLog("Updated CSO info")
+  }
+
   function handleCreateGalleryItem(item: GalleryItem) {
     setGalleryItems((current) => [item, ...current])
     syncApi("POST", "/api/portal/gallery", item).then((result: unknown) => {
@@ -3039,6 +3061,8 @@ export function usePortalDashboardModel(role: Role) {
     studentTickets,
     auditLogs,
     setAuditLogs,
+    csoInfo,
+    setCsoInfo,
     csoReports,
     setCsoReports,
     quickLinks,
@@ -3134,6 +3158,7 @@ export function usePortalDashboardModel(role: Role) {
     handleCreateCsoReport,
     handleUpdateCsoReport,
     handleDeleteCsoReport,
+    handleUpdateCsoInfo,
     handleCreateGalleryItem,
     handleUpdateGalleryItem,
     handleDeleteGalleryItem,

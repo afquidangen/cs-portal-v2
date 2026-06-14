@@ -863,7 +863,6 @@ export function UsersModule({ model }: PortalModuleProps) {
                         options={[
                           "Regular",
                           "Irregular",
-                          "Overstayed",
                           "Transferee",
                           "Shifter",
                         ]}
@@ -1641,7 +1640,6 @@ export function UsersModule({ model }: PortalModuleProps) {
                         options={[
                           "Regular",
                           "Irregular",
-                          "Overstayed",
                           "Transferee",
                           "Shifter",
                         ]}

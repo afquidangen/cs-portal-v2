@@ -214,7 +214,8 @@ export type CsoReport = {
   date: string
   summary: string
   total?: string
-  image?: string
+  file?: string
+  fileName?: string
   cloudinaryPublicId?: string
 }
 

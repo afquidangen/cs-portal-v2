@@ -20,14 +20,10 @@ export async function POST(request: Request) {
       return badRequest("Report id and title are required.")
     }
 
-    if (typeof body.image === "string" && body.image.startsWith("data:")) {
-      try {
-        const result = await uploadFile(body.image, `cso-report-${Date.now()}`, "cso-reports", "image")
-        body.image = result.secureUrl
-        body.cloudinaryPublicId = result.publicId
-      } catch {
-        console.error("Cloudinary upload failed, keeping base64 image.")
-      }
+    if (typeof body.file === "string" && body.file.startsWith("data:")) {
+      const result = await uploadFile(body.file, `cso-report-${Date.now()}.pdf`, "cso-reports", "image")
+      body.file = result.secureUrl
+      body.cloudinaryPublicId = result.publicId
     }
 
     const report = await csoReportsRepository.create(body)

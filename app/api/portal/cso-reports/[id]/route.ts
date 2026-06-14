@@ -26,24 +26,35 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
 
-    if (typeof body.image === "string" && body.image.startsWith("data:")) {
-      try {
-        const existing = await csoReportsRepository.findById(id) as Record<string, unknown> | null
-        const existingPublicId = existing?.cloudinaryPublicId as string | undefined
-        if (existingPublicId) {
-          await destroyFile(existingPublicId, "image")
-        } else {
-          const existingImage = existing?.image as string | undefined
-          if (existingImage) {
-            await deleteFile(existingImage)
-          }
-        }
+    const existing = await csoReportsRepository.findById(id) as Record<string, unknown> | null
+    if (existing) {
+      const oldFile = existing?.file as string | undefined
+      const oldPublicId = existing?.cloudinaryPublicId as string | undefined
 
-        const result = await uploadFile(body.image, `cso-report-${Date.now()}`, "cso-reports", "image")
-        body.image = result.secureUrl
+      if (typeof body.file === "string" && body.file.startsWith("data:")) {
+        if (oldPublicId) {
+          await destroyFile(oldPublicId, "image").catch(() => {})
+        } else if (oldFile) {
+          await deleteFile(oldFile).catch(() => {})
+        }
+        const result = await uploadFile(body.file, `cso-report-${Date.now()}.pdf`, "cso-reports", "image")
+        body.file = result.secureUrl
         body.cloudinaryPublicId = result.publicId
-      } catch {
-        console.error("Cloudinary upload failed, keeping base64 image.")
+      } else if (oldFile && !body.file) {
+        if (oldPublicId) {
+          await destroyFile(oldPublicId, "image").catch(() => {})
+        } else {
+          await deleteFile(oldFile).catch(() => {})
+        }
+        body.file = undefined
+        body.fileName = undefined
+        body.cloudinaryPublicId = undefined
+      } else if (oldFile && body.file && body.file !== oldFile) {
+        if (oldPublicId) {
+          await destroyFile(oldPublicId, "image").catch(() => {})
+        } else {
+          await deleteFile(oldFile).catch(() => {})
+        }
       }
     }
 
@@ -69,15 +80,19 @@ export async function DELETE(
       try {
         await destroyFile(cloudinaryPublicId, "image")
       } catch {
-        console.error("Cloudinary destroy failed for publicId:", cloudinaryPublicId)
+        try {
+          await destroyFile(cloudinaryPublicId, "raw")
+        } catch {
+          console.error("Cloudinary destroy failed for publicId:", cloudinaryPublicId)
+        }
       }
     } else {
-      const image = report?.image as string | undefined
-      if (image) {
+      const file = report?.file as string | undefined
+      if (file) {
         try {
-          await deleteFile(image)
+          await deleteFile(file)
         } catch {
-          console.error("Cloudinary delete failed for image URL")
+          console.error("Cloudinary delete failed for file URL")
         }
       }
     }

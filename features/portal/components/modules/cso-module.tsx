@@ -17,7 +17,7 @@ import {
 import { ImageCropDialog } from "../shared/image-crop-dialog"
 
 import type { CsoReport } from "../../data/portal-data"
-import type { GalleryItem } from "@/lib/types"
+import type { CsoInfoRecord, GalleryItem } from "@/lib/types"
 import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalDashboardModel } from "../../hooks/use-portal-dashboard-model"
 
@@ -36,6 +36,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
 
   const [addReportType, setAddReportType] = useState<CsoReport["type"] | null>(null)
 
+  const [showCsoInfoForm, setShowCsoInfoForm] = useState(false)
   const [isManageGallery, setIsManageGallery] = useState(false)
   const [showGalleryForm, setShowGalleryForm] = useState(false)
   const [editingGalleryItem, setEditingGalleryItem] = useState<GalleryItem | null>(null)
@@ -64,6 +65,11 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
   function handleDelete(id: string) {
     model.handleDeleteCsoReport(id)
     setDeletingReport(null)
+  }
+
+  function handleCsoInfoSave(data: CsoInfoRecord) {
+    model.handleUpdateCsoInfo(data)
+    setShowCsoInfoForm(false)
   }
 
   function handleGallerySave(item: GalleryItem) {
@@ -207,31 +213,48 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
       <section className="relative overflow-hidden rounded-xl border border-primary/15 bg-[linear-gradient(120deg,#f8fbff_0%,#eef7ff_56%,#f7fbff_100%)] px-4 py-6 text-center shadow-sm dark:border-[#1d3858] dark:bg-[linear-gradient(120deg,#071224_0%,#0b2038_58%,#123768_100%)] sm:px-8 sm:py-8">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(36,120,255,0.08)_1px,transparent_1px),linear-gradient(rgba(36,120,255,0.06)_1px,transparent_1px)] bg-[size:38px_38px] opacity-50 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)]" />
         <div className="relative mx-auto max-w-3xl">
+          {isAdmin ? (
+            <div className="absolute right-0 top-0 z-10">
+              <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setShowCsoInfoForm(true)}>
+                <Pencil className="size-3.5" />
+                Edit Info
+              </Button>
+            </div>
+          ) : null}
           <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-2xl border border-primary/20 bg-white/80 p-1.5 shadow-md dark:border-[#8bd3ff]/25 dark:bg-white/10 sm:mb-6 sm:size-32 sm:rounded-3xl">
-            <Image
-              src="/csso-logo.svg"
-              alt="CSSO logo placeholder"
-              width={200}
-              height={250}
-              className="size-full rounded-xl object-contain"
-              priority={false}
-            />
+            {model.csoInfo?.logoUrl ? (
+              <Image
+                src={model.csoInfo.logoUrl}
+                alt="CSSO logo"
+                width={200}
+                height={250}
+                className="size-full rounded-xl object-contain"
+                priority={false}
+                unoptimized
+              />
+            ) : (
+              <ImageIcon className="size-8 text-foreground/30 sm:size-12" />
+            )}
           </div>
           <h2 className="font-heading text-[1.4rem] font-black uppercase leading-tight tracking-[0.03em] text-foreground sm:text-[3.35rem]">
-            COMPUTING STUDIES STUDENTS ORGANIZATION
+            {model.csoInfo?.orgName ?? "COMPUTING STUDIES STUDENTS ORGANIZATION"}
           </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-            The Computer Science Student Organization is the student-led home for CS leadership, events, transparency records, and community initiatives across the department.
-          </p>
-          <a
-            href="https://www.facebook.com/nlpsccssocandon"
-            target="_blank"
-            rel="noreferrer"
-            className="mx-auto mt-5 inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-[#8bd3ff]/25 dark:bg-[#8bd3ff] dark:text-[#071224]"
-          >
-            Visit CSSO Facebook Page
-            <ExternalLink className="size-4" />
-          </a>
+          {model.csoInfo?.description ? (
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+              {model.csoInfo.description}
+            </p>
+          ) : null}
+          {model.csoInfo?.facebookLink ? (
+            <a
+              href={model.csoInfo.facebookLink}
+              target="_blank"
+              rel="noreferrer"
+              className="mx-auto mt-5 inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-[#8bd3ff]/25 dark:bg-[#8bd3ff] dark:text-[#071224]"
+            >
+              Visit CSSO Facebook Page
+              <ExternalLink className="size-4" />
+            </a>
+          ) : null}
           <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs font-semibold text-primary dark:text-[#8bd3ff]">
             <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/15 bg-white/70 px-3 py-1.5 dark:border-[#8bd3ff]/20 dark:bg-white/10">
               <Sparkles className="size-3.5" />
@@ -523,6 +546,14 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
         />
       ) : null}
 
+      {showCsoInfoForm ? (
+        <CsoInfoFormDialog
+          data={model.csoInfo}
+          onSave={handleCsoInfoSave}
+          onClose={() => setShowCsoInfoForm(false)}
+        />
+      ) : null}
+
       {showGalleryForm ? (
         <GalleryFormDialog
           item={editingGalleryItem}
@@ -586,7 +617,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
       </Dialog>
 
       <Dialog open={!!viewingReport} onOpenChange={(open) => { if (!open) setViewingReport(null) }}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl">
           {viewingReport ? (
             <>
               <DialogHeader>
@@ -600,17 +631,49 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
               </DialogHeader>
 
               <div className="space-y-4">
-                {viewingReport.image ? (
-                  <div className="overflow-hidden border border-border">
-                    <Image
-                      src={viewingReport.image}
-                      alt={viewingReport.title}
-                      width={800}
-                      height={450}
-                      className="w-full h-auto object-contain"
-                      unoptimized
-                    />
-                  </div>
+                {viewingReport.file ? (
+                  <>
+                    <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 p-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <FileText className="size-6 shrink-0 text-foreground/60" />
+                        <span className="truncate text-sm font-medium text-foreground">
+                          {viewingReport.fileName ?? "Report File"}
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-lg shrink-0"
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`/api/portal/cso-reports/${viewingReport.id}/pdf`)
+                            const blob = await res.blob()
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement("a")
+                            a.href = url
+                            a.download = viewingReport.fileName || `${viewingReport.title}.pdf`
+                            document.body.appendChild(a)
+                            a.click()
+                            document.body.removeChild(a)
+                            URL.revokeObjectURL(url)
+                          } catch {
+                            window.open(`/api/portal/cso-reports/${viewingReport.id}/pdf`, "_blank")
+                          }
+                        }}
+                      >
+                        <Download className="size-4" />
+                        Download
+                      </Button>
+                    </div>
+                    <div className="overflow-hidden rounded-lg border border-border">
+                      <iframe
+                        src={`/api/portal/cso-reports/${viewingReport.id}/pdf`}
+                        className="w-full"
+                        style={{ height: "60vh", minHeight: 400, border: 0 }}
+                        title="PDF Viewer"
+                      />
+                    </div>
+                  </>
                 ) : null}
 
                 <p className="text-sm leading-7 text-foreground/85">
@@ -770,16 +833,12 @@ function ReportGrid({
               key={`${title}-${report.id}`}
               className="group relative rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md edu-bg-soft-lapis"
             >
-              {report.image ? (
-                <div className="mb-3 overflow-hidden rounded-xl border border-border">
-                  <Image
-                    src={report.image}
-                    alt={report.title}
-                    width={400}
-                    height={144}
-                    className="w-full h-auto object-contain"
-                    unoptimized
-                  />
+              {report.file ? (
+                <div className="mb-3 flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2">
+                  <FileText className="size-5 shrink-0 text-foreground/60" />
+                  <span className="truncate text-xs font-medium text-foreground/80">
+                    {report.fileName ?? "PDF file"}
+                  </span>
                 </div>
               ) : null}
 
@@ -804,6 +863,15 @@ function ReportGrid({
               <div className="mt-4 flex flex-wrap gap-2">
                 {isAdmin ? (
                   <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-lg"
+                      onClick={() => onView(report)}
+                    >
+                      <Eye className="size-4" />
+                      Read
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
@@ -982,6 +1050,191 @@ function OrgChartUploadDialog({
   )
 }
 
+function CsoInfoFormDialog({
+  data,
+  onSave,
+  onClose,
+}: {
+  data: CsoInfoRecord | null
+  onSave: (data: CsoInfoRecord) => void
+  onClose: () => void
+}) {
+  const [orgName, setOrgName] = useState(data?.orgName ?? "")
+  const [description, setDescription] = useState(data?.description ?? "")
+  const [facebookLink, setFacebookLink] = useState(data?.facebookLink ?? "")
+  const [logoUrl, setLogoUrl] = useState(data?.logoUrl ?? "")
+  const [logoPublicId, setLogoPublicId] = useState(data?.logoPublicId ?? "")
+  const [portalLogoUrl, setPortalLogoUrl] = useState(data?.portalLogoUrl ?? "")
+  const [portalLogoPublicId, setPortalLogoPublicId] = useState(data?.portalLogoPublicId ?? "")
+  const [uploading, setUploading] = useState(false)
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setUploading(true)
+    const formData = new FormData()
+    formData.append("file", f)
+    try {
+      const res = await fetch("/api/portal/upload", {
+        method: "POST",
+        body: formData,
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? "Upload failed.")
+      setLogoUrl(json.data.secureUrl)
+      setLogoPublicId(json.data.publicId ?? "")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to upload logo.")
+    }
+    setUploading(false)
+  }
+
+  async function handlePortalLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setUploading(true)
+    const formData = new FormData()
+    formData.append("file", f)
+    try {
+      const res = await fetch("/api/portal/upload", {
+        method: "POST",
+        body: formData,
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? "Upload failed.")
+      setPortalLogoUrl(json.data.secureUrl)
+      setPortalLogoPublicId(json.data.publicId ?? "")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to upload portal logo.")
+    }
+    setUploading(false)
+  }
+
+  function handleSubmit() {
+    onSave({
+      ...data,
+      orgName,
+      description,
+      facebookLink,
+      logoUrl: logoUrl || "",
+      logoPublicId: logoUrl ? logoPublicId : "",
+      portalLogoUrl: portalLogoUrl || "",
+      portalLogoPublicId: portalLogoUrl ? portalLogoPublicId : "",
+    })
+  }
+
+  return (
+    <Dialog open onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="text-xl text-foreground">Edit CSO Info</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="grid gap-1.5">
+            <label className="text-sm font-medium text-foreground">Organization Name</label>
+            <input
+              value={orgName}
+              onChange={(e) => setOrgName(e.target.value)}
+              className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
+              placeholder="Organization name"
+            />
+          </div>
+
+          <div className="grid gap-1.5">
+            <label className="text-sm font-medium text-foreground">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full resize-none border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
+              placeholder="Organization description"
+            />
+          </div>
+
+          <div className="grid gap-1.5">
+            <label className="text-sm font-medium text-foreground">Facebook Page Link</label>
+            <input
+              value={facebookLink}
+              onChange={(e) => setFacebookLink(e.target.value)}
+              className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
+              placeholder="https://facebook.com/..."
+            />
+          </div>
+
+          <div className="grid gap-1.5">
+            <label className="text-sm font-medium text-foreground">CSO Logo</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoUpload}
+              disabled={uploading}
+              className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 disabled:pointer-events-none disabled:opacity-50"
+            />
+            {logoUrl ? (
+              <div className="relative mt-2 flex items-center justify-center overflow-hidden border border-border bg-muted/50 p-2">
+                <Image
+                  src={logoUrl}
+                  alt="Logo preview"
+                  width={80}
+                  height={80}
+                  className="max-h-20 w-auto object-contain"
+                  unoptimized
+                />
+                <button
+                  type="button"
+                  onClick={() => setLogoUrl("")}
+                  className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-red-500/80 text-white transition hover:bg-red-500"
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="grid gap-1.5">
+            <label className="text-sm font-medium text-foreground">Portal Logo (navbar)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handlePortalLogoUpload}
+              disabled={uploading}
+              className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 disabled:pointer-events-none disabled:opacity-50"
+            />
+            {portalLogoUrl ? (
+              <div className="relative mt-2 flex items-center justify-center overflow-hidden border border-border bg-muted/50 p-2">
+                <Image
+                  src={portalLogoUrl}
+                  alt="Portal logo preview"
+                  width={32}
+                  height={32}
+                  className="max-h-8 w-auto object-contain"
+                  unoptimized
+                />
+                <button
+                  type="button"
+                  onClick={() => setPortalLogoUrl("")}
+                  className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-red-500/80 text-white transition hover:bg-red-500"
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={!orgName || uploading}>
+            {uploading ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : null}
+            Save Changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function GalleryFormDialog({
   item,
   onSave,
@@ -996,6 +1249,15 @@ function GalleryFormDialog({
   const [image, setImage] = useState(item?.image ?? "")
   const [newFile, setNewFile] = useState<File | null>(null)
   const [pendingCropImage, setPendingCropImage] = useState<string | null>(null)
+
+  const wordCount = description.trim() ? description.trim().split(/\s+/).length : 0
+
+  function handleDescriptionChange(value: string) {
+    const words = value.trim() ? value.trim().split(/\s+/) : []
+    if (words.length <= 60) {
+      setDescription(value)
+    }
+  }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
@@ -1050,11 +1312,14 @@ function GalleryFormDialog({
             <label className="text-sm font-medium text-foreground">Description</label>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => handleDescriptionChange(e.target.value)}
               rows={3}
               className="w-full resize-none border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
               placeholder="Photo description"
             />
+            <p className={`text-xs ${wordCount >= 60 ? "text-red-500" : "text-foreground/50"}`}>
+              {wordCount}/60 words
+            </p>
           </div>
 
           <div className="grid gap-1.5">
@@ -1125,16 +1390,32 @@ function ReportFormDialog({
   const [date, setDate] = useState(report?.date ?? "")
   const [summary, setSummary] = useState(report?.summary ?? "")
   const [total, setTotal] = useState(report?.total ?? "")
-  const [image, setImage] = useState(report?.image ?? "")
+  const [file, setFile] = useState(report?.file ?? "")
+  const [fileName, setFileName] = useState(report?.fileName ?? "")
+  const [uploading, setUploading] = useState(false)
 
-  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      setImage(reader.result as string)
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setUploading(true)
+    setFileName(f.name)
+    try {
+      const formData = new FormData()
+      formData.append("file", f)
+      const res = await fetch("/api/portal/upload", {
+        method: "POST",
+        body: formData,
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? "Upload failed.")
+      setFile(json.data.secureUrl)
+      setUploading(false)
+    } catch (err) {
+      console.error("File upload failed:", err)
+      toast.error(err instanceof Error ? err.message : "Failed to upload file.")
+      setFileName("")
+      setUploading(false)
     }
-    reader.readAsDataURL(file)
   }
 
   function handleSubmit() {
@@ -1146,7 +1427,8 @@ function ReportFormDialog({
       date,
       summary,
       total: total || undefined,
-      image: image || undefined,
+      file: file || undefined,
+      fileName: fileName || undefined,
     })
   }
 
@@ -1213,27 +1495,29 @@ function ReportFormDialog({
           </div>
 
           <div className="grid gap-1.5">
-            <label className="text-sm font-medium text-foreground">Image</label>
+            <label className="text-sm font-medium text-foreground">File (PDF)</label>
             <input
               type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
+              accept=".pdf"
+              onChange={handleFileUpload}
+              disabled={uploading}
+              className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 disabled:pointer-events-none disabled:opacity-50"
             />
-            {image ? (
-              <div className="relative mt-2 overflow-hidden border border-border">
-                <Image
-                  src={image}
-                  alt="Preview"
-                  width={400}
-                  height={128}
-                  className="h-32 w-full object-cover"
-                  unoptimized
-                />
+            {uploading ? (
+              <div className="mt-2 flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2">
+                <Loader2 className="size-5 shrink-0 animate-spin text-foreground/60" />
+                <span className="text-sm text-foreground/80">Uploading file...</span>
+              </div>
+            ) : file ? (
+              <div className="mt-2 flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2">
+                <FileText className="size-5 shrink-0 text-foreground/60" />
+                <span className="truncate text-sm text-foreground/80">
+                  {fileName || "File selected"}
+                </span>
                 <button
                   type="button"
-                  onClick={() => setImage("")}
-                  className="absolute right-2 top-2 flex size-6 items-center justify-center bg-black/60 text-white transition-colors hover:bg-black/80"
+                  onClick={() => { setFile(""); setFileName("") }}
+                  className="ml-auto flex size-5 items-center justify-center text-foreground/50 transition-colors hover:text-foreground"
                 >
                   <X className="size-3" />
                 </button>
@@ -1248,9 +1532,12 @@ function ReportFormDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!title || !date || !summary}
+            disabled={!title || !date || !summary || uploading}
           >
-            {report ? "Update Report" : "Create Report"}
+            {uploading ? (
+              <Loader2 className="mr-1.5 size-4 animate-spin" />
+            ) : null}
+            {uploading ? "Uploading\u2026" : report ? "Update Report" : "Create Report"}
           </Button>
         </DialogFooter>
       </DialogContent>

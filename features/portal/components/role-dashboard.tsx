@@ -15,6 +15,7 @@ import {
   Download,
   GraduationCap,
   HardDrive,
+  ImageIcon,
   Info,
   Layers3,
   LogOut,
@@ -149,6 +150,7 @@ export function RoleDashboard({ role }: { role: Role }) {
         model.setDownloadables(d.downloadables ?? model.downloadables)
         model.setAuditLogs(d.auditLogs ?? model.auditLogs)
         model.setGalleryItems(d.gallery ?? model.galleryItems)
+        model.setCsoInfo(d.csoInfo ?? model.csoInfo)
         setDataLoading(false)
       } catch (err) {
         if (!cancelled) {
@@ -189,6 +191,7 @@ export function RoleDashboard({ role }: { role: Role }) {
           model.setDownloadables(d.downloadables ?? model.downloadables)
           model.setAuditLogs(d.auditLogs ?? model.auditLogs)
           model.setGalleryItems(d.gallery ?? model.galleryItems)
+          model.setCsoInfo(d.csoInfo ?? model.csoInfo)
         })
         .catch(() => {})
     }
@@ -895,13 +898,20 @@ export function RoleDashboard({ role }: { role: Role }) {
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <div className="edu-sidebar-icon flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 shadow-sm ring-1 ring-white/20">
-                  <Image
-                    src="/portal-logo.svg"
-                    alt="Portal logo placeholder"
-                    width={32}
-                    height={32}
-                    className="size-full rounded-lg object-contain"
-                  />
+                  {model.csoInfo?.portalLogoUrl ? (
+                    <Image
+                      src={model.csoInfo.portalLogoUrl}
+                      alt="Portal logo"
+                      width={32}
+                      height={32}
+                      className="size-full rounded-lg object-contain"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="flex size-full items-center justify-center rounded-lg bg-muted">
+                      <ImageIcon className="size-5 text-muted-foreground/50" />
+                    </div>
+                  )}
                 </div>
 
                 {!effectivelyCollapsed ? (

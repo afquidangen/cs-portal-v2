@@ -7,7 +7,8 @@ export interface ICsoReport extends Document {
   date: string
   summary: string
   total?: string
-  image?: string
+  file?: string
+  fileName?: string
   cloudinaryPublicId?: string
 }
 
@@ -23,7 +24,8 @@ const CsoReportSchema = new Schema<ICsoReport>(
     date: String,
     summary: String,
     total: String,
-    image: String,
+    file: String,
+    fileName: String,
     cloudinaryPublicId: String,
   },
   { timestamps: true }

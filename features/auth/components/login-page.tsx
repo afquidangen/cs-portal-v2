@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState, type FormEvent } from "react"
 import { Eye, EyeOff, Lock, Mail } from "lucide-react"
 
+import type { CsoInfoRecord } from "@/lib/types"
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -26,7 +27,17 @@ export function LoginPage() {
   const [message, setMessage] = useState("")
   const [forgotSent, setForgotSent] = useState(false)
   const [forgotLoading, setForgotLoading] = useState(false)
+  const [portalLogo, setPortalLogo] = useState("/portal-logo.svg")
   const router = useRouter()
+
+  useEffect(() => {
+    fetch("/api/portal/cso-info")
+      .then((res) => res.ok ? res.json() : null)
+      .then((json) => {
+        if (json?.data?.portalLogoUrl) setPortalLogo(json.data.portalLogoUrl)
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     document.documentElement.classList.remove("dark")
@@ -91,8 +102,8 @@ export function LoginPage() {
         <section className="relative flex flex-col items-center text-center md:items-start md:text-left">
           <div className="pointer-events-none absolute -inset-x-8 -inset-y-10 rounded-[2rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.42),rgba(234,247,255,0.16))] opacity-80" />
           <Image
-            src="/portal-logo.svg"
-            alt="ComScite Portal logo placeholder"
+            src={portalLogo}
+            alt="ComScite Portal logo"
             width={260}
             height={260}
             className="relative h-auto w-40 max-w-[68vw] object-contain drop-shadow-[0_28px_52px_rgb(24_71_159_/_0.28)] sm:w-52 md:w-64"
