@@ -100,16 +100,6 @@ import { UsersModule } from "./modules/users-module"
 export function RoleDashboard({ role }: { role: Role }) {
   const model = usePortalDashboardModel(role)
 
-  const adminSparklineData = useMemo(() => [
-    model.users.length,
-    model.tickets.length,
-    model.grades.length,
-    model.theses.length,
-    model.announcements.length,
-    model.seminars.length,
-    model.auditLogs.length,
-  ], [model.users.length, model.tickets.length, model.grades.length, model.theses.length, model.announcements.length, model.seminars.length, model.auditLogs.length])
-
   const chartLabels = ["Users", "Tickets", "Grades", "Theses", "Announce.", "Seminars", "Audit"]
 
   const activityIcon = useCallback((action: string): LucideIcon => {
@@ -127,6 +117,9 @@ export function RoleDashboard({ role }: { role: Role }) {
   const [dataLoading, setDataLoading] = useState(true)
   const [dataError, setDataError] = useState<string | null>(null)
   const [darkMode, setDarkMode] = useState(false)
+  const [dateFilter, setDateFilter] = useState<"week" | "month" | "year">("week")
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [customDate, setCustomDate] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -222,6 +215,170 @@ export function RoleDashboard({ role }: { role: Role }) {
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null)
   const [readAnnouncementIds, setReadAnnouncementIds] = useState<Set<string>>(new Set())
   const [viewingAnnouncement, setViewingAnnouncement] = useState<Announcement | null>(null)
+
+  const getDateRange = useCallback((range: "week" | "month" | "year") => {
+    const now = new Date()
+    let start: Date
+    let end: Date
+    if (range === "week") {
+      const day = now.getDay()
+      start = new Date(now)
+      start.setDate(now.getDate() - day)
+      start.setHours(0, 0, 0, 0)
+      end = new Date(start)
+      end.setDate(start.getDate() + 6)
+      end.setHours(23, 59, 59, 999)
+    } else if (range === "month") {
+      start = new Date(now.getFullYear(), now.getMonth(), 1)
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+    } else {
+      start = new Date(now.getFullYear(), 0, 1)
+      end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999)
+    }
+    return { start, end }
+  }, [])
+
+  const parseDate = useCallback((dateStr: string): Date | null => {
+    const months: Record<string, number> = {
+      Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+      Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
+    }
+    const parts = dateStr.split(/[, ]+/)
+    if (parts.length >= 4) {
+      const month = months[parts[0]]
+      if (month !== undefined) {
+        const day = parseInt(parts[1], 10)
+        const year = parseInt(parts[2], 10)
+        const timeParts = parts[3].split(":")
+        const hour = parseInt(timeParts[0], 10)
+        const minute = parseInt(timeParts[1], 10)
+        const ampm = parts[4]?.toUpperCase()
+        let hours = hour
+        if (ampm === "PM" && hour !== 12) hours += 12
+        if (ampm === "AM" && hour === 12) hours = 0
+        return new Date(year, month, day, hours, minute)
+      }
+    }
+    const iso = new Date(dateStr)
+    return isNaN(iso.getTime()) ? null : iso
+  }, [])
+
+  const getDaysInMonth = useCallback((year: number, month: number) =>
+    new Date(year, month + 1, 0).getDate(), [])
+
+  const getFirstDayOfMonth = useCallback((year: number, month: number) =>
+    new Date(year, month, 1).getDay(), [])
+
+  const buildCalendarDays = useCallback((year: number, month: number) => {
+    const daysInMonth = getDaysInMonth(year, month)
+    const firstDay = getFirstDayOfMonth(year, month)
+    const grid: (number | null)[] = Array(firstDay).fill(null)
+    for (let d = 1; d <= daysInMonth; d++) grid.push(d)
+    while (grid.length % 7 !== 0) grid.push(null)
+    return grid
+  }, [getDaysInMonth, getFirstDayOfMonth])
+
+  const toISODate = useCallback((year: number, month: number, day: number) =>
+    `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`, [])
+
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+  const dayHeaders = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+  const todayStr = useMemo(() => {
+    const d = new Date()
+    return toISODate(d.getFullYear(), d.getMonth(), d.getDate())
+  }, [toISODate])
+
+  const [calendarYear, setCalendarYear] = useState(new Date().getFullYear())
+  const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth())
+
+  const calendarGrid = useMemo(
+    () => buildCalendarDays(calendarYear, calendarMonth),
+    [calendarYear, calendarMonth, buildCalendarDays]
+  )
+
+  const handlePrevMonth = useCallback(() => {
+    setCalendarMonth((m) => {
+      if (m === 0) { setCalendarYear((y) => y - 1); return 11 }
+      return m - 1
+    })
+  }, [])
+
+  const handleNextMonth = useCallback(() => {
+    setCalendarMonth((m) => {
+      if (m === 11) { setCalendarYear((y) => y + 1); return 0 }
+      return m + 1
+    })
+  }, [])
+
+  const handleDateSelect = useCallback((day: number) => {
+    const iso = toISODate(calendarYear, calendarMonth, day)
+    setCustomDate(iso)
+    setShowCalendar(false)
+  }, [calendarYear, calendarMonth, toISODate])
+
+  const handleDownloadAcademic = useCallback(() => {
+    window.print()
+  }, [])
+
+  const dateRange = useMemo(() => {
+    if (customDate) {
+      const start = new Date(customDate + "T00:00:00.000")
+      const end = new Date(customDate + "T23:59:59.999")
+      return { start, end }
+    }
+    return getDateRange(dateFilter)
+  }, [dateFilter, customDate, getDateRange])
+
+  const filterByDate = useCallback(
+    (itemDate: string | number | undefined | null): boolean => {
+      if (itemDate == null) return false
+      const { start, end } = dateRange
+      if (typeof itemDate === "number") return itemDate === start.getFullYear()
+      const date = parseDate(itemDate)
+      return date !== null && date >= start && date <= end
+    },
+    [dateRange, parseDate]
+  )
+
+  const filteredUsers = useMemo(
+    () => model.users.filter((u: { createdAt?: string }) => filterByDate(u.createdAt)),
+    [model.users, filterByDate]
+  )
+  const filteredTickets = useMemo(
+    () => model.tickets.filter((t: { submittedAt: string }) => filterByDate(t.submittedAt)),
+    [model.tickets, filterByDate]
+  )
+  const filteredGrades = useMemo(
+    () => model.grades.filter((g: { updatedAt: string }) => filterByDate(g.updatedAt)),
+    [model.grades, filterByDate]
+  )
+  const filteredTheses = useMemo(
+    () => model.theses.filter((t: { year: number }) => filterByDate(t.year)),
+    [model.theses, filterByDate]
+  )
+  const filteredAnnouncements = useMemo(
+    () => model.announcements.filter((a: { date: string }) => filterByDate(a.date)),
+    [model.announcements, filterByDate]
+  )
+  const filteredSeminars = useMemo(
+    () => model.seminars.filter((s: { date: string }) => filterByDate(s.date)),
+    [model.seminars, filterByDate]
+  )
+  const filteredAuditLogs = useMemo(
+    () => model.auditLogs.filter((log: { time: string }) => filterByDate(log.time)),
+    [model.auditLogs, filterByDate]
+  )
+
+  const adminSparklineData = useMemo(() => [
+    filteredUsers.length,
+    filteredTickets.length,
+    filteredGrades.length,
+    filteredTheses.length,
+    filteredAnnouncements.length,
+    filteredSeminars.length,
+    filteredAuditLogs.length,
+  ], [filteredUsers.length, filteredTickets.length, filteredGrades.length, filteredTheses.length, filteredAnnouncements.length, filteredSeminars.length, filteredAuditLogs.length])
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px) and (max-width: 1023px)")
@@ -408,11 +565,11 @@ export function RoleDashboard({ role }: { role: Role }) {
   ], [model.userStats.students, model.userStats.faculty, model.theses.length, model.tickets, adminSparklineData])
 
   const performanceMetrics = useMemo(() => [
-    { label: "Audit Entries", value: model.auditLogs.length.toLocaleString(), trend: "System log" },
-    { label: "Users", value: totalUserCount.toLocaleString(), trend: "Registered accounts" },
-    { label: "Theses", value: model.theses.length.toLocaleString(), trend: "Library records" },
-    { label: "Tickets", value: String(model.tickets.filter((t: { status: string }) => t.status !== "Resolved").length), trend: "Open tickets" },
-  ], [model.auditLogs.length, totalUserCount, model.theses.length, model.tickets])
+    { label: "Audit Entries", value: filteredAuditLogs.length.toLocaleString(), trend: "System log" },
+    { label: "Users", value: (filteredUsers.length || model.userStats.students + model.userStats.faculty + model.userStats.admins).toLocaleString(), trend: "Registered accounts" },
+    { label: "Theses", value: filteredTheses.length.toLocaleString(), trend: "Library records" },
+    { label: "Tickets", value: String(filteredTickets.filter((t: { status: string }) => t.status !== "Resolved").length), trend: "Open tickets" },
+  ], [filteredAuditLogs.length, filteredUsers.length, model.userStats.students, model.userStats.faculty, model.userStats.admins, filteredTheses.length, filteredTickets])
 
   const systemHealth = [
     { label: "Database", status: "Operational", icon: Database },
@@ -653,13 +810,13 @@ export function RoleDashboard({ role }: { role: Role }) {
   }, [])
 
   const recentActivity = useMemo(() =>
-    model.auditLogs.slice(0, 5).map((log) => ({
+    filteredAuditLogs.slice(0, 5).map((log) => ({
       id: log.id,
       label: `${log.action} — ${log.actor}`,
       time: timeAgo(log.time),
       icon: activityIcon(log.action),
     })),
-  [model.auditLogs, timeAgo, activityIcon])
+  [filteredAuditLogs, timeAgo, activityIcon])
 
   if (dataLoading) {
     return (
@@ -1605,7 +1762,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                       })}
                     </div>
 
-                    <Card className="rounded-xl border border-border bg-card shadow-sm">
+                    <Card id="academic-overview-print" className="rounded-xl border border-border bg-card shadow-sm">
                       <CardHeader className="flex flex-col gap-4 border-b border-border px-4 py-5 sm:px-5 lg:flex-row lg:items-start lg:justify-between">
                         <div>
                           <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground">
@@ -1616,23 +1773,47 @@ export function RoleDashboard({ role }: { role: Role }) {
                             Real-time insight into institutional activity, platform usage, and academic operations.
                           </CardDescription>
                         </div>
-                        <div className="flex w-full flex-wrap items-center gap-2 text-xs sm:w-auto">
-                          {["This Week", "This Month", "This Year"].map((label, index) => (
+                        <div className="no-print flex w-full flex-wrap items-center gap-2 text-xs sm:w-auto">
+                          {(["week", "month", "year"] as const).map((range) => (
                             <button
-                              key={label}
+                              key={range}
                               type="button"
                               className={cn(
                                 "rounded-lg px-3 py-2 font-medium text-muted-foreground hover:bg-muted",
-                                index === 0 && "bg-primary/10 text-primary"
+                                !customDate && dateFilter === range && "bg-primary/10 text-primary"
                               )}
+                              onClick={() => { setDateFilter(range); setCustomDate(null) }}
                             >
-                              {label}
+                              {range === "week" ? "This Week" : range === "month" ? "This Month" : "This Year"}
                             </button>
                           ))}
-                          <button type="button" className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted">
+                          {customDate && (
+                            <span className="rounded-lg bg-primary/10 px-3 py-2 text-xs font-semibold text-primary">
+                              {new Date(customDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            className={cn(
+                              "flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted",
+                              customDate && "bg-primary/10 text-primary"
+                            )}
+                            onClick={() => {
+                              const d = customDate ? new Date(customDate + "T00:00:00") : new Date()
+                              setCalendarMonth(d.getMonth())
+                              setCalendarYear(d.getFullYear())
+                              setShowCalendar(true)
+                            }}
+                            title="Select a specific date"
+                          >
                             <CalendarDays className="size-4" />
                           </button>
-                          <button type="button" className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted">
+                          <button
+                            type="button"
+                            className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+                            onClick={handleDownloadAcademic}
+                            title="Download Academic Overview as PDF"
+                          >
                             <Download className="size-4" />
                           </button>
                         </div>
@@ -1892,6 +2073,53 @@ export function RoleDashboard({ role }: { role: Role }) {
         confirmLabel={model.pendingConfirm?.confirmLabel}
         cancelLabel={model.pendingConfirm?.cancelLabel}
       />
+
+      <Dialog open={showCalendar} onOpenChange={(open) => { if (!open) setShowCalendar(false) }}>
+        <DialogContent className="sm:max-w-[300px]">
+          <DialogHeader>
+            <DialogTitle>Select Date</DialogTitle>
+          </DialogHeader>
+          <div className="p-1">
+            <div className="mb-3 flex items-center justify-between">
+              <button type="button" className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted" onClick={handlePrevMonth}>
+                <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              </button>
+              <span className="text-sm font-semibold text-foreground">{monthNames[calendarMonth]} {calendarYear}</span>
+              <button type="button" className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted" onClick={handleNextMonth}>
+                <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </button>
+            </div>
+            <div className="mb-2 grid grid-cols-7 text-center text-xs font-medium text-muted-foreground">
+              {dayHeaders.map((d) => (<span key={d}>{d}</span>))}
+            </div>
+            <div className="grid grid-cols-7 gap-0.5">
+              {calendarGrid.map((day, i) => {
+                if (day === null) return <div key={i} />
+                const iso = toISODate(calendarYear, calendarMonth, day)
+                const isToday = iso === todayStr
+                const isSelected = iso === customDate
+                return (
+                  <button
+                    key={iso}
+                    type="button"
+                    className={cn(
+                      "flex size-8 items-center justify-center rounded-lg text-sm transition-colors",
+                      isSelected
+                        ? "bg-primary text-primary-foreground"
+                        : isToday
+                          ? "bg-primary/10 font-semibold text-primary"
+                          : "text-foreground hover:bg-muted"
+                    )}
+                    onClick={() => handleDateSelect(day)}
+                  >
+                    {day}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </main>
   )

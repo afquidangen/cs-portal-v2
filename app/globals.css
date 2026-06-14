@@ -611,3 +611,38 @@
     }
   }
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #academic-overview-print,
+  #academic-overview-print * {
+    visibility: visible;
+  }
+  #academic-overview-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 8mm;
+  }
+  .no-print {
+    display: none !important;
+  }
+  body::after {
+    content: "ComScite";
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 100px;
+    font-weight: bold;
+    color: rgba(0, 0, 0, 0.06);
+    pointer-events: none;
+    z-index: 9999;
+    font-family: Arial, sans-serif;
+    visibility: visible;
+  }
+}
