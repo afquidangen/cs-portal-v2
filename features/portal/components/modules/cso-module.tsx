@@ -266,7 +266,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
         <div className="flex items-center justify-between border-b border-border/50 px-4 py-3 sm:px-5">
           <div className="flex items-center gap-2">
             <Images className="size-4 text-primary dark:text-[#8bd3ff]" />
-            <h3 className="text-sm font-semibold text-foreground">CSSO Gallery</h3>
+            <h3 className="text-sm font-semibold text-foreground">CSSO Newsroom</h3>
           </div>
           {isAdmin ? (
             <div className="flex gap-2">
@@ -656,6 +656,14 @@ function CsoMiniGallery({ items }: { items: GalleryItem[] }) {
   const normalizedIndex = activeIndex % slides.length
   const activeSlide = slides[normalizedIndex] ?? slides[0]
 
+  useEffect(() => {
+    if (slides.length <= 1) return
+    const id = setInterval(() => {
+      setActiveIndex((current) => (current + 1) % slides.length)
+    }, 5000)
+    return () => clearInterval(id)
+  }, [slides.length])
+
   function showPrevious() {
     setActiveIndex((current) => (current - 1 + slides.length) % slides.length)
   }
@@ -683,7 +691,7 @@ function CsoMiniGallery({ items }: { items: GalleryItem[] }) {
               variant="secondary"
               className="size-9 rounded-full bg-white/90 text-foreground shadow-sm hover:bg-white"
               onClick={showPrevious}
-              aria-label="Show previous CSSO gallery item"
+              aria-label="Show previous CSSO news item"
             >
               <ChevronLeft className="size-4" />
             </Button>
