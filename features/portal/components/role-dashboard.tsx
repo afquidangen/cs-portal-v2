@@ -25,7 +25,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Phone,
-  Search,
   Server,
   Sun,
   Users,
@@ -149,6 +148,7 @@ export function RoleDashboard({ role }: { role: Role }) {
         model.setQuickLinks(d.quickLinks ?? model.quickLinks)
         model.setDownloadables(d.downloadables ?? model.downloadables)
         model.setAuditLogs(d.auditLogs ?? model.auditLogs)
+        model.setGalleryItems(d.gallery ?? model.galleryItems)
         setDataLoading(false)
       } catch (err) {
         if (!cancelled) {
@@ -188,6 +188,7 @@ export function RoleDashboard({ role }: { role: Role }) {
           model.setQuickLinks(d.quickLinks ?? model.quickLinks)
           model.setDownloadables(d.downloadables ?? model.downloadables)
           model.setAuditLogs(d.auditLogs ?? model.auditLogs)
+          model.setGalleryItems(d.gallery ?? model.galleryItems)
         })
         .catch(() => {})
     }
@@ -1062,17 +1063,6 @@ export function RoleDashboard({ role }: { role: Role }) {
               </div>
 
               <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-                <div className="relative hidden w-[260px] lg:block xl:w-[340px]">
-                  <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    type="search"
-                    placeholder="Search portal..."
-                    className="edu-topbar-highlight h-11 w-full rounded-lg border border-border bg-background px-11 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground hover:bg-muted/40 focus:border-ring focus:ring-2 focus:ring-ring/20"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
-                    Ctrl K
-                  </span>
-                </div>
                 <div ref={notifRef}>
                   <Button
                     ref={notifBtnRef}
@@ -1906,7 +1896,11 @@ export function RoleDashboard({ role }: { role: Role }) {
                             </button>
                           </div>
                           <div className="mt-5 space-y-4">
-                            {recentActivity.map((item) => {
+                            {recentActivity.filter((item) =>
+                              model.query
+                                ? item.label.toLowerCase().includes(model.query.toLowerCase())
+                                : true
+                            ).map((item) => {
                               const Icon = item.icon
                               return (
                                 <div key={item.id} className="flex gap-3">
@@ -1932,22 +1926,6 @@ export function RoleDashboard({ role }: { role: Role }) {
             {renderModule()}
           </section>
 
-          <footer className="border-t border-border bg-background px-4 py-3 sm:px-6 lg:px-8">
-            <div className="mx-auto flex max-w-[1720px] flex-col items-center gap-2 text-xs text-muted-foreground sm:flex-row sm:justify-between">
-              <span>&copy; 2026 ComScite Portal &mdash; ISPSC Computing Studies Unit</span>
-              <span className="inline-flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-                <span className="inline-flex items-center gap-1.5">
-                  <Mail className="size-3.5" />
-                  comscite@ispsc.edu.ph
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Phone className="size-3.5" />
-                  077 000 0000
-                </span>
-                <span className="hidden sm:inline">San Nicolas, Candon City, Ilocos Sur</span>
-              </span>
-            </div>
-          </footer>
         </div>
       </div>
 

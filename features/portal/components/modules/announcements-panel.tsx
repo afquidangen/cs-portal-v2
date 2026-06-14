@@ -52,8 +52,10 @@ function getPriorityStyles(priority: Announcement["priority"]) {
 export function AnnouncementsPanel({ model }: PortalModuleProps) {
   const {
     announcements,
+    filteredAnnouncements,
     handleDeleteAnnouncement,
     handleUpdateAnnouncement,
+    query,
     role,
     setShowAnnouncementForm,
     facultyClassSections,
@@ -70,7 +72,7 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
     return `${filtered.length} Sections`
   }
 
-  const filtered = announcements.filter((a) => {
+  const filtered = filteredAnnouncements.filter((a) => {
     if (role === "admin") return (a.audience === "All Users" || a.audience === "Students" || a.audience === "Faculty") && !a.classSection && (!a.classSections?.length)
     if (role === "student") return a.audience === "All Users" || a.audience === "Students" || a.audience?.split(", ").includes(profileSection) || (a.classSections?.includes(profileSection) ?? false) || a.classSection === profileSection
     return a.audience === "All Users" || a.audience === "Faculty" || a.audience?.split(", ").some((s) => facultyClassSections.includes(s)) || (a.classSections?.some((s) => facultyClassSections.includes(s)) ?? false) || (a.classSection && facultyClassSections.includes(a.classSection)) || a.createdBy === profile.name

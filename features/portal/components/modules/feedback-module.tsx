@@ -23,6 +23,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
   const {
     feedbackDraft,
     handleFeedbackSubmit,
+    filteredTickets,
     role,
     setFeedbackDraft,
     studentTickets,
@@ -217,7 +218,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
         ))}
       </div>
       <div className="space-y-3">
-        {tickets.map((ticket) => (
+        {filteredTickets.map((ticket) => (
           <div
             key={ticket.id}
             className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md"

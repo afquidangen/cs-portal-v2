@@ -17,7 +17,7 @@ export function SeminarsModule({ model }: PortalModuleProps) {
     handleEnlist,
     profile,
     role,
-    seminars,
+    filteredSeminars: seminars,
     setEventDraft,
   } = model
 

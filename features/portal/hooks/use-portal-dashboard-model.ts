@@ -14,6 +14,7 @@ import { toast } from "sonner"
 import { initialModule, roleNavigation } from "../config/navigation"
 import type { AuditLogRecord } from "@/lib/types/audit-log"
 import type { DownloadableRecord } from "@/lib/types/downloadable"
+import type { GalleryItem } from "@/lib/types/gallery"
 import type { QuickLinkRecord } from "@/lib/types/quick-link"
 import type { YearSectionRecord } from "@/lib/types/year-section"
 import {
@@ -163,6 +164,7 @@ export function usePortalDashboardModel(role: Role) {
   const [csoReports, setCsoReports] = useState<CsoReport[]>([])
   const [quickLinks, setQuickLinks] = useState<QuickLinkRecord[]>([])
   const [downloadables, setDownloadables] = useState<DownloadableRecord[]>([])
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([])
 
   const prevUsersRef = useRef<UserRecord[]>([])
   useEffect(() => {
@@ -200,7 +202,7 @@ export function usePortalDashboardModel(role: Role) {
     fileName: "",
     fileSize: 0,
     fileData: "",
-    imageData: "",
+    imageData: undefined as string | undefined,
   })
 
   const [roleFilter, setRoleFilter] = useState("All")
@@ -642,6 +644,46 @@ export function usePortalDashboardModel(role: Role) {
     })
   }, [query, theses, thesisCategoryFilter, thesisYearFilter])
 
+  const filteredSeminars = useMemo(() => {
+    const search = query.toLowerCase()
+    return seminars.filter((s) =>
+      [s.title, s.speaker, s.location, s.description]
+        .join(" ")
+        .toLowerCase()
+        .includes(search)
+    )
+  }, [query, seminars])
+
+  const filteredAnnouncements = useMemo(() => {
+    const search = query.toLowerCase()
+    return announcements.filter((a) =>
+      [a.title, a.content]
+        .join(" ")
+        .toLowerCase()
+        .includes(search)
+    )
+  }, [query, announcements])
+
+  const filteredCsoReports = useMemo(() => {
+    const search = query.toLowerCase()
+    return csoReports.filter((r) =>
+      [r.title, r.summary, r.type]
+        .join(" ")
+        .toLowerCase()
+        .includes(search)
+    )
+  }, [query, csoReports])
+
+  const filteredTickets = useMemo(() => {
+    const search = query.toLowerCase()
+    return tickets.filter((t) =>
+      [t.subject, t.description, t.studentName]
+        .join(" ")
+        .toLowerCase()
+        .includes(search)
+    )
+  }, [query, tickets])
+
   const userByFacultyEmail = useMemo(() => {
     const map = new Map<string, (typeof users)[number]>()
     for (const u of users) {
@@ -886,6 +928,7 @@ export function usePortalDashboardModel(role: Role) {
       setQuickLinks(d.quickLinks ?? quickLinks)
       setDownloadables(d.downloadables ?? downloadables)
       setAuditLogs(d.auditLogs ?? auditLogs)
+      setGalleryItems(d.gallery ?? galleryItems)
     } catch {
       // Silently fail
     }
@@ -1249,26 +1292,51 @@ export function usePortalDashboardModel(role: Role) {
     syncApi("POST", "/api/portal/audit-logs", entry).catch(() => {})
   }
 
-  function handleAddUser(event: FormEvent<HTMLFormElement>) {
+  async function handleAddUser(event: FormEvent<HTMLFormElement>): Promise<{ type: "success" } | { type: "duplicate"; existingUser: UserRecord; message: string } | { type: "error"; message: string }> {
     event.preventDefault()
-    if (!newUser.firstName.trim() || !newUser.lastName.trim() || !newUser.email.trim()) return
+    if (!newUser.firstName.trim() || !newUser.lastName.trim() || !newUser.email.trim()) {
+      return { type: "error", message: "First name, last name, and email are required." }
+    }
     const fullName = [newUser.firstName, newUser.middleName, newUser.lastName]
       .map((part) => part.trim())
       .filter(Boolean)
       .join(" ")
     const accountId = newUser.idNumber.trim() || `USR-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-    if (users.some((u) => u.id === accountId)) {
-      toast.error(`An account with ID "${accountId}" already exists.`)
-      return
+
+    const existingById = users.find((u) => u.id === accountId)
+    if (existingById) {
+      return { type: "duplicate", existingUser: existingById, message: `DUPLICATE ERROR FOUND. Duplicate record existing in the system with ID: ${accountId}. Would you like to edit it?` }
     }
-    if (users.some((u) => u.email.toLowerCase() === newUser.email.trim().toLowerCase())) {
-      toast.error(`An account with email "${newUser.email.trim()}" already exists.`)
-      return
+    const existingByEmail = users.find((u) => u.email.toLowerCase() === newUser.email.trim().toLowerCase())
+    if (existingByEmail) {
+      return { type: "duplicate", existingUser: existingByEmail, message: `DUPLICATE ERROR FOUND. Duplicate record existing in the system with Email: ${newUser.email.trim()}. Would you like to edit it?` }
     }
-    if (newUser.role === "student" && roster.some((r) => r.id === accountId)) {
-      toast.error(`A roster entry with ID "${accountId}" already exists.`)
-      return
+
+    const apiPayload = {
+      id: accountId,
+      name: fullName,
+      email: newUser.email.trim().toLowerCase(),
+      role: newUser.role,
+      sex: newUser.sex,
+      firstName: newUser.firstName.trim(),
+      middleName: newUser.middleName.trim(),
+      lastName: newUser.lastName.trim(),
+      studentType: newUser.role === "student" ? (newUser.studentType as UserRecord["studentType"]) : undefined,
+      curriculum: newUser.role === "student" ? newUser.curriculum : undefined,
+      curriculumId: newUser.role === "student" ? newUser.curriculumId : undefined,
+      currentYearLevel: newUser.role === "student" ? newUser.currentYearLevel : undefined,
+      currentSemester: newUser.role === "student" ? newUser.currentSemester : undefined,
+      course: newUser.role === "student" ? "BSCS" : undefined,
+      year: newUser.role === "student" ? Number(newUser.year) : undefined,
+      section: newUser.role === "student" ? newUser.section : undefined,
+      advisoryClass: newUser.role === "faculty" && newUser.hasAdvisory ? newUser.advisoryClass : undefined,
+      employmentType: newUser.role === "faculty" ? (newUser.employmentType as UserRecord["employmentType"]) : undefined,
+      academicTitle: newUser.role === "faculty" ? newUser.academicTitle : undefined,
+      position: newUser.role === "faculty" ? "Instructor" : undefined,
+      status: "Active" as const,
+      password: newUser.role === "admin" ? "ispsc@admin2026" : newUser.role === "faculty" ? "ispsc@faculty2026" : "ispsc@student2026",
     }
+
     setUsers((current) => [
       {
         id: accountId,
@@ -1279,29 +1347,17 @@ export function usePortalDashboardModel(role: Role) {
         firstName: newUser.firstName.trim(),
         middleName: newUser.middleName.trim(),
         lastName: newUser.lastName.trim(),
-        studentType:
-          newUser.role === "student"
-            ? (newUser.studentType as UserRecord["studentType"])
-            : undefined,
-        curriculum:
-          newUser.role === "student" ? newUser.curriculum : undefined,
-        curriculumId:
-          newUser.role === "student" ? newUser.curriculumId : undefined,
-        currentYearLevel:
-          newUser.role === "student" ? newUser.currentYearLevel : undefined,
-        currentSemester:
-          newUser.role === "student" ? newUser.currentSemester : undefined,
+        studentType: newUser.role === "student" ? (newUser.studentType as UserRecord["studentType"]) : undefined,
+        curriculum: newUser.role === "student" ? newUser.curriculum : undefined,
+        curriculumId: newUser.role === "student" ? newUser.curriculumId : undefined,
+        currentYearLevel: newUser.role === "student" ? newUser.currentYearLevel : undefined,
+        currentSemester: newUser.role === "student" ? newUser.currentSemester : undefined,
         course: newUser.role === "student" ? "BSCS" : undefined,
         year: newUser.role === "student" ? Number(newUser.year) : undefined,
         section: newUser.role === "student" ? newUser.section : undefined,
-        advisoryClass:
-          newUser.role === "faculty" && newUser.hasAdvisory ? newUser.advisoryClass : undefined,
-        employmentType:
-          newUser.role === "faculty"
-            ? (newUser.employmentType as UserRecord["employmentType"])
-            : undefined,
-        academicTitle:
-          newUser.role === "faculty" ? newUser.academicTitle : undefined,
+        advisoryClass: newUser.role === "faculty" && newUser.hasAdvisory ? newUser.advisoryClass : undefined,
+        employmentType: newUser.role === "faculty" ? (newUser.employmentType as UserRecord["employmentType"]) : undefined,
+        academicTitle: newUser.role === "faculty" ? newUser.academicTitle : undefined,
         position: newUser.role === "faculty" ? "Instructor" : undefined,
         status: "Active",
       },
@@ -1329,20 +1385,16 @@ export function usePortalDashboardModel(role: Role) {
       employmentType: "Regular",
       academicTitle: "MIT",
     })
+
     if (newUser.role === "student") {
       setRoster((current) => {
         const exists = current.some((s) => s.id === accountId)
         if (exists) return current
         return [{ id: accountId, name: fullName, section: newUser.section, enrolled: true }, ...current]
       })
-      syncApi("POST", "/api/portal/roster", { id: accountId, name: fullName, section: newUser.section, enrolled: true }).then(() =>
-        toast.success(`User "${fullName}" created.`)
-      ).catch((e) => {
-        toast.error(`Failed to sync roster for ${fullName}.`)
-        console.error(e)
-      })
-    } else {
-      toast.success(`User "${fullName}" created.`)
+      syncApi("POST", "/api/portal/roster", { id: accountId, name: fullName, section: newUser.section, enrolled: true }).catch((e) =>
+        console.error(`Failed to sync roster for ${fullName}:`, e)
+      )
     }
 
     if (newUser.role === "faculty") {
@@ -1364,45 +1416,26 @@ export function usePortalDashboardModel(role: Role) {
       )
     }
 
-    addAuditLog(`Created ${newUser.role} account "${fullName}" (${newUser.email})`)
-    syncApi("POST", "/api/portal/users", {
-      id: accountId,
-      name: fullName,
-      email: newUser.email.trim().toLowerCase(),
-      role: newUser.role,
-      sex: newUser.sex,
-      firstName: newUser.firstName.trim(),
-      middleName: newUser.middleName.trim(),
-      lastName: newUser.lastName.trim(),
-      studentType:
-        newUser.role === "student"
-          ? (newUser.studentType as UserRecord["studentType"])
-          : undefined,
-      curriculum:
-        newUser.role === "student" ? newUser.curriculum : undefined,
-      curriculumId:
-        newUser.role === "student" ? newUser.curriculumId : undefined,
-      currentYearLevel:
-        newUser.role === "student" ? newUser.currentYearLevel : undefined,
-      currentSemester:
-        newUser.role === "student" ? newUser.currentSemester : undefined,
-      course: newUser.role === "student" ? "BSCS" : undefined,
-      year: newUser.role === "student" ? Number(newUser.year) : undefined,
-      section: newUser.role === "student" ? newUser.section : undefined,
-      advisoryClass:
-        newUser.role === "faculty" && newUser.hasAdvisory ? newUser.advisoryClass : undefined,
-      employmentType:
-        newUser.role === "faculty"
-          ? (newUser.employmentType as UserRecord["employmentType"])
-          : undefined,
-      academicTitle:
-        newUser.role === "faculty" ? newUser.academicTitle : undefined,
-      position: newUser.role === "faculty" ? "Instructor" : undefined,
-      status: "Active",
-      password: newUser.role === "admin" ? "ispsc@admin2026" : newUser.role === "faculty" ? "ispsc@faculty2026" : "ispsc@student2026",
-    }).catch((e) =>
-      console.error(`Failed to sync user ${accountId}:`, e)
-    )
+    try {
+      const res = await fetch("/api/portal/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(apiPayload),
+      })
+      if (!res.ok) {
+        setUsers((current) => current.filter((u) => u.id !== accountId))
+        const errData = await res.json().catch(() => ({}))
+        if (res.status === 409 && (errData as Record<string, unknown>).existing) {
+          return { type: "duplicate", existingUser: (errData as Record<string, unknown>).existing as UserRecord, message: `DUPLICATE ERROR FOUND. Duplicate record existing in the system. Would you like to edit it?` }
+        }
+        return { type: "error", message: ((errData as Record<string, unknown>).error as string) || "Failed to create user." }
+      }
+      addAuditLog(`Created ${newUser.role} account "${fullName}" (${newUser.email})`)
+      return { type: "success" }
+    } catch (e) {
+      setUsers((current) => current.filter((u) => u.id !== accountId))
+      return { type: "error", message: e instanceof Error ? e.message : "Network error. Please try again." }
+    }
   }
 
   function confirmAndToggleUserStatus(userId: string) {
@@ -2842,6 +2875,47 @@ export function usePortalDashboardModel(role: Role) {
     if (item) addAuditLog(`Deleted CSO report "${item.title}"`)
   }
 
+  function handleCreateGalleryItem(item: GalleryItem) {
+    setGalleryItems((current) => [item, ...current])
+    syncApi("POST", "/api/portal/gallery", item).then((result: unknown) => {
+      const res = result as { data?: GalleryItem }
+      if (res?.data) {
+        setGalleryItems((current) =>
+          current.map((g) => (g.id === item.id ? res.data! : g))
+        )
+      }
+    }).catch((e) => {
+      toast.error("Failed to create gallery item.")
+      console.error(e)
+    })
+    addAuditLog(`Created gallery item "${item.title}"`)
+  }
+
+  function handleUpdateGalleryItem(id: string, updated: GalleryItem) {
+    setGalleryItems((current) =>
+      current.map((item) => (item._id === id || item.id === id ? { ...item, ...updated } : item))
+    )
+    syncApi("PUT", `/api/portal/gallery/${id}`, updated).then(() =>
+      toast.success("Gallery item updated.")
+    ).catch((e) => {
+      toast.error("Failed to update gallery item.")
+      console.error(e)
+    })
+    addAuditLog(`Updated gallery item "${updated.title}"`)
+  }
+
+  function handleDeleteGalleryItem(id: string) {
+    const item = galleryItems.find((g) => g._id === id)
+    setGalleryItems((current) => current.filter((g) => g._id !== id))
+    syncApi("DELETE", `/api/portal/gallery/${id}`).then(() =>
+      toast.success("Gallery item deleted.")
+    ).catch((e) => {
+      toast.error("Failed to delete gallery item.")
+      console.error(e)
+    })
+    if (item) addAuditLog(`Deleted gallery item "${item.title}"`)
+  }
+
   return {
     role,
     activeModule,
@@ -2953,6 +3027,10 @@ export function usePortalDashboardModel(role: Role) {
     allStudentGrades,
     gradeAverage,
     filteredTheses,
+    filteredSeminars,
+    filteredAnnouncements,
+    filteredCsoReports,
+    filteredTickets,
     filteredFaculty,
     filteredUsers,
     deletedUsers,
@@ -2967,6 +3045,8 @@ export function usePortalDashboardModel(role: Role) {
     setQuickLinks,
     downloadables,
     setDownloadables,
+    galleryItems,
+    setGalleryItems,
     quickLinkDraft,
     setQuickLinkDraft,
     showQuickLinkForm,
@@ -3054,6 +3134,9 @@ export function usePortalDashboardModel(role: Role) {
     handleCreateCsoReport,
     handleUpdateCsoReport,
     handleDeleteCsoReport,
+    handleCreateGalleryItem,
+    handleUpdateGalleryItem,
+    handleDeleteGalleryItem,
   }
 }
 

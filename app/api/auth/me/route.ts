@@ -48,6 +48,9 @@ export async function GET(request: Request) {
     if (!user) {
       return Response.json({ error: "User not found" }, { status: 401 })
     }
+    if (user.status !== "Active") {
+      return Response.json({ error: "Account is inactive" }, { status: 403 })
+    }
 
     return Response.json({
       account: {

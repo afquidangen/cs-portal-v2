@@ -41,6 +41,7 @@ export async function authenticateAccount(
 
   const user = await UserModel.findOne({ email: normalizedEmail })
   if (!user) return null
+  if (user.status !== "Active") return null
 
   const isMatch = await user.comparePassword(password)
   if (!isMatch) return null

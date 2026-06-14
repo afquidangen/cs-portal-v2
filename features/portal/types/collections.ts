@@ -11,7 +11,7 @@ import type {
   ThesisRecord,
   UserRecord,
 } from "../data/portal-data"
-import type { DownloadableRecord, QuickLinkRecord, SemesterRecord, SubjectRecord } from "@/lib/types"
+import type { DownloadableRecord, GalleryItem, QuickLinkRecord, SemesterRecord, SubjectRecord } from "@/lib/types"
 
 export type YearSectionRecord = {
   year: string
@@ -43,6 +43,7 @@ export type PortalCollectionMap = {
   csoReports: CsoReport[]
   quickLinks: QuickLinkRecord[]
   downloadables: DownloadableRecord[]
+  gallery: GalleryItem[]
 }
 
 export type PortalCollectionName = keyof PortalCollectionMap

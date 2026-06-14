@@ -20,8 +20,7 @@ export async function POST(request: Request) {
     }
     const existing = await usersRepository.findOne({ $or: [{ id: body.id }, { email: body.email.toLowerCase() }] })
     if (existing) {
-      const field = (existing as Record<string, unknown>).id === body.id ? "id" : "email"
-      return badRequest(`A user with this ${field} already exists.`)
+      return Response.json({ error: "A user with this id already exists.", existing }, { status: 409 })
     }
     const user = await usersRepository.create(body)
     return success(user, 201)

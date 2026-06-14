@@ -234,7 +234,7 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
             <button
               type="button"
               onClick={() => {
-                setQuickLinkDraft({ label: link.label, href: link.href, type: "link", fileName: "", fileSize: 0, fileData: "", imageData: "" })
+                setQuickLinkDraft({ label: link.label, href: link.href, type: "link", fileName: "", fileSize: 0, fileData: "", imageData: undefined })
                 setEditingQuickLink(link)
                 setShowQuickLinkForm(true)
               }}

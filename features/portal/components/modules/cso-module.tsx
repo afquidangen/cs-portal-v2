@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { ChevronLeft, ChevronRight, Download, ExternalLink, Eye, FileText, ImageIcon, Loader2, Megaphone, Pencil, Plus, Sparkles, Trash2, Upload, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Download, ExternalLink, Eye, FileText, ImageIcon, Images, LayoutGrid, Loader2, Megaphone, Pencil, Plus, Sparkles, Trash2, Upload, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
@@ -14,8 +14,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { ImageCropDialog } from "../shared/image-crop-dialog"
 
 import type { CsoReport } from "../../data/portal-data"
+import type { GalleryItem } from "@/lib/types"
 import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalDashboardModel } from "../../hooks/use-portal-dashboard-model"
 
@@ -34,13 +36,18 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
 
   const [addReportType, setAddReportType] = useState<CsoReport["type"] | null>(null)
 
+  const [isManageGallery, setIsManageGallery] = useState(false)
+  const [showGalleryForm, setShowGalleryForm] = useState(false)
+  const [editingGalleryItem, setEditingGalleryItem] = useState<GalleryItem | null>(null)
+  const [deletingGalleryItem, setDeletingGalleryItem] = useState<GalleryItem | null>(null)
+
   const isAdmin = model.role === "admin"
 
-  const accomplishments = model.csoReports.filter(
+  const accomplishments = model.filteredCsoReports.filter(
     (report: CsoReport) => report.type === "Accomplishment" || report.type === "Event"
   )
-  const financials = model.csoReports.filter((report: CsoReport) => report.type === "Financial")
-  const records = model.csoReports.filter((report: CsoReport) => report.type === "Record")
+  const financials = model.filteredCsoReports.filter((report: CsoReport) => report.type === "Financial")
+  const records = model.filteredCsoReports.filter((report: CsoReport) => report.type === "Record")
 
   function handleSave(report: CsoReport) {
     const existing = model.csoReports.find((r: CsoReport) => r.id === report.id)
@@ -57,6 +64,26 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
   function handleDelete(id: string) {
     model.handleDeleteCsoReport(id)
     setDeletingReport(null)
+  }
+
+  function handleGallerySave(item: GalleryItem) {
+    const existing = editingGalleryItem
+    if (existing) {
+      model.handleUpdateGalleryItem(existing._id ?? existing.id, item)
+    } else {
+      model.handleCreateGalleryItem(item)
+    }
+    setShowGalleryForm(false)
+    setEditingGalleryItem(null)
+  }
+
+  function handleGalleryEdit(item: GalleryItem) {
+    setEditingGalleryItem(item)
+    setShowGalleryForm(true)
+  }
+
+  function handleGalleryDeleteConfirm(item: GalleryItem) {
+    setDeletingGalleryItem(item)
   }
 
   useEffect(() => {
@@ -235,7 +262,96 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
         ))}
       </div>
 
-      <CsoMiniGallery reports={model.csoReports} />
+      <div className="overflow-hidden rounded-xl border border-primary/15 bg-card shadow-sm dark:border-[#1d3858]">
+        <div className="flex items-center justify-between border-b border-border/50 px-4 py-3 sm:px-5">
+          <div className="flex items-center gap-2">
+            <Images className="size-4 text-primary dark:text-[#8bd3ff]" />
+            <h3 className="text-sm font-semibold text-foreground">CSSO Gallery</h3>
+          </div>
+          {isAdmin ? (
+            <div className="flex gap-2">
+              {isManageGallery ? (
+                <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setIsManageGallery(false)}>
+                  <LayoutGrid className="size-3.5" />
+                  View Gallery
+                </Button>
+              ) : (
+                <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setIsManageGallery(true)}>
+                  <Pencil className="size-3.5" />
+                  Manage Gallery
+                </Button>
+              )}
+            </div>
+          ) : null}
+        </div>
+        {isManageGallery ? (
+          <div className="p-4 sm:p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">{model.galleryItems.length} photo{model.galleryItems.length !== 1 ? "s" : ""}</p>
+              <Button size="sm" className="rounded-lg" onClick={() => { setEditingGalleryItem(null); setShowGalleryForm(true) }}>
+                <Plus className="size-3.5" />
+                Add Photo
+              </Button>
+            </div>
+            {model.galleryItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <ImageIcon className="mx-auto mb-3 size-10 text-foreground/40" />
+                <p className="text-sm text-foreground/60">No photos in gallery yet.</p>
+                <Button size="sm" variant="outline" className="mt-3 rounded-lg" onClick={() => { setEditingGalleryItem(null); setShowGalleryForm(true) }}>
+                  <Plus className="size-3.5" />
+                  Add Photo
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {model.galleryItems.map((item) => (
+                  <article
+                    key={item._id ?? item.id}
+                    className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:shadow-md"
+                  >
+                    <div className="flex items-center justify-center overflow-hidden bg-muted min-h-[280px]">
+                      <Image
+                        src={item.image}
+                        alt={item.title}
+                        width={400}
+                        height={300}
+                        className="size-full object-cover"
+                        unoptimized
+                      />
+                    </div>
+                    <div className="p-3">
+                      <h4 className="text-sm font-semibold text-foreground">{item.title}</h4>
+                      {item.description ? (
+                        <p className="mt-1 text-xs text-foreground/70 line-clamp-2">{item.description}</p>
+                      ) : null}
+                    </div>
+                    <div className="absolute right-2 top-2 flex gap-1.5 opacity-0 transition group-hover:opacity-100">
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="size-8 rounded-full bg-white/90 shadow-sm hover:bg-white"
+                        onClick={() => handleGalleryEdit(item)}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="size-8 rounded-full shadow-sm"
+                        onClick={() => handleGalleryDeleteConfirm(item)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <CsoMiniGallery items={model.galleryItems} />
+        )}
+      </div>
 
       <Panel title="CSSO Organizational Chart" eyebrow="Officers and adviser">
         {orgChartUrl ? (
@@ -407,6 +523,45 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
         />
       ) : null}
 
+      {showGalleryForm ? (
+        <GalleryFormDialog
+          item={editingGalleryItem}
+          onSave={handleGallerySave}
+          onClose={() => {
+            setShowGalleryForm(false)
+            setEditingGalleryItem(null)
+          }}
+        />
+      ) : null}
+
+      <Dialog open={!!deletingGalleryItem} onOpenChange={(open) => { if (!open) setDeletingGalleryItem(null) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-foreground">Delete Photo</DialogTitle>
+            <p className="pt-1 text-sm text-muted-foreground">
+              Are you sure you want to delete &ldquo;{deletingGalleryItem?.title}&rdquo;? This action cannot be undone.
+            </p>
+          </DialogHeader>
+          <DialogFooter className="mt-2 gap-2">
+            <DialogClose asChild>
+              <Button variant="ghost">Cancel</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (deletingGalleryItem) {
+                  model.handleDeleteGalleryItem(deletingGalleryItem._id ?? deletingGalleryItem.id)
+                }
+                setDeletingGalleryItem(null)
+              }}
+            >
+              <Trash2 className="size-4" />
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!deletingReport} onOpenChange={(open) => { if (!open) setDeletingReport(null) }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -476,21 +631,26 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
   )
 }
 
-function CsoMiniGallery({ reports }: { reports: CsoReport[] }) {
-  const reportSlides = reports
-    .filter((report) => report.image || report.summary)
+function CsoMiniGallery({ items }: { items: GalleryItem[] }) {
+  const gallerySlides = items
     .slice(0, 10)
-    .map((report) => ({
-      title: report.title,
-      description: report.summary,
-      image: report.image,
-      meta: `${report.type} | ${report.date}`,
+    .map((item) => ({
+      title: item.title,
+      description: item.description,
+      image: item.image,
+      meta: "Gallery",
     }))
 
-  const slides = [
-    ...reportSlides,
-    ...CSSO_GALLERY_FALLBACK_SLIDES.slice(reportSlides.length),
-  ].slice(0, 10)
+  if (items.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <ImageIcon className="mx-auto mb-3 size-10 text-foreground/40" />
+        <p className="text-sm font-medium text-foreground/70">No gallery photos yet</p>
+      </div>
+    )
+  }
+
+  const slides = gallerySlides.slice(0, 10)
 
   const [activeIndex, setActiveIndex] = useState(0)
   const normalizedIndex = activeIndex % slides.length
@@ -506,8 +666,8 @@ function CsoMiniGallery({ reports }: { reports: CsoReport[] }) {
 
   return (
     <section className="overflow-hidden rounded-xl border border-primary/15 bg-card shadow-sm dark:border-[#1d3858]">
-      <div className="grid gap-0 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
-        <div className="relative aspect-[4/3] bg-muted">
+      <div className="grid gap-0 lg:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.8fr)]">
+        <div className="relative min-h-[400px] bg-muted">
           <Image
             src={activeSlide.image || "/csso-logo.svg"}
             alt={activeSlide.title}
@@ -561,74 +721,6 @@ function CsoMiniGallery({ reports }: { reports: CsoReport[] }) {
       </div>
     </section>
   )
-}
-
-const CSSO_GALLERY_FALLBACK_SLIDES = [
-  {
-    title: "CSSO Community Highlights",
-    description: "A quick look at student leadership, academic support, and department activities led by the Computing Studies Students Organization.",
-    image: createCsoGalleryImage("#1f6fe5", "#8bd3ff", "CS"),
-    meta: "Student organization",
-  },
-  {
-    title: "Events and Initiatives",
-    description: "CSSO helps organize programs that bring students together for collaboration, service, and professional growth.",
-    image: createCsoGalleryImage("#0f766e", "#99f6e4", "EV"),
-    meta: "Campus engagement",
-  },
-  {
-    title: "Transparent Records",
-    description: "Reports and documents keep the organization accountable while making important updates easier for students to follow.",
-    image: createCsoGalleryImage("#7c3aed", "#ddd6fe", "TR"),
-    meta: "Transparency",
-  },
-  {
-    title: "Academic Support",
-    description: "Student-led activities help classmates find guidance, prepare for academic work, and stay connected with department opportunities.",
-    image: createCsoGalleryImage("#dc2626", "#fecaca", "AC"),
-    meta: "Learning support",
-  },
-  {
-    title: "Leadership Development",
-    description: "CSSO gives students space to practice planning, communication, accountability, and service through real organization work.",
-    image: createCsoGalleryImage("#ca8a04", "#fef08a", "LD"),
-    meta: "Leadership",
-  },
-  {
-    title: "Digital Skills",
-    description: "Programs and activities encourage students to build technical confidence through collaboration and hands-on computing experiences.",
-    image: createCsoGalleryImage("#2563eb", "#bfdbfe", "DS"),
-    meta: "Skills building",
-  },
-  {
-    title: "Student Service",
-    description: "The organization supports department needs through coordinated student service, communication, and volunteer participation.",
-    image: createCsoGalleryImage("#16a34a", "#bbf7d0", "SS"),
-    meta: "Service",
-  },
-  {
-    title: "Project Collaboration",
-    description: "CSSO activities create practical chances for students to coordinate, share ideas, and contribute to meaningful department work.",
-    image: createCsoGalleryImage("#0891b2", "#a5f3fc", "PC"),
-    meta: "Collaboration",
-  },
-  {
-    title: "Campus Connection",
-    description: "The section keeps students closer to announcements, events, reports, and opportunities across the Computing Studies community.",
-    image: createCsoGalleryImage("#9333ea", "#f5d0fe", "CC"),
-    meta: "Community",
-  },
-  {
-    title: "Organization Updates",
-    description: "Gallery highlights make it easier to scan CSSO work before reading the detailed records and reports below.",
-    image: createCsoGalleryImage("#475569", "#cbd5e1", "OU"),
-    meta: "Updates",
-  },
-]
-
-function createCsoGalleryImage(primary: string, secondary: string, label: string) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="1536" viewBox="0 0 2048 1536"><rect width="2048" height="1536" fill="${primary}"/><circle cx="1685" cy="270" r="360" fill="${secondary}" opacity=".55"/><circle cx="285" cy="1248" r="330" fill="${secondary}" opacity=".35"/><path d="M320 1000h1408v160H320zM448 760h1152v152H448zM576 520h896v152H576z" fill="#fff" opacity=".85"/><text x="1024" y="360" text-anchor="middle" font-family="Arial, sans-serif" font-size="190" font-weight="800" fill="#fff">${label}</text></svg>`
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
 function ReportGrid({
@@ -878,6 +970,133 @@ function OrgChartUploadDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+    </Dialog>
+  )
+}
+
+function GalleryFormDialog({
+  item,
+  onSave,
+  onClose,
+}: {
+  item: GalleryItem | null
+  onSave: (item: GalleryItem) => void
+  onClose: () => void
+}) {
+  const [title, setTitle] = useState(item?.title ?? "")
+  const [description, setDescription] = useState(item?.description ?? "")
+  const [image, setImage] = useState(item?.image ?? "")
+  const [newFile, setNewFile] = useState<File | null>(null)
+  const [pendingCropImage, setPendingCropImage] = useState<string | null>(null)
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setNewFile(f)
+    const reader = new FileReader()
+    reader.onload = () => setPendingCropImage(reader.result as string)
+    reader.readAsDataURL(f)
+  }
+
+  function handleCropConfirm(croppedDataUrl: string) {
+    setImage(croppedDataUrl)
+    setPendingCropImage(null)
+  }
+
+  function handleCropCancel() {
+    setPendingCropImage(null)
+    setNewFile(null)
+  }
+
+  function handleSubmit() {
+    const id = item?.id ?? `GALLERY-${String(Date.now()).slice(-6)}`
+    onSave({
+      id,
+      title,
+      description,
+      image: image || "",
+    })
+  }
+
+  return (
+    <Dialog open onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="text-xl text-foreground">
+            {item ? "Edit Photo" : "Add Photo"}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="grid gap-1.5">
+            <label className="text-sm font-medium text-foreground">Title</label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
+              placeholder="Photo title"
+            />
+          </div>
+
+          <div className="grid gap-1.5">
+            <label className="text-sm font-medium text-foreground">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full resize-none border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
+              placeholder="Photo description"
+            />
+          </div>
+
+          <div className="grid gap-1.5">
+            <label className="text-sm font-medium text-foreground">
+              {item ? "Replace Image (optional)" : "Image"}
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
+            />
+            {image ? (
+              <div className="relative mt-2 overflow-hidden border border-border">
+                  <Image
+                    src={image}
+                    alt="Preview"
+                    width={400}
+                    height={200}
+                    className="max-h-48 w-full object-contain"
+                    unoptimized
+                  />
+                {newFile ? null : (
+                  <p className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1 text-xs text-white">
+                    Current image (pick a new file to replace)
+                  </p>
+                )}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={!title || !image}>
+            {item ? "Update Photo" : "Add Photo"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+
+      {pendingCropImage ? (
+        <ImageCropDialog
+          imageSrc={pendingCropImage}
+          open
+          aspect={4 / 3}
+          cropShape="rect"
+          onConfirm={handleCropConfirm}
+          onCancel={handleCropCancel}
+        />
+      ) : null}
     </Dialog>
   )
 }

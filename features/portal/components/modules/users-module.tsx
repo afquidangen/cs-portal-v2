@@ -95,6 +95,7 @@ export function UsersModule({ model }: PortalModuleProps) {
   const [toggleUserId, setToggleUserId] = useState<string | null>(null)
   const [deleteAllConfirm, setDeleteAllConfirm] = useState(false)
   const [batchLoading, setBatchLoading] = useState<string | null>(null)
+  const [duplicateConfirm, setDuplicateConfirm] = useState<{ existingUser: UserRecord; message: string } | null>(null)
   const [changeCurriculumUser, setChangeCurriculumUser] = useState<{
     user: UserRecord
     newCurriculumId: string
@@ -276,10 +277,17 @@ export function UsersModule({ model }: PortalModuleProps) {
     setToggleUserId(null)
   }
 
-  function handleAddSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleAddSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    handleAddUser(e)
-    setAddOpen(false)
+    const result = await handleAddUser(e)
+    if (result.type === "success") {
+      setAddOpen(false)
+      toast.success("User account created successfully.")
+    } else if (result.type === "duplicate") {
+      setDuplicateConfirm({ existingUser: result.existingUser, message: result.message })
+    } else {
+      toast.error(result.message || "Failed to create user.")
+    }
   }
 
   return (
@@ -1375,6 +1383,38 @@ export function UsersModule({ model }: PortalModuleProps) {
             <DialogClose asChild>
               <Button variant="outline" className="rounded-xl">Close</Button>
             </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Duplicate Confirmation ── */}
+      <Dialog open={!!duplicateConfirm} onOpenChange={() => setDuplicateConfirm(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10">
+              <AlertTriangle className="size-6 text-destructive" />
+            </div>
+            <DialogTitle className="text-center">DUPLICATE ERROR FOUND</DialogTitle>
+            <DialogDescription className="text-center text-sm leading-relaxed">
+              {duplicateConfirm?.message}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-row justify-center gap-2 sm:justify-center">
+            <Button variant="outline" onClick={() => setDuplicateConfirm(null)}>
+              No
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => {
+                if (duplicateConfirm) {
+                  setEditUser({ ...duplicateConfirm.existingUser } as UserRecord & { password?: string })
+                  setAddOpen(false)
+                }
+                setDuplicateConfirm(null)
+              }}
+            >
+              Yes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
