@@ -5,6 +5,7 @@ import type { Role } from "@/lib/types/common"
 export type AuthenticatedAccount = {
   email: string
   role: Role
+  roles?: string[]
   name: string
   title: string
   id: string
@@ -54,6 +55,7 @@ export async function authenticateAccount(
   return {
     email: user.email,
     role: user.role,
+    roles: [...(user.roles ?? [])],
     name: user.name,
     title: titleForAccount(user),
     id: user.id,

@@ -42,7 +42,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
   const [editingGalleryItem, setEditingGalleryItem] = useState<GalleryItem | null>(null)
   const [deletingGalleryItem, setDeletingGalleryItem] = useState<GalleryItem | null>(null)
 
-  const isAdmin = model.role === "admin"
+  const canManage = model.canManageCso ?? false
 
   const accomplishments = model.filteredCsoReports.filter(
     (report: CsoReport) => report.type === "Accomplishment" || report.type === "Event"
@@ -213,7 +213,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
       <section className="relative overflow-hidden rounded-xl border border-primary/15 bg-[linear-gradient(120deg,#f8fbff_0%,#eef7ff_56%,#f7fbff_100%)] px-4 py-6 text-center shadow-sm dark:border-[#1d3858] dark:bg-[linear-gradient(120deg,#071224_0%,#0b2038_58%,#123768_100%)] sm:px-8 sm:py-8">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(36,120,255,0.08)_1px,transparent_1px),linear-gradient(rgba(36,120,255,0.06)_1px,transparent_1px)] bg-[size:38px_38px] opacity-50 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)]" />
         <div className="relative mx-auto max-w-3xl">
-          {isAdmin ? (
+          {canManage ? (
             <div className="absolute right-0 top-0 z-10">
               <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setShowCsoInfoForm(true)}>
                 <Pencil className="size-3.5" />
@@ -272,6 +272,42 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
         </div>
       </section>
 
+      {model.csoInfo?.facebookLink ? (
+        <div className="overflow-hidden rounded-xl border border-[#1877F2]/20 bg-card shadow-sm dark:border-[#1877F2]/15">
+          <div className="flex items-center justify-between border-b border-[#1877F2]/15 bg-[#1877F2]/5 px-4 py-3 dark:border-[#1877F2]/10 dark:bg-[#1877F2]/[0.07] sm:px-5">
+            <div className="flex items-center gap-2.5">
+              <svg viewBox="0 0 24 24" className="size-4 shrink-0 text-[#1877F2]" fill="currentColor">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+              </svg>
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">CSSO Facebook Page</h3>
+                <p className="text-[11px] leading-tight text-muted-foreground">Stay updated with our latest posts</p>
+              </div>
+            </div>
+            <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" asChild>
+              <a href={model.csoInfo.facebookLink} target="_blank" rel="noreferrer">
+                Visit Page
+                <ExternalLink className="size-3" />
+              </a>
+            </Button>
+          </div>
+          <div className="w-full">
+            <iframe
+              src={`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(model.csoInfo.facebookLink)}&tabs=timeline&width=500&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`}
+              width="100%"
+              height="500"
+              className="h-[400px] sm:h-[500px]"
+              style={{ border: "none", overflow: "hidden", display: "block" }}
+              scrolling="no"
+              frameBorder={0}
+              allowFullScreen
+              allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+              title="CSSO Facebook Page"
+            />
+          </div>
+        </div>
+      ) : null}
+
       <div className="grid gap-3 md:grid-cols-3">
         {[
           { label: "Accomplishments", value: String(accomplishments.length) },
@@ -291,7 +327,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
             <Images className="size-4 text-primary dark:text-[#8bd3ff]" />
             <h3 className="text-sm font-semibold text-foreground">CSSO Newsroom</h3>
           </div>
-          {isAdmin ? (
+          {canManage ? (
             <div className="flex gap-2">
               {isManageGallery ? (
                 <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setIsManageGallery(false)}>
@@ -389,7 +425,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
                 unoptimized
               />
             </div>
-            {isAdmin ? (
+            {canManage ? (
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setShowOrgChartUpload(true)}>
                   <Upload className="size-4" />
@@ -409,7 +445,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
               <p className="mt-3 text-sm font-medium">
                 Organizational chart picture placeholder
               </p>
-              {isAdmin ? (
+              {canManage ? (
                 <Button size="sm" variant="outline" className="mt-4 rounded-lg" onClick={() => setShowOrgChartUpload(true)}>
                   <Upload className="size-4" />
                   Upload Image
@@ -423,14 +459,14 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
       <ReportGrid
         title="Accomplishment Reports"
         reports={accomplishments}
-        isAdmin={isAdmin}
+        isAdmin={canManage}
         onEdit={(r) => {
           setEditingReport(r)
           setShowForm(true)
         }}
         onDelete={(r) => setDeletingReport(r)}
         onView={(r) => setViewingReport(r)}
-        onAdd={isAdmin ? () => {
+        onAdd={canManage ? () => {
           setEditingReport(null)
           setAddReportType("Accomplishment")
           setShowForm(true)
@@ -440,14 +476,14 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
       <ReportGrid
         title="Financial Reports"
         reports={financials}
-        isAdmin={isAdmin}
+        isAdmin={canManage}
         onEdit={(r) => {
           setEditingReport(r)
           setShowForm(true)
         }}
         onDelete={(r) => setDeletingReport(r)}
         onView={(r) => setViewingReport(r)}
-        onAdd={isAdmin ? () => {
+        onAdd={canManage ? () => {
           setEditingReport(null)
           setAddReportType("Financial")
           setShowForm(true)
@@ -457,14 +493,14 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
       <ReportGrid
         title="Transparency Documents"
         reports={records}
-        isAdmin={isAdmin}
+        isAdmin={canManage}
         onEdit={(r) => {
           setEditingReport(r)
           setShowForm(true)
         }}
         onDelete={(r) => setDeletingReport(r)}
         onView={(r) => setViewingReport(r)}
-        onAdd={isAdmin ? () => {
+        onAdd={canManage ? () => {
           setEditingReport(null)
           setAddReportType("Record")
           setShowForm(true)
@@ -489,7 +525,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
                 <Download className="size-4" />
                 Download
               </Button>
-              {isAdmin ? (
+              {canManage ? (
                 <>
                   <Button size="sm" variant="outline" className="w-full rounded-lg min-[420px]:w-auto" onClick={() => setShowConstitutionUpload(true)}>
                     <Upload className="size-4" />
@@ -507,7 +543,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
           <div className="edu-bg-soft-glacier flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--edu-border-glacier)] py-12 text-center">
             <FileText className="mx-auto mb-3 size-10 text-foreground/40" />
             <p className="text-sm text-foreground/60">No constitution uploaded yet.</p>
-            {isAdmin ? (
+            {canManage ? (
               <Button size="sm" variant="outline" className="mt-3 rounded-lg" onClick={() => setShowConstitutionUpload(true)}>
                 <Upload className="size-4" />
                 Upload PDF
@@ -797,7 +833,7 @@ function CsoMiniGallery({ items }: { items: GalleryItem[] }) {
 function ReportGrid({
   title,
   reports,
-  isAdmin,
+  isAdmin: canManage,
   onEdit,
   onDelete,
   onView,
@@ -861,7 +897,7 @@ function ReportGrid({
               ) : null}
 
               <div className="mt-4 flex flex-wrap gap-2">
-                {isAdmin ? (
+                {canManage ? (
                   <>
                     <Button
                       size="sm"

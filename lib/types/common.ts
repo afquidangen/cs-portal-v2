@@ -1,4 +1,4 @@
-export type Role = "student" | "faculty" | "admin"
+export type Role = "student" | "faculty" | "admin" | "csso_officer"
 
 export type AvailabilityStatus =
   | "Available"

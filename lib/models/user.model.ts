@@ -7,6 +7,7 @@ export interface IUser extends Document {
   email: string
   password: string
   role: "student" | "faculty" | "admin"
+  roles?: string[]
   firstName?: string
   middleName?: string
   lastName?: string
@@ -87,6 +88,9 @@ const UserSchema = new Schema<IUser>(
         semester: String,
         section: String,
         units: Number,
+        editReason: String,
+        editedBy: String,
+        editedAt: String,
       },
     ],
     advisoryClass: String,
@@ -96,6 +100,7 @@ const UserSchema = new Schema<IUser>(
     year: Number,
     section: String,
     position: String,
+    roles: { type: [String], default: [] },
     status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
     createdAt: String,
     lastLogin: String,

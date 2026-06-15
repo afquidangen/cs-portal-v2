@@ -1,6 +1,7 @@
 import { csoReportsRepository } from "@/features/portal/repositories/cso-reports.repository"
 import { success, error, notFound } from "@/lib/api-response"
 import { uploadFile, destroyFile, deleteFile } from "@/lib/cloudinary"
+import { requireCsoAccess } from "@/lib/api-auth"
 
 export const runtime = "nodejs"
 
@@ -23,6 +24,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireCsoAccess(request)
+    if (auth instanceof Response) return auth
     const { id } = await params
     const body = await request.json()
 
@@ -67,10 +70,12 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireCsoAccess(request)
+    if (auth instanceof Response) return auth
     const { id } = await params
     const report = await csoReportsRepository.findById(id) as Record<string, unknown> | null
     if (!report) return notFound("CSO report")

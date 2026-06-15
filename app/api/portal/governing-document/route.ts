@@ -3,6 +3,7 @@ import { v2 as cloudinary } from "cloudinary"
 import { governingDocumentRepository } from "@/features/portal/repositories/governing-document.repository"
 import { success, error, badRequest, notFound } from "@/lib/api-response"
 import { uploadFile } from "@/lib/cloudinary"
+import { requireCsoAccess } from "@/lib/api-auth"
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -24,6 +25,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireCsoAccess(request)
+    if (auth instanceof Response) return auth
     const body = await request.json()
     if (!body.href) {
       return badRequest("File data is required.")
@@ -61,8 +64,10 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
+    const auth = await requireCsoAccess(request)
+    if (auth instanceof Response) return auth
     const docs = await governingDocumentRepository.findAll() as Record<string, unknown>[]
     if (docs.length === 0) return notFound("Governing document")
 

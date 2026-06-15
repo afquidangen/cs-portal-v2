@@ -46,6 +46,7 @@ type SessionUser = {
   email: string
   id: string
   role: Role
+  roles?: string[]
   title: string
 }
 
@@ -429,7 +430,7 @@ export function usePortalDashboardModel(role: Role) {
   })
   const profileName = getProfileFullName(profileDetails)
   const profile = authenticatedUser ?? {
-    name: "", email: "", id: "", role, title: "",
+    name: "", email: "", id: "", role, roles: [], title: "",
   } as SessionUser
 
   const profileUser = users.find((user) => user.id === profile.id)
@@ -752,6 +753,7 @@ export function usePortalDashboardModel(role: Role) {
       ticket.studentName === profile.name
   )
 
+  const canManageCso = role === "admin" || profile.roles?.includes("csso_officer")
   const selectedNav = navigation.find((item) => item.id === activeModule)
   const currentTitle = selectedNav?.label ?? "Home"
 
@@ -1294,6 +1296,29 @@ export function usePortalDashboardModel(role: Role) {
     syncApi("POST", "/api/portal/audit-logs", entry).catch(() => {})
   }
 
+  async function handleToggleCsoOfficer(userId: string, action: "assign" | "revoke") {
+    try {
+      const res = await fetch(`/api/portal/users/${userId}/cso-role`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? "Failed to update CSSO role.")
+      setUsers((current) =>
+        current.map((u) =>
+          u.id === userId ? { ...u, roles: json.data.roles } : u
+        )
+      )
+      addAuditLog(
+        `${action === "assign" ? "Assigned" : "Revoked"} CSSO officer role for user ${userId}`
+      )
+      toast.success(`CSSO Officer role ${action === "assign" ? "assigned" : "revoked"} successfully.`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update CSSO role.")
+    }
+  }
+
   async function handleAddUser(event: FormEvent<HTMLFormElement>): Promise<{ type: "success" } | { type: "duplicate"; existingUser: UserRecord; message: string } | { type: "error"; message: string }> {
     event.preventDefault()
     if (!newUser.firstName.trim() || !newUser.lastName.trim() || !newUser.email.trim()) {
@@ -1810,9 +1835,10 @@ export function usePortalDashboardModel(role: Role) {
           i === index ? entry : e
         ),
       }
-      syncApi("PUT", `/api/portal/users/${studentId}`, updated).then(() =>
+      syncApi("PUT", `/api/portal/users/${studentId}`, updated).then(() => {
         toast.success("Grade history updated.")
-      ).catch((e) => {
+        addAuditLog(`Grade correction for ${student.name}: ${entry.subjectCode} — ${entry.subjectName} (${studentId}) — Reason: ${entry.editReason ?? "N/A"}`)
+      }).catch((e) => {
         toast.error("Failed to update grade history.")
         console.error(e)
       })
@@ -3080,6 +3106,8 @@ export function usePortalDashboardModel(role: Role) {
     handleDeleteQuickLink,
     handleDeleteDownloadable,
     handleUploadStudentManual,
+    handleToggleCsoOfficer,
+    canManageCso,
     selectedNav,
     currentTitle,
     selectModule,

@@ -8,6 +8,7 @@ const secret = new TextEncoder().encode(
 export type JwtPayload = {
   email: string
   role: Role
+  roles?: string[]
   name: string
   id: string
 }

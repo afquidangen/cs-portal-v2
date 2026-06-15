@@ -1,6 +1,7 @@
 import { csoReportsRepository } from "@/features/portal/repositories/cso-reports.repository"
 import { success, error, badRequest } from "@/lib/api-response"
 import { uploadFile } from "@/lib/cloudinary"
+import { requireCsoAccess } from "@/lib/api-auth"
 
 export const runtime = "nodejs"
 
@@ -15,6 +16,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireCsoAccess(request)
+    if (auth instanceof Response) return auth
     const body = await request.json()
     if (!body.id || !body.title) {
       return badRequest("Report id and title are required.")

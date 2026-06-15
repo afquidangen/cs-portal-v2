@@ -116,6 +116,7 @@ export function UsersModule({ model }: PortalModuleProps) {
     units: 3,
   })
   const [editGradeHistoryIndex, setEditGradeHistoryIndex] = useState<number | null>(null)
+  const [gradeEditReason, setGradeEditReason] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [page, setPage] = useState(1)
   const [addOpen, setAddOpen] = useState(false)
@@ -123,6 +124,7 @@ export function UsersModule({ model }: PortalModuleProps) {
   const [studentYearFilter, setStudentYearFilter] = useState("All Years")
   const [studentSectionFilter, setStudentSectionFilter] = useState("All Sections")
   const [facultyFilter, setFacultyFilter] = useState("All Faculty")
+  const [studentTypeFilter, setStudentTypeFilter] = useState("All Students")
 
   const curriculumOptions = curricula.map(
     (c) => `${c.id} - ${c.name} - ${c.major}`
@@ -165,7 +167,7 @@ export function UsersModule({ model }: PortalModuleProps) {
 
   const visibleUsers = useMemo(() => {
     const hasStudentFilter =
-      studentYearFilter !== "All Years" || studentSectionFilter !== "All Sections"
+      studentYearFilter !== "All Years" || studentSectionFilter !== "All Sections" || studentTypeFilter !== "All Students"
     const hasFacultyFilter = facultyFilter !== "All Faculty"
 
     return filteredUsers.filter((user) => {
@@ -174,6 +176,8 @@ export function UsersModule({ model }: PortalModuleProps) {
         const yearLabel = user.currentYearLevel ?? YEAR_LABELS[String(user.year ?? "")]
         const matchesYear = studentYearFilter === "All Years" || yearLabel === studentYearFilter
         const matchesSection = studentSectionFilter === "All Sections" || user.section === studentSectionFilter
+        if (studentTypeFilter === "Regular" && user.studentType !== "Regular") return false
+        if (studentTypeFilter === "Irregular" && !["Irregular", "Transferee", "Shifter"].includes(user.studentType ?? "")) return false
         return matchesYear && matchesSection
       }
 
@@ -187,7 +191,7 @@ export function UsersModule({ model }: PortalModuleProps) {
 
       return true
     })
-  }, [facultyFilter, filteredUsers, studentSectionFilter, studentYearFilter])
+  }, [facultyFilter, filteredUsers, studentSectionFilter, studentTypeFilter, studentYearFilter])
 
   const totalPages = Math.max(1, Math.ceil(visibleUsers.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
@@ -347,7 +351,7 @@ export function UsersModule({ model }: PortalModuleProps) {
         eyebrow={trashView ? "Deleted accounts" : "Search and filter"}
         className="[&>div:first-child]:border-b-0 [&>div:first-child]:bg-transparent [&>div:first-child]:pb-2 [&>div:first-child>div:first-child]:hidden [&>div:first-child>div:nth-child(2)]:w-full [&>div:first-child>div:nth-child(2)]:sm:w-full"
         actions={
-          <div className="grid w-full max-w-full min-w-0 grid-cols-1 gap-2 rounded-xl bg-muted/20 p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(240px,1.45fr)_repeat(4,minmax(125px,1fr))_repeat(3,minmax(112px,auto))]">
+          <div className="grid w-full max-w-full min-w-0 grid-cols-1 gap-2 rounded-xl bg-muted/20 p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(240px,1.45fr)_repeat(5,minmax(125px,1fr))_repeat(3,minmax(112px,auto))]">
             <div className="min-w-0 sm:col-span-2 lg:col-span-3 xl:col-span-1 [&>div]:max-w-none">
               <SearchBox
                 value={query}
@@ -365,6 +369,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                 setStudentYearFilter("All Years")
                 setStudentSectionFilter("All Sections")
                 setFacultyFilter("All Faculty")
+                setStudentTypeFilter("All Students")
                 setPage(1)
               }}
               options={["All", "student", "faculty", "admin"]}
@@ -391,6 +396,17 @@ export function UsersModule({ model }: PortalModuleProps) {
               options={studentSectionOptions}
               className="w-full min-w-0"
             />
+            {roleFilter === "student" ? (
+              <Select
+                value={studentTypeFilter}
+                onChange={(value) => {
+                  setStudentTypeFilter(value)
+                  setPage(1)
+                }}
+                options={["All Students", "Regular", "Irregular"]}
+                className="w-full min-w-0"
+              />
+            ) : null}
             <Select
               value={facultyFilter}
               onChange={(value) => {
@@ -443,7 +459,7 @@ export function UsersModule({ model }: PortalModuleProps) {
       >
         {!trashView ? (
           <>
-            <div className="mb-4 grid gap-3 rounded-xl border border-border bg-muted/20 p-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mb-4 grid gap-3 rounded-xl border border-border bg-muted/20 p-3 text-sm sm:grid-cols-2 xl:grid-cols-5">
               <div className="flex h-[74px] min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 shadow-sm">
                 <Filter className="size-4 shrink-0 text-primary" />
                 <div className="min-w-0">
@@ -470,6 +486,13 @@ export function UsersModule({ model }: PortalModuleProps) {
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Faculty</p>
                   <p className="truncate font-medium text-foreground">{facultyFilter}</p>
+                </div>
+              </div>
+              <div className="flex h-[74px] min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 shadow-sm">
+                <Filter className="size-4 shrink-0 text-amber-600 dark:text-amber-300" />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Student Type</p>
+                  <p className="truncate font-medium text-foreground">{studentTypeFilter}</p>
                 </div>
               </div>
             </div>
@@ -517,6 +540,11 @@ export function UsersModule({ model }: PortalModuleProps) {
                         {user.role === "student" ? (
                           <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 }) }} title="Grade history">
                             <History className="size-3.5" />
+                          </Button>
+                        ) : null}
+                        {model.role === "admin" && user.role === "student" ? (
+                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => model.handleToggleCsoOfficer(user.id, user.roles?.includes("csso_officer") ? "revoke" : "assign")} title={user.roles?.includes("csso_officer") ? "Revoke CSSO Officer" : "Assign CSSO Officer"}>
+                            <ShieldCheck className="size-3.5" />
                           </Button>
                         ) : null}
                         <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setToggleUserId(user.id)} title={user.status === "Active" ? "Deactivate" : "Activate"}>
@@ -585,6 +613,9 @@ export function UsersModule({ model }: PortalModuleProps) {
                               ) : null}
                               {user.role === "student" ? (
                                 <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 }) }} title="Grade history" aria-label="Grade history"><History className="size-4" /></Button>
+                              ) : null}
+                              {model.role === "admin" && user.role === "student" ? (
+                                <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => model.handleToggleCsoOfficer(user.id, user.roles?.includes("csso_officer") ? "revoke" : "assign")} title={user.roles?.includes("csso_officer") ? "Revoke CSSO Officer" : "Assign CSSO Officer"} aria-label={user.roles?.includes("csso_officer") ? "Revoke CSSO Officer" : "Assign CSSO Officer"}><ShieldCheck className="size-4" /></Button>
                               ) : null}
                               <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => setToggleUserId(user.id)} title={user.status === "Active" ? "Deactivate" : "Activate"} aria-label={user.status === "Active" ? "Deactivate user" : "Activate user"}>
                                 {user.status === "Active" ? <UserX className="size-4" /> : <UserCheck className="size-4" />}
@@ -1182,7 +1213,10 @@ export function UsersModule({ model }: PortalModuleProps) {
                         <tbody>
                           {history.map((entry, idx) => (
                             <tr key={idx} className="border-t border-border">
-                              <td className="px-3 py-2 font-medium text-foreground">{entry.subjectCode}</td>
+                              <td className="px-3 py-2 font-medium text-foreground">
+                                {entry.subjectCode}
+                                {entry.editedAt ? <span className="ml-1.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400" title={entry.editReason ?? ""}>(edited)</span> : null}
+                              </td>
                               <td className="px-3 py-2 text-foreground/80">{entry.subjectName}</td>
                               <td className="px-3 py-2 text-center text-foreground">{entry.finalPercentile}</td>
                               <td className="px-3 py-2 text-center text-foreground">{entry.transmutedGrade}</td>
@@ -1207,6 +1241,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                                         units: entry.units ?? 3,
                                       })
                                       setEditGradeHistoryIndex(idx)
+                                      setGradeEditReason("")
                                     }}
                                   >
                                     <Pencil className="size-3.5 inline" />
@@ -1328,11 +1363,25 @@ export function UsersModule({ model }: PortalModuleProps) {
                         />
                       </div>
                     </div>
+                    {editGradeHistoryIndex !== null ? (
+                      <div className="sm:col-span-2">
+                        <p className="mb-1 text-xs font-medium text-foreground/70">
+                          Reason for change <span className="text-red-500">*</span>
+                        </p>
+                        <textarea
+                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
+                          rows={2}
+                          value={gradeEditReason}
+                          onChange={(e) => setGradeEditReason(e.target.value)}
+                          placeholder="Explain why this grade is being corrected..."
+                        />
+                      </div>
+                    ) : null}
                     <div className="flex gap-2">
                       <Button
                         size="sm"
                         className="rounded-xl"
-                        disabled={!gradeHistoryEntry.subjectCode || !gradeHistoryEntry.finalPercentile}
+                        disabled={!gradeHistoryEntry.subjectCode || !gradeHistoryEntry.finalPercentile || (editGradeHistoryIndex !== null && !gradeEditReason.trim())}
                         onClick={() => {
                           if (!student) return
                           const entry: GradeHistoryEntry = {
@@ -1346,6 +1395,9 @@ export function UsersModule({ model }: PortalModuleProps) {
                             semester: gradeHistoryEntry.semester,
                             section: gradeHistoryEntry.section || undefined,
                             units: gradeHistoryEntry.units,
+                            editReason: editGradeHistoryIndex !== null ? gradeEditReason.trim() : undefined,
+                            editedBy: editGradeHistoryIndex !== null ? model.profile?.name : undefined,
+                            editedAt: editGradeHistoryIndex !== null ? new Date().toISOString() : undefined,
                           }
                           if (editGradeHistoryIndex !== null) {
                             handleUpdateGradeHistory(student.id, editGradeHistoryIndex, entry)
@@ -1354,6 +1406,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                             handleAddGradeHistory(student.id, entry)
                           }
                             setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: student.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 })
+                            setGradeEditReason("")
                         }}
                       >
                         {editGradeHistoryIndex !== null ? <Pencil className="mr-1 size-4" /> : <Plus className="mr-1 size-4" />}
@@ -1367,6 +1420,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                           onClick={() => {
                             setEditGradeHistoryIndex(null)
                           setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "Passed", curriculumId: student.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 })
+                          setGradeEditReason("")
                           }}
                         >
                           Cancel

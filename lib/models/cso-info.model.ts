@@ -16,7 +16,7 @@ const CsoInfoSchema = new Schema<ICsoInfo>(
     description: { type: String, default: "" },
     logoUrl: { type: String, default: "/csso-logo.svg" },
     logoPublicId: String,
-    facebookLink: { type: String, default: "" },
+    facebookLink: { type: String, default: "https://www.facebook.com/profile.php?id=61587590024541" },
     portalLogoUrl: { type: String, default: "/portal-logo.svg" },
     portalLogoPublicId: String,
   },

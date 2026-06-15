@@ -1,6 +1,7 @@
 import { csoInfoRepository } from "@/features/portal/repositories/cso-info.repository"
 import { success, error, badRequest, notFound } from "@/lib/api-response"
 import { uploadFile, deleteFile, destroyFile } from "@/lib/cloudinary"
+import { requireCsoAccess } from "@/lib/api-auth"
 
 export const runtime = "nodejs"
 
@@ -16,6 +17,8 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
+    const auth = await requireCsoAccess(request)
+    if (auth instanceof Response) return auth
     const body = await request.json()
     if (!body.orgName) {
       return badRequest("Organization name is required.")
@@ -83,7 +86,7 @@ export async function PUT(request: Request) {
     const updateData: Record<string, unknown> = {
       orgName: body.orgName,
       description: body.description ?? "",
-      facebookLink: body.facebookLink ?? "",
+      facebookLink: body.facebookLink ?? "https://www.facebook.com/profile.php?id=61587590024541",
       logoUrl,
       logoPublicId,
       portalLogoUrl,
@@ -101,8 +104,10 @@ export async function PUT(request: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
+    const auth = await requireCsoAccess(request)
+    if (auth instanceof Response) return auth
     const records = await csoInfoRepository.findAll() as Record<string, unknown>[]
     if (records.length === 0) return notFound("CSO info")
 

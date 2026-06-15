@@ -1,4 +1,4 @@
-export type Role = "student" | "faculty" | "admin"
+export type Role = "student" | "faculty" | "admin" | "csso_officer"
 
 export type AvailabilityStatus =
   | "Available"
@@ -19,6 +19,9 @@ export type GradeHistoryEntry = {
   semester: string
   section?: string
   units?: number
+  editReason?: string
+  editedBy?: string
+  editedAt?: string
 }
 
 export type UserRecord = {
@@ -26,6 +29,7 @@ export type UserRecord = {
   name: string
   email: string
   role: Role
+  roles?: Role[]
   firstName?: string
   middleName?: string
   lastName?: string

@@ -43,6 +43,17 @@ export function LoginPage() {
     document.documentElement.classList.remove("dark")
   }, [])
 
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.account?.role) {
+          router.push(`/${data.account.role}`)
+        }
+      })
+      .catch(() => {})
+  }, [router])
+
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setMessage("")

@@ -56,6 +56,7 @@ export async function GET(request: Request) {
       account: {
         email: user.email,
         role: user.role,
+        roles: user.roles ?? [],
         name: user.name,
         id: user.id,
         title: computeTitle(user),

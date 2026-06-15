@@ -66,6 +66,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
     index?: number
   } | null>(null)
   const [customDialog, setCustomDialog] = useState(false)
+  const [gradeEditReason, setGradeEditReason] = useState("")
   const [gradeForm, setGradeForm] = useState({
     subjectCode: "",
     subjectName: "",
@@ -187,7 +188,13 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
     }
 
     if (gradeDialog?.mode === "edit" && gradeDialog.index !== undefined) {
-      handleUpdateGradeHistory(selectedStudent.id, gradeDialog.index, entry)
+      handleUpdateGradeHistory(selectedStudent.id, gradeDialog.index, {
+        ...entry,
+        editReason: gradeEditReason.trim(),
+        editedBy: model.profile?.name,
+        editedAt: new Date().toISOString(),
+      })
+      setGradeEditReason("")
     } else {
       handleAddGradeHistory(selectedStudent.id, entry)
     }
@@ -527,7 +534,10 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
                       <tbody className="divide-y divide-border bg-card">
                         {gradeHistory.map((entry, idx) => (
                           <tr key={`custom-${idx}`} className="transition-colors hover:bg-muted/30">
-                            <td className="px-4 py-3 font-medium text-foreground">{entry.subjectCode}</td>
+                            <td className="px-4 py-3 font-medium text-foreground">
+                              {entry.subjectCode}
+                              {entry.editedAt ? <span className="ml-1.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400" title={entry.editReason ?? ""}>(edited)</span> : null}
+                            </td>
                             <td className="px-4 py-3 text-foreground/80">{entry.subjectName}</td>
                             <td className="px-4 py-3 text-foreground/80">{entry.transmutedGrade}</td>
                             <td className="px-4 py-3 text-foreground/80">
@@ -557,6 +567,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
                                       section: entry.section ?? "",
                                       index: idx,
                                     })
+                                    setGradeEditReason("")
                                   }}
                                 >
                                   <Pencil className="size-3.5" />
@@ -591,7 +602,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
       {/* Grade dialog */}
       <Dialog
         open={!!gradeDialog && !customDialog}
-        onOpenChange={(o) => { if (!o) { setGradeDialog(null); setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "", remarks: "Passed", section: "", units: 3 }) } }}
+        onOpenChange={(o) => { if (!o) { setGradeDialog(null); setGradeForm({ subjectCode: "", subjectName: "", finalPercentile: "", remarks: "Passed", section: "", units: 3 }); setGradeEditReason("") } }}
       >
         <DialogContent className="w-[95vw] sm:max-w-sm">
           <DialogHeader>
@@ -643,10 +654,24 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
                 options={yearSections.find((ys) => ys.year === gradeDialog?.yearLevel)?.sections ?? []}
               />
             </div>
+            {gradeDialog?.mode === "edit" ? (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">
+                  Reason for change <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
+                  rows={2}
+                  value={gradeEditReason}
+                  onChange={(e) => setGradeEditReason(e.target.value)}
+                  placeholder="Explain why this grade is being corrected..."
+                />
+              </div>
+            ) : null}
           </div>
           <DialogFooter className="mt-2 gap-2">
-            <Button variant="ghost" onClick={() => setGradeDialog(null)}>Cancel</Button>
-            <Button onClick={handleSaveGrade}>
+            <Button variant="ghost" onClick={() => { setGradeDialog(null); setGradeEditReason("") }}>Cancel</Button>
+            <Button onClick={handleSaveGrade} disabled={gradeDialog?.mode === "edit" && !gradeEditReason.trim()}>
               <BookMarked className="mr-1.5 size-4" /> Save
             </Button>
           </DialogFooter>

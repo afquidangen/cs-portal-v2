@@ -11,6 +11,9 @@ export type GradeHistoryEntry = {
   semester: string
   section?: string
   units?: number
+  editReason?: string
+  editedBy?: string
+  editedAt?: string
 }
 
 export type UserRecord = {
@@ -18,6 +21,7 @@ export type UserRecord = {
   name: string
   email: string
   role: Role
+  roles?: Role[]
   password?: string
   firstName?: string
   middleName?: string

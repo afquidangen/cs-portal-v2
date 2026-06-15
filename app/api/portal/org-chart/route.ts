@@ -1,6 +1,7 @@
 import { orgChartRepository } from "@/features/portal/repositories/org-chart.repository"
 import { success, error, badRequest, notFound } from "@/lib/api-response"
 import { uploadFile, deleteFile, destroyFile } from "@/lib/cloudinary"
+import { requireCsoAccess } from "@/lib/api-auth"
 
 export const runtime = "nodejs"
 
@@ -16,6 +17,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireCsoAccess(request)
+    if (auth instanceof Response) return auth
     const body = await request.json()
     if (!body.imageUrl) {
       return badRequest("Image data is required.")
@@ -56,8 +59,10 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
+    const auth = await requireCsoAccess(request)
+    if (auth instanceof Response) return auth
     const records = await orgChartRepository.findAll() as Record<string, unknown>[]
     if (records.length === 0) return notFound("Organizational chart")
 
