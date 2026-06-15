@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { BookOpen, Download, FileText, LibraryBig, Loader2, Plus, Search, Tags } from "lucide-react"
+import { BookOpen, Calendar, Download, FileText, LibraryBig, Loader2, Plus, Search, Tags, FileIcon, ExternalLink, Bookmark, User, Tag, Users } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -307,73 +307,130 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
           />
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-5 lg:grid-cols-2">
           {filteredTheses.map((thesis) => (
             <article
               key={thesis.id}
-              className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md"
+              className="group rounded-2xl border border-border bg-card shadow-sm transition-all hover:shadow-lg"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h4 className="line-clamp-2 font-semibold tracking-tight text-foreground">
-                    {thesis.title}
-                  </h4>
-                  <p className="mt-1 text-sm text-foreground/70">
-                    {thesis.authors} - {thesis.year}
-                  </p>
-                </div>
-                <StatusBadge value={thesis.category} />
-              </div>
-
-              <p className="mt-3 line-clamp-3 text-sm leading-6 text-foreground/80">
-                {thesis.abstract}
-              </p>
-
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                {thesis.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground/80 dark:bg-secondary"
-                  >
-                    {tag}
+              <div className="flex h-full flex-col p-5">
+                <div className="flex items-start gap-3">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm">
+                    <Bookmark className="size-5" />
                   </span>
-                ))}
-              </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <StatusBadge value={thesis.category} />
+                    </div>
+                    <h4 className="mt-2 line-clamp-2 text-base font-bold leading-snug tracking-tight text-foreground">
+                      {thesis.title}
+                    </h4>
+                  </div>
+                </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-<Button
-  size="sm"
-  className="rounded-lg"
-  onClick={async () => {
-    try {
-      const res = await fetch(thesis.pdfUrl)
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = thesis.fileName || `${thesis.title}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    } catch {
-      window.open(thesis.pdfUrl, "_blank")
-    }
-  }}
->
-  <Download className="size-4" />
-  Download PDF
-</Button>
+                <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
+                  <div className="flex items-center gap-2 text-foreground/70">
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                      <Users className="size-3" />
+                    </span>
+                    <span className="truncate font-medium text-foreground/80">{thesis.authors}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-foreground/70">
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                      <User className="size-3" />
+                    </span>
+                    <span className="truncate">{thesis.adviser}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-foreground/70">
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                      <Calendar className="size-3" />
+                    </span>
+                    <span>{thesis.year}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-foreground/70">
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                      <Tag className="size-3" />
+                    </span>
+                    <span className="truncate">{thesis.category}</span>
+                  </div>
+                </div>
+
+                <p className="mt-4 line-clamp-3 text-sm leading-6 text-foreground/70">
+                  {thesis.abstract}
+                </p>
+
+                {thesis.tags.length > 0 ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                    {thesis.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-lg border border-border bg-muted/50 px-2.5 py-1 text-[11px] font-medium text-foreground/60 dark:bg-secondary"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+
+                <div className="mt-auto pt-4">
+                  <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3">
+                    <FileIcon className="size-6 shrink-0 text-primary" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {thesis.fileName || `${thesis.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.pdf`}
+                      </p>
+                      <p className="text-xs text-muted-foreground">PDF &middot; Manuscript File</p>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-9 gap-1.5 rounded-lg px-3 text-xs"
+                        title="Open in new tab"
+                        onClick={() => window.open(thesis.pdfUrl, "_blank")}
+                      >
+                        <ExternalLink className="size-3.5" />
+                        Open
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="h-9 gap-1.5 rounded-lg px-3 text-xs"
+                        title="Download PDF"
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(thesis.pdfUrl)
+                            const blob = await res.blob()
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement("a")
+                            a.href = url
+                            a.download = thesis.fileName || `${thesis.title}.pdf`
+                            document.body.appendChild(a)
+                            a.click()
+                            document.body.removeChild(a)
+                            URL.revokeObjectURL(url)
+                          } catch {
+                            window.open(thesis.pdfUrl, "_blank")
+                          }
+                        }}
+                      >
+                        <Download className="size-3.5" />
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                </div>
 
                 {role === "admin" ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="rounded-lg"
-                    onClick={() => confirmAndDeleteThesis(thesis.id)}
-                  >
-                    Delete
-                  </Button>
+                  <div className="mt-2 flex justify-end">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-lg h-8 text-xs"
+                      onClick={() => confirmAndDeleteThesis(thesis.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 ) : null}
               </div>
             </article>

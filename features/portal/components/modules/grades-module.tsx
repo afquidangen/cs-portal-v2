@@ -253,20 +253,28 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
     updateGradeRemarks,
     uploadName,
     visibleSchedules,
+    semesters,
   } = model
 
+  const [selectedSemesterId, setSelectedSemesterId] = useState("")
   const [selectedSubject, setSelectedSubject] = useState("")
   const [selectedSection, setSelectedSection] = useState<string | null>(null)
   const [studentQuery, setStudentQuery] = useState("")
 
+  const scheduleSemesters = useMemo(() => {
+    const semesterIds = new Set(visibleSchedules.map((s) => s.semesterId))
+    return semesters.filter((sem) => semesterIds.has(sem.id))
+  }, [visibleSchedules, semesters])
+
   const facultySubjects = useMemo(() => {
     const seen = new Set<string>()
     return visibleSchedules.filter((s) => {
+      if (selectedSemesterId && s.semesterId !== selectedSemesterId) return false
       if (seen.has(s.subject)) return false
       seen.add(s.subject)
       return true
     })
-  }, [visibleSchedules])
+  }, [visibleSchedules, selectedSemesterId])
 
   const subjectSections = useMemo(() => {
     if (!selectedSubject) return []
@@ -274,12 +282,13 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
     return visibleSchedules
       .filter((s) => s.subject === selectedSubject)
       .filter((s) => {
+        if (selectedSemesterId && s.semesterId !== selectedSemesterId) return false
         if (seen.has(s.section)) return false
         seen.add(s.section)
         return true
       })
       .map((s) => s.section)
-  }, [visibleSchedules, selectedSubject])
+  }, [visibleSchedules, selectedSubject, selectedSemesterId])
 
   const subjectRoster = useMemo(() => {
     if (subjectSections.length === 0) return []
@@ -421,33 +430,65 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
         })}
       </div>
 
-      {/* Subject selector */}
-      <div className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
-        <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          <BookMarked className="size-4" />
-          Subject
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {facultySubjects.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No subjects assigned.</p>
-          ) : (
-            facultySubjects.map((s) => (
-              <Button
-                key={s.subject}
-                type="button"
-                variant={selectedSubject === s.subject ? "default" : "outline"}
-                onClick={() => {
-                  setSelectedSubject(s.subject)
-                  setSelectedSection(null)
-                }}
-                className="rounded-xl"
-              >
-                {s.subject}
-              </Button>
-            ))
-          )}
+      {/* Semester selector */}
+      {scheduleSemesters.length > 0 && (
+        <div className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <BookMarked className="size-4" />
+            Semester
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {scheduleSemesters.map((sem) => {
+              const label = `S.Y. ${sem.schoolYearStart}-${sem.schoolYearEnd} &middot; ${sem.semester}`
+              return (
+                <Button
+                  key={sem.id}
+                  type="button"
+                  variant={selectedSemesterId === sem.id ? "default" : "outline"}
+                  onClick={() => {
+                    setSelectedSemesterId(sem.id)
+                    setSelectedSubject("")
+                    setSelectedSection(null)
+                  }}
+                  className="rounded-xl"
+                >
+                  S.Y. {sem.schoolYearStart}-{sem.schoolYearEnd} &middot; {sem.semester}
+                </Button>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Subject selector */}
+      {selectedSemesterId && (
+        <div className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <BookMarked className="size-4" />
+            Subject
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {facultySubjects.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No subjects assigned for this semester.</p>
+            ) : (
+              facultySubjects.map((s) => (
+                <Button
+                  key={s.subject}
+                  type="button"
+                  variant={selectedSubject === s.subject ? "default" : "outline"}
+                  onClick={() => {
+                    setSelectedSubject(s.subject)
+                    setSelectedSection(null)
+                  }}
+                  className="rounded-xl"
+                >
+                  {s.subject}
+                </Button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Upload */}
       <div className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">

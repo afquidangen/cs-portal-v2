@@ -1,8 +1,14 @@
 "use client"
 
-import { Activity, Clock, FileClock, Filter, RefreshCw, Search, ShieldCheck, User, Users } from "lucide-react"
-import { useState } from "react"
+import { Activity, CalendarDays, ChevronLeft, ChevronRight, Clock, FileClock, Filter, RefreshCw, Search, ShieldCheck, User, Users, X } from "lucide-react"
+import { useCallback, useMemo, useState } from "react"
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -16,18 +22,109 @@ import { cn } from "@/lib/utils"
 import { Panel, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
+const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+const dayHeaders = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+type PickerTarget = "from" | "to"
+
+function getDaysInMonth(year: number, month: number) {
+  return new Date(year, month + 1, 0).getDate()
+}
+
+function getFirstDayOfMonth(year: number, month: number) {
+  return new Date(year, month, 1).getDay()
+}
+
+function buildCalendarGrid(year: number, month: number) {
+  const daysInMonth = getDaysInMonth(year, month)
+  const firstDay = getFirstDayOfMonth(year, month)
+  const grid: (number | null)[] = Array(firstDay).fill(null)
+  for (let d = 1; d <= daysInMonth; d++) grid.push(d)
+  while (grid.length % 7 !== 0) grid.push(null)
+  return grid
+}
+
+function toISODate(year: number, month: number, day: number) {
+  return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+}
+
 export function AuditModule({ model }: PortalModuleProps) {
   const { auditLogs } = model
   const [search, setSearch] = useState("")
   const [actorFilter, setActorFilter] = useState("All")
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [pickerTarget, setPickerTarget] = useState<PickerTarget>("from")
+  const [calYear, setCalYear] = useState(new Date().getFullYear())
+  const [calMonth, setCalMonth] = useState(new Date().getMonth())
+
+  const todayStr = useMemo(() => toISODate(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()), [])
 
   const actors = Array.from(new Set(auditLogs.map((log: { actor: string }) => log.actor)))
 
-  const filtered = auditLogs.filter((log: { actor: string; action: string }) => {
+  const filtered = auditLogs.filter((log: { actor: string; action: string; time: string }) => {
     if (actorFilter !== "All" && log.actor !== actorFilter) return false
     if (search && !log.action.toLowerCase().includes(search.toLowerCase())) return false
+    if (dateFrom) {
+      const logDate = log.time.slice(0, 10)
+      if (logDate < dateFrom) return false
+    }
+    if (dateTo) {
+      const logDate = log.time.slice(0, 10)
+      if (logDate > dateTo) return false
+    }
     return true
   })
+
+  const calendarGrid = useMemo(() => buildCalendarGrid(calYear, calMonth), [calYear, calMonth])
+
+  const openCalendar = useCallback((target: PickerTarget) => {
+    const currentDate = target === "from" ? dateFrom : dateTo
+    if (currentDate) {
+      const d = new Date(currentDate + "T00:00:00")
+      setCalYear(d.getFullYear())
+      setCalMonth(d.getMonth())
+    } else {
+      const d = new Date()
+      setCalYear(d.getFullYear())
+      setCalMonth(d.getMonth())
+    }
+    setPickerTarget(target)
+    setShowCalendar(true)
+  }, [dateFrom, dateTo])
+
+  const handlePrevMonth = useCallback(() => {
+    setCalMonth((m) => {
+      if (m === 0) { setCalYear((y) => y - 1); return 11 }
+      return m - 1
+    })
+  }, [])
+
+  const handleNextMonth = useCallback(() => {
+    setCalMonth((m) => {
+      if (m === 11) { setCalYear((y) => y + 1); return 0 }
+      return m + 1
+    })
+  }, [])
+
+  const handleDateSelect = useCallback((day: number) => {
+    const iso = toISODate(calYear, calMonth, day)
+    if (pickerTarget === "from") setDateFrom(iso)
+    else setDateTo(iso)
+    setShowCalendar(false)
+  }, [calYear, calMonth, pickerTarget])
+
+  const clearDates = useCallback(() => {
+    setDateFrom("")
+    setDateTo("")
+  }, [])
+
+  const formatLabel = (iso: string) => {
+    if (!iso) return ""
+    const d = new Date(iso + "T00:00:00")
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+  }
 
   return (
     <Panel
@@ -91,9 +188,9 @@ export function AuditModule({ model }: PortalModuleProps) {
         })}
       </div>
 
-      {actors.length > 1 ? (
-        <div className="mb-4 flex items-center gap-2">
-          <Filter className="size-4 text-muted-foreground" />
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <Filter className="size-4 text-muted-foreground" />
+        {actors.length > 1 ? (
           <Select value={actorFilter} onValueChange={setActorFilter}>
             <SelectTrigger className="h-8 w-44 text-xs">
               <SelectValue placeholder="Filter by actor" />
@@ -105,8 +202,89 @@ export function AuditModule({ model }: PortalModuleProps) {
               ))}
             </SelectContent>
           </Select>
+        ) : null}
+        <div className="flex items-center gap-1">
+          <CalendarDays className="size-3.5 text-muted-foreground" />
+          <button
+            type="button"
+            onClick={() => openCalendar("from")}
+            className={cn(
+              "h-8 rounded-xl border border-border bg-card px-3 text-xs transition-colors hover:bg-muted",
+              dateFrom ? "font-medium text-foreground" : "text-muted-foreground"
+            )}
+          >
+            {dateFrom ? formatLabel(dateFrom) : "From"}
+          </button>
+          <span className="text-xs text-muted-foreground">—</span>
+          <button
+            type="button"
+            onClick={() => openCalendar("to")}
+            className={cn(
+              "h-8 rounded-xl border border-border bg-card px-3 text-xs transition-colors hover:bg-muted",
+              dateTo ? "font-medium text-foreground" : "text-muted-foreground"
+            )}
+          >
+            {dateTo ? formatLabel(dateTo) : "To"}
+          </button>
         </div>
-      ) : null}
+        {(dateFrom || dateTo) && (
+          <button
+            type="button"
+            onClick={clearDates}
+            className="flex size-6 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+            title="Clear date filter"
+          >
+            <X className="size-3.5" />
+          </button>
+        )}
+      </div>
+
+      <Dialog open={showCalendar} onOpenChange={(open) => { if (!open) setShowCalendar(false) }}>
+        <DialogContent className="sm:max-w-[300px]">
+          <DialogHeader>
+            <DialogTitle>Select {pickerTarget === "from" ? "Start" : "End"} Date</DialogTitle>
+          </DialogHeader>
+          <div className="p-1">
+            <div className="mb-3 flex items-center justify-between">
+              <button type="button" className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted" onClick={handlePrevMonth}>
+                <ChevronLeft className="size-4" />
+              </button>
+              <span className="text-sm font-semibold text-foreground">{monthNames[calMonth]} {calYear}</span>
+              <button type="button" className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted" onClick={handleNextMonth}>
+                <ChevronRight className="size-4" />
+              </button>
+            </div>
+            <div className="mb-2 grid grid-cols-7 text-center text-xs font-medium text-muted-foreground">
+              {dayHeaders.map((d) => (<span key={d}>{d}</span>))}
+            </div>
+            <div className="grid grid-cols-7 gap-0.5">
+              {calendarGrid.map((day, i) => {
+                if (day === null) return <div key={i} />
+                const iso = toISODate(calYear, calMonth, day)
+                const isToday = iso === todayStr
+                const isSelected = iso === (pickerTarget === "from" ? dateFrom : dateTo)
+                return (
+                  <button
+                    key={iso}
+                    type="button"
+                    className={cn(
+                      "flex size-8 items-center justify-center rounded-lg text-sm transition-colors",
+                      isSelected
+                        ? "bg-primary text-primary-foreground"
+                        : isToday
+                          ? "bg-primary/10 font-semibold text-primary"
+                          : "text-foreground hover:bg-muted"
+                    )}
+                    onClick={() => handleDateSelect(day)}
+                  >
+                    {day}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="space-y-2">
         {filtered.length === 0 ? (
@@ -116,7 +294,7 @@ export function AuditModule({ model }: PortalModuleProps) {
               No audit logs found.
             </p>
             <p className="text-xs text-muted-foreground/60">
-              {search || actorFilter !== "All"
+              {search || actorFilter !== "All" || dateFrom || dateTo
                 ? "Try adjusting your filters."
                 : "Activity will appear here as actions are performed."}
             </p>

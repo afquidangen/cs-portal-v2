@@ -1,9 +1,17 @@
 "use client"
 
-import { Check, Inbox, LifeBuoy, MailPlus, MessageSquareText, RotateCcw, Send, TicketCheck } from "lucide-react"
+import { ArrowDownUp, Check, ChevronDown, Inbox, LifeBuoy, MailPlus, MessageSquareText, RotateCcw, Send, TicketCheck } from "lucide-react"
+import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 import {
   type TicketStatus,
@@ -12,11 +20,12 @@ import {
 import {
   EmptyState,
   Panel,
-  Select,
+  Select as ThemedSelect,
   StatusBadge,
   Textarea,
   TicketList,
 } from "../shared/dashboard-ui"
+import { cn } from "@/lib/utils"
 import type { PortalModuleProps } from "./types"
 
 export function FeedbackModule({ model }: PortalModuleProps) {
@@ -31,6 +40,24 @@ export function FeedbackModule({ model }: PortalModuleProps) {
     undoTicketResolution,
     updateTicketStatus,
   } = model
+
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "resolved">("all")
+
+  const sorted = useMemo(() =>
+    [...filteredTickets].sort(
+      (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+    ),
+  [filteredTickets])
+
+  const unresolved = useMemo(
+    () => sorted.filter((t) => t.status !== "Resolved"),
+    [sorted]
+  )
+
+  const resolved = useMemo(() => {
+    if (statusFilter === "open") return []
+    return sorted.filter((t) => t.status === "Resolved")
+  }, [sorted, statusFilter])
 
   if (role === "student") {
     return (
@@ -52,7 +79,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
           </div>
 
           <form onSubmit={handleFeedbackSubmit} className="edu-bg-soft-glacier space-y-3 rounded-xl border border-[var(--edu-border-glacier)] p-4">
-            <Select
+            <ThemedSelect
               value={feedbackDraft.category}
               onChange={(value) =>
                 setFeedbackDraft((current) => ({
@@ -124,7 +151,7 @@ export function FeedbackModule({ model }: PortalModuleProps) {
           </div>
 
           <form onSubmit={handleFeedbackSubmit} className="edu-bg-soft-glacier space-y-3 rounded-xl border border-[var(--edu-border-glacier)] p-4">
-            <Select
+            <ThemedSelect
               value={feedbackDraft.category}
               onChange={(value) =>
                 setFeedbackDraft((current) => ({
@@ -217,85 +244,153 @@ export function FeedbackModule({ model }: PortalModuleProps) {
           </div>
         ))}
       </div>
-      <div className="space-y-3">
-        {filteredTickets.map((ticket) => (
-          <div
-            key={ticket.id}
-            className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md"
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <ArrowDownUp className="size-4 text-muted-foreground" />
+        {(["all", "open", "resolved"] as const).map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => setStatusFilter(opt)}
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+              statusFilter === opt
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted"
+            )}
           >
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-primary shadow-sm">
-                    <MessageSquareText className="size-5" />
-                  </span>
-                  <h4 className="text-lg font-bold tracking-tight text-foreground">
-                    {ticket.subject}
-                  </h4>
-                  <StatusBadge value={ticket.status} />
-                </div>
-
-                <p className="mt-1 text-sm text-foreground/70">
-                  {ticket.id} - {ticket.studentName} - {ticket.submittedAt}
-                </p>
-
-                <p className="mt-3 text-sm leading-6 text-foreground/80">
-                  {ticket.description}
-                </p>
-
-                {ticket.resolution ? (
-                  <p className="mt-3 rounded-lg border border-border bg-white p-3 text-sm text-black dark:border-primary/30 dark:bg-[#071224] dark:text-white">
-                    {ticket.resolution}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="flex min-w-48 flex-col gap-2">
-                <Select
-                  value={ticket.status}
-                  onChange={(value) =>
-                    updateTicketStatus(ticket.id, value as TicketStatus)
-                  }
-                  options={ticketStatusOptions}
-                />
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="rounded-lg"
-                  onClick={() =>
-                    updateTicketStatus(
-                      ticket.id,
-                      "Resolved",
-                      "Reviewed and marked as resolved by the portal user."
-                    )
-                  }
-                >
-                  <Check className="size-4" />
-                  Resolve
-                </Button>
-
-                {ticket.status === "Resolved" ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="rounded-lg"
-                    onClick={() => undoTicketResolution(ticket.id)}
-                  >
-                    <RotateCcw className="size-4" />
-                    Undo Resolve
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-          </div>
+            {opt === "all" ? "All" : opt === "open" ? "Open" : "Resolved"}
+          </button>
         ))}
+      </div>
 
-        {tickets.length === 0 ? (
-          <EmptyState text="No tickets are assigned here." />
+      <div className="space-y-3">
+        {unresolved.length === 0 && resolved.length === 0 ? (
+          <EmptyState text="No tickets match your filters." />
+        ) : null}
+
+        {unresolved.length > 0 ? (
+          <div>
+            {unresolved.map((ticket) => (
+              <TicketCard
+                key={ticket.id}
+                ticket={ticket}
+                updateTicketStatus={updateTicketStatus}
+                undoTicketResolution={undoTicketResolution}
+              />
+            ))}
+          </div>
+        ) : null}
+
+        {resolved.length > 0 ? (
+          <details className="group rounded-xl border border-border bg-card shadow-sm">
+            <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
+              <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
+              <TicketCheck className="size-4" />
+              Resolved Tickets ({resolved.length})
+            </summary>
+            <div className="space-y-2 border-t border-border px-4 py-3">
+              {resolved.map((ticket) => (
+                <TicketCard
+                  key={ticket.id}
+                  ticket={ticket}
+                  updateTicketStatus={updateTicketStatus}
+                  undoTicketResolution={undoTicketResolution}
+                />
+              ))}
+            </div>
+          </details>
         ) : null}
       </div>
     </Panel>
+    </div>
+  )
+}
+
+function TicketCard({
+  ticket,
+  updateTicketStatus,
+  undoTicketResolution,
+}: {
+  ticket: any
+  updateTicketStatus: (id: string, status: TicketStatus, resolution?: string) => void
+  undoTicketResolution: (id: string) => void
+}) {
+  return (
+    <div className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-primary shadow-sm">
+              <MessageSquareText className="size-5" />
+            </span>
+            <h4 className="text-lg font-bold tracking-tight text-foreground">
+              {ticket.subject}
+            </h4>
+            <StatusBadge value={ticket.status} />
+          </div>
+
+          <p className="mt-1 text-sm text-foreground/70">
+            {ticket.id} - {ticket.studentName} - {ticket.submittedAt}
+          </p>
+
+          <p className="mt-3 text-sm leading-6 text-foreground/80">
+            {ticket.description}
+          </p>
+
+          {ticket.resolution ? (
+            <p className="mt-3 rounded-lg border border-border bg-white p-3 text-sm text-black dark:border-primary/30 dark:bg-[#071224] dark:text-white">
+              {ticket.resolution}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="flex min-w-48 flex-col gap-2">
+          <Select
+            value={ticket.status}
+            onValueChange={(value) =>
+              updateTicketStatus(ticket.id, value as TicketStatus)
+            }
+          >
+            <SelectTrigger className="h-8 rounded-lg text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ticketStatusOptions.map((opt) => (
+                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-lg"
+            onClick={() =>
+              updateTicketStatus(
+                ticket.id,
+                "Resolved",
+                "Reviewed and marked as resolved by the portal user."
+              )
+            }
+          >
+            <Check className="size-4" />
+            Resolve
+          </Button>
+
+          {ticket.status === "Resolved" ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-lg"
+              onClick={() => undoTicketResolution(ticket.id)}
+            >
+              <RotateCcw className="size-4" />
+              Undo Resolve
+            </Button>
+          ) : null}
+        </div>
+      </div>
     </div>
   )
 }
