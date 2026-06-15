@@ -24,7 +24,10 @@ export async function POST(request: Request) {
     }
 
     if (typeof body.file === "string" && body.file.startsWith("data:")) {
-      const result = await uploadFile(body.file, `cso-report-${Date.now()}.pdf`, "cso-reports", "image")
+      const isPdf = body.file.startsWith("data:application/pdf;")
+      const resourceType = isPdf ? "raw" : "image"
+      const publicId = isPdf ? `cso-report-${Date.now()}.pdf` : `cso-report-${Date.now()}`
+      const result = await uploadFile(body.file, publicId, "cso-reports", resourceType)
       body.file = result.secureUrl
       body.cloudinaryPublicId = result.publicId
     }

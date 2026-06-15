@@ -1,3 +1,4 @@
+import { configuredCloudinary } from "@/lib/cloudinary"
 import { csoReportsRepository } from "@/features/portal/repositories/cso-reports.repository"
 
 export const runtime = "nodejs"
@@ -9,57 +10,67 @@ export async function GET(
   try {
     const { id } = await params
     const { searchParams } = new URL(request.url)
-    const debug = searchParams.get("debug") === "1"
+    const download = searchParams.get("download") === "1"
 
-    const report = await csoReportsRepository.findById(id) as Record<string, unknown> | null
-    const originalUrl = report?.file as string | undefined
-    if (!report || !originalUrl) {
-      return new Response("Not found", { status: 404 })
+    const report = (await csoReportsRepository.findById(id)) as Record<
+      string,
+      unknown
+    > | null
+    const file = report?.file as string | undefined
+    const cloudinaryPublicId = report?.cloudinaryPublicId as string | undefined
+
+    if (!file && !cloudinaryPublicId)
+      return new Response("No file", { status: 404 })
+
+    const isPdf =
+      !!file?.includes("/raw/upload/") ||
+      !!cloudinaryPublicId?.endsWith(".pdf")
+
+    let fetchUrl: string
+
+    if (isPdf) {
+      const format =
+        cloudinaryPublicId?.split(".").pop() ||
+        file?.split(".").pop() ||
+        "pdf"
+      fetchUrl = configuredCloudinary.utils.private_download_url(
+        cloudinaryPublicId || file!,
+        format,
+        {
+          resource_type: "raw",
+          type: "upload",
+          attachment: false,
+          expires_at: Math.floor(Date.now() / 1000) + 3600,
+        }
+      )
+    } else {
+      fetchUrl = file!
     }
 
-    let fileUrl = originalUrl
-
-    if (fileUrl.endsWith(".pdf.pdf")) {
-      fileUrl = fileUrl.slice(0, -5)
-    }
-
-    const reportData = {
-      id: report.id as string ?? id,
-      title: report.title as string ?? "unknown",
-      cloudinaryPublicId: report.cloudinaryPublicId as string | undefined,
-      originalUrl,
-      normalizedUrl: fileUrl,
-      hadDoublePdf: originalUrl !== fileUrl,
-    }
-
-    const cloudinaryRes = await fetch(fileUrl)
-    const cloudinaryStatus = cloudinaryRes.status
-    const cloudinaryHeaders = Object.fromEntries(cloudinaryRes.headers.entries())
-    const cloudinaryBody = await cloudinaryRes.text().catch(() => "unknown")
-
-    if (debug) {
-      return Response.json({
-        report: reportData,
-        cloudinary: {
-          url: fileUrl,
-          status: cloudinaryStatus,
-          headers: cloudinaryHeaders,
-          body: cloudinaryBody.slice(0, 1000),
-        },
+    const res = await fetch(fetchUrl, { signal: AbortSignal.timeout(30000) })
+    if (!res.ok) {
+      const body = await res.text().catch(() => "")
+      console.error("PDF proxy fetch failed", {
+        status: res.status,
+        body: body.slice(0, 500),
+        file,
+        cloudinaryPublicId,
+      })
+      return new Response(`Failed to fetch file (${res.status})`, {
+        status: 502,
       })
     }
 
-    if (!cloudinaryRes.ok) {
-      console.error("PDF proxy: Cloudinary fetch failed", { url: fileUrl, status: cloudinaryStatus, body: cloudinaryBody.slice(0, 500) })
-      return new Response(`Failed to fetch PDF (${cloudinaryStatus})`, { status: 502 })
-    }
+    const buffer = Buffer.from(await res.arrayBuffer())
+    const filename =
+      (report?.fileName as string) || `${report?.id || "file"}.pdf`
 
-    const blob = await cloudinaryRes.blob()
-
-    return new Response(blob, {
+    return new Response(buffer, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": "inline",
+        "Content-Disposition": download
+          ? `attachment; filename="${filename}"`
+          : "inline",
       },
     })
   } catch (err) {

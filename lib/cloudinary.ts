@@ -6,6 +6,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
+export const configuredCloudinary = cloudinary
+
 export async function uploadProfilePhoto(
   dataUrl: string,
   userId: string

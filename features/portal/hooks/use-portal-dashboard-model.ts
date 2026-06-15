@@ -1020,6 +1020,12 @@ export function usePortalDashboardModel(role: Role) {
     section: string,
     subjectCode: string
   ) {
+    const targetUser = users.find((u) => u.id === studentId)
+    if (!targetUser || targetUser.role !== "student") {
+      console.warn(`Cannot add user ${studentId} to roster: not a student account.`)
+      return
+    }
+
     const now = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
     const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
     const normSubject = normalize(subjectLabel)

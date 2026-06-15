@@ -1,5 +1,7 @@
 import { rosterRepository } from "@/features/portal/repositories/roster.repository"
-import { success, error, notFound } from "@/lib/api-response"
+import { connectToDatabase } from "@/lib/mongodb"
+import { UserModel } from "@/lib/models/user.model"
+import { success, error, badRequest, notFound } from "@/lib/api-response"
 
 export const runtime = "nodejs"
 
@@ -23,6 +25,11 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
+    await connectToDatabase()
+    const user = await UserModel.findOne({ id }).select("role").lean()
+    if (!user || user.role !== "student") {
+      return badRequest("Only student accounts can be added to the roster.")
+    }
     const body = await request.json()
     const student = await rosterRepository.upsert({ id }, body)
     return success(student)

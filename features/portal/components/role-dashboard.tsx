@@ -494,7 +494,9 @@ export function RoleDashboard({ role }: { role: Role }) {
       ? "Monitor academic operations, users, and institutional activity."
       : role === "faculty"
         ? "Manage classes, grading workflows, and student-related tasks."
-        : "Access grades, announcements, seminars, and academic services."
+        : role === "csso_officer"
+          ? "Manage CSSO records, reports, and student concerns."
+          : "Access grades, announcements, seminars, and academic services."
 
   const totalUserCount = model.users.length || model.userStats.students + model.userStats.faculty + model.userStats.admins
 
@@ -521,12 +523,19 @@ export function RoleDashboard({ role }: { role: Role }) {
               { label: "Communications", items: pick(["announcements", "feedback"]) },
               { label: "Resources", items: pick(["quick-links", "cso"]) },
             ]
-          : [
-              { label: "Workspace", items: pick(["overview", "profile"]) },
-              { label: "My Academics", items: pick(["my-classes", "grades", "curriculum", "grade-history", "thesis"]) },
-              { label: "Campus Support", items: pick(["instructors", "availability", "announcements", "seminars", "feedback"]) },
-              { label: "Resources", items: pick(["quick-links", "cso"]) },
-            ]
+          : role === "csso_officer"
+            ? [
+                { label: "Workspace", items: pick(["overview", "profile"]) },
+                { label: "CSSO", items: pick(["cso", "thesis"]) },
+                { label: "Communications", items: pick(["announcements"]) },
+                { label: "Resources", items: pick(["quick-links"]) },
+              ]
+            : [
+                { label: "Workspace", items: pick(["overview", "profile"]) },
+                { label: "My Academics", items: pick(["my-classes", "grades", "curriculum", "grade-history", "thesis"]) },
+                { label: "Campus Support", items: pick(["instructors", "availability", "announcements", "seminars", "feedback"]) },
+                { label: "Resources", items: pick(["quick-links", "cso"]) },
+              ]
 
     return [
       ...roleGroups,

@@ -36,16 +36,21 @@ export async function PUT(
 
       if (typeof body.file === "string" && body.file.startsWith("data:")) {
         if (oldPublicId) {
-          await destroyFile(oldPublicId, "image").catch(() => {})
+          const oldResourceType = oldFile?.includes("/raw/upload/") ? "raw" : "image"
+          await destroyFile(oldPublicId, oldResourceType).catch(() => {})
         } else if (oldFile) {
           await deleteFile(oldFile).catch(() => {})
         }
-        const result = await uploadFile(body.file, `cso-report-${Date.now()}.pdf`, "cso-reports", "image")
+        const isPdf = body.file.startsWith("data:application/pdf;")
+        const resourceType = isPdf ? "raw" : "image"
+        const publicId = isPdf ? `cso-report-${Date.now()}.pdf` : `cso-report-${Date.now()}`
+        const result = await uploadFile(body.file, publicId, "cso-reports", resourceType)
         body.file = result.secureUrl
         body.cloudinaryPublicId = result.publicId
       } else if (oldFile && !body.file) {
         if (oldPublicId) {
-          await destroyFile(oldPublicId, "image").catch(() => {})
+          const oldResourceType = oldFile?.includes("/raw/upload/") ? "raw" : "image"
+          await destroyFile(oldPublicId, oldResourceType).catch(() => {})
         } else {
           await deleteFile(oldFile).catch(() => {})
         }
@@ -54,7 +59,8 @@ export async function PUT(
         body.cloudinaryPublicId = undefined
       } else if (oldFile && body.file && body.file !== oldFile) {
         if (oldPublicId) {
-          await destroyFile(oldPublicId, "image").catch(() => {})
+          const oldResourceType = oldFile?.includes("/raw/upload/") ? "raw" : "image"
+          await destroyFile(oldPublicId, oldResourceType).catch(() => {})
         } else {
           await deleteFile(oldFile).catch(() => {})
         }
@@ -81,25 +87,19 @@ export async function DELETE(
     if (!report) return notFound("CSO report")
 
     const cloudinaryPublicId = report?.cloudinaryPublicId as string | undefined
+    const file = report?.file as string | undefined
     if (cloudinaryPublicId) {
-      try {
-        await destroyFile(cloudinaryPublicId, "image")
-      } catch {
-        try {
-          await destroyFile(cloudinaryPublicId, "raw")
-        } catch {
-          console.error("Cloudinary destroy failed for publicId:", cloudinaryPublicId)
-        }
-      }
-    } else {
-      const file = report?.file as string | undefined
-      if (file) {
-        try {
-          await deleteFile(file)
-        } catch {
-          console.error("Cloudinary delete failed for file URL")
-        }
-      }
+      const resourceType = file?.includes("/raw/upload/") ? "raw" : "image"
+      await destroyFile(cloudinaryPublicId, resourceType).catch(() => {
+        const fallback = resourceType === "raw" ? "image" : "raw"
+        return destroyFile(cloudinaryPublicId, fallback)
+      }).catch((err) => {
+        console.error("Cloudinary destroy failed for publicId:", cloudinaryPublicId, err)
+      })
+    } else if (file) {
+      await deleteFile(file).catch((err) => {
+        console.error("Cloudinary delete failed for file URL:", err)
+      })
     }
 
     const deleted = await csoReportsRepository.delete({ id })

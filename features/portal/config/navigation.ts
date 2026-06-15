@@ -63,10 +63,19 @@ export const roleNavigation: Record<Role, NavItem[]> = {
     { id: "audit", label: "Audit Logs", icon: Database },
     { id: "quick-links", label: "Quick Links", icon: LinkIcon },
   ],
+  csso_officer: [
+    { id: "overview", label: "Home", icon: LayoutDashboard },
+    { id: "cso", label: "CSSO Section", icon: FileArchive },
+    { id: "thesis", label: "Thesis Library", icon: BookOpen },
+    { id: "announcements", label: "Announcements", icon: Bell },
+    { id: "profile", label: "Profile", icon: UserCircle },
+    { id: "quick-links", label: "Quick Links", icon: LinkIcon },
+  ],
 }
 
 export const initialModule: Record<Role, ModuleId> = {
   student: "overview",
   faculty: "overview",
   admin: "overview",
+  csso_officer: "overview",
 }

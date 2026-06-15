@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+
 import { ChevronLeft, ChevronRight, Download, ExternalLink, Eye, FileText, ImageIcon, Images, LayoutGrid, Loader2, Megaphone, Pencil, Plus, Sparkles, Trash2, Upload, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -48,8 +49,6 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
     (report: CsoReport) => report.type === "Accomplishment" || report.type === "Event"
   )
   const financials = model.filteredCsoReports.filter((report: CsoReport) => report.type === "Financial")
-  const records = model.filteredCsoReports.filter((report: CsoReport) => report.type === "Record")
-
   function handleSave(report: CsoReport) {
     const existing = model.csoReports.find((r: CsoReport) => r.id === report.id)
     if (existing) {
@@ -264,10 +263,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
               <Megaphone className="size-3.5" />
               Events and reports
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/15 bg-white/70 px-3 py-1.5 dark:border-[#8bd3ff]/20 dark:bg-white/10">
-              <FileText className="size-3.5" />
-              Transparent records
-            </span>
+
           </div>
         </div>
       </section>
@@ -490,23 +486,6 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
         } : undefined}
       />
 
-      <ReportGrid
-        title="Transparency Documents"
-        reports={records}
-        isAdmin={canManage}
-        onEdit={(r) => {
-          setEditingReport(r)
-          setShowForm(true)
-        }}
-        onDelete={(r) => setDeletingReport(r)}
-        onView={(r) => setViewingReport(r)}
-        onAdd={canManage ? () => {
-          setEditingReport(null)
-          setAddReportType("Record")
-          setShowForm(true)
-        } : undefined}
-      />
-
       <Panel title="CSSO Constitution and By Laws" eyebrow="Governing document">
         {constitutionDoc ? (
           <div className="edu-bg-soft-lapis flex flex-col gap-4 rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
@@ -680,21 +659,13 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
                         size="sm"
                         variant="outline"
                         className="rounded-lg shrink-0"
-                        onClick={async () => {
-                          try {
-                            const res = await fetch(`/api/portal/cso-reports/${viewingReport.id}/pdf`)
-                            const blob = await res.blob()
-                            const url = URL.createObjectURL(blob)
-                            const a = document.createElement("a")
-                            a.href = url
-                            a.download = viewingReport.fileName || `${viewingReport.title}.pdf`
-                            document.body.appendChild(a)
-                            a.click()
-                            document.body.removeChild(a)
-                            URL.revokeObjectURL(url)
-                          } catch {
-                            window.open(`/api/portal/cso-reports/${viewingReport.id}/pdf`, "_blank")
-                          }
+                        onClick={() => {
+                          const a = document.createElement("a")
+                          a.href = `/api/portal/cso-reports/${viewingReport.id}/pdf?download=1`
+                          a.download = viewingReport.fileName || `${viewingReport.title}.pdf`
+                          document.body.appendChild(a)
+                          a.click()
+                          document.body.removeChild(a)
                         }}
                       >
                         <Download className="size-4" />
@@ -705,8 +676,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
                       <iframe
                         src={`/api/portal/cso-reports/${viewingReport.id}/pdf`}
                         className="w-full"
-                        style={{ height: "60vh", minHeight: 400, border: 0 }}
-                        title="PDF Viewer"
+                        style={{ height: "65vh", minHeight: 450 }}
                       />
                     </div>
                   </>
@@ -740,15 +710,6 @@ function CsoMiniGallery({ items }: { items: GalleryItem[] }) {
       meta: "Gallery",
     }))
 
-  if (items.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <ImageIcon className="mx-auto mb-3 size-10 text-foreground/40" />
-        <p className="text-sm font-medium text-foreground/70">No gallery photos yet</p>
-      </div>
-    )
-  }
-
   const slides = gallerySlides.slice(0, 10)
 
   const [activeIndex, setActiveIndex] = useState(0)
@@ -762,6 +723,15 @@ function CsoMiniGallery({ items }: { items: GalleryItem[] }) {
     }, 5000)
     return () => clearInterval(id)
   }, [slides.length])
+
+  if (items.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <ImageIcon className="mx-auto mb-3 size-10 text-foreground/40" />
+        <p className="text-sm font-medium text-foreground/70">No gallery photos yet</p>
+      </div>
+    )
+  }
 
   function showPrevious() {
     setActiveIndex((current) => (current - 1 + slides.length) % slides.length)
@@ -850,7 +820,7 @@ function ReportGrid({
   return (
     <Panel
       title={title}
-      eyebrow="CSSO transparency documents"
+      eyebrow="CSSO reports and records"
       actions={
         onAdd ? (
           <Button size="sm" variant="default" className="rounded-lg" onClick={onAdd}>
@@ -1428,6 +1398,7 @@ function ReportFormDialog({
   const [total, setTotal] = useState(report?.total ?? "")
   const [file, setFile] = useState(report?.file ?? "")
   const [fileName, setFileName] = useState(report?.fileName ?? "")
+  const [cloudinaryPublicId, setCloudinaryPublicId] = useState(report?.cloudinaryPublicId ?? "")
   const [uploading, setUploading] = useState(false)
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1445,6 +1416,7 @@ function ReportFormDialog({
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? "Upload failed.")
       setFile(json.data.secureUrl)
+      setCloudinaryPublicId(json.data.publicId)
       setUploading(false)
     } catch (err) {
       console.error("File upload failed:", err)
@@ -1465,6 +1437,7 @@ function ReportFormDialog({
       total: total || undefined,
       file: file || undefined,
       fileName: fileName || undefined,
+      cloudinaryPublicId: cloudinaryPublicId || undefined,
     })
   }
 
@@ -1493,7 +1466,7 @@ function ReportFormDialog({
             <Select
               value={type}
               onChange={(v) => setType(v as CsoReport["type"])}
-              options={["Event", "Accomplishment", "Financial", "Record"]}
+              options={["Event", "Accomplishment", "Financial"]}
             />
           </div>
 
@@ -1552,7 +1525,7 @@ function ReportFormDialog({
                 </span>
                 <button
                   type="button"
-                  onClick={() => { setFile(""); setFileName("") }}
+                  onClick={() => { setFile(""); setFileName(""); setCloudinaryPublicId("") }}
                   className="ml-auto flex size-5 items-center justify-center text-foreground/50 transition-colors hover:text-foreground"
                 >
                   <X className="size-3" />

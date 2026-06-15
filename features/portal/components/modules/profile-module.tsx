@@ -44,7 +44,9 @@ export function ProfileModule({ model }: PortalModuleProps) {
       ? "Admin"
       : role === "faculty"
         ? "Faculty"
-        : "Student"
+        : role === "csso_officer"
+          ? "CSSO Officer"
+          : "Student"
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]

@@ -152,7 +152,7 @@ export function ProfileDialog({
                 </p>
 
                 <div className="mt-3">
-                  <StatusBadge value={role === "faculty" ? "Faculty" : role} />
+                  <StatusBadge value={role === "faculty" ? "Faculty" : role === "csso_officer" ? "CSSO Officer" : role} />
                 </div>
               </div>
             </div>

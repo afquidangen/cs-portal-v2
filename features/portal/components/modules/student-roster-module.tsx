@@ -87,6 +87,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
     )
 
     return users.filter((u) => {
+      if (u.role !== "student") return false
       const name = (u.name ?? "").replace(/\s+/g, "").toLowerCase()
       const id = (u.id ?? "").toLowerCase()
       return !alreadyInSubject.has(u.id) && (name.includes(search) || id.includes(search))
