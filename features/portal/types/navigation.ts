@@ -23,6 +23,7 @@ export type ModuleId =
   | "audit"
   | "irregular-students"
   | "student-roster"
+  | "manage-grades"
 
 export type NavItem = {
   id: ModuleId

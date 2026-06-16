@@ -1,0 +1,33 @@
+import { gradeColumnRepository } from "@/features/portal/repositories/grade-column.repository"
+import { success, error, badRequest } from "@/lib/api-response"
+import { requireFacultyOrAdmin } from "@/lib/api-auth"
+
+export const runtime = "nodejs"
+
+export async function POST(request: Request) {
+  try {
+    const auth = await requireFacultyOrAdmin(request)
+    if (auth instanceof Response) return auth
+
+    const body = await request.json()
+    if (!body.classId || !body.name || !body.category) {
+      return badRequest("classId, name, and category are required.")
+    }
+
+    const existing = await gradeColumnRepository.findAll({ classId: body.classId }) as Array<{ order: number }>
+    const maxOrder = existing.reduce((max: number, col: { order: number }) => Math.max(max, col.order ?? 0), 0)
+
+    const column = await gradeColumnRepository.create({
+      id: `COL-${Date.now()}`,
+      classId: body.classId,
+      name: body.name,
+      category: body.category,
+      maxScore: body.maxScore ?? 100,
+      order: maxOrder + 1,
+    })
+
+    return success(column, 201)
+  } catch (err) {
+    return error(err instanceof Error ? err.message : "Unable to create column.")
+  }
+}

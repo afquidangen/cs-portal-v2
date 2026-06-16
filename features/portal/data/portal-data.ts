@@ -79,10 +79,24 @@ export type GradeRecord = {
   subject: string
   code: string
   units: number
+  classId?: string
+  subjectType?: "Lecture" | "Lecture with Lab"
+  scores?: Record<string, number>
+  categoryGrades?: Array<{ category: string; totalStudentScore: number; totalPossibleScore: number; grade: number }>
+  lectureClassStanding?: number
+  lectureExam?: number
+  lectureGrade?: number
+  laboratoryGrade?: number
+  midtermGrade?: number
+  tentativeFinalGrade?: number
+  finalGrade?: number
+  transmutedGrade?: number
+  gradingSchemeId?: string
+  workflowStatus?: "Draft" | "Submitted" | "Reviewed" | "Approved" | "Locked"
   midtermTransmuted?: number
-  midterm: number
+  midterm?: number
   finalTransmuted?: number
-  finalTerm: number
+  finalTerm?: number
   gradePercentage?: number
   remarks?: string
   released?: boolean

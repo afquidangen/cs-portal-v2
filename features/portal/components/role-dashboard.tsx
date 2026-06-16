@@ -96,6 +96,7 @@ import { SeminarsModule } from "./modules/seminars-module"
 import { TemplatesModule } from "./modules/templates-module"
 import { ThesisLibraryModule } from "./modules/thesis-library-module"
 import { UsersModule } from "./modules/users-module"
+import { ManageGradesModule } from "./modules/manage-grades-module"
 
 export function RoleDashboard({ role }: { role: Role }) {
   const model = usePortalDashboardModel(role)
@@ -460,6 +461,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       cso: <CsoModule model={model} />,
       classes: <ClassesModule model={model} />,
       grades: <GradesModule model={model} />,
+      "manage-grades": <ManageGradesModule model={model} />,
       schedule: <SchedulePanel model={model} />,
       curriculum: <CurriculumModule model={model} />,
       "quick-links": <QuickLinksModule model={model} />,
@@ -513,7 +515,7 @@ export function RoleDashboard({ role }: { role: Role }) {
         : role === "faculty"
           ? [
               { label: "Workspace", items: pick(["overview", "profile"]) },
-              { label: "Teaching", items: pick(["schedule", "student-roster", "grades", "availability"]) },
+              { label: "Teaching", items: pick(["schedule", "student-roster", "grades", "manage-grades", "availability"]) },
               { label: "Academic Records", items: pick(["instructors", "thesis"]) },
               { label: "Communications", items: pick(["announcements", "feedback"]) },
               { label: "Resources", items: pick(["quick-links", "cso"]) },

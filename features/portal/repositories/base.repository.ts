@@ -98,6 +98,15 @@ export class BaseRepository {
     )
   }
 
+  async updateMany(
+    filter: Record<string, unknown>,
+    update: Record<string, unknown>
+  ): Promise<number> {
+    await connectToDatabase()
+    const result = await this.model.updateMany(filter, { $set: update })
+    return result.modifiedCount
+  }
+
   async deleteMany(filter: Record<string, unknown> = {}): Promise<number> {
     await connectToDatabase()
     const result = await this.model.deleteMany(filter)

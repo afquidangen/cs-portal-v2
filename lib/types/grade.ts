@@ -1,3 +1,12 @@
+export type CategoryGrade = {
+  category: string
+  totalStudentScore: number
+  totalPossibleScore: number
+  grade: number
+}
+
+export type GradeWorkflowStatus = "Draft" | "Submitted" | "Reviewed" | "Approved" | "Locked"
+
 export type GradeRecord = {
   id: string
   studentId: string
@@ -6,14 +15,27 @@ export type GradeRecord = {
   subject: string
   code: string
   units: number
-  midtermTransmuted?: number
-  midterm: number
-  finalTransmuted?: number
-  finalTerm: number
-  gradePercentage?: number
+  classId: string
+  subjectType: "Lecture" | "Lecture with Lab"
+
+  scores: Record<string, number>
+
+  categoryGrades: CategoryGrade[]
+  lectureClassStanding?: number
+  lectureExam?: number
+  lectureGrade?: number
+  laboratoryGrade?: number
+  midtermGrade?: number
+  tentativeFinalGrade?: number
+  finalGrade?: number
+  transmutedGrade?: number
   remarks?: string
-  released?: boolean
-  deletedAt?: string | null
+
+  workflowStatus: GradeWorkflowStatus
+  released: boolean
+  gradingSchemeId?: string
+
   updatedAt: string
+  deletedAt?: string | null
   createdAt?: string
 }
