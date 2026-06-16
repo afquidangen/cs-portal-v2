@@ -156,6 +156,9 @@ export type Announcement = {
   classSections?: string[]
   createdBy?: string
   readBy?: string[]
+  isDeleted?: boolean
+  deletedAt?: string | null
+  deletedBy?: string
 }
 
 export type ScheduleItem = {

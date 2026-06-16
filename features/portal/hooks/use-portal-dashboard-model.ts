@@ -155,6 +155,7 @@ export function usePortalDashboardModel(role: Role) {
   const [seminars, setSeminars] = useState<SeminarRecord[]>([])
   const [tickets, setTickets] = useState<FeedbackTicket[]>([])
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
+  const [trashedAnnouncements, setTrashedAnnouncements] = useState<Announcement[]>([])
   const [roster, setRoster] = useState<ClassStudent[]>([])
   const [semesters, setSemesters] = useState<SemesterRecord[]>([])
   const [subjects, setSubjects] = useState<SubjectRecord[]>([])
@@ -2729,16 +2730,54 @@ export function usePortalDashboardModel(role: Role) {
     addAuditLog(`Updated announcement "${updated.title}"`)
   }
 
-  function handleDeleteAnnouncement(id: string) {
+  function handleDeleteAnnouncement(id: string, deletedBy?: string) {
     const item = announcements.find((a) => a.id === id)
-    setAnnouncements((current) => current.filter((item) => item.id !== id))
-    syncApi("DELETE", `/api/portal/announcements/${id}`).then(() =>
-      toast.success("Announcement deleted.")
+    setAnnouncements((current) => current.filter((a) => a.id !== id))
+    syncApi("DELETE", `/api/portal/announcements/${id}`, { deletedBy }).then(() =>
+      toast.success("Moved to Trash Bin successfully")
     ).catch((e) => {
       toast.error("Failed to delete announcement.")
       console.error(e)
     })
     if (item) addAuditLog(`Deleted announcement "${item.title}"`)
+  }
+
+  async function handleRestoreAnnouncement(id: string) {
+    const item = trashedAnnouncements.find((a) => a.id === id)
+    setTrashedAnnouncements((current) => current.filter((a) => a.id !== id))
+    try {
+      await syncApi("PATCH", `/api/portal/announcements/trash/${id}`)
+      toast.success("Restored successfully")
+      if (item) {
+        setAnnouncements((current) => [{ ...item, isDeleted: false, deletedAt: null, deletedBy: undefined }, ...current])
+        addAuditLog(`Restored announcement "${item.title}"`)
+      }
+    } catch (e) {
+      toast.error("Failed to restore announcement.")
+      console.error(e)
+    }
+  }
+
+  async function handlePermanentDeleteAnnouncement(id: string) {
+    const item = trashedAnnouncements.find((a) => a.id === id)
+    setTrashedAnnouncements((current) => current.filter((a) => a.id !== id))
+    try {
+      await syncApi("DELETE", `/api/portal/announcements/trash/${id}`)
+      toast.success("Permanently deleted successfully")
+      if (item) addAuditLog(`Permanently deleted announcement "${item.title}"`)
+    } catch (e) {
+      toast.error("Failed to permanently delete announcement.")
+      console.error(e)
+    }
+  }
+
+  async function fetchTrashedAnnouncements() {
+    try {
+      const res = await syncApi<{ data: Announcement[] }>("GET", "/api/portal/announcements/trash")
+      setTrashedAnnouncements(res.data ?? [])
+    } catch (e) {
+      console.error("Failed to fetch trashed announcements", e)
+    }
   }
 
   async function handleCreateQuickLink(event: FormEvent<HTMLFormElement>) {
@@ -3187,6 +3226,11 @@ export function usePortalDashboardModel(role: Role) {
     handleCreateAnnouncement,
     handleUpdateAnnouncement,
     handleDeleteAnnouncement,
+    handleRestoreAnnouncement,
+    handlePermanentDeleteAnnouncement,
+    fetchTrashedAnnouncements,
+    trashedAnnouncements,
+    setTrashedAnnouncements,
     handleEnlist,
     handleFacultySelfStatus,
     handleCreateCsoReport,

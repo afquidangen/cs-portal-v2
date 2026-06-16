@@ -11,4 +11,7 @@ export type Announcement = {
   readBy?: string[]
   createdAt?: string
   updatedAt?: string
+  isDeleted?: boolean
+  deletedAt?: string | null
+  deletedBy?: string
 }

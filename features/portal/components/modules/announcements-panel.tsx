@@ -49,7 +49,11 @@ function getPriorityStyles(priority: Announcement["priority"]) {
   }
 }
 
-export function AnnouncementsPanel({ model }: PortalModuleProps) {
+type AnnouncementsPanelProps = PortalModuleProps & {
+  onShowTrash?: () => void
+}
+
+export function AnnouncementsPanel({ model, onShowTrash }: AnnouncementsPanelProps) {
   const {
     announcements,
     filteredAnnouncements,
@@ -132,6 +136,20 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
               </div>
             </div>
           </div>
+
+          {role === "admin" ? (
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-xl"
+                onClick={onShowTrash}
+              >
+                <Trash2 className="mr-1.5 size-4" />
+                Trash Bin
+              </Button>
+            </div>
+          ) : null}
 
           {filtered.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border bg-muted/20 py-10 text-center">
@@ -417,7 +435,7 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
           <DialogHeader>
             <DialogTitle className="text-xl text-foreground">Delete Announcement</DialogTitle>
             <DialogDescription className="pt-1 text-muted-foreground">
-              Are you sure you want to delete this announcement? This action cannot be undone.
+              This announcement will be moved to the trash bin. You can restore it later from the Trash Bin.
             </DialogDescription>
           </DialogHeader>
 
@@ -431,11 +449,11 @@ export function AnnouncementsPanel({ model }: PortalModuleProps) {
               type="button"
               variant="destructive"
               onClick={() => {
-                if (deletingAnnId) handleDeleteAnnouncement(deletingAnnId)
+                if (deletingAnnId) handleDeleteAnnouncement(deletingAnnId, profile?.name)
                 setDeletingAnnId(null)
               }}
             >
-              <Trash2 className="mr-1.5 size-4" /> Delete
+              <Trash2 className="mr-1.5 size-4" /> Move to Trash
             </Button>
           </DialogFooter>
         </DialogContent>

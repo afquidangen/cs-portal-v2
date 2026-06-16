@@ -11,6 +11,9 @@ export interface IAnnouncement extends Document {
   classSections?: string[]
   createdBy?: string
   readBy?: string[]
+  isDeleted?: boolean
+  deletedAt?: Date | null
+  deletedBy?: string
 }
 
 const AnnouncementSchema = new Schema<IAnnouncement>(
@@ -29,6 +32,9 @@ const AnnouncementSchema = new Schema<IAnnouncement>(
     classSections: [String],
     createdBy: String,
     readBy: [{ type: String }],
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
+    deletedBy: String,
   },
   { timestamps: true }
 )

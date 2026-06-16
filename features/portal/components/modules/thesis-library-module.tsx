@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { BookOpen, Calendar, Download, FileText, LibraryBig, Loader2, Plus, Search, Tags, FileIcon, ExternalLink, Bookmark, User, Tag, Users } from "lucide-react"
+import { BookOpen, Calendar, Download, FileText, LibraryBig, Loader2, Plus, Search, Tags, FileIcon, ExternalLink, Bookmark, User, Tag, Users, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,6 +14,18 @@ import {
   StatusBadge,
   Textarea,
 } from "../shared/dashboard-ui"
+import { toast } from "sonner"
+
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+
 import type { PortalModuleProps } from "./types"
 
 export function ThesisLibraryModule({ model }: PortalModuleProps) {
@@ -91,9 +103,9 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
         fileName: "",
       })
       setShowThesisUploadForm(false)
-      window.alert("Thesis uploaded successfully.")
+      toast.success("Thesis uploaded successfully")
     } catch {
-      window.alert("Failed to upload thesis.")
+      toast.error("Failed to upload thesis")
     } finally {
       setUploading(false)
     }
@@ -146,113 +158,110 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
         })}
       </div>
 
-      {role === "admin" && showThesisUploadForm ? (
-        <Panel title="Upload Thesis PDF" eyebrow="Repository management">
-          <form onSubmit={handleSubmitThesis} className="edu-bg-soft-glacier relative grid gap-3 rounded-xl border border-[var(--edu-border-glacier)] p-4 lg:grid-cols-2">
-            {uploading && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-2xl bg-background/80 backdrop-blur-sm">
-                <Loader2 className="size-8 animate-spin text-primary" />
-                <p className="text-sm font-medium text-foreground">Uploading PDF...</p>
+      <Dialog open={showThesisUploadForm} onOpenChange={setShowThesisUploadForm}>
+        <DialogContent className="sm:max-w-lg">
+          <form onSubmit={handleSubmitThesis}>
+            <DialogHeader>
+              <div className="flex items-start gap-3">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-muted/35 text-foreground">
+                  <LibraryBig className="size-5" />
+                </span>
+                <div>
+                  <DialogTitle className="text-xl">Upload Thesis PDF</DialogTitle>
+                  <DialogDescription>Add a new manuscript to the thesis repository</DialogDescription>
+                </div>
               </div>
-            )}
+            </DialogHeader>
 
-            <Input
-              value={thesisDraft.title}
-              onChange={(event) =>
-                setThesisDraft((current) => ({
-                  ...current,
-                  title: event.target.value,
-                }))
-              }
-              placeholder="Thesis title"
-              className="h-10 rounded-lg"
-            />
+            <div className="space-y-4 py-4">
+              <Input
+                value={thesisDraft.title}
+                onChange={(event) =>
+                  setThesisDraft((current) => ({
+                    ...current,
+                    title: event.target.value,
+                  }))
+                }
+                placeholder="Thesis title"
+                className="h-10 rounded-lg"
+              />
 
-            <Input
-              value={thesisDraft.authors}
-              onChange={(event) =>
-                setThesisDraft((current) => ({
-                  ...current,
-                  authors: event.target.value,
-                }))
-              }
-              placeholder="Authors"
-              className="h-10 rounded-lg"
-            />
+              <Input
+                value={thesisDraft.authors}
+                onChange={(event) =>
+                  setThesisDraft((current) => ({
+                    ...current,
+                    authors: event.target.value,
+                  }))
+                }
+                placeholder="Authors"
+                className="h-10 rounded-lg"
+              />
 
-            <Input
-              value={thesisDraft.category}
-              onChange={(event) =>
-                setThesisDraft((current) => ({
-                  ...current,
-                  category: event.target.value,
-                }))
-              }
-              placeholder="Category"
-              className="h-10 rounded-lg"
-            />
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  value={thesisDraft.category}
+                  onChange={(event) =>
+                    setThesisDraft((current) => ({
+                      ...current,
+                      category: event.target.value,
+                    }))
+                  }
+                  placeholder="Category"
+                  className="h-10 rounded-lg"
+                />
 
-            <Input
-              value={thesisDraft.adviser}
-              onChange={(event) =>
-                setThesisDraft((current) => ({
-                  ...current,
-                  adviser: event.target.value,
-                }))
-              }
-              placeholder="Adviser"
-              className="h-10 rounded-lg"
-            />
+                <Input
+                  value={thesisDraft.year}
+                  onChange={(event) =>
+                    setThesisDraft((current) => ({
+                      ...current,
+                      year: event.target.value,
+                    }))
+                  }
+                  placeholder="Year"
+                  className="h-10 rounded-lg"
+                />
+              </div>
 
-            <Input
-              value={thesisDraft.year}
-              onChange={(event) =>
-                setThesisDraft((current) => ({
-                  ...current,
-                  year: event.target.value,
-                }))
-              }
-              placeholder="Year"
-              className="h-10 rounded-lg"
-            />
+              <Input
+                value={thesisDraft.adviser}
+                onChange={(event) =>
+                  setThesisDraft((current) => ({
+                    ...current,
+                    adviser: event.target.value,
+                  }))
+                }
+                placeholder="Adviser"
+                className="h-10 rounded-lg"
+              />
 
-            <div className="flex items-center gap-2">
-<Input
-  type="file"
-  accept="application/pdf,.pdf"
-  className="h-10 rounded-lg"
-  onChange={(event) => {
-    const file = event.target.files?.[0]
+              <Input
+                type="file"
+                accept="application/pdf,.pdf"
+                className="h-10 rounded-lg"
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
 
-    if (!file) return
-    if (file.type !== "application/pdf" && !file.name.endsWith(".pdf")) {
-      window.alert("Please upload a PDF manuscript.")
-      event.target.value = ""
-      return
-    }
+                  if (!file) return
+                  if (file.type !== "application/pdf" && !file.name.endsWith(".pdf")) {
+                    toast.error("Please upload a PDF manuscript.")
+                    event.target.value = ""
+                    return
+                  }
 
-    const reader = new FileReader()
-    reader.onload = () => {
-      setThesisDraft((current) => ({
-        ...current,
-        pdfUrl: reader.result as string,
-        fileName: file.name,
-      }))
-    }
-    reader.readAsDataURL(file)
-  }}
-/>
-              <Button type="submit" size="sm" className="rounded-lg" disabled={uploading}>
-                {uploading ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Plus className="size-4" />
-                )}
-                {uploading ? "Uploading..." : "Save"}
-              </Button>
-            </div>
+                  const reader = new FileReader()
+                  reader.onload = () => {
+                    setThesisDraft((current) => ({
+                      ...current,
+                      pdfUrl: reader.result as string,
+                      fileName: file.name,
+                    }))
+                  }
+                  reader.readAsDataURL(file)
+                }}
+              />
 
-            <div className="lg:col-span-2">
               <Textarea
                 value={thesisDraft.abstract}
                 onChange={(value) =>
@@ -264,9 +273,26 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                 placeholder="Abstract"
               />
             </div>
+
+            <DialogFooter className="gap-2">
+              <DialogClose asChild>
+                <Button type="button" variant="ghost" className="rounded-lg">
+                  <X className="size-4" />
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit" className="rounded-lg" disabled={uploading}>
+                {uploading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Plus className="size-4" />
+                )}
+                {uploading ? "Uploading..." : "Save"}
+              </Button>
+            </DialogFooter>
           </form>
-        </Panel>
-      ) : null}
+        </DialogContent>
+      </Dialog>
 
       <Panel
         title={role === "admin" ? "Thesis Records" : "Online Thesis Library"}

@@ -11,19 +11,19 @@ export class BaseRepository {
     await connectToDatabase()
     const query = includeDeleted
       ? filter
-      : { ...filter, deletedAt: null }
+      : { ...filter, isDeleted: { $ne: true } }
     return this.model.find(query).lean()
   }
 
   async findDeleted(): Promise<unknown[]> {
     await connectToDatabase()
-    return this.model.find({ deletedAt: { $ne: null } }).lean()
+    return this.model.find({ isDeleted: true }).lean()
   }
 
   async softDelete(filter: Record<string, unknown>): Promise<boolean> {
     await connectToDatabase()
     const result = await this.model.updateMany(filter, {
-      $set: { deletedAt: new Date().toISOString() },
+      $set: { isDeleted: true, deletedAt: new Date() },
     })
     return result.modifiedCount > 0
   }
@@ -31,7 +31,7 @@ export class BaseRepository {
   async restore(filter: Record<string, unknown>): Promise<boolean> {
     await connectToDatabase()
     const result = await this.model.updateMany(filter, {
-      $set: { deletedAt: null },
+      $set: { isDeleted: false, deletedAt: null },
     })
     return result.modifiedCount > 0
   }

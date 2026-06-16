@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { BellPlus, Megaphone, Plus, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -18,9 +19,12 @@ import {
 import type { Announcement } from "../../data/portal-data"
 import { Select, Textarea } from "../shared/dashboard-ui"
 import { AnnouncementsPanel } from "./announcements-panel"
+import { AnnouncementsTrashPanel } from "./announcements-trash-panel"
 import type { PortalModuleProps } from "./types"
 
 export function AnnouncementManagerModule({ model }: PortalModuleProps) {
+  const [showTrash, setShowTrash] = useState(false)
+
   const {
     announcementDraft,
     handleCreateAnnouncement,
@@ -33,7 +37,11 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-5">
-      <AnnouncementsPanel model={model} />
+      {showTrash ? (
+        <AnnouncementsTrashPanel model={model} onBack={() => setShowTrash(false)} />
+      ) : (
+        <AnnouncementsPanel model={model} onShowTrash={() => { model.fetchTrashedAnnouncements(); setShowTrash(true) }} />
+      )}
 
       <Dialog open={showAnnouncementForm} onOpenChange={setShowAnnouncementForm}>
         <DialogContent className="max-w-xl">

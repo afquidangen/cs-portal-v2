@@ -55,13 +55,24 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    const deleted = await announcementsRepository.delete({ id })
-    if (!deleted) return notFound("Announcement")
+    const { deletedBy } = await request.json()
+    await connectToDatabase()
+    const result = await AnnouncementModel.collection.updateOne(
+      { id },
+      {
+        $set: {
+          isDeleted: true,
+          deletedAt: new Date(),
+          deletedBy: deletedBy || null,
+        },
+      }
+    )
+    if (result.matchedCount === 0) return notFound("Announcement")
     return success({ deleted: true })
   } catch (err) {
     return error(err instanceof Error ? err.message : "Unable to delete announcement.")

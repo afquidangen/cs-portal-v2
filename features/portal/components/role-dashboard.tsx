@@ -100,7 +100,7 @@ import { UsersModule } from "./modules/users-module"
 export function RoleDashboard({ role }: { role: Role }) {
   const model = usePortalDashboardModel(role)
 
-  const chartLabels = ["Users", "Tickets", "Grades", "Theses", "Announce.", "Seminars", "Audit"]
+  const chartLabels = ["Users", "Tickets", "Grades", "Theses", "Announce.", "Audit"]
 
   const activityIcon = useCallback((action: string): LucideIcon => {
     const a = action.toLowerCase()
@@ -365,10 +365,6 @@ export function RoleDashboard({ role }: { role: Role }) {
     () => model.announcements.filter((a: { date: string }) => filterByDate(a.date)),
     [model.announcements, filterByDate]
   )
-  const filteredSeminars = useMemo(
-    () => model.seminars.filter((s: { date: string }) => filterByDate(s.date)),
-    [model.seminars, filterByDate]
-  )
   const filteredAuditLogs = useMemo(
     () => model.auditLogs.filter((log: { time: string }) => filterByDate(log.time)),
     [model.auditLogs, filterByDate]
@@ -380,9 +376,8 @@ export function RoleDashboard({ role }: { role: Role }) {
     filteredGrades.length,
     filteredTheses.length,
     filteredAnnouncements.length,
-    filteredSeminars.length,
     filteredAuditLogs.length,
-  ], [filteredUsers.length, filteredTickets.length, filteredGrades.length, filteredTheses.length, filteredAnnouncements.length, filteredSeminars.length, filteredAuditLogs.length])
+  ], [filteredUsers.length, filteredTickets.length, filteredGrades.length, filteredTheses.length, filteredAnnouncements.length, filteredAuditLogs.length])
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px) and (max-width: 1023px)")
@@ -1880,7 +1875,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                               </defs>
                             </svg>
                           </div>
-                          <div className="mt-2 grid grid-cols-7 text-center text-xs text-muted-foreground">
+                          <div className="mt-2 grid grid-cols-6 text-center text-xs text-muted-foreground">
                             {chartLabels.map((label) => (
                               <span key={label}>{label}</span>
                             ))}
