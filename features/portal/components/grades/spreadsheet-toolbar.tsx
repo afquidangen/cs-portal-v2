@@ -2,7 +2,7 @@
 
 import {
   Columns, Columns3, Download, FileSpreadsheet, Plus, Redo2, Save,
-  Table2, Trash2, Undo2, Upload, UserPlus, UserX,
+  Table2, Trash2, Undo2, Upload, UserPlus, UserX, Bookmark,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -18,6 +18,7 @@ export type ToolbarAction =
   | "export"
   | "save"
   | "reorderColumns"
+  | "templates"
 
 export function SpreadsheetToolbar({
   onAction,
@@ -90,7 +91,7 @@ export function SpreadsheetToolbar({
         </Button>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 pe-2 border-e border-border">
         <Button size="sm" variant="ghost" onClick={() => onAction("import")}
           className="h-8 px-2" title="Import Excel">
           <Upload className="size-4" />
@@ -100,6 +101,14 @@ export function SpreadsheetToolbar({
           className="h-8 px-2" title="Export Excel">
           <Download className="size-4" />
           <span className="ms-1.5 text-xs hidden md:inline">Export</span>
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <Button size="sm" variant="ghost" onClick={() => onAction("templates")}
+          className="h-8 px-2" title="Saved Templates">
+          <Bookmark className="size-4" />
+          <span className="ms-1.5 text-xs hidden md:inline">Templates</span>
         </Button>
       </div>
 

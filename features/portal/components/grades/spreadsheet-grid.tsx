@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
-  Lock, CheckCircle2, Search, Plus, Upload, Download, Calculator,
-  Send, XCircle, BookMarked, UsersRound, FileSpreadsheet, GraduationCap,
+  Lock, CheckCircle2, Search, Calculator,
+  Send, XCircle,
 } from "lucide-react"
 import { AgGridReact } from "ag-grid-react"
 import type { ColDef, CellValueChangedEvent, SelectionChangedEvent, GridReadyEvent } from "ag-grid-community"
@@ -24,7 +24,8 @@ import { RenameColumnDialog } from "./rename-column-dialog"
 import { DeleteColumnDialog } from "./delete-column-dialog"
 import { DeleteRowDialog } from "./delete-row-dialog"
 import { AddColumnDialog } from "../modules/add-column-dialog"
-import { ImportExcelDialog } from "../modules/import-excel-dialog"
+import { IntelligentImportDialog } from "./intelligent-import-dialog"
+import { TemplateSelector } from "./template-selector"
 import { SaveStatusIndicator } from "../modules/save-status-indicator"
 
 ModuleRegistry.registerModules([AllCommunityModule])
@@ -111,6 +112,7 @@ export function SpreadsheetGrid({
   const [deleteColOpen, setDeleteColOpen] = useState(false)
   const [deleteRowOpen, setDeleteRowOpen] = useState(false)
   const [selectedColName, setSelectedColName] = useState("")
+  const [templatesOpen, setTemplatesOpen] = useState(false)
 
   const undoManager = useRef(new UndoRedoManager())
 
@@ -322,9 +324,8 @@ export function SpreadsheetGrid({
     fetch(`/api/portal/grades/class/${classId}`)
       .then((res) => res.json())
       .then((json) => {
-        if (json.data?.grades) {
-          setGrades(json.data.grades)
-        }
+        if (json.data?.grades) setGrades(json.data.grades)
+        if (json.data?.columns) setGradeColumns(json.data.columns)
       })
       .catch(() => {})
   }
@@ -379,6 +380,7 @@ export function SpreadsheetGrid({
       }
       case "import": setImportOpen(true); break
       case "export": handleExport(); break
+      case "templates": setTemplatesOpen((prev) => !prev); break
       case "save": autoSave.saveNow({ grades: Array.from(gradeMap.values()), cid: classId }).then().catch(() => {}); break
     }
   }
@@ -513,14 +515,22 @@ export function SpreadsheetGrid({
 
       <AddColumnDialog open={addColumnOpen} onOpenChange={setAddColumnOpen}
         onConfirm={handleAddColumn} availableCategories={columnCategories} />
-      <ImportExcelDialog open={importOpen} onOpenChange={setImportOpen}
-        classId={classId} onImportComplete={handleImportComplete} />
+      <IntelligentImportDialog open={importOpen} onOpenChange={setImportOpen}
+        classId={classId} subject={selectedSubject} onImportComplete={handleImportComplete} />
       <RenameColumnDialog open={renameOpen} onOpenChange={setRenameOpen}
         currentName={selectedColName} onConfirm={handleRenameColumn} />
       <DeleteColumnDialog open={deleteColOpen} onOpenChange={setDeleteColOpen}
         columnName={selectedColName} onConfirm={handleDeleteColumn} />
       <DeleteRowDialog open={deleteRowOpen} onOpenChange={setDeleteRowOpen}
         rowCount={selectedRows.length} onConfirm={handleDeleteRow} />
+
+      {templatesOpen && (
+        <TemplateSelector classId={classId} open={templatesOpen} onClose={() => setTemplatesOpen(false)}
+          onApplied={() => {
+            setTemplatesOpen(false)
+            handleImportComplete()
+          }} />
+      )}
     </div>
   )
 }
