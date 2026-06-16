@@ -6,7 +6,7 @@ import {
   Send, XCircle,
 } from "lucide-react"
 import { AgGridReact } from "ag-grid-react"
-import type { ColDef, CellValueChangedEvent, SelectionChangedEvent, GridReadyEvent } from "ag-grid-community"
+import type { ColDef, CellValueChangedEvent, ColumnResizedEvent, SelectionChangedEvent, GridReadyEvent } from "ag-grid-community"
 import { AllCommunityModule, ModuleRegistry, themeAlpine } from "ag-grid-community"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -84,6 +84,7 @@ export function SpreadsheetGrid({
   setStudentQuery,
   computedOnce,
   setComputedOnce,
+  darkMode,
 }: {
   model: PortalModuleProps["model"]
   selectedSubject: string
@@ -99,8 +100,10 @@ export function SpreadsheetGrid({
   setStudentQuery: (q: string) => void
   computedOnce: boolean
   setComputedOnce: (v: boolean) => void
+  darkMode: boolean
 }) {
   const gridRef = useRef<AgGridReact>(null)
+  const colStateRef = useRef<Record<string, number>>({})
   const isEditable = model.role === "faculty" || model.role === "admin"
 
   const [selectedRows, setSelectedRows] = useState<StudentGradeRow[]>([])
@@ -194,13 +197,20 @@ export function SpreadsheetGrid({
     undoManager.current.clear()
   }
 
-  async function handleComputeGrades() {
+  function onColumnResized(event: ColumnResizedEvent) {
+    if (!event.finished) return
+    event.api.getColumnState().forEach((col) => {
+      colStateRef.current[col.colId] = col.width ?? 0
+    })
+  }
+
+  async function handleComputeGrades(period: "midterm" | "final" = "final") {
     if (!classId) return
     try {
       const res = await fetch("/api/portal/grades/compute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ classId }),
+        body: JSON.stringify({ classId, gradingPeriod: period }),
       })
       const json = await res.json()
       if (!res.ok) { toast.error(json.error || "Computation failed."); return }
@@ -213,7 +223,7 @@ export function SpreadsheetGrid({
         })
       })
       setComputedOnce(true)
-      toast.success("Grades computed successfully.")
+      toast.success(`Grades computed successfully (${period} period).`)
     } catch { toast.error("Failed to compute grades.") }
   }
 
@@ -392,16 +402,19 @@ export function SpreadsheetGrid({
   }, [gradeColumns])
 
   const colDefs = useMemo((): ColDef[] => {
+    const saved = colStateRef.current
+
     const cols: ColDef[] = [
-      { headerName: "No.", field: "no", width: 60, sortable: true, filter: false, cellStyle: { textAlign: "center" } },
-      { headerName: "Student Name", field: "studentName", width: 220, sortable: true, filter: "agTextColumnFilter", pinned: "left" },
+      { headerName: "No.", field: "no", width: saved["no"] ?? 60, sortable: true, filter: false, cellStyle: { textAlign: "center" } },
+      { headerName: "Student Name", field: "studentName", width: saved["studentName"] ?? 220, sortable: true, filter: "agTextColumnFilter", pinned: "left" },
     ]
 
     for (const col of gradeColumns) {
+      const field = `score_${col.name}`
       cols.push({
         headerName: col.displayName || col.name,
-        field: `score_${col.name}`,
-        width: col.width ?? 120,
+        field,
+        width: saved[field] ?? col.width ?? 120,
         sortable: true,
         filter: "agNumberColumnFilter",
         editable: isEditable,
@@ -422,20 +435,66 @@ export function SpreadsheetGrid({
     }
 
     cols.push(
-      { headerName: "Midterm Grade", field: "midtermGrade", width: 120, sortable: true, filter: "agNumberColumnFilter",
+      { headerName: "Midterm Grade", field: "midtermGrade", width: saved["midtermGrade"] ?? 120, sortable: true, filter: "agNumberColumnFilter",
         valueFormatter: (params) => params.value?.toFixed(2) ?? "", cellStyle: { fontWeight: 600 } },
-      { headerName: "Final Grade", field: "finalGrade", width: 120, sortable: true, filter: "agNumberColumnFilter",
+      { headerName: "Final Grade", field: "finalGrade", width: saved["finalGrade"] ?? 120, sortable: true, filter: "agNumberColumnFilter",
         valueFormatter: (params) => params.value?.toFixed(2) ?? "", cellStyle: { fontWeight: 600 } },
-      { headerName: "Transmuted", field: "transmutedGrade", width: 110, sortable: true, filter: "agNumberColumnFilter",
+      { headerName: "Transmuted", field: "transmutedGrade", width: saved["transmutedGrade"] ?? 110, sortable: true, filter: "agNumberColumnFilter",
         valueFormatter: (params) => params.value?.toFixed(2) ?? "", cellStyle: { fontWeight: 700 } },
-      { headerName: "Remarks", field: "remarks", width: 120, sortable: true, filter: "agTextColumnFilter",
+      { headerName: "Remarks", field: "remarks", width: saved["remarks"] ?? 120, sortable: true, filter: "agTextColumnFilter",
         cellRenderer: RemarksCellRenderer },
-      { headerName: "Status", field: "workflowStatus", width: 130, sortable: true, filter: "agTextColumnFilter",
+      { headerName: "Status", field: "workflowStatus", width: saved["workflowStatus"] ?? 130, sortable: true, filter: "agTextColumnFilter",
         cellRenderer: StatusCellRenderer },
     )
 
     return cols
   }, [gradeColumns, isEditable])
+
+  const theme = useMemo(() => {
+    return themeAlpine.withParams({
+      fontFamily: "inherit",
+      fontSize: 13,
+      headerFontWeight: 600,
+
+      backgroundColor: "var(--card)",
+      foregroundColor: "var(--foreground)",
+      textColor: "var(--foreground)",
+      cellTextColor: "var(--foreground)",
+      dataBackgroundColor: "var(--card)",
+
+      borderColor: "var(--border)",
+      wrapperBorder: { color: "var(--border)", width: 1, style: "solid" },
+      rowBorder: { color: "var(--border)", width: 1, style: "solid" },
+      columnBorder: { color: "var(--border)", width: 1, style: "solid" },
+      headerColumnBorder: { color: "var(--border)", width: 1, style: "solid" },
+      pinnedColumnBorder: { color: "var(--border)", width: 2, style: "solid" },
+
+      headerBackgroundColor: "var(--muted)",
+      headerTextColor: "var(--foreground)",
+      headerCellHoverBackgroundColor: "color-mix(in srgb, var(--muted), black 8%)",
+
+      rowHoverColor: "color-mix(in srgb, var(--muted), transparent 50%)",
+      oddRowBackgroundColor: "color-mix(in srgb, var(--muted), transparent 70%)",
+      selectedRowBackgroundColor: "color-mix(in srgb, var(--primary), transparent 85%)",
+
+      accentColor: "var(--primary)",
+      focusShadow: { radius: 0, spread: 2, color: "var(--ring)" },
+
+      borderRadius: 8,
+      wrapperBorderRadius: 12,
+
+      iconColor: "var(--foreground)",
+      iconButtonColor: "var(--foreground)",
+
+      chromeBackgroundColor: "var(--muted)",
+
+      cellEditingBorder: { color: "var(--ring)", width: 2, style: "solid" },
+
+      cellHorizontalPadding: 12,
+
+      browserColorScheme: darkMode ? "dark" : "light",
+    }, darkMode ? "dark" : undefined)
+  }, [darkMode])
 
   return (
     <div className="space-y-4">
@@ -470,22 +529,13 @@ export function SpreadsheetGrid({
             filter: true,
             cellStyle: { display: "flex", alignItems: "center" },
           }}
-          theme={themeAlpine.withParams({
-            fontFamily: "inherit",
-            fontSize: 13,
-            headerFontWeight: 600,
-            headerTextColor: "var(--foreground)",
-            headerBackgroundColor: "var(--muted)",
-            backgroundColor: "var(--card)",
-            borderColor: "var(--border)",
-            rowHoverColor: "hsl(var(--muted) / 0.5)",
-            oddRowBackgroundColor: "hsl(var(--muted) / 0.3)",
-          })}
+          theme={theme}
           animateRows
           rowSelection="multiple"
           onSelectionChanged={onSelectionChanged}
           onCellValueChanged={onCellValueChanged}
           onGridReady={onGridReady}
+          onColumnResized={onColumnResized}
           suppressClickEdit
           singleClickEdit
           stopEditingWhenCellsLoseFocus
@@ -495,12 +545,18 @@ export function SpreadsheetGrid({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" onClick={handleComputeGrades} className="rounded-lg">
-          <Calculator className="size-4" /> Compute
+        <Button size="sm" onClick={() => handleComputeGrades("midterm")} className="rounded-lg">
+          <Calculator className="size-4" /> Midterm
+        </Button>
+        <Button size="sm" variant="secondary" onClick={() => handleComputeGrades("final")} className="rounded-lg">
+          <Calculator className="size-4" /> Final
         </Button>
         <span className="text-xs font-medium text-muted-foreground">Workflow:</span>
         <Button size="sm" variant="outline" onClick={() => handleUpdateWorkflow("Submitted")} className="rounded-lg">
           <Send className="size-3.5" /> Submit
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => handleUpdateWorkflow("Reviewed")} className="rounded-lg">
+          <CheckCircle2 className="size-3.5" /> Reviewed
         </Button>
         <Button size="sm" variant="outline" onClick={() => handleUpdateWorkflow("Approved")} className="rounded-lg">
           <CheckCircle2 className="size-3.5" /> Approve
@@ -509,7 +565,7 @@ export function SpreadsheetGrid({
           <Lock className="size-3.5" /> Lock
         </Button>
         <Button size="sm" variant="outline" onClick={() => handleUpdateWorkflow("Draft")} className="rounded-lg">
-          <XCircle className="size-3.5" /> Revert to Draft
+          <XCircle className="size-3.5" /> Revert
         </Button>
       </div>
 

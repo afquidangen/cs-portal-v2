@@ -1,0 +1,47 @@
+import { transmutationTableRepository } from "@/features/portal/repositories/transmutation-table.repository"
+import { success, error, notFound } from "@/lib/api-response"
+
+export const runtime = "nodejs"
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const table = await transmutationTableRepository.findById(id)
+    if (!table) return notFound("Transmutation table")
+    return success(table)
+  } catch (err) {
+    return error(err instanceof Error ? err.message : "Unable to fetch transmutation table.")
+  }
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+    const table = await transmutationTableRepository.update({ id }, body)
+    if (!table) return notFound("Transmutation table")
+    return success(table)
+  } catch (err) {
+    return error(err instanceof Error ? err.message : "Unable to update transmutation table.")
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const deleted = await transmutationTableRepository.delete({ id })
+    if (!deleted) return notFound("Transmutation table")
+    return success({ deleted: true })
+  } catch (err) {
+    return error(err instanceof Error ? err.message : "Unable to delete transmutation table.")
+  }
+}

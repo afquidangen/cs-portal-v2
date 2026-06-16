@@ -97,6 +97,7 @@ import { TemplatesModule } from "./modules/templates-module"
 import { ThesisLibraryModule } from "./modules/thesis-library-module"
 import { UsersModule } from "./modules/users-module"
 import { ManageGradesModule } from "./modules/manage-grades-module"
+import { GradingAdminModule } from "./modules/grading-admin-module"
 
 export function RoleDashboard({ role }: { role: Role }) {
   const model = usePortalDashboardModel(role)
@@ -461,7 +462,8 @@ export function RoleDashboard({ role }: { role: Role }) {
       cso: <CsoModule model={model} />,
       classes: <ClassesModule model={model} />,
       grades: <GradesModule model={model} />,
-      "manage-grades": <ManageGradesModule model={model} />,
+      "manage-grades": <ManageGradesModule model={model} darkMode={darkMode} />,
+      "grading-admin": <GradingAdminModule />,
       schedule: <SchedulePanel model={model} />,
       curriculum: <CurriculumModule model={model} />,
       "quick-links": <QuickLinksModule model={model} />,
@@ -507,7 +509,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       role === "admin"
         ? [
             { label: "Workspace", items: pick(["overview", "profile"]) },
-            { label: "Academic Setup", items: pick(["academic", "classes", "curriculum"]) },
+            { label: "Academic Setup", items: pick(["academic", "classes", "curriculum", "grading-admin"]) },
             { label: "People & Records", items: pick(["users", "irregular-students", "instructors", "availability", "audit"]) },
             { label: "Communications", items: pick(["announcements", "feedback", "templates"]) },
             { label: "Resources", items: pick(["thesis", "quick-links", "cso"]) },

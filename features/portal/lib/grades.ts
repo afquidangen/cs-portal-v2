@@ -8,18 +8,23 @@ const EQUIVALENT_GRADES = [1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 4.0,
 export type EquivalentGrade = (typeof EQUIVALENT_GRADES)[number]
 export { EQUIVALENT_GRADES }
 
-export function transmutedToEquivalent(score: number) {
-  if (score >= 97) return 1
-  if (score >= 94) return 1.25
-  if (score >= 91) return 1.5
-  if (score >= 88) return 1.75
-  if (score >= 85) return 2
-  if (score >= 82) return 2.25
-  if (score >= 79) return 2.5
-  if (score >= 76) return 2.75
-  if (score >= 75) return 3
-  if (score >= 72) return 4
-  return 5
+const DEFAULT_CLIENT_TABLE: Record<string, number> = {
+  "97-100": 1.0, "94-96": 1.25, "91-93": 1.5, "88-90": 1.75,
+  "85-87": 2.0, "82-84": 2.25, "79-81": 2.5, "76-78": 2.75,
+  "75": 3.0, "72-74": 4.0, "0-71": 5.0,
+}
+
+export function transmutedToEquivalent(score: number): number {
+  for (const [range, equiv] of Object.entries(DEFAULT_CLIENT_TABLE)) {
+    if (range.includes("-")) {
+      const [low, high] = range.split("-").map(Number)
+      if (score >= low && score <= high) return equiv
+    } else {
+      const val = Number(range)
+      if (score >= val) return equiv
+    }
+  }
+  return 5.0
 }
 
 export function equivalentToPercentage(equiv: number): number {
@@ -42,7 +47,11 @@ export function calculateFinalGrade(record: GradeRecord) {
 }
 
 export function calculateGradePercentage(record: GradeRecord) {
+  if (record.finalGrade !== undefined) return record.finalGrade
   if (record.gradePercentage !== undefined) return record.gradePercentage
+  if (record.midtermGrade !== undefined && record.tentativeFinalGrade !== undefined) {
+    return Number(((record.midtermGrade + record.tentativeFinalGrade) / 2).toFixed(2))
+  }
   if (record.midtermTransmuted !== undefined && record.finalTransmuted !== undefined) {
     return Number(((record.midtermTransmuted + record.finalTransmuted) / 2).toFixed(2))
   }

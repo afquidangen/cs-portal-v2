@@ -13,7 +13,7 @@ import {
 } from "../../lib/grades"
 import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
-import type { GradeRecord } from "../../data/portal-data"
+import type { GradeRecord } from "@/lib/types/grade"
 
 export function GradesModule({ model }: PortalModuleProps) {
   const { downloadGradeReport, allStudentGrades, studentGrades } = model
@@ -23,14 +23,18 @@ export function GradesModule({ model }: PortalModuleProps) {
     [allStudentGrades]
   )
 
+  function gradePercentile(g: GradeRecord): number | undefined {
+    return g.finalGrade ?? g.transmutedGrade
+  }
+
   const gwaData = useMemo(() => {
     const graded = studentGrades.filter(
-      (g) => g.midterm !== undefined && g.finalTerm !== undefined
+      (g) => g.finalGrade !== undefined || g.transmutedGrade !== undefined
     )
     if (graded.length === 0) return null
     const totalUnits = graded.reduce((sum, g) => sum + (g.units || 0), 0)
     const weightedSum = graded.reduce(
-      (sum, g) => sum + (g.gradePercentage ?? 0) * (g.units || 0),
+      (sum, g) => sum + (gradePercentile(g) ?? 0) * (g.units || 0),
       0
     )
     const gwa = Number((weightedSum / totalUnits).toFixed(2))
@@ -201,16 +205,16 @@ export function GradesModule({ model }: PortalModuleProps) {
                     {grade.released ? (
                       <>
                         <td className="px-4 py-3 text-foreground/80">
-                          {grade.midtermTransmuted !== undefined ? grade.midtermTransmuted.toFixed(2) : "N/A"}
+                          {grade.midtermGrade !== undefined ? grade.midtermGrade.toFixed(2) : "N/A"}
                         </td>
                         <td className="px-4 py-3 text-foreground/80">
-                          {grade.finalTransmuted !== undefined ? grade.finalTransmuted.toFixed(2) : "N/A"}
+                          {grade.tentativeFinalGrade !== undefined ? grade.tentativeFinalGrade.toFixed(2) : "N/A"}
                         </td>
                         <td className="px-4 py-3 text-foreground/80">
-                          {percentage !== undefined ? percentage.toFixed(2) : "N/A"}
+                          {grade.finalGrade !== undefined ? grade.finalGrade.toFixed(2) : "N/A"}
                         </td>
                         <td className="px-4 py-3 font-semibold text-foreground">
-                          {equivalent !== undefined ? equivalent.toFixed(2) : "N/A"}
+                          {grade.transmutedGrade !== undefined ? grade.transmutedGrade.toFixed(2) : "N/A"}
                         </td>
                         <td className="px-4 py-3">
                           <StatusBadge value={grade.remarks || "Passed"} />

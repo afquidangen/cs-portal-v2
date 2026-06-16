@@ -1,6 +1,7 @@
 import "dotenv/config"
 import { connectToDatabase } from "../lib/mongodb"
 import { GradingSchemeModel } from "../lib/models/grading-scheme.model"
+import { TransmutationTableModel } from "../lib/models/transmutation-table.model"
 
 const DEFAULT_LECTURE_SCHEME = {
   id: "GS-DEFAULT-LECTURE",
@@ -89,7 +90,36 @@ async function seed() {
     console.log("Lab scheme already exists.")
   }
 
-  console.log("Grading scheme seeding complete.")
+  const existingTT = await TransmutationTableModel.findOne({
+    id: "TT-DEFAULT",
+  })
+  if (!existingTT) {
+    await TransmutationTableModel.create({
+      id: "TT-DEFAULT",
+      name: "ISPSC Default Transmutation",
+      subjectType: "All",
+      isDefault: true,
+      isActive: true,
+      entries: [
+        { min: 97, max: 100, equivalent: 1.0 },
+        { min: 94, max: 96, equivalent: 1.25 },
+        { min: 91, max: 93, equivalent: 1.5 },
+        { min: 88, max: 90, equivalent: 1.75 },
+        { min: 85, max: 87, equivalent: 2.0 },
+        { min: 82, max: 84, equivalent: 2.25 },
+        { min: 79, max: 81, equivalent: 2.5 },
+        { min: 76, max: 78, equivalent: 2.75 },
+        { min: 75, max: 75, equivalent: 3.0 },
+        { min: 72, max: 74, equivalent: 4.0 },
+        { min: 0, max: 71, equivalent: 5.0 },
+      ],
+    })
+    console.log("Created default transmutation table.")
+  } else {
+    console.log("Transmutation table already exists.")
+  }
+
+  console.log("Grading scheme and transmutation seeding complete.")
   process.exit(0)
 }
 

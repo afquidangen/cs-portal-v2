@@ -14,7 +14,7 @@ import type { GradeRecord } from "../../data/portal-data"
 import type { GradeColumn } from "@/lib/types"
 import { SpreadsheetGrid } from "../grades/spreadsheet-grid"
 
-export function ManageGradesModule({ model }: PortalModuleProps) {
+export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { darkMode: boolean }) {
   const { grades, setGrades, roster, users, visibleSchedules, semesters } = model
 
   const [selectedSemesterId, setSelectedSemesterId] = useState("")
@@ -267,6 +267,7 @@ export function ManageGradesModule({ model }: PortalModuleProps) {
           setStudentQuery={setStudentQuery}
           computedOnce={computedOnce}
           setComputedOnce={setComputedOnce}
+          darkMode={darkMode}
         />
       ) : (
         selectedSubject && (

@@ -1,22 +1,13 @@
 import { connectToDatabase } from "@/lib/mongodb"
 import { GradeModel, UserModel } from "@/lib/models"
 import { success, error, badRequest } from "@/lib/api-response"
+import {
+  computeAllCategoryGrades, computeClassStanding, computeLectureGrade,
+  computeLaboratoryGrade, computePeriodGrade, computeFinalGrade,
+  transmuteGrade, getGradeRemarks,
+} from "@/features/portal/lib/grade-engine"
 
 export const runtime = "nodejs"
-
-function transmutedToEquivalent(score: number): number {
-  if (score >= 97) return 1.0
-  if (score >= 94) return 1.25
-  if (score >= 91) return 1.5
-  if (score >= 88) return 1.75
-  if (score >= 85) return 2.0
-  if (score >= 82) return 2.25
-  if (score >= 79) return 2.5
-  if (score >= 76) return 2.75
-  if (score >= 75) return 3.0
-  if (score >= 72) return 4.0
-  return 5.0
-}
 
 export async function POST(request: Request) {
   try {
@@ -27,12 +18,16 @@ export async function POST(request: Request) {
     }
 
     await connectToDatabase()
-    const result = await GradeModel.updateMany(
-      { section, subject },
-      { $set: { released: true } }
-    )
 
-    const grades = await GradeModel.find({ section, subject, released: true }).lean()
+    const grades = await GradeModel.find({ section, subject, released: { $ne: true } }).lean()
+    if (grades.length === 0) {
+      return success({ modifiedCount: 0, message: "All grades already released." })
+    }
+
+    await GradeModel.updateMany(
+      { section, subject },
+      { $set: { released: true, workflowStatus: "Approved" } }
+    )
 
     const studentMap = new Map<string, typeof grades>()
     for (const g of grades) {
@@ -49,40 +44,32 @@ export async function POST(request: Request) {
       let changed = false
 
       for (const grade of studentGrades) {
-        const g = grade as any
-        const midtermPct = g.midtermTransmuted ?? 0
-        const finalPct = g.finalTransmuted ?? 0
-        const gradePct = g.gradePercentage
-        const finalPercentile = midtermPct || finalPct
-          ? Number(((midtermPct + finalPct) / 2).toFixed(2))
-          : 0
-        const transmutedGrade = gradePct !== undefined
-          ? transmutedToEquivalent(gradePct)
-          : finalPercentile > 0
-            ? transmutedToEquivalent(finalPercentile)
-            : 0
+        const g = grade as Record<string, unknown>
+        const finalGrade = g.finalGrade as number | undefined
+        const transmuted = finalGrade !== undefined ? transmuteGrade(finalGrade) : undefined
+        const remarks = g.remarks ?? getGradeRemarks(transmuted ?? 5.0)
 
-        const existingIdx = history.findIndex(
-          (h: any) => h.subjectCode === grade.code
+        const existingIdx = (history as Array<Record<string, unknown>>).findIndex(
+          (h) => h.subjectCode === (g.code as string)
         )
 
-        const entry: any = {
-          subjectCode: grade.code,
-          subjectName: grade.subject,
-          finalPercentile,
-          transmutedGrade,
-          remarks: g.remarks ?? "Passed",
+        const entry: Record<string, unknown> = {
+          subjectCode: g.code,
+          subjectName: g.subject,
+          finalPercentile: finalGrade ?? 0,
+          transmutedGrade: transmuted ?? 0,
+          remarks,
           section: g.section,
         }
 
         if (existingIdx >= 0) {
-          history[existingIdx] = { ...history[existingIdx] as any, ...entry }
+          (history as Array<Record<string, unknown>>)[existingIdx] = { ...(history as Array<Record<string, unknown>>)[existingIdx], ...entry }
         } else {
-          const u = user as any
-          entry.curriculumId = u.curriculumId ?? ""
-          entry.yearLevel = u.currentYearLevel ?? ""
-          entry.semester = u.currentSemester ?? ""
-          history.push(entry)
+          const u = user as Record<string, unknown>
+          entry.curriculumId = (u.curriculumId as string) ?? ""
+          entry.yearLevel = (u.currentYearLevel as string) ?? ""
+          entry.semester = (u.currentSemester as string) ?? ""
+          ;(history as Array<Record<string, unknown>>).push(entry)
         }
         changed = true
       }
@@ -92,7 +79,7 @@ export async function POST(request: Request) {
       }
     }
 
-    return success({ modifiedCount: result.modifiedCount })
+    return success({ modifiedCount: grades.length })
   } catch (err) {
     return error(err instanceof Error ? err.message : "Unable to release grades.")
   }
