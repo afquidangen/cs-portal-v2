@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Plus, Save, Trash2, AlertTriangle, CheckCircle2, BookMarked, GraduationCap, Variable, Table2 } from "lucide-react"
+import { Plus, Save, Trash2, AlertTriangle, CheckCircle2, BookMarked, GraduationCap, Variable, Table2, Code } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
@@ -88,22 +88,9 @@ export function GradingAdminModule() {
     const errors: string[] = []
     const compTotal = scheme.components.reduce((s, c) => s + c.weight, 0)
     if (Math.abs(compTotal - 100) > 0.01) errors.push(`Component weights sum to ${compTotal}%, must be 100%.`)
-    for (const comp of scheme.components) {
-      const catTotal = comp.categories.reduce((s, c) => s + c.weight, 0)
-      if (comp.categories.length > 0 && Math.abs(catTotal - 100) > 0.01) {
-        errors.push(`"${comp.name}" categories sum to ${catTotal}%, must be 100%.`)
-      }
-    }
     if (scheme.subjectType === "Lecture with Lab") {
-      const labCompTotal = (scheme.labComponents ?? []).reduce((s, c) => s + c.weight, 0)
-      if ((scheme.labComponents?.length ?? 0) > 0 && Math.abs(labCompTotal - 100) > 0.01) {
-        errors.push(`Lab components sum to ${labCompTotal}%, must be 100%.`)
-      }
-      for (const comp of scheme.labComponents ?? []) {
-        const catTotal = comp.categories.reduce((s, c) => s + c.weight, 0)
-        if (comp.categories.length > 0 && Math.abs(catTotal - 100) > 0.01) {
-          errors.push(`"${comp.name}" (lab) categories sum to ${catTotal}%, must be 100%.`)
-        }
+      if ((scheme.lectureWeight ?? 0) + (scheme.laboratoryWeight ?? 0) !== 100) {
+        errors.push(`Lecture weight (${scheme.lectureWeight ?? 0}%) + Laboratory weight (${scheme.laboratoryWeight ?? 0}%) must equal 100%.`)
       }
     }
     return errors
@@ -243,22 +230,31 @@ export function GradingAdminModule() {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Lecture Weight (%)</label>
-              <Input type="number" value={draft.lectureWeight ?? 40} onChange={(e) => updateField("lectureWeight", Number(e.target.value))} className="rounded-xl" />
+               <Input type="number" value={draft.lectureWeight ?? 40} onChange={(e) => updateField("lectureWeight", Number(e.target.value))} className="rounded-xl" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Laboratory Weight (%)</label>
-              <Input type="number" value={draft.laboratoryWeight ?? 60} onChange={(e) => updateField("laboratoryWeight", Number(e.target.value))} className="rounded-xl" />
+               <Input type="number" value={draft.laboratoryWeight ?? 60} onChange={(e) => updateField("laboratoryWeight", Number(e.target.value))} className="rounded-xl" />
+            </div>
+            <div className="col-span-full text-xs">
+              <span className={`${(draft.lectureWeight ?? 0) + (draft.laboratoryWeight ?? 0) === 100 ? "text-emerald-600" : "text-red-500"}`}>
+                Lecture + Lab = {(draft.lectureWeight ?? 0) + (draft.laboratoryWeight ?? 0)}% {(draft.lectureWeight ?? 0) + (draft.laboratoryWeight ?? 0) === 100 ? "✓" : "✗ (must equal 100%)"}
+              </span>
             </div>
           </div>
         )}
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <h4 className="text-sm font-bold text-foreground">Components</h4>
+            <h4 className="text-sm font-bold text-foreground">Components <span className={`ml-2 text-xs font-normal ${Math.abs(draft.components.reduce((s, c) => s + c.weight, 0) - 100) < 0.01 ? "text-emerald-600" : "text-red-500"}`}>
+              (Sum: {draft.components.reduce((s, c) => s + c.weight, 0)}%)
+            </span></h4>
             <Button size="sm" variant="outline" onClick={addComponent} className="rounded-lg"><Plus className="size-3.5" /> Add</Button>
           </div>
           <div className="space-y-3">
-            {draft.components.map((comp, ci) => (
+            {draft.components.map((comp, ci) => {
+              const catSum = comp.categories.reduce((s, c) => s + c.weight, 0)
+              return (
               <div key={ci} className="rounded-xl border border-border bg-muted/30 p-4">
                 <div className="mb-3 flex items-center gap-3">
                   <Input placeholder="Component name" value={comp.name} onChange={(e) => updateComponent(ci, "name", e.target.value)} className="flex-1 rounded-lg" />
@@ -275,21 +271,30 @@ export function GradingAdminModule() {
                       <Button size="sm" variant="ghost" onClick={() => removeCategory(ci, cati)}><Trash2 className="size-3.5 text-destructive" /></Button>
                     </div>
                   ))}
+                  {comp.categories.length > 0 && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>Category sum: {catSum}%</span>
+                    </div>
+                  )}
                   <Button size="sm" variant="ghost" onClick={() => addCategory(ci)} className="text-xs"><Plus className="size-3" /> Category</Button>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
 
         {draft.subjectType === "Lecture with Lab" && (
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <h4 className="text-sm font-bold text-foreground">Lab Components</h4>
+              <h4 className="text-sm font-bold text-foreground">Lab Components <span className="ml-2 text-xs font-normal text-muted-foreground">
+                (Sum: {(draft.labComponents ?? []).reduce((s, c) => s + c.weight, 0)}%)
+              </span></h4>
               <Button size="sm" variant="outline" onClick={addLabComponent} className="rounded-lg"><Plus className="size-3.5" /> Add</Button>
             </div>
             <div className="space-y-3">
-              {(draft.labComponents ?? []).map((comp, ci) => (
+              {(draft.labComponents ?? []).map((comp, ci) => {
+                const catSum = comp.categories.reduce((s, c) => s + c.weight, 0)
+                return (
                 <div key={ci} className="rounded-xl border border-border bg-muted/30 p-4">
                   <div className="mb-3 flex items-center gap-3">
                     <Input placeholder="Component name" value={comp.name} onChange={(e) => updateLabComponent(ci, "name", e.target.value)} className="flex-1 rounded-lg" />
@@ -306,10 +311,15 @@ export function GradingAdminModule() {
                         <Button size="sm" variant="ghost" onClick={() => removeLabCategory(ci, cati)}><Trash2 className="size-3.5 text-destructive" /></Button>
                       </div>
                     ))}
+                    {comp.categories.length > 0 && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>Category sum: {catSum}%</span>
+                      </div>
+                    )}
                     <Button size="sm" variant="ghost" onClick={() => addLabCategory(ci)} className="text-xs"><Plus className="size-3" /> Category</Button>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           </div>
         )}
@@ -418,6 +428,61 @@ export function GradingAdminModule() {
     )
   }
 
+  function ActiveSchemePreview({ schemes }: { schemes: GradingScheme[] }) {
+    const activeSchemes = schemes.filter((s) => s.isActive)
+    if (activeSchemes.length === 0) return null
+
+    return (
+      <div className="mb-4 space-y-3 rounded-xl border border-border bg-muted/20 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Active Grading Formula Applied</p>
+        {activeSchemes.map((s) => (
+          <div key={s.id} className="rounded-lg border border-border bg-card p-3">
+            <div className="flex items-center gap-2">
+              <GraduationCap className="size-4 text-primary" />
+              <p className="font-semibold text-foreground">{s.subjectType}</p>
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700 dark:bg-emerald-900 dark:text-emerald-400">Active</span>
+              <span className="text-xs text-muted-foreground">— {s.name}</span>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {s.components.map((comp) => {
+                const catTotal = comp.categories.reduce((sum, c) => sum + c.weight, 0)
+                return (
+                  <span key={comp.name} className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs">
+                    {comp.name}: <strong>{comp.weight}%</strong>
+                    {comp.categories.length > 0 && (
+                      <span className="text-muted-foreground">
+                        ({comp.categories.map((c) => `${c.name} ${c.weight}%`).join(", ")})
+                      </span>
+                    )}
+                    <span className="text-muted-foreground">{catTotal}%</span>
+                  </span>
+                )
+              })}
+              {s.subjectType === "Lecture with Lab" && s.labComponents?.map((comp) => (
+                <span key={comp.name} className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs">
+                  {comp.name}: <strong>{comp.weight}%</strong>
+                  {comp.categories.length > 0 && (
+                    <span className="text-muted-foreground">
+                      ({comp.categories.map((c) => `${c.name} ${c.weight}%`).join(", ")})
+                    </span>
+                  )}
+                </span>
+              ))}
+              {s.subjectType === "Lecture with Lab" && (
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs">
+                  Lecture {s.lectureWeight}% / Lab {s.laboratoryWeight}%
+                </span>
+              )}
+            </div>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Final Grade = <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground">(Midterm Grade + Tentative Final Grade) ÷ 2</code> &rarr; Transmute
+            </p>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <Panel title="Grading Configuration">
       <div className="mb-5 flex flex-col items-start gap-4 rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left shadow-sm sm:flex-row sm:items-center sm:px-6">
@@ -437,6 +502,8 @@ export function GradingAdminModule() {
           </p>
         </div>
       </div>
+
+      <ActiveSchemePreview schemes={schemes} />
 
       <div className="mb-4 flex gap-2">
         <Button variant={activeTab === "schemes" ? "default" : "outline"} onClick={() => setActiveTab("schemes")} className="rounded-lg">

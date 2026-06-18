@@ -82,7 +82,8 @@ export type GradeRecord = {
   classId?: string
   subjectType?: "Lecture" | "Lecture with Lab"
   scores?: Record<string, number>
-  categoryGrades?: Array<{ category: string; totalStudentScore: number; totalPossibleScore: number; grade: number }>
+  maxScores?: Record<string, number>
+  categoryGrades?: Array<{ category: string; totalStudentScore: number; totalPossibleScore: number; percentageScore: number; weightedScore: number; grade: number }>
   lectureClassStanding?: number
   lectureExam?: number
   lectureGrade?: number

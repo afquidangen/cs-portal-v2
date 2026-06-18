@@ -62,6 +62,7 @@ export const roleNavigation: Record<Role, NavItem[]> = {
     { id: "availability", label: "Teacher Status", icon: CheckCircle2 },
     { id: "cso", label: "CSSO Section", icon: FileArchive },
     { id: "audit", label: "Audit Logs", icon: Database },
+    { id: "grading-admin", label: "Grading Rules", icon: Settings },
     { id: "quick-links", label: "Quick Links", icon: LinkIcon },
   ],
   csso_officer: [

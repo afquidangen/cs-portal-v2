@@ -1,6 +1,7 @@
 import { gradesRepository } from "@/features/portal/repositories/grades.repository"
 import { gradeColumnRepository } from "@/features/portal/repositories/grade-column.repository"
 import { assessmentRepository } from "@/features/portal/repositories/assessment.repository"
+import { gradingSchemeRepository } from "@/features/portal/repositories/grading-scheme.repository"
 import { success, error, badRequest } from "@/lib/api-response"
 import { requireFacultyOrAdmin } from "@/lib/api-auth"
 
@@ -15,7 +16,21 @@ export async function GET(
     const grades = await gradesRepository.findAll({ classId })
     const columns = await gradeColumnRepository.findByClass(classId)
     const assessments = await assessmentRepository.findByClass(classId)
-    return success({ grades, columns, assessments })
+
+    const midtermColumns = (columns as Array<Record<string, unknown>>).filter(
+      (c) => !c.gradingPeriod || c.gradingPeriod === "midterm" || c.gradingPeriod === "both"
+    )
+    const finalColumns = (columns as Array<Record<string, unknown>>).filter(
+      (c) => c.gradingPeriod === "final" || c.gradingPeriod === "both"
+    )
+    const midtermAssessments = (assessments as Array<Record<string, unknown>>).filter(
+      (a) => !a.gradingPeriod || a.gradingPeriod === "midterm" || a.gradingPeriod === "both"
+    )
+    const finalAssessments = (assessments as Array<Record<string, unknown>>).filter(
+      (a) => a.gradingPeriod === "final" || a.gradingPeriod === "both"
+    )
+
+    return success({ grades, columns, assessments, midtermColumns, finalColumns, midtermAssessments, finalAssessments })
   } catch (err) {
     return error(err instanceof Error ? err.message : "Unable to fetch class grades.")
   }

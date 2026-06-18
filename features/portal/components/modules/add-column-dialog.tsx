@@ -14,26 +14,32 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+export type GradingPeriodOption = "midterm" | "final" | "both"
+
 export function AddColumnDialog({
   open,
   onOpenChange,
   onConfirm,
   availableCategories,
+  defaultPeriod = "midterm",
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onConfirm: (name: string, category: string, maxScore: number) => void
+  onConfirm: (name: string, category: string, maxScore: number, gradingPeriod: GradingPeriodOption) => void
   availableCategories: string[]
+  defaultPeriod?: GradingPeriodOption
 }) {
   const [name, setName] = useState("")
   const [category, setCategory] = useState(availableCategories[0] || "")
   const [maxScore, setMaxScore] = useState("100")
+  const [gradingPeriod, setGradingPeriod] = useState<GradingPeriodOption>(defaultPeriod)
 
   function handleConfirm() {
     if (!name.trim()) return
-    onConfirm(name.trim(), category || "Custom", Number(maxScore) || 100)
+    onConfirm(name.trim(), category || "Custom", Number(maxScore) || 100, gradingPeriod)
     setName("")
     setMaxScore("100")
+    setGradingPeriod(defaultPeriod)
     onOpenChange(false)
   }
 
@@ -68,7 +74,7 @@ export function AddColumnDialog({
                   variant={category === cat ? "default" : "outline"}
                   size="sm"
                   onClick={() => setCategory(cat)}
-                  className="rounded-lg"
+                  className={`rounded-lg ${category === cat ? "shadow-sm ring-1 ring-primary/50 ring-offset-1 ring-offset-background font-semibold" : ""}`}
                 >
                   {cat}
                 </Button>
@@ -85,6 +91,24 @@ export function AddColumnDialog({
                   </button>
                 </span>
               )}
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-foreground">Grading Period</label>
+            <div className="flex gap-2">
+              {(["midterm", "final", "both"] as GradingPeriodOption[]).map((p) => (
+                <Button
+                  key={p}
+                  type="button"
+                  variant={gradingPeriod === p ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setGradingPeriod(p)}
+                  className={`rounded-lg capitalize ${gradingPeriod === p ? "shadow-sm ring-1 ring-primary/50 ring-offset-1 ring-offset-background font-semibold" : ""}`}
+                >
+                  {p}
+                </Button>
+              ))}
             </div>
           </div>
 

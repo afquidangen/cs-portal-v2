@@ -8,6 +8,7 @@ export type Assessment = {
   classId: string
   name: string
   category: string
+  gradingPeriod: "midterm" | "final" | "both"
   maxScore: number
   scores: AssessmentScore[]
   archived: boolean

@@ -10,6 +10,7 @@ export interface IAssessment extends Document {
   classId: string
   name: string
   category: string
+  gradingPeriod: "midterm" | "final" | "both"
   maxScore: number
   scores: IAssessmentScore[]
   archived: boolean
@@ -31,6 +32,7 @@ const AssessmentSchema = new Schema<IAssessment>(
     classId: { type: String, required: true, index: true },
     name: { type: String, required: true },
     category: { type: String, required: true },
+    gradingPeriod: { type: String, enum: ["midterm", "final", "both"], default: "midterm" },
     maxScore: { type: Number, default: 100 },
     scores: { type: [AssessmentScoreSchema], default: [] },
     archived: { type: Boolean, default: false },
@@ -38,7 +40,7 @@ const AssessmentSchema = new Schema<IAssessment>(
   { timestamps: true }
 )
 
-AssessmentSchema.index({ classId: 1, category: 1 })
+AssessmentSchema.index({ classId: 1, gradingPeriod: 1, category: 1 })
 
 export const AssessmentModel =
   (mongoose.models.Assessment as Model<IAssessment> | undefined) ??

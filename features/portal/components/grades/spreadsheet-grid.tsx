@@ -3,21 +3,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   Lock, CheckCircle2, Search, Calculator,
-  Send, XCircle,
+  Send, XCircle, RotateCcw, Save,
 } from "lucide-react"
 import { AgGridReact } from "ag-grid-react"
-import type { ColDef, CellValueChangedEvent, ColumnResizedEvent, SelectionChangedEvent, GridReadyEvent } from "ag-grid-community"
+import type { ColDef, ColGroupDef, CellValueChangedEvent, ColumnResizedEvent, SelectionChangedEvent, GridReadyEvent, ColumnHeaderClickedEvent } from "ag-grid-community"
 import { AllCommunityModule, ModuleRegistry, themeAlpine } from "ag-grid-community"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Dialog, DialogContent, DialogDescription,
+  DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog"
 import { toast } from "sonner"
 
 import { Panel, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "../modules/types"
-import type { GradeRecord } from "../../data/portal-data"
-import type { GradeWorkflowStatus, GradeColumn } from "@/lib/types"
+import type { GradeRecord, GradeWorkflowStatus, GradeColumn, GradingPeriod, Assessment } from "@/lib/types"
 import { useAutoSave, type SaveStatus } from "../../lib/auto-save"
-import { transmuteGrade, getGradeRemarks, computeAllCategoryGrades } from "../../lib/grade-engine"
+import { computeLivePreview, gradeCategoryMatches } from "../../lib/grade-engine"
 import { UndoRedoManager, buildSnapshot } from "../../lib/undo-redo"
 import { SpreadsheetToolbar, type ToolbarAction } from "./spreadsheet-toolbar"
 import { RenameColumnDialog } from "./rename-column-dialog"
@@ -29,6 +32,68 @@ import { TemplateSelector } from "./template-selector"
 import { SaveStatusIndicator } from "../modules/save-status-indicator"
 
 ModuleRegistry.registerModules([AllCommunityModule])
+
+function fmtNum(val: unknown) {
+  const n = Number(val)
+  return isNaN(n) ? "" : n.toFixed(2)
+}
+
+function scoreKey(col: { name: string; gradingPeriod: string }): string {
+  return col.gradingPeriod === "both" ? col.name : `${col.gradingPeriod}_${col.name}`
+}
+
+function findGradeColumnBySelection(columns: GradeColumn[], selection: string): GradeColumn | undefined {
+  return columns.find((col) => col.name === selection || scoreKey(col) === selection)
+}
+
+function gradeColumnLabel(col: GradeColumn | undefined, fallback: string) {
+  return col?.displayName || col?.name || fallback
+}
+
+function EditMaxScoreDialog({
+  open, onOpenChange, colName, currentMax, onConfirm,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  colName: string
+  currentMax: number
+  onConfirm: (maxScore: number) => void
+}) {
+  const [val, setVal] = useState(String(currentMax))
+  useEffect(() => { setVal(String(currentMax)) }, [currentMax])
+
+  function handleSave() {
+    const num = Number(val)
+    if (!isNaN(num) && num >= 0) onConfirm(num)
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-xs">
+        <DialogHeader>
+          <DialogTitle>Edit Max Score</DialogTitle>
+          <DialogDescription>
+            Set the maximum possible score for &ldquo;{colName}&rdquo;.
+          </DialogDescription>
+        </DialogHeader>
+        <Input
+          type="number"
+          min={0}
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") handleSave() }}
+          className="rounded-lg"
+          autoFocus
+        />
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-lg">Cancel</Button>
+          <Button onClick={handleSave} className="rounded-lg">Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 function RemarksCellRenderer(params: { value: string }) {
   const val = params.value
@@ -55,6 +120,22 @@ function StatusCellRenderer(params: { value: string }) {
   )
 }
 
+type CategoryPreviewData = {
+  category: string
+  totalStudentScore: number
+  totalPossibleScore: number
+  percentageScore: number
+  weightedScore: number
+}
+
+type LivePreviewEntry = {
+  studentId: string
+  classStanding: number
+  examGrade: number
+  periodGrade: number
+  categoryGrades: CategoryPreviewData[]
+}
+
 type StudentGradeRow = {
   no: number
   studentId: string
@@ -67,7 +148,12 @@ type StudentGradeRow = {
   transmutedGrade?: number
   remarks?: string
   workflowStatus: GradeWorkflowStatus
+  liveClassStanding?: number
+  liveExamGrade?: number
+  livePeriodGrade?: number
 }
+
+type TabKey = "midterm" | "final" | "summary"
 
 export function SpreadsheetGrid({
   model,
@@ -85,6 +171,8 @@ export function SpreadsheetGrid({
   computedOnce,
   setComputedOnce,
   darkMode,
+  assessments,
+  gradingScheme,
 }: {
   model: PortalModuleProps["model"]
   selectedSubject: string
@@ -101,11 +189,14 @@ export function SpreadsheetGrid({
   computedOnce: boolean
   setComputedOnce: (v: boolean) => void
   darkMode: boolean
+  assessments: Assessment[]
+  gradingScheme?: { components: Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number }> }>; labComponents?: Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number }> }>; lectureWeight?: number; laboratoryWeight?: number; subjectType: "Lecture" | "Lecture with Lab" } | null
 }) {
   const gridRef = useRef<AgGridReact>(null)
   const colStateRef = useRef<Record<string, number>>({})
   const isEditable = model.role === "faculty" || model.role === "admin"
 
+  const [activeTab, setActiveTab] = useState<TabKey>("midterm")
   const [selectedRows, setSelectedRows] = useState<StudentGradeRow[]>([])
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle")
   const [lastSaved, setLastSaved] = useState<string | null>(null)
@@ -116,18 +207,51 @@ export function SpreadsheetGrid({
   const [deleteRowOpen, setDeleteRowOpen] = useState(false)
   const [selectedColName, setSelectedColName] = useState("")
   const [templatesOpen, setTemplatesOpen] = useState(false)
+  const [maxScoreDialogOpen, setMaxScoreDialogOpen] = useState(false)
+  const [maxScoreColName, setMaxScoreColName] = useState("")
+  const [maxScoreCurrent, setMaxScoreCurrent] = useState(0)
 
   const undoManager = useRef(new UndoRedoManager())
 
+  const gradeMapRef = useRef(gradeMap)
+  const livePreviewDataRef = useRef<LivePreviewEntry[] | null>(null)
+  const dataLoadedRef = useRef(false)
+
+  useEffect(() => { gradeMapRef.current = gradeMap }, [gradeMap])
+
+  // Force grid refresh once grade data first becomes available
+  useEffect(() => {
+    if (gradeMap.size > 0 && !dataLoadedRef.current) {
+      dataLoadedRef.current = true
+      setTimeout(() => {
+        gridRef.current?.api?.refreshCells({ force: true })
+      }, 0)
+    }
+  }, [gradeMap])
+
   const saveGradeData = useCallback(async (data: unknown) => {
-    const { grades: gradeData, cid } = data as { grades: GradeRecord[]; cid: string }
+    const { grades: gradeData, cid, showToast } = data as { grades: GradeRecord[]; cid: string; showToast?: boolean }
     const res = await fetch(`/api/portal/grades/class/${cid}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ grades: gradeData }),
     })
-    if (!res.ok) throw new Error("Failed to save")
-  }, [])
+    if (!res.ok) {
+      if (showToast) toast.error("Failed to save grades.")
+      throw new Error("Failed to save")
+    }
+    const json = await res.json()
+    if (json.data?.grades) {
+      setGrades((prev) => {
+        const serverMap = new Map((json.data.grades as GradeRecord[]).map((g: GradeRecord) => [g.studentId, g]))
+        return prev.map((g) => {
+          const s = serverMap.get(g.studentId)
+          return s ? { ...g, ...s } : g
+        })
+      })
+    }
+    if (showToast) toast.success("Grades saved successfully.")
+  }, [setGrades])
 
   const autoSave = useAutoSave(saveGradeData, 800)
 
@@ -135,6 +259,27 @@ export function SpreadsheetGrid({
     setSaveStatus(autoSave.status)
     setLastSaved(autoSave.lastSaved)
   }, [autoSave.status, autoSave.lastSaved])
+
+  const filteredColumns = useMemo(() => {
+    if (activeTab === "summary") return []
+    return gradeColumns.filter((col) => {
+      if (col.gradingPeriod === "both") return true
+      return col.gradingPeriod === activeTab
+    })
+  }, [gradeColumns, activeTab])
+
+  const filteredAssessments = useMemo(() => {
+    if (activeTab === "summary") return []
+    return assessments.filter((a) => {
+      if (a.gradingPeriod === activeTab) return true
+      return true
+    })
+  }, [assessments, activeTab])
+
+  const periodAssessments = useMemo(() => {
+    if (activeTab === "summary") return []
+    return assessments.filter((a) => a.gradingPeriod === activeTab || a.gradingPeriod === "both")
+  }, [assessments, activeTab])
 
   function ensureGradeRecord(studentId: string): GradeRecord | undefined {
     const existing = gradeMap.get(studentId)
@@ -150,7 +295,7 @@ export function SpreadsheetGrid({
       code: selectedSubject.split(" - ")[0]?.trim() ?? selectedSubject,
       units: 3,
       classId,
-      subjectType: "Lecture",
+      subjectType: effectiveScheme?.subjectType ?? "Lecture",
       scores: {},
       categoryGrades: [],
       workflowStatus: "Draft",
@@ -168,10 +313,10 @@ export function SpreadsheetGrid({
     undoManager.current.push(buildSnapshot(gridData as unknown as Record<string, unknown>[], []))
 
     const row = data as StudentGradeRow
-    const field = colDef.field
+    const colId = colDef.colId
 
-    if (field?.startsWith("score_")) {
-      const colName = field.replace("score_", "")
+    if (colId?.startsWith("score_")) {
+      const colName = colId.replace("score_", "")
       const grade = ensureGradeRecord(row.studentId)
       if (!grade) return
       const score = Number(newValue) || 0
@@ -184,6 +329,10 @@ export function SpreadsheetGrid({
             : g
         )
       )
+
+      setTimeout(() => {
+        gridRef.current?.api?.refreshCells({ force: true })
+      }, 0)
 
       autoSave.schedule({ grades: [{ ...grade, scores: updatedScores }], cid: classId })
     }
@@ -204,7 +353,27 @@ export function SpreadsheetGrid({
     })
   }
 
-  async function handleComputeGrades(period: "midterm" | "final" = "final") {
+  function onColumnHeaderClicked(event: ColumnHeaderClickedEvent) {
+    const col = event.column as { isGroupColumn?: () => boolean; getChildren?: () => Array<{ getColDef: () => { colId?: string } }> }
+    if (typeof col.isGroupColumn === "function" && col.isGroupColumn()) {
+      const children = col.getChildren?.() ?? []
+      for (const child of children) {
+        const id = child.getColDef().colId
+        if (id?.startsWith("score_")) {
+          const colName = id.replace("score_", "")
+          const colData = findGradeColumnBySelection(gradeColumns, colName)
+          if (colData) {
+            setMaxScoreColName(scoreKey(colData))
+            setMaxScoreCurrent(colData.maxScore)
+            setMaxScoreDialogOpen(true)
+            return
+          }
+        }
+      }
+    }
+  }
+
+  async function handleComputeGrades(period: "midterm" | "final") {
     if (!classId) return
     try {
       const res = await fetch("/api/portal/grades/compute", {
@@ -260,12 +429,13 @@ export function SpreadsheetGrid({
     URL.revokeObjectURL(url)
   }
 
-  async function handleAddColumn(name: string, category: string, maxScore: number) {
+  async function handleAddColumn(name: string, category: string, maxScore: number, gradingPeriod?: string) {
+    const period = gradingPeriod || (activeTab === "summary" ? "midterm" : activeTab)
     try {
       const res = await fetch("/api/portal/grades/columns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ classId, name, category, maxScore }),
+        body: JSON.stringify({ classId, name, category, maxScore, gradingPeriod: period }),
       })
       const json = await res.json()
       if (!res.ok) { toast.error(json.error || "Failed to add column."); return }
@@ -276,7 +446,7 @@ export function SpreadsheetGrid({
 
   async function handleRenameColumn(newName: string) {
     if (!selectedColName) return
-    const col = gradeColumns.find((c) => c.name === selectedColName)
+    const col = findGradeColumnBySelection(gradeColumns, selectedColName)
     if (!col) return
     try {
       const res = await fetch(`/api/portal/grades/columns/${col.id}/rename`, {
@@ -294,13 +464,19 @@ export function SpreadsheetGrid({
 
   async function handleDeleteColumn() {
     if (!selectedColName) return
-    const col = gradeColumns.find((c) => c.name === selectedColName)
+    const col = findGradeColumnBySelection(gradeColumns, selectedColName)
     if (!col) return
     try {
       const res = await fetch(`/api/portal/grades/columns/${col.id}`, { method: "DELETE" })
       if (!res.ok) { toast.error("Failed to delete column."); return }
       setGradeColumns(gradeColumns.filter((c) => c.id !== col.id))
-      toast.success(`Column "${selectedColName}" deleted.`)
+      const keysToRemove = new Set([col.name, scoreKey(col)])
+      setGrades((prev) => prev.map((grade) => {
+        const scores = { ...(grade.scores ?? {}) }
+        for (const key of keysToRemove) delete scores[key]
+        return { ...grade, scores, updatedAt: new Date().toISOString() }
+      }))
+      toast.success(`Column "${gradeColumnLabel(col, selectedColName)}" deleted.`)
       setDeleteColOpen(false)
     } catch { toast.error("Failed to delete column.") }
   }
@@ -347,8 +523,8 @@ export function SpreadsheetGrid({
         const focused = gridRef.current?.api.getFocusedCell()
         if (focused) {
           const colDef = focused.column.getColDef()
-          if (colDef.field?.startsWith("score_")) {
-            setSelectedColName(colDef.field.replace("score_", ""))
+          if (colDef.colId?.startsWith("score_")) {
+            setSelectedColName(colDef.colId.replace("score_", ""))
             setRenameOpen(true)
           } else { toast.info("Focus a grade column to rename.") }
         } else { toast.info("Click a grade column first, then rename.") }
@@ -358,8 +534,8 @@ export function SpreadsheetGrid({
         const focused = gridRef.current?.api.getFocusedCell()
         if (focused) {
           const colDef = focused.column.getColDef()
-          if (colDef.field?.startsWith("score_")) {
-            setSelectedColName(colDef.field.replace("score_", ""))
+          if (colDef.colId?.startsWith("score_")) {
+            setSelectedColName(colDef.colId.replace("score_", ""))
             setDeleteColOpen(true)
           } else { toast.info("Focus a grade column to delete.") }
         } else { toast.info("Click a grade column first, then delete.") }
@@ -375,80 +551,358 @@ export function SpreadsheetGrid({
       case "addRow": handleAddRow(); break
       case "deleteRow": setDeleteRowOpen(true); break
       case "undo": {
-        const snapshot = undoManager.current.undo()
-        if (snapshot) {
-          toast.info("Undo applied.")
-        } else { toast.info("Nothing to undo.") }
+        undoManager.current.undo()
+        toast.info("Undo applied.")
         break
       }
       case "redo": {
-        const snapshot = undoManager.current.redo()
-        if (snapshot) {
-          toast.info("Redo applied.")
-        } else { toast.info("Nothing to redo.") }
+        undoManager.current.redo()
+        toast.info("Redo applied.")
         break
       }
       case "import": setImportOpen(true); break
       case "export": handleExport(); break
       case "templates": setTemplatesOpen((prev) => !prev); break
-      case "save": autoSave.saveNow({ grades: Array.from(gradeMap.values()), cid: classId }).then().catch(() => {}); break
+      case "refresh": handleRefresh(); break
+      case "save": autoSave.saveNow({ grades: Array.from(gradeMap.values()), cid: classId, showToast: true }).then().catch(() => {}); break
     }
   }
+
+  const effectiveScheme = gradingScheme
+
+  const catWeightMap = useMemo(() => {
+    const map = new Map<string, number>()
+    if (!effectiveScheme) return map
+    for (const comp of effectiveScheme.components) {
+      for (const cat of comp.categories) map.set(cat.name.toLowerCase(), cat.weight)
+    }
+    for (const lab of effectiveScheme.labComponents ?? []) {
+      for (const cat of lab.categories) map.set(cat.name.toLowerCase(), cat.weight)
+    }
+    return map
+  }, [effectiveScheme])
+
+  const compWeightMap = useMemo(() => {
+    const map = new Map<string, number>()
+    if (!effectiveScheme) return map
+    for (const comp of effectiveScheme.components) map.set(comp.name, comp.weight)
+    for (const lab of effectiveScheme.labComponents ?? []) map.set(lab.name, lab.weight)
+    return map
+  }, [effectiveScheme])
+
+  const handleUpdateMaxScore = useCallback(async (colName: string, newMaxScore: number) => {
+    const col = findGradeColumnBySelection(gradeColumns, colName)
+    if (!col || col.maxScore === newMaxScore) return
+    try {
+      const res = await fetch(`/api/portal/grades/columns/${col.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ maxScore: newMaxScore }),
+      })
+      if (!res.ok) { toast.error("Failed to update max score."); return }
+      setGradeColumns(gradeColumns.map((c) =>
+        c.id === col.id ? { ...c, maxScore: newMaxScore } : c
+      ))
+      toast.success(`Max score for "${col.displayName || col.name}" updated to ${newMaxScore}.`)
+    } catch { toast.error("Failed to update max score.") }
+  }, [gradeColumns])
+
+  function handleRefresh() {
+    if (!classId) return
+    toast.info("Refreshing grade data…")
+    fetch(`/api/portal/grades/class/${classId}`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.data?.grades) setGrades(json.data.grades)
+        if (json.data?.columns) setGradeColumns(json.data.columns)
+        toast.success("Grade data refreshed.")
+      })
+      .catch(() => toast.error("Failed to refresh."))
+  }
+
+  const catToComponent = useMemo(() => {
+    const map = new Map<string, string>()
+    if (!effectiveScheme) return map
+    for (const comp of effectiveScheme.components) {
+      for (const cat of comp.categories) map.set(cat.name.toLowerCase(), comp.name)
+    }
+    for (const lab of effectiveScheme.labComponents ?? []) {
+      for (const cat of lab.categories) map.set(cat.name.toLowerCase(), lab.name)
+    }
+    return map
+  }, [effectiveScheme])
 
   const columnCategories = useMemo(() => {
     const cats = new Set<string>()
     for (const col of gradeColumns) cats.add(col.category)
+    if (effectiveScheme) {
+      for (const comp of effectiveScheme.components) {
+        for (const cat of comp.categories) cats.add(cat.name)
+      }
+      for (const lab of effectiveScheme.labComponents ?? []) {
+        for (const cat of lab.categories) cats.add(cat.name)
+      }
+    }
     return Array.from(cats)
-  }, [gradeColumns])
+  }, [gradeColumns, effectiveScheme])
 
-  const colDefs = useMemo((): ColDef[] => {
+  const livePreviewData = useMemo(() => {
+    if (!effectiveScheme || activeTab === "summary") return null
+    return gridData.map((row) => {
+      const grade = gradeMap.get(row.studentId)
+      const result = computeLivePreview({
+        scores: row.scores,
+        columns: filteredColumns,
+        assessments: periodAssessments,
+        studentId: row.studentId,
+        components: effectiveScheme.components,
+        labComponents: effectiveScheme.labComponents,
+        subjectType: effectiveScheme.subjectType,
+        lectureWeight: effectiveScheme.lectureWeight,
+        laboratoryWeight: effectiveScheme.laboratoryWeight,
+        midtermGrade: activeTab === "final" ? (grade?.midtermGrade ?? row.midtermGrade) : undefined,
+      })
+      return {
+        studentId: row.studentId,
+        classStanding: result.classStanding,
+        examGrade: result.examGrade,
+        periodGrade: result.periodGrade,
+        categoryGrades: result.categoryGrades.map((cg) => ({
+          category: cg.category,
+          totalStudentScore: cg.totalStudentScore,
+          totalPossibleScore: cg.totalPossibleScore,
+          percentageScore: cg.percentageScore,
+          weightedScore: cg.weightedScore,
+        })),
+      }
+    })
+  }, [gridData, effectiveScheme, filteredColumns, periodAssessments, activeTab, gradeMap])
+
+  useEffect(() => { livePreviewDataRef.current = livePreviewData }, [livePreviewData])
+
+  const colDefs = useMemo((): (ColDef | ColGroupDef)[] => {
     const saved = colStateRef.current
 
-    const cols: ColDef[] = [
-      { headerName: "No.", field: "no", width: saved["no"] ?? 60, sortable: true, filter: false, cellStyle: { textAlign: "center" } },
+    if (activeTab === "summary") {
+      return [
+        { headerName: "No.", field: "no", width: saved["no"] ?? 60, sortable: true, filter: false, cellStyle: { textAlign: "center" }, pinned: "left" },
+        { headerName: "Student Name", field: "studentName", width: saved["studentName"] ?? 220, sortable: true, filter: "agTextColumnFilter", pinned: "left" },
+        { headerName: "Midterm Grade", field: "midtermGrade", width: 130, sortable: true, filter: "agNumberColumnFilter",
+          valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 600 } },
+        { headerName: "Tentative Final", field: "finalGrade", width: 130, sortable: true, filter: "agNumberColumnFilter",
+          valueFormatter: (params) => {
+            const row = params.data as StudentGradeRow
+            const grade = gradeMapRef.current.get(row.studentId)
+            return fmtNum(grade?.tentativeFinalGrade)
+          }, cellStyle: { fontWeight: 600 } },
+        { headerName: "Final %", field: "finalGrade", width: 120, sortable: true, filter: "agNumberColumnFilter",
+          valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 700 } },
+        { headerName: "Transmuted", field: "transmutedGrade", width: 120, sortable: true, filter: "agNumberColumnFilter",
+          valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 700 } },
+        { headerName: "Remarks", field: "remarks", width: 120, sortable: true, filter: "agTextColumnFilter",
+          cellRenderer: RemarksCellRenderer },
+        { headerName: "Status", field: "workflowStatus", width: 130, sortable: true, filter: "agTextColumnFilter",
+          cellRenderer: StatusCellRenderer },
+      ]
+    }
+
+    const cols: (ColDef | ColGroupDef)[] = [
+      { headerName: "No.", field: "no", width: saved["no"] ?? 60, sortable: true, filter: false, cellStyle: { textAlign: "center" }, pinned: "left" },
       { headerName: "Student Name", field: "studentName", width: saved["studentName"] ?? 220, sortable: true, filter: "agTextColumnFilter", pinned: "left" },
     ]
 
-    for (const col of gradeColumns) {
-      const field = `score_${col.name}`
-      cols.push({
+    const catColDefs = new Map<string, ColDef[]>()
+    for (const col of filteredColumns) {
+      const colId = `score_${scoreKey(col)}`
+      const colDef: ColDef = {
         headerName: col.displayName || col.name,
-        field,
-        width: saved[field] ?? col.width ?? 120,
+        headerTooltip: `${col.category} (${catWeightMap.get(col.category.toLowerCase()) ?? "?"}%) — max ${col.maxScore}`,
+        colId,
+        width: saved[colId] ?? col.width ?? 120,
         sortable: true,
         filter: "agNumberColumnFilter",
         editable: isEditable,
         valueGetter: (params) => {
           const row = params.data as StudentGradeRow
-          return row.scores?.[col.name] ?? ""
+          return row.scores?.[scoreKey(col)] ?? ""
         },
         valueSetter: (params) => {
           const row = params.data as StudentGradeRow
           const val = params.newValue
           const num = val === "" || val === null || val === undefined ? 0 : Number(val)
-          row.scores = { ...row.scores, [col.name]: isNaN(num) ? 0 : num }
+          row.scores = { ...row.scores, [scoreKey(col)]: isNaN(num) ? 0 : num }
           return true
         },
         cellEditor: "agNumberCellEditor",
         cellEditorParams: { min: 0, max: col.maxScore, precision: 2 },
-      })
+      }
+      if (!catColDefs.has(col.category)) catColDefs.set(col.category, [])
+      catColDefs.get(col.category)!.push(colDef)
     }
 
+    // Ensure all scheme categories appear as groups even when no columns exist
+    if (effectiveScheme) {
+      for (const comp of effectiveScheme.components) {
+        for (const cat of comp.categories) {
+          if (!catColDefs.has(cat.name)) {
+            catColDefs.set(cat.name, [{
+              headerName: "",
+              colId: `spacer_${cat.name}`,
+              width: 20,
+              editable: false,
+              sortable: false,
+              filter: false,
+              cellStyle: { backgroundColor: "transparent", cursor: "default" },
+            }])
+          }
+        }
+      }
+      for (const lab of effectiveScheme.labComponents ?? []) {
+        for (const cat of lab.categories) {
+          if (!catColDefs.has(cat.name)) {
+            catColDefs.set(cat.name, [{
+              headerName: "",
+              colId: `spacer_${cat.name}`,
+              width: 20,
+              editable: false,
+              sortable: false,
+              filter: false,
+              cellStyle: { backgroundColor: "transparent", cursor: "default" },
+            }])
+          }
+        }
+      }
+    }
+
+    const CAT_COLORS = ["ag-cat-blue", "ag-cat-green", "ag-cat-orange", "ag-cat-purple", "ag-cat-cyan", "ag-cat-rose"] as const
+
+    const compCatGroups = new Map<string, ColGroupDef[]>()
+    let catColorIdx = 0
+    for (const [catName, colDefs] of catColDefs) {
+      const compName = catToComponent.get(catName.toLowerCase()) || "Other"
+      if (!compCatGroups.has(compName)) compCatGroups.set(compName, [])
+      const catWt = catWeightMap.get(catName.toLowerCase())
+      const psColDef: ColDef = {
+        headerName: "PS",
+        colId: `ps_${catName}`,
+        width: saved[`ps_${catName}`] ?? 70,
+        sortable: true,
+        filter: "agNumberColumnFilter",
+        editable: false,
+        valueGetter: (params) => {
+          const row = params.data as StudentGradeRow
+          const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
+          if (!preview?.categoryGrades) return ""
+          const match = preview.categoryGrades.find((cg) => gradeCategoryMatches(catName, cg.category))
+          return match?.totalStudentScore ?? ""
+        },
+        cellStyle: { backgroundColor: "color-mix(in srgb, var(--accent), transparent 75%)" },
+      }
+      const wsColDef: ColDef = {
+        headerName: "WS",
+        colId: `ws_${catName}`,
+        width: saved[`ws_${catName}`] ?? 70,
+        sortable: true,
+        filter: "agNumberColumnFilter",
+        editable: false,
+        valueGetter: (params) => {
+          const row = params.data as StudentGradeRow
+          const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
+          if (!preview?.categoryGrades) return ""
+          const match = preview.categoryGrades.find((cg) => gradeCategoryMatches(catName, cg.category))
+          return match?.weightedScore ?? ""
+        },
+        valueFormatter: (params) => params.value == null ? "" : String(Math.round(Number(params.value))),
+        cellStyle: { fontWeight: 500, backgroundColor: "color-mix(in srgb, var(--accent), transparent 70%)" },
+      }
+      const isExam = gradeCategoryMatches("exam", catName)
+      const nCat = catName.toLowerCase().replace(/[^a-z0-9]/g, "")
+      const isAttendance = nCat.includes("attendance") || nCat.includes("attend")
+      const extraCols = isExam || isAttendance ? [] : [psColDef, wsColDef]
+      compCatGroups.get(compName)!.push({
+        headerName: catWt != null ? `${catName} (${catWt}%)` : catName,
+        headerClass: `ag-category-group-header ${CAT_COLORS[catColorIdx % CAT_COLORS.length]}`,
+        marryChildren: true,
+        children: [...colDefs, ...extraCols],
+      })
+      catColorIdx++
+    }
+
+    const csColDef: ColDef = {
+      headerName: "Class Standing", field: "liveClassStanding", width: saved["liveClassStanding"] ?? 130, sortable: true, filter: "agNumberColumnFilter",
+      valueGetter: (params) => {
+        const row = params.data as StudentGradeRow
+        const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
+         return preview?.classStanding ?? ""
+       }, valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 500, backgroundColor: "color-mix(in srgb, var(--accent), transparent 50%)" },
+     }
+     const examColDef: ColDef = {
+       headerName: "Exam Grade", field: "liveExamGrade", width: saved["liveExamGrade"] ?? 110, sortable: true, filter: "agNumberColumnFilter",
+       valueGetter: (params) => {
+         const row = params.data as StudentGradeRow
+         const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
+        return preview?.examGrade ?? ""
+      }, valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 500, backgroundColor: "color-mix(in srgb, var(--accent), transparent 50%)" },
+    }
+
+    let csPlaced = false
+    let examPlaced = false
+    for (const [compName, catGroups] of compCatGroups) {
+      const compWt = compWeightMap.get(compName)
+      const isExam = compName.toLowerCase().includes("exam")
+      const extraCol = isExam ? (!examPlaced ? examColDef : null) : (!csPlaced ? csColDef : null)
+      if (extraCol === examColDef) examPlaced = true
+      if (extraCol === csColDef) csPlaced = true
+
+      const children: (ColDef | ColGroupDef)[] = extraCol ? [...catGroups, extraCol] : catGroups
+
+      if (catGroups.length === 1 && !extraCol) {
+        cols.push(...catGroups)
+      } else {
+        cols.push({
+          headerName: compWt != null ? `${compName} (${compWt}%)` : compName,
+          headerClass: "ag-component-group-header",
+          marryChildren: true,
+          children,
+        })
+      }
+    }
+
+    if (!csPlaced) cols.push(csColDef)
+    if (!examPlaced) cols.push(examColDef)
     cols.push(
-      { headerName: "Midterm Grade", field: "midtermGrade", width: saved["midtermGrade"] ?? 120, sortable: true, filter: "agNumberColumnFilter",
-        valueFormatter: (params) => params.value?.toFixed(2) ?? "", cellStyle: { fontWeight: 600 } },
-      { headerName: "Final Grade", field: "finalGrade", width: saved["finalGrade"] ?? 120, sortable: true, filter: "agNumberColumnFilter",
-        valueFormatter: (params) => params.value?.toFixed(2) ?? "", cellStyle: { fontWeight: 600 } },
-      { headerName: "Transmuted", field: "transmutedGrade", width: saved["transmutedGrade"] ?? 110, sortable: true, filter: "agNumberColumnFilter",
-        valueFormatter: (params) => params.value?.toFixed(2) ?? "", cellStyle: { fontWeight: 700 } },
-      { headerName: "Remarks", field: "remarks", width: saved["remarks"] ?? 120, sortable: true, filter: "agTextColumnFilter",
-        cellRenderer: RemarksCellRenderer },
+      { headerName: activeTab === "midterm" ? "Midterm Grade" : "Final Period Grade", field: "livePeriodGrade", width: saved["livePeriodGrade"] ?? 130, sortable: true, filter: "agNumberColumnFilter",
+        valueGetter: (params) => {
+          const row = params.data as StudentGradeRow
+           const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
+           return preview?.periodGrade ?? ""
+         }, valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 700 } },
       { headerName: "Status", field: "workflowStatus", width: saved["workflowStatus"] ?? 130, sortable: true, filter: "agTextColumnFilter",
         cellRenderer: StatusCellRenderer },
     )
 
     return cols
-  }, [gradeColumns, isEditable])
+  }, [filteredColumns, isEditable, activeTab, catToComponent, catWeightMap, compWeightMap, handleUpdateMaxScore])
+
+  const pinnedTopRowData = useMemo(() => {
+    if (activeTab === "summary") return undefined
+    const row: Record<string, string> = { no: "No.", studentName: "Scores" }
+    for (const col of filteredColumns) {
+      row[`score_${scoreKey(col)}`] = ""
+    }
+    return [row]
+  }, [filteredColumns, activeTab])
+
+  useEffect(() => {
+    const api = gridRef.current?.api
+    if (!api) return
+    const state = Object.entries(colStateRef.current)
+      .filter(([, w]) => w > 0)
+      .map(([colId, width]) => ({ colId, width }))
+    if (state.length > 0) {
+      api.applyColumnState({ state })
+    }
+  }, [colDefs])
 
   const theme = useMemo(() => {
     return themeAlpine.withParams({
@@ -496,6 +950,59 @@ export function SpreadsheetGrid({
     }, darkMode ? "dark" : undefined)
   }, [darkMode])
 
+  const schemeInfo = useMemo(() => {
+    if (!effectiveScheme) return null
+    const totalComp = effectiveScheme.components.reduce((s, c) => s + c.weight, 0)
+    return { totalComp, ...effectiveScheme }
+  }, [effectiveScheme])
+
+  const selectedColumnLabel = gradeColumnLabel(
+    findGradeColumnBySelection(gradeColumns, selectedColName),
+    selectedColName
+  )
+
+  const SchemeInfoBanner = useCallback(() => {
+    if (!schemeInfo) return null
+    const { subjectType, components, labComponents, lectureWeight, laboratoryWeight } = schemeInfo
+    return (
+      <div className="rounded-xl border border-border bg-card p-3 text-xs">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span className="font-semibold text-foreground">Grading Scheme:</span>
+          <span className="text-muted-foreground">{subjectType}</span>
+          {components.map((c) => {
+            const catSum = c.categories.reduce((s, cat) => s + cat.weight, 0)
+            return (
+              <span key={c.name} className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-0.5">
+                {c.name}
+                <span className="font-semibold text-foreground">{c.weight}%</span>
+                {c.categories.length > 0 && (
+                  <span className="text-muted-foreground">
+                    ({c.categories.map((cat) => `${cat.name} ${cat.weight}%`).join(", ")})
+                  </span>
+                )}
+                <span className={catSum === 100 ? "text-emerald-500" : "text-red-500"}>{catSum}%</span>
+              </span>
+            )
+          })}
+          {subjectType === "Lecture with Lab" && labComponents && (
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-0.5">
+              Lecture {lectureWeight}% / Lab {laboratoryWeight}%
+            </span>
+          )}
+          <span className={schemeInfo.totalComp === 100 ? "text-emerald-500" : "text-red-500"}>
+            {schemeInfo.totalComp}% total
+          </span>
+        </div>
+      </div>
+    )
+  }, [schemeInfo])
+
+  const tabLabels: { key: TabKey; label: string }[] = [
+    { key: "midterm", label: "Midterm" },
+    { key: "final", label: "Final" },
+    { key: "summary", label: "Summary" },
+  ]
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -509,20 +1016,37 @@ export function SpreadsheetGrid({
         </div>
       </div>
 
+      <div className="flex gap-1 rounded-xl border border-border bg-muted/30 p-1">
+        {tabLabels.map(({ key, label }) => (
+          <Button
+            key={key}
+            size="sm"
+            variant={activeTab === key ? "default" : "ghost"}
+            onClick={() => setActiveTab(key)}
+            className={`rounded-lg flex-1 ${activeTab === key ? "shadow-sm ring-1 ring-primary/50 font-semibold" : ""}`}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
+
+      <SchemeInfoBanner />
+
       <SpreadsheetToolbar
         onAction={handleToolbarAction}
         canUndo={undoManager.current.canUndo}
         canRedo={undoManager.current.canRedo}
         selectedRowCount={selectedRows.length}
-        columnCount={gradeColumns.length}
+        columnCount={filteredColumns.length}
         saveStatus={saveStatus}
       />
 
       <div className="rounded-xl border border-border shadow-sm overflow-hidden" style={{ height: "min(600px, 70vh)", width: "100%" }}>
-        <AgGridReact
-          ref={gridRef}
-          rowData={gridData}
-          columnDefs={colDefs}
+          <AgGridReact
+            ref={gridRef}
+            rowData={gridData}
+            columnDefs={colDefs}
+            pinnedTopRowData={pinnedTopRowData}
           defaultColDef={{
             resizable: true,
             sortable: true,
@@ -530,12 +1054,14 @@ export function SpreadsheetGrid({
             cellStyle: { display: "flex", alignItems: "center" },
           }}
           theme={theme}
+          getRowId={(params) => params.data.studentId}
           animateRows
           rowSelection="multiple"
           onSelectionChanged={onSelectionChanged}
           onCellValueChanged={onCellValueChanged}
           onGridReady={onGridReady}
           onColumnResized={onColumnResized}
+          onColumnHeaderClicked={onColumnHeaderClicked}
           suppressClickEdit
           singleClickEdit
           stopEditingWhenCellsLoseFocus
@@ -545,12 +1071,20 @@ export function SpreadsheetGrid({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" onClick={() => handleComputeGrades("midterm")} className="rounded-lg">
-          <Calculator className="size-4" /> Midterm
+        <Button size="sm" variant="outline" onClick={handleRefresh} className="rounded-lg">
+          <RotateCcw className="size-3.5" /> Refresh
         </Button>
-        <Button size="sm" variant="secondary" onClick={() => handleComputeGrades("final")} className="rounded-lg">
-          <Calculator className="size-4" /> Final
+        <Button size="sm" variant="outline" onClick={() => autoSave.saveNow({ grades: Array.from(gradeMap.values()), cid: classId, showToast: true })} className="rounded-lg">
+          <Save className="size-3.5" /> Save
         </Button>
+        {activeTab !== "summary" && (
+          <>
+            <Button size="sm" variant="default" onClick={() => handleComputeGrades(activeTab === "midterm" ? "midterm" : "final")} className="rounded-lg shadow-sm ring-1 ring-primary/30">
+              <Calculator className="size-4" /> Compute {activeTab === "midterm" ? "Midterm" : "Final"}
+            </Button>
+            <span className="text-xs text-muted-foreground">Live preview updates automatically as you type</span>
+          </>
+        )}
         <span className="text-xs font-medium text-muted-foreground">Workflow:</span>
         <Button size="sm" variant="outline" onClick={() => handleUpdateWorkflow("Submitted")} className="rounded-lg">
           <Send className="size-3.5" /> Submit
@@ -569,14 +1103,23 @@ export function SpreadsheetGrid({
         </Button>
       </div>
 
+      <EditMaxScoreDialog
+        open={maxScoreDialogOpen}
+        onOpenChange={setMaxScoreDialogOpen}
+        colName={maxScoreColName}
+        currentMax={maxScoreCurrent}
+        onConfirm={(newMax) => handleUpdateMaxScore(maxScoreColName, newMax)}
+      />
       <AddColumnDialog open={addColumnOpen} onOpenChange={setAddColumnOpen}
-        onConfirm={handleAddColumn} availableCategories={columnCategories} />
+        onConfirm={(name, cat, max, period) => handleAddColumn(name, cat, max, period)}
+        availableCategories={columnCategories}
+        defaultPeriod={activeTab === "summary" ? "midterm" : activeTab as "midterm" | "final"} />
       <IntelligentImportDialog open={importOpen} onOpenChange={setImportOpen}
         classId={classId} subject={selectedSubject} onImportComplete={handleImportComplete} />
       <RenameColumnDialog open={renameOpen} onOpenChange={setRenameOpen}
-        currentName={selectedColName} onConfirm={handleRenameColumn} />
+        currentName={selectedColumnLabel} onConfirm={handleRenameColumn} />
       <DeleteColumnDialog open={deleteColOpen} onOpenChange={setDeleteColOpen}
-        columnName={selectedColName} onConfirm={handleDeleteColumn} />
+        columnName={selectedColumnLabel} onConfirm={handleDeleteColumn} />
       <DeleteRowDialog open={deleteRowOpen} onOpenChange={setDeleteRowOpen}
         rowCount={selectedRows.length} onConfirm={handleDeleteRow} />
 

@@ -10,8 +10,11 @@ export async function POST(request: Request) {
     if (auth instanceof Response) return auth
 
     const body = await request.json()
-    if (!body.classId || !body.name || !body.category) {
-      return badRequest("classId, name, and category are required.")
+    if (!body.classId || !body.name || !body.category || !body.gradingPeriod) {
+      return badRequest("classId, name, category, and gradingPeriod are required.")
+    }
+    if (!["midterm", "final", "both"].includes(body.gradingPeriod)) {
+      return badRequest("gradingPeriod must be 'midterm', 'final', or 'both'.")
     }
 
     const existing = await gradeColumnRepository.findAll({ classId: body.classId }) as Array<{ order: number }>
@@ -22,6 +25,7 @@ export async function POST(request: Request) {
       classId: body.classId,
       name: body.name,
       category: body.category,
+      gradingPeriod: body.gradingPeriod,
       maxScore: body.maxScore ?? 100,
       order: maxOrder + 1,
     })

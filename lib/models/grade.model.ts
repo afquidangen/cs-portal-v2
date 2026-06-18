@@ -6,6 +6,8 @@ export interface ICategoryGrade {
   category: string
   totalStudentScore: number
   totalPossibleScore: number
+  percentageScore: number
+  weightedScore: number
   grade: number
 }
 
@@ -21,17 +23,33 @@ export interface IGrade extends Document {
   subjectType: "Lecture" | "Lecture with Lab"
 
   scores: Map<string, number>
+  maxScores: Map<string, number>
 
   categoryGrades: ICategoryGrade[]
   lectureClassStanding?: number
   lectureExam?: number
   lectureGrade?: number
   laboratoryGrade?: number
+
+  midtermClassStanding?: number
+  midtermExam?: number
+  midtermLaboratoryGrade?: number
   midtermGrade?: number
+
+  finalClassStanding?: number
+  finalExam?: number
+  finalLaboratoryGrade?: number
   tentativeFinalGrade?: number
+
   finalGrade?: number
   transmutedGrade?: number
   remarks?: string
+
+  midtermTransmuted?: number
+  midterm?: number
+  finalTransmuted?: number
+  finalTerm?: number
+  gradePercentage?: number
 
   workflowStatus: GradeWorkflowStatus
   released: boolean
@@ -46,6 +64,8 @@ const CategoryGradeSchema = new Schema<ICategoryGrade>(
     category: { type: String, required: true },
     totalStudentScore: { type: Number, default: 0 },
     totalPossibleScore: { type: Number, default: 0 },
+    percentageScore: { type: Number, default: 0 },
+    weightedScore: { type: Number, default: 0 },
     grade: { type: Number, default: 0 },
   },
   { _id: false }
@@ -68,17 +88,33 @@ const GradeSchema = new Schema<IGrade>(
     },
 
     scores: { type: Map, of: Number, default: new Map() },
+    maxScores: { type: Map, of: Number, default: new Map() },
 
     categoryGrades: { type: [CategoryGradeSchema], default: [] },
     lectureClassStanding: Number,
     lectureExam: Number,
     lectureGrade: Number,
     laboratoryGrade: Number,
+
+    midtermClassStanding: Number,
+    midtermExam: Number,
+    midtermLaboratoryGrade: Number,
     midtermGrade: Number,
+
+    finalClassStanding: Number,
+    finalExam: Number,
+    finalLaboratoryGrade: Number,
     tentativeFinalGrade: Number,
+
     finalGrade: Number,
     transmutedGrade: Number,
     remarks: String,
+
+    midtermTransmuted: Number,
+    midterm: Number,
+    finalTransmuted: Number,
+    finalTerm: Number,
+    gradePercentage: Number,
 
     workflowStatus: {
       type: String,

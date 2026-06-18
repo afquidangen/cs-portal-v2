@@ -5,13 +5,22 @@ import { transmutationTableRepository } from "@/features/portal/repositories/tra
 import { assessmentRepository } from "@/features/portal/repositories/assessment.repository"
 import { success, error, badRequest } from "@/lib/api-response"
 import { requireFacultyOrAdmin } from "@/lib/api-auth"
+import type { GradingPeriod } from "@/lib/types"
 import {
-  computeAllCategoryGrades, computeClassStanding, computeLectureGrade,
+  computeAllCategoryGrades, computeClassStanding,
+  computeLectureGrade, computeExamGrade,
   computeLaboratoryGrade, computePeriodGrade, computeFinalGrade,
-  transmuteGrade, getGradeRemarks,
+  transmuteGrade, getGradeRemarks, gradeCategoryMatches,
 } from "@/features/portal/lib/grade-engine"
+import type { CategoryGradeResult } from "@/features/portal/lib/grade-engine"
 
 export const runtime = "nodejs"
+
+function scoreKey(col: { name: string; gradingPeriod?: string }) {
+  return col.gradingPeriod && col.gradingPeriod !== "both"
+    ? `${col.gradingPeriod}_${col.name}`
+    : col.name
+}
 
 export async function POST(request: Request) {
   try {
@@ -25,9 +34,11 @@ export async function POST(request: Request) {
       return badRequest("gradingPeriod must be 'midterm' or 'final'.")
     }
 
+    const period = gradingPeriod as GradingPeriod
+
     const grades = await gradesRepository.findAll({ classId })
-    const columns = await gradeColumnRepository.findByClass(classId)
-    const assessments = await assessmentRepository.findByClass(classId)
+    const allColumns = await gradeColumnRepository.findByClass(classId)
+    const allAssessments = await assessmentRepository.findByClass(classId)
 
     if (grades.length === 0) {
       return badRequest("No grades found for this class.")
@@ -65,50 +76,45 @@ export async function POST(request: Request) {
     const lectureWeight = (schemeData.lectureWeight as number) ?? 40
     const laboratoryWeight = (schemeData.laboratoryWeight as number) ?? 60
 
-    const columnsData = columns as Array<{ category: string; name: string; maxScore: number }>
-    const assessmentData = assessments as Array<{ id: string; classId: string; name: string; category: string; maxScore: number; scores: Array<{ studentId: string; score: number }> }>
+    const columnsData = allColumns as Array<{ category: string; name: string; maxScore: number; gradingPeriod?: string }>
+    const assessmentData = allAssessments as Array<{ id: string; classId: string; name: string; category: string; maxScore: number; gradingPeriod?: string; scores: Array<{ studentId: string; score: number }> }>
+
+    const periodColumns = columnsData.filter(
+      (c) => !c.gradingPeriod || c.gradingPeriod === period || c.gradingPeriod === "both"
+    )
+    const periodAssessments = assessmentData.filter(
+      (a) => !a.gradingPeriod || a.gradingPeriod === period || a.gradingPeriod === "both"
+    )
 
     const validationErrors: string[] = []
+
     const compTotal = (components as Array<Record<string, unknown>>).reduce((s, c) => s + (c.weight as number), 0)
     if (Math.abs(compTotal - 100) > 0.01) validationErrors.push(`Component weights sum to ${compTotal}%, must be 100%.`)
-    for (const comp of components) {
-      const cats = (comp.categories as Array<Record<string, unknown>>) ?? []
-      if (cats.length === 0) continue
-      const catTotal = cats.reduce((s, c) => s + (c.weight as number), 0)
-      if (Math.abs(catTotal - 100) > 0.01) validationErrors.push(`"${comp.name}" categories sum to ${catTotal}%, must be 100%.`)
+    if (subjectType === "Lecture with Lab") {
+      if (lectureWeight + laboratoryWeight !== 100) {
+        validationErrors.push(`Lecture weight (${lectureWeight}%) + Laboratory weight (${laboratoryWeight}%) must equal 100%.`)
+      }
     }
 
-    for (const col of columnsData) {
+    for (const col of periodColumns) {
       const studentScore = grades.some((g) => {
         const scores = (g as Record<string, unknown>).scores as Record<string, number> | undefined
-        return (scores?.[col.name] ?? 0) > (col.maxScore ?? 0)
+        return (scores?.[scoreKey(col)] ?? scores?.[col.name] ?? 0) > (col.maxScore ?? 0)
       })
       if (studentScore) validationErrors.push(`Column "${col.name}" has student scores exceeding max score of ${col.maxScore}.`)
     }
 
-    for (const asm of assessmentData) {
+    for (const asm of periodAssessments) {
       const studentScore = asm.scores.some((s) => s.score > asm.maxScore)
       if (studentScore) validationErrors.push(`Assessment "${asm.name}" has student score exceeding max score of ${asm.maxScore}.`)
-    }
-
-    const categoriesWithAssessments = new Set<string>()
-    for (const col of nonExamColumns) categoriesWithAssessments.add(col.category)
-    for (const asm of assessmentData) categoriesWithAssessments.add(asm.category)
-    for (const comp of components) {
-      const cats = (comp.categories as Array<Record<string, unknown>>) ?? []
-      for (const cat of cats) {
-        if (!categoriesWithAssessments.has(cat.name as string)) {
-          validationErrors.push(`Category "${cat.name}" has no assessments.`)
-        }
-      }
     }
 
     if (validationErrors.length > 0) {
       return badRequest(validationErrors.join(" | "))
     }
 
-    const examColumns = columnsData.filter((c) => c.category.toLowerCase() === "exam")
-    const nonExamColumns = columnsData.filter((c) => c.category.toLowerCase() !== "exam")
+    const allPeriodColumns = periodColumns
+    const allPeriodAssessments = periodAssessments
 
     const updatedGrades = []
 
@@ -117,93 +123,197 @@ export async function POST(request: Request) {
       const studentId = g.studentId as string
       const scores = (g.scores as Record<string, number>) || {}
 
-      const assessmentsByCategory: Record<string, { studentScores: number[]; maxScores: number[] }> = {}
-      for (const col of nonExamColumns) {
-        if (!assessmentsByCategory[col.category]) {
-          assessmentsByCategory[col.category] = { studentScores: [], maxScores: [] }
-        }
-        assessmentsByCategory[col.category].studentScores.push(scores[col.name] ?? 0)
-        assessmentsByCategory[col.category].maxScores.push(col.maxScore)
-      }
+      const componentsTyped = components as Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number }> }>
+      const labComponentsTyped = labComponents as Array<{ name: string; categories: Array<{ name: string; weight: number }> }>
 
-      for (const asm of assessmentData) {
-        if (asm.category.toLowerCase() === "exam") continue
-        if (!assessmentsByCategory[asm.category]) {
-          assessmentsByCategory[asm.category] = { studentScores: [], maxScores: [] }
-        }
-        const studentScore = asm.scores.find((s) => s.studentId === studentId)?.score ?? 0
-        assessmentsByCategory[asm.category].studentScores.push(studentScore)
-        assessmentsByCategory[asm.category].maxScores.push(asm.maxScore)
-      }
+      const standingComponent = componentsTyped.find(
+        (c) => c.name.toLowerCase().includes("class standing") || c.name.toLowerCase().includes("lecture class standing")
+      ) || componentsTyped[0]
+      const examComponent = componentsTyped.find(
+        (c) => c.name.toLowerCase().includes("exam")
+      ) || componentsTyped[1]
 
-      const categoryGrades = computeAllCategoryGrades(assessmentsByCategory)
+      const standingCategories = standingComponent?.categories || []
+      const examCategories = examComponent?.categories || []
+      const standingWeight = standingComponent?.weight ?? 60
+      const examWeight = examComponent?.weight ?? 40
 
-      const mainComponent = (components as Array<Record<string, unknown>>).find(
-        (c) => ((c.name as string) || "").toLowerCase().includes("class standing") || (c.name as string) === "Class Standing"
-      ) || components[0]
+      const examColumnNames = new Set(periodColumns
+        .filter((col) => examCategories.some((cat) => gradeCategoryMatches(cat.name, col.category)))
+        .map((col) => col.name))
 
-      const classStanding = computeClassStanding(
-        categoryGrades,
-        (mainComponent as Record<string, unknown>)?.categories as Array<{ name: string; weight: number }> || []
-      )
+      const nonExamColumns = periodColumns.filter((col) => !examColumnNames.has(col.name))
+      const examPeriodColumns = periodColumns.filter((col) => examColumnNames.has(col.name))
 
-      const examAssessments = assessmentData.filter((a) => a.category.toLowerCase() === "exam")
-      const examScores = examColumns.map((col) => {
-        const score = scores[col.name] ?? 0
-        const max = col.maxScore
-        return max > 0 ? (score / max) * 100 : 0
-      })
-      for (const asm of examAssessments) {
-        const studentScore = asm.scores.find((s) => s.studentId === studentId)?.score ?? 0
-        examScores.push(asm.maxScore > 0 ? (studentScore / asm.maxScore) * 100 : 0)
-      }
-      const examScore = examScores.length > 0
-        ? examScores.reduce((sum, s) => sum + s, 0) / examScores.length
-        : 0
+      const examAssessmentIds = new Set(periodAssessments
+        .filter((asm) => examCategories.some((cat) => gradeCategoryMatches(cat.name, asm.category)))
+        .map((asm) => asm.id))
 
-      const lectureGrade = computeLectureGrade(classStanding, examScore)
+      const nonExamAssessments = periodAssessments.filter((asm) => !examAssessmentIds.has(asm.id))
+      const examPeriodAssessments = periodAssessments.filter((asm) => examAssessmentIds.has(asm.id))
 
+      let classStanding: number
+      let examGrade: number
       let laboratoryGrade: number | undefined
-      if (subjectType === "Lecture with Lab" && labComponents.length > 0) {
-        const labComponentsTyped = labComponents as Array<{ name: string; categories?: Array<{ name: string }> }>
-        const labGrades = categoryGrades.filter((cg) =>
-          labComponentsTyped.some((lc) => lc.categories?.some((cat) => cat.name === cg.category))
-        )
-        const labMain = labComponentsTyped.find(
+      let categoryGrades: CategoryGradeResult[] = []
+
+      if (subjectType === "Lecture with Lab" && labComponentsTyped.length > 0) {
+        const labComponent = labComponentsTyped.find(
           (c) => c.name.toLowerCase().includes("laboratory") || c.name === "Laboratory"
         ) || labComponentsTyped[0]
-        laboratoryGrade = computeLaboratoryGrade(labGrades, (labMain?.categories || []) as Array<{ name: string; weight: number }>)
+
+        const labCategories = labComponent?.categories || []
+
+        const lectureAssessmentsByCategory: Record<string, { studentScores: number[]; maxScores: number[] }> = {}
+        const labAssessmentsByCategory: Record<string, { studentScores: number[]; maxScores: number[] }> = {}
+        const examItems: Array<{ maxScore: number; studentScore: number }> = []
+
+        for (const col of allPeriodColumns) {
+          if (examColumnNames.has(col.name)) {
+            examItems.push({
+              maxScore: col.maxScore,
+              studentScore: scores[scoreKey(col)] ?? scores[col.name] ?? 0,
+            })
+            continue
+          }
+          const lectureCategory = standingCategories.find((cat) => gradeCategoryMatches(cat.name, col.category))?.name
+          const labCategory = labCategories.find((cat) => gradeCategoryMatches(cat.name, col.category))?.name
+          const target = lectureCategory ? lectureAssessmentsByCategory
+            : labCategory ? labAssessmentsByCategory
+            : null
+          const categoryName = lectureCategory ?? labCategory
+          if (target) {
+            if (!target[categoryName!]) {
+              target[categoryName!] = { studentScores: [], maxScores: [] }
+            }
+            target[categoryName!].studentScores.push(scores[scoreKey(col)] ?? scores[col.name] ?? 0)
+            target[categoryName!].maxScores.push(col.maxScore)
+          }
+        }
+
+        for (const asm of allPeriodAssessments) {
+          if (examAssessmentIds.has(asm.id)) {
+            examItems.push({
+              maxScore: asm.maxScore,
+              studentScore: asm.scores.find((s) => s.studentId === studentId)?.score ?? 0,
+            })
+            continue
+          }
+          const lectureCategory = standingCategories.find((cat) => gradeCategoryMatches(cat.name, asm.category))?.name
+          const labCategory = labCategories.find((cat) => gradeCategoryMatches(cat.name, asm.category))?.name
+          const target = lectureCategory ? lectureAssessmentsByCategory
+            : labCategory ? labAssessmentsByCategory
+            : null
+          const categoryName = lectureCategory ?? labCategory
+          if (target) {
+            if (!target[categoryName!]) {
+              target[categoryName!] = { studentScores: [], maxScores: [] }
+            }
+            const studentScore = asm.scores.find((s) => s.studentId === studentId)?.score ?? 0
+            target[categoryName!].studentScores.push(studentScore)
+            target[categoryName!].maxScores.push(asm.maxScore)
+          }
+        }
+
+        const lectureWeights: Record<string, number> = {}
+        for (const cat of standingCategories) lectureWeights[cat.name] = cat.weight
+        const labWeights: Record<string, number> = {}
+        for (const cat of labCategories) labWeights[cat.name] = cat.weight
+
+        const lectureCategoryGrades = computeAllCategoryGrades(lectureAssessmentsByCategory, lectureWeights)
+        const labCategoryGrades = computeAllCategoryGrades(labAssessmentsByCategory, labWeights)
+
+        categoryGrades = [...lectureCategoryGrades, ...labCategoryGrades]
+        classStanding = computeClassStanding(lectureCategoryGrades, standingCategories)
+        examGrade = computeExamGrade(examItems)
+        laboratoryGrade = computeLaboratoryGrade(labCategoryGrades, labCategories)
+      } else {
+        const assessmentsByCategory: Record<string, { studentScores: number[]; maxScores: number[] }> = {}
+        const examItems: Array<{ maxScore: number; studentScore: number }> = []
+
+        for (const col of allPeriodColumns) {
+          if (examColumnNames.has(col.name)) {
+            examItems.push({
+              maxScore: col.maxScore,
+              studentScore: scores[scoreKey(col)] ?? scores[col.name] ?? 0,
+            })
+            continue
+          }
+          const categoryName = standingCategories.find((cat) => gradeCategoryMatches(cat.name, col.category))?.name
+          if (!categoryName) continue
+          if (!assessmentsByCategory[categoryName]) {
+            assessmentsByCategory[categoryName] = { studentScores: [], maxScores: [] }
+          }
+          assessmentsByCategory[categoryName].studentScores.push(scores[scoreKey(col)] ?? scores[col.name] ?? 0)
+          assessmentsByCategory[categoryName].maxScores.push(col.maxScore)
+        }
+
+        for (const asm of allPeriodAssessments) {
+          if (examAssessmentIds.has(asm.id)) {
+            examItems.push({
+              maxScore: asm.maxScore,
+              studentScore: asm.scores.find((s) => s.studentId === studentId)?.score ?? 0,
+            })
+            continue
+          }
+          const categoryName = standingCategories.find((cat) => gradeCategoryMatches(cat.name, asm.category))?.name
+          if (!categoryName) continue
+          if (!assessmentsByCategory[categoryName]) {
+            assessmentsByCategory[categoryName] = { studentScores: [], maxScores: [] }
+          }
+          const studentScore = asm.scores.find((s) => s.studentId === studentId)?.score ?? 0
+          assessmentsByCategory[categoryName].studentScores.push(studentScore)
+          assessmentsByCategory[categoryName].maxScores.push(asm.maxScore)
+        }
+
+        const standingWeights: Record<string, number> = {}
+        for (const cat of standingCategories) standingWeights[cat.name] = cat.weight
+
+        categoryGrades = computeAllCategoryGrades(assessmentsByCategory, standingWeights)
+        classStanding = computeClassStanding(categoryGrades, standingCategories)
+        examGrade = computeExamGrade(examItems)
       }
 
+      const lectureGrade = computeLectureGrade(classStanding, examGrade, standingWeight, examWeight)
       const periodGrade = computePeriodGrade(lectureGrade, laboratoryGrade, lectureWeight, laboratoryWeight)
-
-      const isMidterm = gradingPeriod === "midterm"
-      const midtermGrade = isMidterm ? periodGrade : (g.midtermGrade as number | undefined)
-      const tentativeFinalGrade = isMidterm ? (g.tentativeFinalGrade as number | undefined) : periodGrade
-
-      const finalGrade = midtermGrade !== undefined && tentativeFinalGrade !== undefined
-        ? computeFinalGrade(midtermGrade, tentativeFinalGrade) : undefined
-      const transmutedGrade = finalGrade !== undefined
-        ? transmuteGrade(finalGrade, Object.keys(transmutationTable).length > 0 ? transmutationTable : undefined)
-        : undefined
-      const remarks = transmutedGrade !== undefined ? getGradeRemarks(transmutedGrade) : "Draft"
 
       const updates: Record<string, unknown> = {
         categoryGrades: categoryGrades.map((cg) => ({
-          category: cg.category, totalStudentScore: cg.totalStudentScore,
-          totalPossibleScore: cg.totalPossibleScore, grade: cg.grade,
+          category: cg.category,
+          totalStudentScore: cg.totalStudentScore,
+          totalPossibleScore: cg.totalPossibleScore,
+          percentageScore: cg.percentageScore,
+          weightedScore: cg.weightedScore,
+          grade: cg.grade,
         })),
-        lectureClassStanding: classStanding,
-        lectureExam: examScore,
-        lectureGrade,
-        ...(laboratoryGrade !== undefined ? { laboratoryGrade } : {}),
-        midtermGrade,
-        tentativeFinalGrade,
-        ...(finalGrade !== undefined ? { finalGrade } : {}),
-        ...(transmutedGrade !== undefined ? { transmutedGrade } : {}),
-        remarks,
         gradingSchemeId: (schemeData as { id: string }).id,
         updatedAt: new Date().toISOString(),
+      }
+
+      if (period === "midterm") {
+        updates.midtermClassStanding = classStanding
+        updates.midtermExam = examGrade
+        if (laboratoryGrade !== undefined) updates.midtermLaboratoryGrade = laboratoryGrade
+        updates.midtermGrade = periodGrade
+        updates.lectureClassStanding = classStanding
+        updates.lectureExam = examGrade
+        updates.lectureGrade = lectureGrade
+        if (laboratoryGrade !== undefined) updates.laboratoryGrade = laboratoryGrade
+      } else {
+        updates.finalClassStanding = classStanding
+        updates.finalExam = examGrade
+        if (laboratoryGrade !== undefined) updates.finalLaboratoryGrade = laboratoryGrade
+        updates.tentativeFinalGrade = periodGrade
+
+        const existingMidtermGrade = g.midtermGrade as number | undefined
+        if (existingMidtermGrade !== undefined && existingMidtermGrade > 0) {
+          const finalGrade = computeFinalGrade(existingMidtermGrade, periodGrade)
+          const transmuted = transmuteGrade(finalGrade, Object.keys(transmutationTable).length > 0 ? transmutationTable : undefined)
+          const remarks = getGradeRemarks(transmuted)
+          updates.finalGrade = finalGrade
+          updates.transmutedGrade = transmuted
+          updates.remarks = remarks
+        }
       }
 
       const updated = await gradesRepository.upsert(

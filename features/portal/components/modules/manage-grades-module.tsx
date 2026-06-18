@@ -9,21 +9,31 @@ import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 
 import { Panel } from "../shared/dashboard-ui"
+import { DataLoader } from "@/components/ui/data-loader"
 import type { PortalModuleProps } from "./types"
-import type { GradeRecord } from "../../data/portal-data"
-import type { GradeColumn } from "@/lib/types"
+import type { CurriculumRecord, GradeRecord } from "../../data/portal-data"
+import type { GradeColumn, Assessment } from "@/lib/types"
 import { SpreadsheetGrid } from "../grades/spreadsheet-grid"
 
 export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { darkMode: boolean }) {
-  const { grades, setGrades, roster, users, visibleSchedules, semesters } = model
+  const { grades, setGrades, roster, users, visibleSchedules, semesters, curricula } = model
 
   const [selectedSemesterId, setSelectedSemesterId] = useState("")
   const [selectedSubject, setSelectedSubject] = useState("")
   const [selectedSection, setSelectedSection] = useState<string | null>(null)
   const [studentQuery, setStudentQuery] = useState("")
   const [gradeColumns, setGradeColumns] = useState<GradeColumn[]>([])
+  const [assessments, setAssessments] = useState<Assessment[]>([])
+  const [gradingScheme, setGradingScheme] = useState<{
+    components: Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number }> }>
+    labComponents?: Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number }> }>
+    lectureWeight?: number
+    laboratoryWeight?: number
+    subjectType: "Lecture" | "Lecture with Lab"
+  } | null>(null)
   const [classId, setClassId] = useState("")
   const [computedOnce, setComputedOnce] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const semesterSubjects = useMemo(() => {
     const seen = new Set<string>()
@@ -60,17 +70,42 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
 
   useEffect(() => {
     if (!classId) return
-    fetch(`/api/portal/grades/class/${classId}`)
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.data?.columns) setGradeColumns(json.data.columns)
-        if (json.data?.grades) {
-          const merged = mergeGradesWithState(json.data.grades, grades)
-          setGrades(merged)
+    setLoading(true)
+    Promise.all([
+      fetch(`/api/portal/grades/class/${classId}`).then((r) => r.json()),
+      fetch("/api/portal/grading-schemes").then((r) => r.json()),
+    ])
+      .then(([gradesJson, schemesJson]) => {
+        if (gradesJson.data?.columns) setGradeColumns(gradesJson.data.columns)
+        if (gradesJson.data?.assessments) setAssessments(gradesJson.data.assessments)
+        if (gradesJson.data?.grades) {
+          setGrades((prev) => mergeGradesWithState(gradesJson.data.grades, prev))
+        }
+        const code = selectedSubject.split(" - ")[0]?.trim() ?? selectedSubject
+        const gradeTypes = new Set(gradesJson.data?.grades?.map((g: { subjectType: string }) => g.subjectType) ?? [])
+        let st: string
+        if (curricula && curricula.length > 0) {
+          const foundLab = curricula.some((c) =>
+            c.terms.some((t) =>
+              t.subjects.some((s) =>
+                s.lab > 0 && ((s.code && code.includes(s.code)) || (s.name && code.includes(s.name)))
+              )
+            )
+          )
+          st = foundLab ? "Lecture with Lab" : "Lecture"
+        } else {
+          st = gradeTypes.size === 1 ? (gradeTypes.values().next().value as string) : "Lecture"
+        }
+        const schemes: Array<Record<string, unknown>> = schemesJson.data ?? []
+        const activeScheme = schemes.find((s) => s.isActive && (s as { subjectType: string }).subjectType === st)
+          ?? schemes.find((s) => s.isActive)
+        if (activeScheme) {
+          setGradingScheme(activeScheme as typeof gradingScheme)
         }
       })
       .catch(() => {})
-  }, [classId])
+      .finally(() => setLoading(false))
+  }, [classId, selectedSubject, curricula, setGrades])
 
   function mergeGradesWithState(serverGrades: GradeRecord[], currentGrades: GradeRecord[]): GradeRecord[] {
     const serverMap = new Map(serverGrades.map((g) => [g.studentId, g]))
@@ -86,12 +121,18 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
 
   const subjectRoster = useMemo(() => {
     if (subjectSections.length === 0) return []
-    const sectionSet = new Set(subjectSections)
+    const sectionSet = new Set(selectedSection ? [selectedSection] : subjectSections)
+    const deletedUsers = new Set(
+      users
+        .filter((u) => u.deletedAt)
+        .map((u) => u.id)
+    )
     return roster.filter((s) => {
-      const userExists = users.some((u) => u.id === s.id && u.role === "student" && !u.deletedAt)
-      return sectionSet.has(s.section) && s.enrolled && userExists
+      if (deletedUsers.has(s.id)) return false
+      if (!s.enrolled) return false
+      return sectionSet.has(s.section)
     })
-  }, [roster, subjectSections, users])
+  }, [roster, subjectSections, selectedSection, users])
 
   const filterSchedules = useMemo(() => {
     const semesterIds = new Set(visibleSchedules.map((s) => s.semesterId))
@@ -168,6 +209,7 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
           </h3>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
             Edit grades directly in the table. Supports keyboard navigation, copy/paste, sorting, filtering, and auto-save.
+            Switch between Midterm and Final periods to enter period-specific scores.
           </p>
         </div>
       </div>
@@ -251,7 +293,19 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
         </div>
       )}
 
-      {selectedSubject && gridData.length > 0 ? (
+      {selectedSubject && loading ? (
+        <DataLoader message="Loading grade data..." />
+      ) : selectedSubject && subjectRoster.length === 0 ? (
+        <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] px-4 py-8 text-center text-sm text-muted-foreground">
+          <GraduationCap className="mx-auto mb-2 size-8 text-muted-foreground/50" />
+          <p className="font-medium">No students found</p>
+          <p className="mt-1">
+            {subjectSections.length === 0
+              ? `No sections found for "${selectedSubject}". Check if schedules exist.`
+              : `Roster has ${roster.length} student(s), subject sections: [${subjectSections.join(", ")}]${selectedSection ? `, selected: "${selectedSection}"` : ""}. No roster entries match these sections.`}
+          </p>
+        </div>
+      ) : selectedSubject ? (
         <SpreadsheetGrid
           model={model}
           selectedSubject={selectedSubject}
@@ -268,15 +322,10 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
           computedOnce={computedOnce}
           setComputedOnce={setComputedOnce}
           darkMode={darkMode}
+          assessments={assessments}
+          gradingScheme={gradingScheme}
         />
-      ) : (
-        selectedSubject && (
-          <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] px-4 py-12 text-center text-sm text-muted-foreground">
-            <GraduationCap className="mx-auto mb-2 size-8 text-muted-foreground/50" />
-            No students found. Select a section or check the roster.
-          </div>
-        )
-      )}
+      ) : null}
     </Panel>
   )
 }

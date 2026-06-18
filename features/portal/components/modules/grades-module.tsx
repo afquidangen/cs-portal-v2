@@ -1,19 +1,323 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Award, BarChart3, BookMarked, ClipboardList, Download, FileSpreadsheet, GraduationCap, ListChecks, Search, Send, Upload, UsersRound } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 import {
-  calculateGradePercentage,
   gradeRemarkOptions,
   transmutedToEquivalent,
 } from "../../lib/grades"
 import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 import type { GradeRecord } from "@/lib/types/grade"
+import type { GradingScheme, SchemeComponent, TransmutationEntry, TransmutationTable } from "@/lib/types"
+
+type GradingPeriod = "midterm" | "final"
+type GradeColumnSet = {
+  key: string
+  period: GradingPeriod
+  category: string
+  component: string
+  componentWeight: number
+  categoryWeight: number
+  area: "lecture" | "laboratory"
+}
+
+const DEFAULT_LECTURE_SCHEME: GradingScheme = {
+  id: "GS-DEFAULT-LECTURE",
+  name: "ISPSC Default Lecture",
+  subjectType: "Lecture",
+  isDefault: true,
+  isActive: true,
+  components: [
+    {
+      name: "Class Standing",
+      weight: 60,
+      categories: [
+        { name: "Quizzes", weight: 30 },
+        { name: "Performance/Recitation", weight: 30 },
+        { name: "Assignment", weight: 30 },
+        { name: "Attendance", weight: 10 },
+      ],
+    },
+    { name: "Exam", weight: 40, categories: [{ name: "Exam", weight: 100 }] },
+  ],
+  createdAt: "",
+  updatedAt: "",
+}
+
+const DEFAULT_LAB_SCHEME: GradingScheme = {
+  id: "GS-DEFAULT-LAB",
+  name: "ISPSC Default Lecture with Lab",
+  subjectType: "Lecture with Lab",
+  isDefault: true,
+  isActive: true,
+  lectureWeight: 40,
+  laboratoryWeight: 60,
+  components: [
+    {
+      name: "Lecture Class Standing",
+      weight: 60,
+      categories: [
+        { name: "Quizzes", weight: 30 },
+        { name: "Performance/Recitation", weight: 30 },
+        { name: "Assignment", weight: 30 },
+        { name: "Attendance", weight: 10 },
+      ],
+    },
+    { name: "Lecture Exam", weight: 40, categories: [{ name: "Exam", weight: 100 }] },
+  ],
+  labComponents: [
+    {
+      name: "Laboratory",
+      weight: 100,
+      categories: [
+        { name: "Exercises", weight: 35 },
+        { name: "Work Attitude", weight: 35 },
+        { name: "Project", weight: 15 },
+        { name: "Attendance", weight: 15 },
+      ],
+    },
+  ],
+  createdAt: "",
+  updatedAt: "",
+}
+
+const DEFAULT_TRANSMUTATION_ENTRIES: TransmutationEntry[] = [
+  { min: 97, max: 100, equivalent: 1.0 },
+  { min: 94, max: 96, equivalent: 1.25 },
+  { min: 91, max: 93, equivalent: 1.5 },
+  { min: 88, max: 90, equivalent: 1.75 },
+  { min: 85, max: 87, equivalent: 2.0 },
+  { min: 82, max: 84, equivalent: 2.25 },
+  { min: 79, max: 81, equivalent: 2.5 },
+  { min: 76, max: 78, equivalent: 2.75 },
+  { min: 75, max: 75, equivalent: 3.0 },
+  { min: 72, max: 74, equivalent: 4.0 },
+  { min: 0, max: 71, equivalent: 5.0 },
+]
+
+function normalizeGradeKey(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+}
+
+function makeScoreKey(period: GradingPeriod, component: string, category: string) {
+  return `${period}:${normalizeGradeKey(component)}:${normalizeGradeKey(category)}`
+}
+
+function toDisplayNumber(value: number | undefined) {
+  return value === undefined || Number.isNaN(value) ? "N/A" : value.toFixed(2)
+}
+
+function parseOptionalNumber(value: string) {
+  if (value.trim() === "") return undefined
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
+function clampScore(value: number, max: number) {
+  return Math.max(0, Math.min(value, Math.max(0, max)))
+}
+
+function scorePercent(score: number | undefined, maxScore: number | undefined) {
+  const max = maxScore && maxScore > 0 ? maxScore : 100
+  return Number((((score ?? 0) / max) * 100).toFixed(2))
+}
+
+function transmuteFromEntries(percentile: number | undefined, entries: TransmutationEntry[]) {
+  if (percentile === undefined) return undefined
+  const sorted = [...entries].sort((a, b) => b.max - a.max)
+  return sorted.find((entry) => percentile >= entry.min && percentile <= entry.max)?.equivalent ?? 5.0
+}
+
+function periodLabel(period: GradingPeriod) {
+  return period === "midterm" ? "Midterm" : "Final"
+}
+
+function buildColumnSets(scheme: GradingScheme) {
+  const periods: GradingPeriod[] = ["midterm", "final"]
+  const sets: GradeColumnSet[] = []
+
+  for (const period of periods) {
+    for (const component of scheme.components) {
+      for (const category of component.categories.length > 0 ? component.categories : [{ name: component.name, weight: 100 }]) {
+        sets.push({
+          key: makeScoreKey(period, component.name, category.name),
+          period,
+          category: category.name,
+          component: component.name,
+          componentWeight: component.weight,
+          categoryWeight: category.weight,
+          area: "lecture",
+        })
+      }
+    }
+
+    if (scheme.subjectType === "Lecture with Lab") {
+      for (const component of scheme.labComponents ?? []) {
+        for (const category of component.categories.length > 0 ? component.categories : [{ name: component.name, weight: 100 }]) {
+          sets.push({
+            key: makeScoreKey(period, component.name, category.name),
+            period,
+            category: category.name,
+            component: component.name,
+            componentWeight: component.weight,
+            categoryWeight: category.weight,
+            area: "laboratory",
+          })
+        }
+      }
+    }
+  }
+
+  return sets
+}
+
+function scoreMap(record?: GradeRecord) {
+  return record?.scores ?? {}
+}
+
+function maxScoreMap(record?: GradeRecord) {
+  return record?.maxScores ?? {}
+}
+
+function computePeriodGrade(
+  record: GradeRecord,
+  period: GradingPeriod,
+  scheme: GradingScheme,
+  sets: GradeColumnSet[]
+) {
+  const scores = scoreMap(record)
+  const maxScores = maxScoreMap(record)
+  const periodSets = sets.filter((set) => set.period === period)
+  const hasScores = periodSets.some((set) => Object.prototype.hasOwnProperty.call(scores, set.key))
+
+  function computeWS(percentageScore: number, categoryWeight: number): number {
+    return Number(((percentageScore * 50 + 50) * categoryWeight).toFixed(4))
+  }
+
+  function wsComponentGrade(component: SchemeComponent) {
+    const categories = component.categories.length > 0 ? component.categories : [{ name: component.name, weight: 100 }]
+    const wsValues: number[] = []
+    for (const category of categories) {
+      const key = makeScoreKey(period, component.name, category.name)
+      const maxVal = maxScores[key] && maxScores[key] > 0 ? maxScores[key] : 100
+      const score = scores[key] ?? 0
+      const percentage = maxVal > 0 ? score / maxVal : 0
+      const catWeight = category.weight / 100
+      wsValues.push(computeWS(percentage, catWeight))
+    }
+    const rawSum = wsValues.reduce((s, v) => s + v, 0)
+    return Number(rawSum.toFixed(2))
+  }
+
+  const standingComponents = scheme.components.filter(
+    (c) => !c.name.toLowerCase().includes("exam")
+  )
+  const examComponent = scheme.components.find(
+    (c) => c.name.toLowerCase().includes("exam")
+  )
+
+  const standingGrades = standingComponents.map((component) => ({
+    component,
+    grade: wsComponentGrade(component),
+  }))
+
+  let examGrade = 50
+  if (examComponent) {
+    const categories = examComponent.categories.length > 0
+      ? examComponent.categories
+      : [{ name: examComponent.name, weight: 100 }]
+    const wsValues = categories.map((cat) => {
+      const key = makeScoreKey(period, examComponent.name, cat.name)
+      const maxVal = maxScores[key] && maxScores[key] > 0 ? maxScores[key] : 100
+      const pct = (scores[key] ?? 0) / maxVal
+      return (pct * 50) + 50
+    })
+    examGrade = wsValues.reduce((s, v) => s + v, 0) / wsValues.length
+  }
+
+  const standingGrade = standingGrades.reduce(
+    (sum, item) => sum + item.grade * (item.component.weight / 100), 0
+  )
+  const examWeight = (examComponent?.weight ?? 40) / 100
+
+  const lectureGrade = Number(
+    (standingGrade + examGrade * examWeight).toFixed(2)
+  )
+
+  let laboratoryGrade: number | undefined
+  if (scheme.subjectType === "Lecture with Lab") {
+    const labComponents = (scheme.labComponents ?? []).map((component) => ({
+      component,
+      grade: wsComponentGrade(component),
+    }))
+    laboratoryGrade = Number(labComponents.reduce((sum, item) => sum + item.grade * (item.component.weight / 100), 0).toFixed(2))
+  }
+
+  const periodGrade = scheme.subjectType === "Lecture with Lab"
+    ? Number((lectureGrade * ((scheme.lectureWeight ?? 40) / 100) + (laboratoryGrade ?? 0) * ((scheme.laboratoryWeight ?? 60) / 100)).toFixed(2))
+    : lectureGrade
+
+  const categoryGrades = periodSets.map((set) => {
+    const maxVal = maxScores[set.key] && maxScores[set.key] > 0 ? maxScores[set.key] : 100
+    const rawScore = scores[set.key] ?? 0
+    const percentage = rawScore / maxVal
+    const catWeight = set.categoryWeight / 100
+    const ws = computeWS(percentage, catWeight)
+    return {
+      category: `${periodLabel(period)} ${set.component} - ${set.category}`,
+      totalStudentScore: rawScore,
+      totalPossibleScore: maxVal,
+      percentageScore: percentage,
+      weightedScore: ws,
+      grade: scorePercent(scores[set.key], maxScores[set.key]),
+    }
+  })
+
+  return { hasScores, periodGrade, lectureGrade, laboratoryGrade, standing: standingGrade, exam: examGrade, categoryGrades }
+}
+
+function computeGradeRecord(record: GradeRecord, scheme: GradingScheme, entries: TransmutationEntry[], sets: GradeColumnSet[]) {
+  const midterm = computePeriodGrade(record, "midterm", scheme, sets)
+  const finalTerm = computePeriodGrade(record, "final", scheme, sets)
+  const midtermGrade = midterm.hasScores ? midterm.periodGrade : undefined
+  const tentativeFinalGrade = finalTerm.hasScores ? finalTerm.periodGrade : undefined
+  const finalGrade = midtermGrade !== undefined && tentativeFinalGrade !== undefined
+    ? Number(((midtermGrade + tentativeFinalGrade) / 2).toFixed(2))
+    : undefined
+  const transmutedGrade = transmuteFromEntries(finalGrade, entries)
+
+  return {
+    ...record,
+    categoryGrades: [...midterm.categoryGrades, ...finalTerm.categoryGrades],
+    lectureClassStanding: finalTerm.standing ?? midterm.standing,
+    lectureExam: finalTerm.exam ?? midterm.exam,
+    lectureGrade: finalTerm.lectureGrade,
+    laboratoryGrade: finalTerm.laboratoryGrade,
+    midtermClassStanding: midterm.standing,
+    midtermExam: midterm.exam,
+    midtermLaboratoryGrade: midterm.laboratoryGrade,
+    midtermGrade,
+    tentativeFinalGrade,
+    finalClassStanding: finalTerm.standing,
+    finalExam: finalTerm.exam,
+    finalLaboratoryGrade: finalTerm.laboratoryGrade,
+    finalGrade,
+    transmutedGrade,
+    gradePercentage: finalGrade,
+    midtermTransmuted: midtermGrade,
+    finalTransmuted: tentativeFinalGrade,
+    midterm: transmuteFromEntries(midtermGrade, entries),
+    finalTerm: transmuteFromEntries(tentativeFinalGrade, entries),
+    remarks: transmutedGrade !== undefined ? (transmutedGrade <= 3 ? "Passed" : "Failed") : record.remarks,
+    gradingSchemeId: scheme.id,
+    subjectType: scheme.subjectType,
+  }
+}
 
 export function GradesModule({ model }: PortalModuleProps) {
   const { downloadGradeReport, allStudentGrades, studentGrades } = model
@@ -186,12 +490,6 @@ export function GradesModule({ model }: PortalModuleProps) {
               </tr>
             ) : (
               visibleAllGrades.map((grade) => {
-                const percentage = calculateGradePercentage(grade)
-                const equivalent =
-                  percentage !== undefined
-                    ? transmutedToEquivalent(percentage)
-                    : undefined
-
                 return (
                   <tr key={grade.id} className="transition-colors hover:bg-muted/50">
                     <td className="px-4 py-3">
@@ -258,12 +556,48 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
     uploadName,
     visibleSchedules,
     semesters,
+    subjects,
   } = model
 
   const [selectedSemesterId, setSelectedSemesterId] = useState("")
   const [selectedSubject, setSelectedSubject] = useState("")
   const [selectedSection, setSelectedSection] = useState<string | null>(null)
   const [studentQuery, setStudentQuery] = useState("")
+  const [gradingSchemes, setGradingSchemes] = useState<GradingScheme[]>([])
+  const [transmutationTables, setTransmutationTables] = useState<TransmutationTable[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadGradingConfig() {
+      try {
+        const [schemeRes, tableRes] = await Promise.all([
+          fetch("/api/portal/grading-schemes"),
+          fetch("/api/portal/transmutation-tables"),
+        ])
+        const [schemeData, tableData] = await Promise.all([
+          schemeRes.json(),
+          tableRes.json(),
+        ])
+        if (!cancelled && schemeRes.ok) {
+          setGradingSchemes(schemeData.data ?? [])
+        }
+        if (!cancelled && tableRes.ok) {
+          setTransmutationTables(tableData.data ?? [])
+        }
+      } catch {
+        if (!cancelled) {
+          setGradingSchemes([])
+          setTransmutationTables([])
+        }
+      }
+    }
+
+    loadGradingConfig()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const scheduleSemesters = useMemo(() => {
     const semesterIds = new Set(visibleSchedules.map((s) => s.semesterId))
@@ -306,7 +640,7 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
       const userExists = users.some((u) => u.id === s.id && u.role === "student" && !u.deletedAt)
       return sectionSet.has(s.section) && s.enrolled && userExists && !passedIds.has(s.id)
     })
-  }, [roster, subjectSections, grades, selectedSubject])
+  }, [roster, subjectSections, grades, selectedSubject, users])
 
   const rosterBySection = useMemo(() => {
     const groups = new Map<string, typeof subjectRoster>()
@@ -355,6 +689,28 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
     }
     return map
   }, [grades, selectedSubject])
+
+  const selectedSubjectCode = selectedSubject.split(" - ")[0]?.trim() ?? selectedSubject
+  const selectedSubjectRecord = subjects.find(
+    (subject) => subject.code === selectedSubjectCode || `${subject.code} - ${subject.name}` === selectedSubject
+  )
+  const selectedSubjectType: "Lecture" | "Lecture with Lab" =
+    selectedSubjectRecord?.type === "Lecture with Lab" ? "Lecture with Lab" : "Lecture"
+  const activeScheme = useMemo(() => {
+    const configured = gradingSchemes.find((scheme) => scheme.isActive && scheme.subjectType === selectedSubjectType)
+    if (configured) return configured
+    return selectedSubjectType === "Lecture with Lab" ? DEFAULT_LAB_SCHEME : DEFAULT_LECTURE_SCHEME
+  }, [gradingSchemes, selectedSubjectType])
+  const activeTransmutationEntries = useMemo(() => {
+    const exact = transmutationTables.find(
+      (table) => table.isActive && table.subjectType === selectedSubjectType && table.entries.length > 0
+    )
+    const fallback = transmutationTables.find(
+      (table) => table.isActive && table.subjectType === "All" && table.entries.length > 0
+    )
+    return exact?.entries ?? fallback?.entries ?? DEFAULT_TRANSMUTATION_ENTRIES
+  }, [selectedSubjectType, transmutationTables])
+  const columnSets = useMemo(() => buildColumnSets(activeScheme), [activeScheme])
 
   function handleReleaseAll() {
     if (subjectSections.length === 0 || !selectedSubject) return
@@ -443,7 +799,6 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
           </p>
           <div className="flex flex-wrap gap-2">
             {scheduleSemesters.map((sem) => {
-              const label = `S.Y. ${sem.schoolYearStart}-${sem.schoolYearEnd} &middot; ${sem.semester}`
               return (
                 <Button
                   key={sem.id}
@@ -576,6 +931,9 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
                 updateGrade={updateGrade}
                 updateGradeRemarks={updateGradeRemarks}
                 setGrades={setGrades}
+                scheme={activeScheme}
+                columnSets={columnSets}
+                transmutationEntries={activeTransmutationEntries}
               />
             ))}
           </div>
@@ -590,6 +948,9 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
               updateGrade={updateGrade}
               updateGradeRemarks={updateGradeRemarks}
               setGrades={setGrades}
+              scheme={activeScheme}
+              columnSets={columnSets}
+              transmutationEntries={activeTransmutationEntries}
             />
           )
         })()
@@ -606,7 +967,15 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
 }
 
 function SectionTable({
-  section, students, gradeMap, selectedSubject, updateGrade, updateGradeRemarks, setGrades,
+  section,
+  students,
+  gradeMap,
+  selectedSubject,
+  updateGradeRemarks,
+  setGrades,
+  scheme,
+  columnSets,
+  transmutationEntries,
 }: {
   section: string
   students: Array<{ id: string; name: string; section: string; enrolled?: boolean; firstName?: string; middleName?: string; lastName?: string }>
@@ -615,7 +984,24 @@ function SectionTable({
   updateGrade: (id: string, field: string, value: string) => void
   updateGradeRemarks: (id: string, value: string) => void
   setGrades: (updater: (prev: GradeRecord[]) => GradeRecord[]) => void
+  scheme: GradingScheme
+  columnSets: GradeColumnSet[]
+  transmutationEntries: TransmutationEntry[]
 }) {
+  const storageKey = `faculty-grade-widths:${selectedSubject}:${section}:${scheme.id}`
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    let nextWidths: Record<string, number> = {}
+    try {
+      const raw = window.localStorage.getItem(storageKey)
+      nextWidths = raw ? JSON.parse(raw) : {}
+    } catch {
+      nextWidths = {}
+    }
+    queueMicrotask(() => setColumnWidths(nextWidths))
+  }, [storageKey])
+
   if (students.length === 0) {
     return (
       <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] px-4 py-12 text-center text-sm text-muted-foreground">
@@ -625,76 +1011,251 @@ function SectionTable({
     )
   }
 
+  const midtermColumns = columnSets.filter((set) => set.period === "midterm")
+  const finalColumns = columnSets.filter((set) => set.period === "final")
+  const resultColumns = ["midterm-result", "final-result", "final-grade", "transmuted", "remarks", "status"]
+
+  function persistWidths(next: Record<string, number>) {
+    setColumnWidths(next)
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(next))
+    } catch {
+      // Ignore local storage failures.
+    }
+  }
+
+  function widthFor(key: string, fallback: number) {
+    return columnWidths[key] ?? fallback
+  }
+
+  function startResize(key: string, fallback: number, event: React.MouseEvent<HTMLSpanElement>) {
+    event.preventDefault()
+    const startX = event.clientX
+    const startWidth = widthFor(key, fallback)
+
+    function handleMove(moveEvent: MouseEvent) {
+      const nextWidth = Math.max(76, startWidth + moveEvent.clientX - startX)
+      persistWidths({ ...columnWidths, [key]: nextWidth })
+    }
+
+    function handleUp() {
+      document.removeEventListener("mousemove", handleMove)
+      document.removeEventListener("mouseup", handleUp)
+    }
+
+    document.addEventListener("mousemove", handleMove)
+    document.addEventListener("mouseup", handleUp)
+  }
+
+  function baseGradeFor(student: (typeof students)[number]): GradeRecord {
+    const now = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    return {
+      id: `GRD-${normalizeGradeKey(selectedSubject)}-${normalizeGradeKey(section)}-${normalizeGradeKey(student.id)}`,
+      studentId: student.id,
+      student: student.name,
+      section: student.section,
+      subject: selectedSubject,
+      code: selectedSubject.split(" - ")[0]?.trim() ?? selectedSubject,
+      units: 3,
+      scores: {},
+      maxScores: {},
+      released: false,
+      workflowStatus: "Draft",
+      gradingSchemeId: scheme.id,
+      subjectType: scheme.subjectType,
+      updatedAt: now,
+    }
+  }
+
+  function syncGrade(record: GradeRecord, isNew: boolean) {
+    fetch(isNew ? "/api/portal/grades" : `/api/portal/grades/${record.id}`, {
+      method: isNew ? "POST" : "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(record),
+    }).catch((error) => console.error(`Failed to sync grade ${record.id}:`, error))
+  }
+
+  function commitGrade(record: GradeRecord, isNew: boolean) {
+    setGrades((current) => {
+      const exists = current.some((grade) => grade.id === record.id)
+      if (exists) {
+        return current.map((grade) => (grade.id === record.id ? record : grade))
+      }
+      return [record, ...current]
+    })
+    syncGrade(record, isNew)
+  }
+
+  function updateStudentScore(student: (typeof students)[number], column: GradeColumnSet, value: string) {
+    const existing = gradeMap.get(student.id)
+    const base = existing ?? baseGradeFor(student)
+    const scores = { ...scoreMap(base) }
+    const maxScores = { ...maxScoreMap(base) }
+    const maxScore = maxScores[column.key] ?? 100
+    const parsed = parseOptionalNumber(value)
+
+    if (parsed === undefined) {
+      delete scores[column.key]
+    } else {
+      scores[column.key] = clampScore(parsed, maxScore)
+    }
+
+    const next = computeGradeRecord(
+      { ...base, scores, maxScores, updatedAt: new Date().toISOString() },
+      scheme,
+      transmutationEntries,
+      columnSets
+    )
+    commitGrade(next, !existing)
+  }
+
+  function updateOverall(column: GradeColumnSet, value: string) {
+    const parsed = parseOptionalNumber(value)
+    for (const student of students) {
+      const existing = gradeMap.get(student.id)
+      const base = existing ?? baseGradeFor(student)
+      const scores = { ...scoreMap(base) }
+      const maxScores = { ...maxScoreMap(base) }
+
+      if (parsed === undefined) {
+        delete maxScores[column.key]
+      } else {
+        maxScores[column.key] = Math.max(1, parsed)
+        if (scores[column.key] !== undefined) {
+          scores[column.key] = clampScore(scores[column.key], maxScores[column.key])
+        }
+      }
+
+      const next = computeGradeRecord(
+        { ...base, scores, maxScores, updatedAt: new Date().toISOString() },
+        scheme,
+        transmutationEntries,
+        columnSets
+      )
+      commitGrade(next, !existing)
+    }
+  }
+
+  function overallValue(column: GradeColumnSet) {
+    for (const student of students) {
+      const value = gradeMap.get(student.id)?.maxScores?.[column.key]
+      if (value !== undefined) return String(value)
+    }
+    return "100"
+  }
+
+  function renderResizableHeader(key: string, label: string, fallback: number, className = "", stickyLeft?: number) {
+    return (
+      <th
+        className={`relative border-r border-border px-3 py-3 align-top text-xs font-semibold uppercase tracking-wide text-foreground/80 ${className}`}
+        style={{ width: widthFor(key, fallback), minWidth: widthFor(key, fallback), ...(stickyLeft !== undefined ? { left: stickyLeft } : {}) }}
+      >
+        {label}
+        <span
+          aria-hidden="true"
+          onMouseDown={(event) => startResize(key, fallback, event)}
+          className="absolute right-0 top-0 h-full w-2 cursor-col-resize touch-none"
+        />
+      </th>
+    )
+  }
+
   return (
-    <div>
-      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-        Section {section}
-      </p>
-      <div className="overflow-x-auto rounded-xl border border-border shadow-sm">
-        <table className="w-full min-w-[960px] text-left text-sm">
+    <div className="rounded-xl border border-border bg-card shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Section {section}</p>
+          <p className="mt-1 text-sm text-foreground">
+            {scheme.name} - {scheme.subjectType}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+          <span className="rounded-md bg-muted px-2 py-1">{students.length} students</span>
+          <span className="rounded-md bg-muted px-2 py-1">{columnSets.length} score columns</span>
+        </div>
+      </div>
+
+      <div className="max-h-[70vh] overflow-auto">
+        <table className="min-w-max table-fixed text-left text-sm">
+          <colgroup>
+            <col style={{ width: widthFor("no", 56) }} />
+            <col style={{ width: widthFor("name", 240) }} />
+            {columnSets.map((column) => (
+              <col key={column.key} style={{ width: widthFor(column.key, 132) }} />
+            ))}
+            {resultColumns.map((key) => (
+              <col key={key} style={{ width: widthFor(key, key === "remarks" ? 170 : 118) }} />
+            ))}
+          </colgroup>
           <thead className="bg-muted text-foreground">
             <tr className="border-b border-border">
-              <th className="w-12 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">No.</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Name</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Midterm</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Final</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Grade %</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Equivalent</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Remarks</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Status</th>
+              {renderResizableHeader("no", "No.", 56, "sticky z-30 bg-muted", 0)}
+              {renderResizableHeader("name", "Name", 240, "sticky z-30 bg-muted", widthFor("no", 56))}
+              <th colSpan={midtermColumns.length} className="border-r border-border px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-primary">
+                Midterm Scores
+              </th>
+              <th colSpan={finalColumns.length} className="border-r border-border px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-primary">
+                Final Scores
+              </th>
+              {renderResizableHeader("midterm-result", "Midterm %", 118)}
+              {renderResizableHeader("final-result", "Tentative Final %", 118)}
+              {renderResizableHeader("final-grade", "Final %", 118)}
+              {renderResizableHeader("transmuted", "Transmuted", 118)}
+              {renderResizableHeader("remarks", "Remarks", 170)}
+              {renderResizableHeader("status", "Status", 118)}
+            </tr>
+            <tr className="border-b border-border">
+              <th className="sticky z-30 border-r border-border bg-muted px-3 py-2" style={{ left: 0 }} />
+              <th className="sticky z-30 border-r border-border bg-muted px-3 py-2 text-xs font-medium text-muted-foreground" style={{ left: widthFor("no", 56) }}>
+                Overall
+              </th>
+              {columnSets.map((column) => (
+                <th
+                  key={column.key}
+                  className="border-r border-border bg-muted/80 px-2 py-2 align-top"
+                  style={{ width: widthFor(column.key, 132), minWidth: widthFor(column.key, 132) }}
+                >
+                  <div className="space-y-1">
+                    <p className="truncate text-xs font-semibold text-foreground" title={`${column.component} - ${column.category}`}>
+                      {column.category}
+                    </p>
+                    <p className="truncate text-[11px] text-muted-foreground">
+                      {column.componentWeight}% / {column.categoryWeight}%
+                    </p>
+                    <Input
+                      type="number"
+                      min="1"
+                      step="any"
+                      value={overallValue(column)}
+                      onChange={(event) => updateOverall(column, event.target.value)}
+                      className="h-8 rounded-md px-2 text-xs"
+                    />
+                  </div>
+                </th>
+              ))}
+              {resultColumns.map((key) => (
+                <th key={key} className="border-r border-border bg-muted/80 px-3 py-2" />
+              ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-border bg-card">
             {students.map((student, index) => {
               const grade = gradeMap.get(student.id)
-              const finalGrade = grade ? calculateGradePercentage(grade) : undefined
-              const transmuted = finalGrade !== undefined ? transmutedToEquivalent(finalGrade) : undefined
-
-              function ensureGradeFor() {
-                const existing = gradeMap.get(student.id)
-                if (existing) return existing.id
-                const newId = `GRD-${Date.now()}`
-                const now = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
-                setGrades((current) => [{
-                  id: newId,
-                  studentId: student.id,
-                  student: student.name,
-                  section: student.section,
-                  subject: selectedSubject,
-                  code: selectedSubject.split(" - ")[0]?.trim() ?? selectedSubject,
-                  units: 3,
-                  midtermTransmuted: undefined,
-                  midterm: 0,
-                  finalTransmuted: undefined,
-                  finalTerm: 0,
-                  released: false,
-                  updatedAt: now,
-                }, ...current])
-                return newId
-              }
-
-              function handleMidterm(value: string) {
-                const g = gradeMap.get(student.id)
-                if (g) updateGrade(g.id, "midterm", value)
-                else updateGrade(ensureGradeFor(), "midterm", value)
-              }
-
-              function handleFinal(value: string) {
-                const g = gradeMap.get(student.id)
-                if (g) updateGrade(g.id, "finalTerm", value)
-                else updateGrade(ensureGradeFor(), "finalTerm", value)
-              }
 
               function handleRemarks(value: string) {
                 const g = gradeMap.get(student.id)
-                if (g) updateGradeRemarks(g.id, value)
-                else updateGradeRemarks(ensureGradeFor(), value)
+                if (g) {
+                  updateGradeRemarks(g.id, value)
+                  return
+                }
+                const next = { ...baseGradeFor(student), remarks: value }
+                commitGrade(next, true)
               }
 
               return (
                 <tr key={student.id} className="transition-colors hover:bg-muted/50">
-                  <td className="w-12 px-4 py-3 text-center text-sm text-muted-foreground">{index + 1}</td>
-                  <td className="px-4 py-3">
+                  <td className="sticky z-20 border-r border-border bg-card px-3 py-3 text-center text-sm text-muted-foreground" style={{ left: 0 }}>{index + 1}</td>
+                  <td className="sticky z-20 border-r border-border bg-card px-3 py-3" style={{ left: widthFor("no", 56) }}>
                     <p className="font-medium text-foreground">
                       {student.lastName
                         ? `${student.lastName}, ${student.firstName ?? ""}${student.middleName ? ` ${student.middleName}` : ""}`
@@ -702,39 +1263,45 @@ function SectionTable({
                     </p>
                   </td>
 
-                  <td className="px-4 py-3">
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="any"
-                      value={grade?.midtermTransmuted !== undefined ? String(grade.midtermTransmuted) : ""}
-                      onChange={(e) => handleMidterm(e.target.value)}
-                      className="h-9 w-24 rounded-xl"
-                    />
+                  {columnSets.map((column) => {
+                    const maxScore = grade?.maxScores?.[column.key] ?? 100
+                    const value = grade?.scores?.[column.key]
+                    return (
+                      <td
+                        key={column.key}
+                        className="border-r border-border px-2 py-2"
+                        style={{ width: widthFor(column.key, 132), minWidth: widthFor(column.key, 132) }}
+                      >
+                        <Input
+                          type="number"
+                          min="0"
+                          max={maxScore}
+                          step="any"
+                          value={value !== undefined ? String(value) : ""}
+                          onChange={(event) => updateStudentScore(student, column, event.target.value)}
+                          className="h-9 rounded-md px-2"
+                        />
+                      </td>
+                    )
+                  })}
+
+                  <td className="border-r border-border px-3 py-3 font-semibold text-foreground">
+                    {toDisplayNumber(grade?.midtermGrade)}
                   </td>
 
-                  <td className="px-4 py-3">
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="any"
-                      value={grade?.finalTransmuted !== undefined ? String(grade.finalTransmuted) : ""}
-                      onChange={(e) => handleFinal(e.target.value)}
-                      className="h-9 w-24 rounded-xl"
-                    />
+                  <td className="border-r border-border px-3 py-3 font-semibold text-foreground">
+                    {toDisplayNumber(grade?.tentativeFinalGrade)}
                   </td>
 
-                  <td className="px-4 py-3 font-semibold text-foreground">
-                    {finalGrade !== undefined ? finalGrade.toFixed(2) : "N/A"}
+                  <td className="border-r border-border px-3 py-3 font-semibold text-foreground">
+                    {toDisplayNumber(grade?.finalGrade)}
                   </td>
 
-                  <td className="px-4 py-3 font-semibold text-foreground">
-                    {transmuted !== undefined ? transmuted.toFixed(2) : "N/A"}
+                  <td className="border-r border-border px-3 py-3 font-semibold text-foreground">
+                    {toDisplayNumber(grade?.transmutedGrade)}
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className="border-r border-border px-3 py-3">
                     <Select
                       value={grade?.remarks || "Passed"}
                       onChange={handleRemarks}
@@ -742,7 +1309,7 @@ function SectionTable({
                     />
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-3">
                     <StatusBadge value={grade?.released ? "Released" : "Draft"} />
                   </td>
                 </tr>

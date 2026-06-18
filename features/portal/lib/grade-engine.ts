@@ -11,19 +11,22 @@ export type SchemeComponentDef = {
 
 export type GradeInput = {
   scores: Record<string, number>
-  categoryGrades?: Record<string, { totalStudentScore: number; totalPossibleScore: number }>
+  categoryGrades?: Record<string, { totalStudentScore: number; totalPossibleScore: number; percentageScore: number; weightedScore: number }>
 }
 
 export type CategoryGradeResult = {
   category: string
   totalStudentScore: number
   totalPossibleScore: number
+  percentageScore: number
+  weightedScore: number
   grade: number
 }
 
 export type ComputedGrades = {
   categoryGrades: CategoryGradeResult[]
   classStanding?: number
+  examGrade?: number
   lectureGrade?: number
   laboratoryGrade?: number
   periodGrade: number
@@ -31,37 +34,120 @@ export type ComputedGrades = {
   transmutedGrade?: number
 }
 
+const CATEGORY_ALIASES: Record<string, string[]> = {
+  quizzes: ["quiz", "quizzes"],
+  quiz: ["quiz", "quizzes"],
+  "performance recitation": ["performance", "recitation", "recit", "performance recitation"],
+  performance: ["performance", "recitation", "recit", "performance recitation"],
+  assignment: ["assignment", "assignments", "homework", "task", "activity", "activities", "seatwork"],
+  activities: ["assignment", "assignments", "activity", "activities", "homework", "task", "seatwork"],
+  activity: ["assignment", "assignments", "activity", "activities", "homework", "task", "seatwork"],
+  attendance: ["attendance", "attend", "atten", "att", "lec attendance", "lecture attendance", "lab attendance", "laboratory attendance"],
+  "lec attendance": ["lec attendance", "lecture attendance", "lec attend", "lecture attend", "attendance", "attend"],
+  "lab attendance": ["lab attendance", "laboratory attendance", "lab attend", "laboratory attend", "attendance", "attend"],
+  exam: ["exam", "midterm exam", "final exam", "prelim exam"],
+  exercises: ["exercise", "exercises", "lab quiz", "lab quizzes"],
+  "lab quiz": ["exercise", "exercises", "lab quiz", "lab quizzes"],
+  "work attitude": ["work attitude", "attitude", "lab activity", "lab activities"],
+  "lab activities": ["work attitude", "attitude", "lab activity", "lab activities"],
+  project: ["project", "proj", "pro", "mco"],
+  mco: ["project", "proj", "pro", "mco"],
+}
+
+export function normalizeGradeCategoryName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ")
+}
+
+function categoryTokens(name: string): string[] {
+  const normalized = normalizeGradeCategoryName(name)
+  return CATEGORY_ALIASES[normalized] ?? [normalized]
+}
+
+export function gradeCategoryMatches(targetCategory: string, sourceCategory: string): boolean {
+  const targetTokens = categoryTokens(targetCategory)
+  const source = normalizeGradeCategoryName(sourceCategory)
+  return targetTokens.includes(source)
+}
+
+function findCategoryGrade(
+  categoryGrades: CategoryGradeResult[],
+  categoryName: string
+): CategoryGradeResult | undefined {
+  return categoryGrades.find((cg) => gradeCategoryMatches(categoryName, cg.category))
+}
+
+function findMatchingCategory(
+  categories: Array<{ name: string }>,
+  sourceCategory: string
+): string | undefined {
+  return categories.find((cat) => gradeCategoryMatches(cat.name, sourceCategory))?.name
+}
+
 export function computeCategoryGrade(
   totalStudentScore: number,
-  totalPossibleScore: number
-): number {
-  if (totalPossibleScore === 0) return 0
-  return Number(((totalStudentScore / totalPossibleScore) * 100).toFixed(2))
+  totalPossibleScore: number,
+  categoryWeight?: number
+): { percentageScore: number; weightedScore: number; grade: number } {
+  if (totalPossibleScore === 0) {
+    const w = categoryWeight ?? 0
+    return { percentageScore: 0, weightedScore: Number((50 * w).toFixed(4)), grade: 0 }
+  }
+  const percentageScore = totalStudentScore / totalPossibleScore
+  const grade = Number((percentageScore * 100).toFixed(2))
+  let weightedScore: number
+  if (categoryWeight !== undefined) {
+    weightedScore = Number(((percentageScore * 50 + 50) * categoryWeight).toFixed(4))
+  } else {
+    weightedScore = grade
+  }
+  return { percentageScore, weightedScore, grade }
 }
 
 export function computeAllCategoryGrades(
-  assessmentsByCategory: Record<string, { studentScores: number[]; maxScores: number[] }>
+  assessmentsByCategory: Record<string, { studentScores: number[]; maxScores: number[] }>,
+  categoryWeights?: Record<string, number>
 ): CategoryGradeResult[] {
   return Object.entries(assessmentsByCategory).map(([category, data]) => {
     const totalStudentScore = data.studentScores.reduce((sum, s) => sum + s, 0)
     const totalPossibleScore = data.maxScores.reduce((sum, s) => sum + s, 0)
-    const grade = computeCategoryGrade(totalStudentScore, totalPossibleScore)
-    return { category, totalStudentScore, totalPossibleScore, grade }
+    const weight = categoryWeights?.[category]
+    const catWeight = weight !== undefined ? weight / 100 : undefined
+    const { percentageScore, weightedScore, grade } = computeCategoryGrade(
+      totalStudentScore, totalPossibleScore, catWeight
+    )
+    return { category, totalStudentScore, totalPossibleScore, percentageScore, weightedScore, grade }
   })
+}
+
+export function computeClassStandingRange(categories: GradingCategoryDef[]): { min: number; max: number } {
+  const min = categories.reduce((s, c) => s + 50 * (c.weight / 100), 0)
+  const max = categories.reduce((s, c) => s + 100 * (c.weight / 100), 0)
+  return { min, max }
 }
 
 export function computeClassStanding(
   categoryGrades: CategoryGradeResult[],
   categories: GradingCategoryDef[]
 ): number {
-  let weightedSum = 0
+  if (categories.length === 0) return 0
+  let rawSum = 0
   for (const cat of categories) {
-    const gradeRecord = categoryGrades.find((cg) => cg.category === cat.name)
+    const gradeRecord = findCategoryGrade(categoryGrades, cat.name)
     if (gradeRecord) {
-      weightedSum += gradeRecord.grade * (cat.weight / 100)
+      rawSum += gradeRecord.weightedScore
+    } else {
+      const name = normalizeGradeCategoryName(cat.name)
+      if (CATEGORY_ALIASES.attendance.includes(name)) {
+        rawSum += 100 * (cat.weight / 100)
+      }
     }
   }
-  return Number(weightedSum.toFixed(2))
+  return Number(rawSum.toFixed(2))
 }
 
 export function computeLectureGrade(
@@ -79,14 +165,20 @@ export function computeLaboratoryGrade(
   categoryGrades: CategoryGradeResult[],
   labCategories: GradingCategoryDef[]
 ): number {
-  let weightedSum = 0
+  if (labCategories.length === 0) return 0
+  let rawSum = 0
   for (const cat of labCategories) {
-    const gradeRecord = categoryGrades.find((cg) => cg.category === cat.name)
+    const gradeRecord = findCategoryGrade(categoryGrades, cat.name)
     if (gradeRecord) {
-      weightedSum += gradeRecord.grade * (cat.weight / 100)
+      rawSum += gradeRecord.weightedScore
+    } else {
+      const name = normalizeGradeCategoryName(cat.name)
+      if (CATEGORY_ALIASES.attendance.includes(name)) {
+        rawSum += 100 * (cat.weight / 100)
+      }
     }
   }
-  return Number(weightedSum.toFixed(2))
+  return Number(rawSum.toFixed(2))
 }
 
 export function computePeriodGrade(
@@ -154,4 +246,209 @@ export function computeStandardDeviation(values: number[]): number {
   const mean = values.reduce((s, v) => s + v, 0) / values.length
   const squaredDiffs = values.map((v) => (v - mean) ** 2)
   return Math.sqrt(squaredDiffs.reduce((s, v) => s + v, 0) / values.length)
+}
+
+export function computeExamGrade(
+  assessmentsOrColumns: Array<{ maxScore: number; studentScore: number }>
+): number {
+  if (assessmentsOrColumns.length === 0) return 0
+  const totalStudentScore = assessmentsOrColumns.reduce((s, a) => s + a.studentScore, 0)
+  const totalPossibleScore = assessmentsOrColumns.reduce((s, a) => s + a.maxScore, 0)
+  if (totalPossibleScore === 0) return 0
+  return Number(((totalStudentScore / totalPossibleScore) * 50 + 50).toFixed(2))
+}
+
+function buildComponentAssessments(
+  categories: Array<{ name: string }>,
+  columns: Array<{ name: string; category: string; maxScore: number; gradingPeriod?: string }>,
+  assessments: Array<{ name: string; category: string; maxScore: number; scores: Array<{ studentId: string; score: number }> }>,
+  studentId: string,
+  scores: Record<string, number>
+): Record<string, { studentScores: number[]; maxScores: number[] }> {
+  const result: Record<string, { studentScores: number[]; maxScores: number[] }> = {}
+
+  for (const col of columns) {
+    const categoryName = findMatchingCategory(categories, col.category)
+    if (!categoryName) continue
+    if (!result[categoryName]) {
+      result[categoryName] = { studentScores: [], maxScores: [] }
+    }
+    const key = col.gradingPeriod && col.gradingPeriod !== "both"
+      ? `${col.gradingPeriod}_${col.name}`
+      : col.name
+    result[categoryName].studentScores.push(scores[key] ?? scores[col.name] ?? 0)
+    result[categoryName].maxScores.push(col.maxScore)
+  }
+
+  for (const asm of assessments) {
+    const categoryName = findMatchingCategory(categories, asm.category)
+    if (!categoryName) continue
+    if (!result[categoryName]) {
+      result[categoryName] = { studentScores: [], maxScores: [] }
+    }
+    const studentScore = asm.scores.find((s) => s.studentId === studentId)?.score ?? 0
+    result[categoryName].studentScores.push(studentScore)
+    result[categoryName].maxScores.push(asm.maxScore)
+  }
+
+  return result
+}
+
+function buildCategoryWeightMap(categories: GradingCategoryDef[]): Record<string, number> {
+  const map: Record<string, number> = {}
+  for (const cat of categories) {
+    map[cat.name] = cat.weight
+  }
+  return map
+}
+
+export function computeLivePreview(params: {
+  scores: Record<string, number>
+  columns: Array<{ name: string; category: string; maxScore: number; gradingPeriod?: string }>
+  assessments: Array<{ name: string; category: string; maxScore: number; scores: Array<{ studentId: string; score: number }> }>
+  studentId: string
+  components: SchemeComponentDef[]
+  labComponents?: SchemeComponentDef[]
+  subjectType: "Lecture" | "Lecture with Lab"
+  lectureWeight?: number
+  laboratoryWeight?: number
+  midtermGrade?: number
+}): {
+  categoryGrades: CategoryGradeResult[]
+  classStanding: number
+  examGrade: number
+  lectureGrade: number
+  laboratoryGrade?: number
+  periodGrade: number
+  finalGrade?: number
+  transmutedGrade?: number
+  remarks?: string
+} {
+  const { scores, columns, assessments, studentId, components, labComponents, subjectType, lectureWeight, laboratoryWeight, midtermGrade } = params
+
+  const standingComponent = components.find(
+    (c) => c.name.toLowerCase().includes("class standing") || c.name.toLowerCase().includes("lecture class standing")
+  ) || components[0]
+  const examComponent = components.find(
+    (c) => c.name.toLowerCase().includes("exam")
+  ) || components[1]
+
+  const standingCategories = standingComponent?.categories || []
+  const examCategories = examComponent?.categories || []
+  const standingWeight = standingComponent?.weight ?? 60
+  const examWeight = examComponent?.weight ?? 40
+
+  function isExamItem(category: string): boolean {
+    return examCategories.some((cat) => gradeCategoryMatches(cat.name, category))
+  }
+
+  let classStanding: number
+  let examGrade: number
+  let laboratoryGrade: number | undefined
+  let categoryGrades: CategoryGradeResult[] = []
+
+  if (subjectType === "Lecture with Lab" && labComponents && labComponents.length > 0) {
+    const labComponent = labComponents.find(
+      (c) => c.name.toLowerCase().includes("laboratory") || c.name === "Laboratory"
+    ) || labComponents[0]
+
+    const labCategories = labComponent?.categories || []
+
+    const lectureAssessments = buildComponentAssessments(
+      standingCategories,
+      columns.filter((c) => !isExamItem(c.category)),
+      assessments.filter((a) => !isExamItem(a.category)),
+      studentId,
+      scores
+    )
+    const lectureWeights = buildCategoryWeightMap(standingCategories)
+    const lectureCategoryGrades = computeAllCategoryGrades(lectureAssessments, lectureWeights)
+
+    const labAssessments = buildComponentAssessments(
+      labCategories,
+      columns,
+      assessments,
+      studentId,
+      scores
+    )
+    const labWeights = buildCategoryWeightMap(labCategories)
+    const labCategoryGrades = computeAllCategoryGrades(labAssessments, labWeights)
+
+    const examItems: Array<{ maxScore: number; studentScore: number }> = []
+    for (const col of columns.filter((c) => isExamItem(c.category))) {
+      const key = col.gradingPeriod && col.gradingPeriod !== "both"
+        ? `${col.gradingPeriod}_${col.name}`
+        : col.name
+      examItems.push({
+        maxScore: col.maxScore,
+        studentScore: scores[key] ?? scores[col.name] ?? 0,
+      })
+    }
+    for (const asm of assessments.filter((a) => isExamItem(a.category))) {
+      examItems.push({
+        maxScore: asm.maxScore,
+        studentScore: asm.scores.find((s) => s.studentId === studentId)?.score ?? 0,
+      })
+    }
+
+    categoryGrades = [...lectureCategoryGrades, ...labCategoryGrades]
+    classStanding = computeClassStanding(lectureCategoryGrades, standingCategories)
+    examGrade = computeExamGrade(examItems)
+    laboratoryGrade = computeLaboratoryGrade(labCategoryGrades, labCategories)
+  } else {
+    const assessmentsByCategory = buildComponentAssessments(
+      standingCategories,
+      columns.filter((c) => !isExamItem(c.category)),
+      assessments.filter((a) => !isExamItem(a.category)),
+      studentId,
+      scores
+    )
+    const catWeights = buildCategoryWeightMap(standingCategories)
+    categoryGrades = computeAllCategoryGrades(assessmentsByCategory, catWeights)
+    classStanding = computeClassStanding(categoryGrades, standingCategories)
+
+    const examItems: Array<{ maxScore: number; studentScore: number }> = []
+    for (const col of columns.filter((c) => isExamItem(c.category))) {
+      const key = col.gradingPeriod && col.gradingPeriod !== "both"
+        ? `${col.gradingPeriod}_${col.name}`
+        : col.name
+      examItems.push({
+        maxScore: col.maxScore,
+        studentScore: scores[key] ?? scores[col.name] ?? 0,
+      })
+    }
+    for (const asm of assessments.filter((a) => isExamItem(a.category))) {
+      examItems.push({
+        maxScore: asm.maxScore,
+        studentScore: asm.scores.find((s) => s.studentId === studentId)?.score ?? 0,
+      })
+    }
+    examGrade = computeExamGrade(examItems)
+  }
+
+  const lectureGrade = computeLectureGrade(classStanding, examGrade, standingWeight, examWeight)
+
+  const periodGrade = computePeriodGrade(lectureGrade, laboratoryGrade, lectureWeight, laboratoryWeight)
+
+  let finalGrade: number | undefined
+  let transmutedGrade: number | undefined
+
+  if (midtermGrade !== undefined && midtermGrade > 0) {
+    finalGrade = computeFinalGrade(midtermGrade, periodGrade)
+    transmutedGrade = transmuteGrade(finalGrade)
+  }
+
+  const remarks = transmutedGrade !== undefined ? getGradeRemarks(transmutedGrade) : undefined
+
+  return {
+    categoryGrades,
+    classStanding,
+    examGrade,
+    lectureGrade,
+    laboratoryGrade,
+    periodGrade,
+    finalGrade,
+    transmutedGrade,
+    remarks,
+  }
 }

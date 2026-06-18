@@ -1,7 +1,7 @@
 "use client"
 
 import {
-  Columns, Columns3, Download, FileSpreadsheet, Plus, Redo2, Save,
+  Columns, Columns3, Download, FileSpreadsheet, Plus, Redo2, RotateCcw, Save,
   Table2, Trash2, Undo2, Upload, UserPlus, UserX, Bookmark,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -17,6 +17,7 @@ export type ToolbarAction =
   | "import"
   | "export"
   | "save"
+  | "refresh"
   | "reorderColumns"
   | "templates"
 
@@ -49,6 +50,10 @@ export function SpreadsheetToolbar({
         <Button size="sm" variant="ghost" onClick={() => onAction("save")}
           className="h-8 px-2" title="Save">
           <Save className="size-4" />
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => onAction("refresh")}
+          className="h-8 px-2" title="Refresh grade data">
+          <RotateCcw className="size-4" />
         </Button>
       </div>
 

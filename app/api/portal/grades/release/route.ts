@@ -2,7 +2,7 @@ import { connectToDatabase } from "@/lib/mongodb"
 import { GradeModel, UserModel } from "@/lib/models"
 import { success, error, badRequest } from "@/lib/api-response"
 import {
-  computeAllCategoryGrades, computeClassStanding, computeLectureGrade,
+  computeAllCategoryGrades, computeClassStanding,
   computeLaboratoryGrade, computePeriodGrade, computeFinalGrade,
   transmuteGrade, getGradeRemarks,
 } from "@/features/portal/lib/grade-engine"
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       let changed = false
 
       for (const grade of studentGrades) {
-        const g = grade as Record<string, unknown>
+        const g = grade as unknown as Record<string, unknown>
         const finalGrade = g.finalGrade as number | undefined
         const transmuted = finalGrade !== undefined ? transmuteGrade(finalGrade) : undefined
         const remarks = g.remarks ?? getGradeRemarks(transmuted ?? 5.0)
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
         if (existingIdx >= 0) {
           (history as Array<Record<string, unknown>>)[existingIdx] = { ...(history as Array<Record<string, unknown>>)[existingIdx], ...entry }
         } else {
-          const u = user as Record<string, unknown>
+          const u = user as unknown as Record<string, unknown>
           entry.curriculumId = (u.curriculumId as string) ?? ""
           entry.yearLevel = (u.currentYearLevel as string) ?? ""
           entry.semester = (u.currentSemester as string) ?? ""

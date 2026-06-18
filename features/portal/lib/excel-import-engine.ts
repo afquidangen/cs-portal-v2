@@ -59,13 +59,16 @@ const CATEGORY_PATTERNS: Array<{ pattern: RegExp; category: AutoCategory }> = [
 ]
 
 const GRADE_PATTERNS: Array<{ pattern: RegExp; gradeCategory: string }> = [
-  { pattern: /\b(quiz|q\d)\b/i, gradeCategory: "Quiz" },
+  { pattern: /\b(lab quiz|lab quizzes|exercise|exercises)\b/i, gradeCategory: "Exercises" },
+  { pattern: /\b(work attitude|attitude|lab activity|lab activities)\b/i, gradeCategory: "Work Attitude" },
+  { pattern: /\b(project|proj|pro|capstone|mco)\b/i, gradeCategory: "Project" },
+  { pattern: /\b(quiz|quizzes|q\d)\b/i, gradeCategory: "Quizzes" },
   { pattern: /\b(exam|midterm|final|prelim|midterm exam|final exam)\b/i, gradeCategory: "Exam" },
   { pattern: /\b(assignment|assign|hw|homework|task)\b/i, gradeCategory: "Assignment" },
-  { pattern: /\b(project|proj|capstone)\b/i, gradeCategory: "Project" },
-  { pattern: /\b(activity|act|recitation|recit|seatwork|sw)\b/i, gradeCategory: "Activity" },
-  { pattern: /\b(attendance|att|participation|participate)\b/i, gradeCategory: "Attendance" },
-  { pattern: /\b(lab|laboratory|practical|lab work)\b/i, gradeCategory: "Exam" },
+  { pattern: /\b(performance|recitation|recit|seatwork|sw)\b/i, gradeCategory: "Performance/Recitation" },
+  { pattern: /\b(activity|activities|act)\b/i, gradeCategory: "Assignment" },
+  { pattern: /\b(attendance|attend|atten|att|participation|participate)\b/i, gradeCategory: "Attendance" },
+  { pattern: /\b(lab|laboratory|practical|lab work)\b/i, gradeCategory: "Exercises" },
   { pattern: /\b(grade|score|total|average|percentage|rating)\b/i, gradeCategory: "Computed" },
 ]
 

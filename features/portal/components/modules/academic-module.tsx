@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { BookOpen, CalendarRange, Edit, Layers3, Plus, Settings2, Trash2 } from "lucide-react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { BookOpen, CalendarRange, Edit, FileSpreadsheet, GraduationCap, Layers3, Plus, Settings2, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -22,7 +22,151 @@ import type { SemesterRecord } from "@/lib/types"
 const TABS = [
   { key: "Semesters", label: "Semesters", icon: CalendarRange },
   { key: "Curriculum", label: "Curriculum", icon: Plus },
+  { key: "Grading Workbooks", label: "Grading Workbooks", icon: FileSpreadsheet },
 ] as const
+
+function GradingWorkbooksSection() {
+  const [lectureScheme, setLectureScheme] = useState<Record<string, unknown> | null>(null)
+  const [labScheme, setLabScheme] = useState<Record<string, unknown> | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch("/api/portal/grading-schemes")
+      .then((r) => r.json())
+      .then((json) => {
+        const schemes: Array<Record<string, unknown>> = json.data ?? []
+        const lecture = schemes.find((s) => s.subjectType === "Lecture" && s.isActive)
+        const lab = schemes.find((s) => s.subjectType === "Lecture with Lab" && s.isActive)
+        setLectureScheme(lecture ?? null)
+        setLabScheme(lab ?? null)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  function renderFormula(scheme: Record<string, unknown>) {
+    const components = (scheme.components ?? []) as Array<Record<string, unknown>>
+    const labComps = (scheme.labComponents ?? []) as Array<Record<string, unknown>>
+
+    return (
+      <div className="space-y-3 text-sm">
+        {components.map((comp) => {
+          const categories = (comp.categories ?? []) as Array<Record<string, unknown>>
+          return (
+            <div key={comp.name as string} className="rounded-lg border border-border bg-muted/20 p-3">
+              <p className="font-semibold text-foreground">{comp.name as string} <span className="font-bold text-primary">({comp.weight as number}%)</span></p>
+              {categories.length > 0 && (
+                <ul className="mt-1 space-y-0.5 pl-4 text-muted-foreground">
+                  {categories.map((cat) => (
+                    <li key={cat.name as string}>
+                      {cat.name as string} = {cat.weight as number}%
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="mt-1 text-xs">
+                Formula: <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground">
+                  {categories.map((c) => `${c.name} × ${(c.weight as number) / 100}`).join(" + ")}
+                </code>
+              </p>
+            </div>
+          )
+        })}
+        {scheme.subjectType === "Lecture with Lab" && labComps.length > 0 && (
+          <>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Laboratory Component</p>
+            {labComps.map((comp) => {
+              const categories = (comp.categories ?? []) as Array<Record<string, unknown>>
+              return (
+                <div key={comp.name as string} className="rounded-lg border border-border bg-muted/20 p-3">
+                  <p className="font-semibold text-foreground">{comp.name as string} <span className="font-bold text-primary">({comp.weight as number}%)</span></p>
+                  {categories.length > 0 && (
+                    <ul className="mt-1 space-y-0.5 pl-4 text-muted-foreground">
+                      {categories.map((cat) => (
+                        <li key={cat.name as string}>
+                          {cat.name as string} = {cat.weight as number}%
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="mt-1 text-xs">
+                    Formula: <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground">
+                      {categories.map((c) => `${c.name} × ${(c.weight as number) / 100}`).join(" + ")}
+                    </code>
+                  </p>
+                </div>
+              )
+            })}
+          </>
+        )}
+        {scheme.subjectType === "Lecture with Lab" && (
+          <div className="rounded-lg border border-border bg-muted/20 p-3">
+            <p className="font-semibold text-foreground">Period Grade Formula</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground">
+                 Lecture Grade × {(scheme.lectureWeight as number ?? 40) / 100} + Laboratory Grade × {(scheme.laboratoryWeight as number ?? 60) / 100}
+              </code>
+            </p>
+          </div>
+        )}
+        <div className="rounded-lg border border-border bg-muted/20 p-3">
+          <p className="font-semibold text-foreground">Final Grade Formula</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground">
+              (Midterm Grade + Tentative Final Grade) / 2
+            </code>
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <p className="text-sm text-muted-foreground">Loading grading workbooks...</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <Panel title="Lecture-Only Subject Workbook" eyebrow="Format for non-lab courses">
+        {lectureScheme ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <GraduationCap className="size-4 text-primary" />
+              <p className="font-medium text-foreground">{lectureScheme.name as string}</p>
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700 dark:bg-emerald-900 dark:text-emerald-400">
+                Active
+              </span>
+            </div>
+            {renderFormula(lectureScheme)}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No active Lecture scheme configured. Go to Grading Rules to set one up.</p>
+        )}
+      </Panel>
+
+      <Panel title="Lecture with Lab Subject Workbook" eyebrow="Format for courses with laboratory component">
+        {labScheme ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <GraduationCap className="size-4 text-primary" />
+              <p className="font-medium text-foreground">{labScheme.name as string}</p>
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700 dark:bg-emerald-900 dark:text-emerald-400">
+                Active
+              </span>
+            </div>
+            {renderFormula(labScheme)}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No active Lecture with Lab scheme configured. Go to Grading Rules to set one up.</p>
+        )}
+      </Panel>
+    </div>
+  )
+}
 
 export function AcademicModule({ model }: PortalModuleProps) {
   const {
@@ -162,6 +306,11 @@ export function AcademicModule({ model }: PortalModuleProps) {
       {/* ───── Curriculum Tab ───── */}
       {selectedAcademicSection === "Curriculum" ? (
         <CurriculumModule model={model} />
+      ) : null}
+
+      {/* ───── Grading Workbooks Tab ───── */}
+      {selectedAcademicSection === "Grading Workbooks" ? (
+        <GradingWorkbooksSection />
       ) : null}
 
       {/* ── Dialogs ── */}

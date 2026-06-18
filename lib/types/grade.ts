@@ -2,6 +2,8 @@ export type CategoryGrade = {
   category: string
   totalStudentScore: number
   totalPossibleScore: number
+  percentageScore: number
+  weightedScore: number
   grade: number
 }
 
@@ -15,24 +17,40 @@ export type GradeRecord = {
   subject: string
   code: string
   units: number
-  classId: string
-  subjectType: "Lecture" | "Lecture with Lab"
+  classId?: string
+  subjectType?: "Lecture" | "Lecture with Lab"
 
-  scores: Record<string, number>
+  scores?: Record<string, number>
+  maxScores?: Record<string, number>
 
-  categoryGrades: CategoryGrade[]
+  categoryGrades?: CategoryGrade[]
   lectureClassStanding?: number
   lectureExam?: number
   lectureGrade?: number
   laboratoryGrade?: number
+
+  midtermClassStanding?: number
+  midtermExam?: number
+  midtermLaboratoryGrade?: number
   midtermGrade?: number
+
+  finalClassStanding?: number
+  finalExam?: number
+  finalLaboratoryGrade?: number
   tentativeFinalGrade?: number
+
   finalGrade?: number
   transmutedGrade?: number
   remarks?: string
 
-  workflowStatus: GradeWorkflowStatus
-  released: boolean
+  midtermTransmuted?: number
+  midterm?: number
+  finalTransmuted?: number
+  finalTerm?: number
+  gradePercentage?: number
+
+  workflowStatus?: GradeWorkflowStatus
+  released?: boolean
   gradingSchemeId?: string
 
   updatedAt: string

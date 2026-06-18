@@ -68,7 +68,8 @@ const ROLE_OPTIONS: Array<{ value: ColumnMapping["targetRole"]; label: string }>
 ]
 
 const CATEGORY_OPTIONS = [
-  "Quiz", "Exam", "Assignment", "Project", "Activity", "Attendance", "Custom", "Computed",
+  "Quizzes", "Performance/Recitation", "Assignment", "Exam",
+  "Exercises", "Work Attitude", "Project", "Attendance", "Custom", "Computed",
 ]
 
 export function IntelligentImportDialog({
@@ -265,13 +266,16 @@ export function IntelligentImportDialog({
   function inferGradeCategory(name: string): string {
     const lower = name.toLowerCase().trim()
     const patterns: Array<{ pattern: RegExp; cat: string }> = [
-      { pattern: /\b(quiz|q\d)\b/i, cat: "Quiz" },
+      { pattern: /\b(lab quiz|lab quizzes|exercise|exercises)\b/i, cat: "Exercises" },
+      { pattern: /\b(work attitude|attitude|lab activity|lab activities)\b/i, cat: "Work Attitude" },
+      { pattern: /\b(project|proj|pro|mco)\b/i, cat: "Project" },
+      { pattern: /\b(quiz|quizzes|q\d)\b/i, cat: "Quizzes" },
       { pattern: /\b(exam|midterm|final|prelim)\b/i, cat: "Exam" },
       { pattern: /\b(assignment|assign|hw|homework|task)\b/i, cat: "Assignment" },
-      { pattern: /\b(project|proj)\b/i, cat: "Project" },
-      { pattern: /\b(activity|act|recitation|recit|seatwork|sw)\b/i, cat: "Activity" },
-      { pattern: /\b(attendance|att|participation)\b/i, cat: "Attendance" },
-      { pattern: /\b(lab|laboratory|practical)\b/i, cat: "Exam" },
+      { pattern: /\b(performance|recitation|recit|seatwork|sw)\b/i, cat: "Performance/Recitation" },
+      { pattern: /\b(activity|activities|act)\b/i, cat: "Assignment" },
+      { pattern: /\b(attendance|attend|atten|att|participation)\b/i, cat: "Attendance" },
+      { pattern: /\b(lab|laboratory|practical)\b/i, cat: "Exercises" },
       { pattern: /\b(grade|score|total|average|percentage)\b/i, cat: "Computed" },
     ]
     for (const { pattern, cat } of patterns) {
