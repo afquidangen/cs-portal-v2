@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
-  Lock, CheckCircle2, Search, Calculator,
+  ChevronDown, Lock, CheckCircle2, Search, Calculator,
   Send, XCircle, RotateCcw, Save,
 } from "lucide-react"
 import { AgGridReact } from "ag-grid-react"
@@ -20,7 +20,7 @@ import { Panel, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "../modules/types"
 import type { GradeRecord, GradeWorkflowStatus, GradeColumn, GradingPeriod, Assessment } from "@/lib/types"
 import { useAutoSave, type SaveStatus } from "../../lib/auto-save"
-import { computeLivePreview, gradeCategoryMatches } from "../../lib/grade-engine"
+import { computeLivePreview, gradeCategoryMatches, transmuteGrade } from "../../lib/grade-engine"
 import { UndoRedoManager, buildSnapshot } from "../../lib/undo-redo"
 import { SpreadsheetToolbar, type ToolbarAction } from "./spreadsheet-toolbar"
 import { RenameColumnDialog } from "./rename-column-dialog"
@@ -144,7 +144,9 @@ type StudentGradeRow = {
   gradeId?: string
   scores: Record<string, number>
   midtermGrade?: number
+  midtermTransmuted?: number
   finalGrade?: number
+  finalTransmuted?: number
   transmutedGrade?: number
   remarks?: string
   workflowStatus: GradeWorkflowStatus
@@ -193,7 +195,7 @@ export function SpreadsheetGrid({
   gradingScheme?: { components: Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number }> }>; labComponents?: Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number }> }>; lectureWeight?: number; laboratoryWeight?: number; subjectType: "Lecture" | "Lecture with Lab" } | null
 }) {
   const gridRef = useRef<AgGridReact>(null)
-  const colStateRef = useRef<Record<string, number>>({})
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
   const isEditable = model.role === "faculty" || model.role === "admin"
 
   const [activeTab, setActiveTab] = useState<TabKey>("midterm")
@@ -218,6 +220,12 @@ export function SpreadsheetGrid({
   const dataLoadedRef = useRef(false)
 
   useEffect(() => { gradeMapRef.current = gradeMap }, [gradeMap])
+
+  const scheduleInfo = useMemo(() => {
+    if (!classId || !model.visibleSchedules) return { instructor: "", section: "" }
+    const schedule = (model.visibleSchedules as Array<{ id: string; instructor: string; section: string }>).find((s) => s.id === classId)
+    return { instructor: schedule?.instructor ?? "", section: schedule?.section ?? "" }
+  }, [classId, model.visibleSchedules])
 
   // Force grid refresh once grade data first becomes available
   useEffect(() => {
@@ -262,9 +270,12 @@ export function SpreadsheetGrid({
 
   const filteredColumns = useMemo(() => {
     if (activeTab === "summary") return []
+    const ignore = new Set(["invalid", "scores"])
     return gradeColumns.filter((col) => {
       if (col.gradingPeriod === "both") return true
-      return col.gradingPeriod === activeTab
+      if (col.gradingPeriod !== activeTab) return false
+      if (ignore.has(col.name.toLowerCase())) return false
+      return true
     })
   }, [gradeColumns, activeTab])
 
@@ -335,6 +346,28 @@ export function SpreadsheetGrid({
       }, 0)
 
       autoSave.schedule({ grades: [{ ...grade, scores: updatedScores }], cid: classId })
+    } else if (colId?.startsWith("absences_")) {
+      const catName = colId.replace("absences_", "")
+      const catKey = catName.toLowerCase().replace(/[^a-z0-9]/g, "")
+      const scoresKey = `absences_${catKey}`
+      const grade = ensureGradeRecord(row.studentId)
+      if (!grade) return
+      const absences = Number(newValue) || 0
+      const updatedScores = { ...grade.scores, [scoresKey]: absences }
+
+      setGrades((prev) =>
+        prev.map((g) =>
+          g.studentId === row.studentId
+            ? { ...g, scores: updatedScores, updatedAt: new Date().toISOString() }
+            : g
+        )
+      )
+
+      setTimeout(() => {
+        gridRef.current?.api?.refreshCells({ force: true })
+      }, 0)
+
+      autoSave.schedule({ grades: [{ ...grade, scores: updatedScores }], cid: classId })
     }
   }
 
@@ -348,9 +381,11 @@ export function SpreadsheetGrid({
 
   function onColumnResized(event: ColumnResizedEvent) {
     if (!event.finished) return
+    const next: Record<string, number> = {}
     event.api.getColumnState().forEach((col) => {
-      colStateRef.current[col.colId] = col.width ?? 0
+      next[col.colId] = col.width ?? 0
     })
+    setColumnWidths(next)
   }
 
   function onColumnHeaderClicked(event: ColumnHeaderClickedEvent) {
@@ -620,27 +655,30 @@ export function SpreadsheetGrid({
       .catch(() => toast.error("Failed to refresh."))
   }
 
-  const catToComponent = useMemo(() => {
-    const map = new Map<string, string>()
-    if (!effectiveScheme) return map
-    for (const comp of effectiveScheme.components) {
-      for (const cat of comp.categories) map.set(cat.name.toLowerCase(), comp.name)
-    }
-    for (const lab of effectiveScheme.labComponents ?? []) {
-      for (const cat of lab.categories) map.set(cat.name.toLowerCase(), lab.name)
-    }
-    return map
-  }, [effectiveScheme])
-
   const columnCategories = useMemo(() => {
     const cats = new Set<string>()
-    for (const col of gradeColumns) cats.add(col.category)
+    for (const col of gradeColumns) {
+      let cat = col.category
+      if (cat === "Performance") cat = "Performance/Recitation"
+      if (cat === "Attendance") cat = "Lec Attendance"
+      cats.add(cat)
+    }
     if (effectiveScheme) {
       for (const comp of effectiveScheme.components) {
-        for (const cat of comp.categories) cats.add(cat.name)
+        for (const cat of comp.categories) {
+          let name = cat.name
+          if (name === "Performance") name = "Performance/Recitation"
+          if (name === "Attendance") name = "Lec Attendance"
+          cats.add(name)
+        }
       }
       for (const lab of effectiveScheme.labComponents ?? []) {
-        for (const cat of lab.categories) cats.add(cat.name)
+        for (const cat of lab.categories) {
+          let name = cat.name
+          if (name === "Performance") name = "Performance/Recitation"
+          if (name === "Attendance") name = "Lec Attendance"
+          cats.add(name)
+        }
       }
     }
     return Array.from(cats)
@@ -681,7 +719,7 @@ export function SpreadsheetGrid({
   useEffect(() => { livePreviewDataRef.current = livePreviewData }, [livePreviewData])
 
   const colDefs = useMemo((): (ColDef | ColGroupDef)[] => {
-    const saved = colStateRef.current
+    const saved = columnWidths
 
     if (activeTab === "summary") {
       return [
@@ -736,8 +774,11 @@ export function SpreadsheetGrid({
         cellEditor: "agNumberCellEditor",
         cellEditorParams: { min: 0, max: col.maxScore, precision: 2 },
       }
-      if (!catColDefs.has(col.category)) catColDefs.set(col.category, [])
-      catColDefs.get(col.category)!.push(colDef)
+      let catKey = col.category
+      if (catKey === "Performance") catKey = "Performance/Recitation"
+      if (catKey === "Attendance") catKey = "Lec Attendance"
+      if (!catColDefs.has(catKey)) catColDefs.set(catKey, [])
+      catColDefs.get(catKey)!.push(colDef)
     }
 
     // Ensure all scheme categories appear as groups even when no columns exist
@@ -779,53 +820,129 @@ export function SpreadsheetGrid({
     const compCatGroups = new Map<string, ColGroupDef[]>()
     let catColorIdx = 0
     for (const [catName, colDefs] of catColDefs) {
-      const compName = catToComponent.get(catName.toLowerCase()) || "Other"
+      const compName = (() => {
+        if (!effectiveScheme) return "Other"
+        for (const comp of effectiveScheme.components) {
+          for (const cat of comp.categories) {
+            if (gradeCategoryMatches(cat.name, catName)) return comp.name
+          }
+        }
+        for (const lab of effectiveScheme.labComponents ?? []) {
+          for (const cat of lab.categories) {
+            if (gradeCategoryMatches(cat.name, catName)) return lab.name
+          }
+        }
+        return "Other"
+      })()
       if (!compCatGroups.has(compName)) compCatGroups.set(compName, [])
       const catWt = catWeightMap.get(catName.toLowerCase())
-      const psColDef: ColDef = {
-        headerName: "PS",
-        colId: `ps_${catName}`,
-        width: saved[`ps_${catName}`] ?? 70,
-        sortable: true,
-        filter: "agNumberColumnFilter",
-        editable: false,
-        valueGetter: (params) => {
-          const row = params.data as StudentGradeRow
-          const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
-          if (!preview?.categoryGrades) return ""
-          const match = preview.categoryGrades.find((cg) => gradeCategoryMatches(catName, cg.category))
-          return match?.totalStudentScore ?? ""
-        },
-        cellStyle: { backgroundColor: "color-mix(in srgb, var(--accent), transparent 75%)" },
+      const catKey = catName.toLowerCase().replace(/[^a-z0-9]/g, "")
+      const isAttendance = catKey.includes("attendance") || catKey.includes("attend")
+
+      let children: (ColDef | ColGroupDef)[]
+      if (isAttendance) {
+        const absencesColDef: ColDef = {
+          headerName: "Absences",
+          colId: `absences_${catName}`,
+          width: saved[`absences_${catName}`] ?? 100,
+          sortable: true,
+          filter: "agNumberColumnFilter",
+          editable: isEditable,
+          valueGetter: (params) => {
+            const row = params.data as StudentGradeRow
+            return row.scores?.[`absences_${catKey}`] ?? ""
+          },
+          valueSetter: (params) => {
+            const row = params.data as StudentGradeRow
+            const val = params.newValue
+            const num = val === "" || val === null || val === undefined ? 0 : Number(val)
+            row.scores = { ...row.scores, [`absences_${catKey}`]: isNaN(num) ? 0 : num }
+            return true
+          },
+          cellEditor: "agNumberCellEditor",
+          cellEditorParams: { min: 0, max: 100, precision: 0 },
+          cellStyle: { backgroundColor: "color-mix(in srgb, var(--destructive), transparent 85%)" },
+        }
+        const scoreColDef: ColDef = {
+          headerName: "Score",
+          colId: `attendance_score_${catName}`,
+          width: saved[`attendance_score_${catName}`] ?? 90,
+          sortable: true,
+          filter: "agNumberColumnFilter",
+          editable: false,
+          valueGetter: (params) => {
+            const row = params.data as StudentGradeRow
+            const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
+            if (!preview?.categoryGrades) return ""
+            const match = preview.categoryGrades.find((cg) => gradeCategoryMatches(catName, cg.category))
+            return match?.totalStudentScore ?? ""
+          },
+          cellStyle: { backgroundColor: "color-mix(in srgb, var(--accent), transparent 75%)" },
+        }
+        children = [absencesColDef, scoreColDef]
+      } else {
+        const isExam = gradeCategoryMatches("exam", catName)
+        const psColDef: ColDef = {
+          headerName: "PS",
+          colId: `ps_${catName}`,
+          width: saved[`ps_${catName}`] ?? 70,
+          sortable: true,
+          filter: "agNumberColumnFilter",
+          editable: false,
+          valueGetter: (params) => {
+            const row = params.data as StudentGradeRow
+            const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
+            if (!preview?.categoryGrades) return ""
+            const match = preview.categoryGrades.find((cg) => gradeCategoryMatches(catName, cg.category))
+            return match?.totalStudentScore ?? ""
+          },
+          cellStyle: { backgroundColor: "color-mix(in srgb, var(--accent), transparent 75%)" },
+        }
+        const wsColDef: ColDef = {
+          headerName: "WS",
+          colId: `ws_${catName}`,
+          width: saved[`ws_${catName}`] ?? 70,
+          sortable: true,
+          filter: "agNumberColumnFilter",
+          editable: false,
+          valueGetter: (params) => {
+            const row = params.data as StudentGradeRow
+            const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
+            if (!preview?.categoryGrades) return ""
+            const match = preview.categoryGrades.find((cg) => gradeCategoryMatches(catName, cg.category))
+            return match?.weightedScore ?? ""
+          },
+          valueFormatter: (params) => params.value == null ? "" : String(Math.round(Number(params.value))),
+          cellStyle: { fontWeight: 500, backgroundColor: "color-mix(in srgb, var(--accent), transparent 70%)" },
+        }
+        const extraCols = isExam ? [] : [psColDef, wsColDef]
+        children = [...colDefs, ...extraCols]
       }
-      const wsColDef: ColDef = {
-        headerName: "WS",
-        colId: `ws_${catName}`,
-        width: saved[`ws_${catName}`] ?? 70,
-        sortable: true,
-        filter: "agNumberColumnFilter",
-        editable: false,
-        valueGetter: (params) => {
-          const row = params.data as StudentGradeRow
-          const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
-          if (!preview?.categoryGrades) return ""
-          const match = preview.categoryGrades.find((cg) => gradeCategoryMatches(catName, cg.category))
-          return match?.weightedScore ?? ""
-        },
-        valueFormatter: (params) => params.value == null ? "" : String(Math.round(Number(params.value))),
-        cellStyle: { fontWeight: 500, backgroundColor: "color-mix(in srgb, var(--accent), transparent 70%)" },
-      }
-      const isExam = gradeCategoryMatches("exam", catName)
-      const nCat = catName.toLowerCase().replace(/[^a-z0-9]/g, "")
-      const isAttendance = nCat.includes("attendance") || nCat.includes("attend")
-      const extraCols = isExam || isAttendance ? [] : [psColDef, wsColDef]
       compCatGroups.get(compName)!.push({
         headerName: catWt != null ? `${catName} (${catWt}%)` : catName,
         headerClass: `ag-category-group-header ${CAT_COLORS[catColorIdx % CAT_COLORS.length]}`,
         marryChildren: true,
-        children: [...colDefs, ...extraCols],
+        children,
       })
       catColorIdx++
+    }
+
+    for (const [compName, catGroups] of compCatGroups) {
+      const schemeComp = effectiveScheme?.components.find((c) => c.name === compName)
+        ?? effectiveScheme?.labComponents?.find((c) => c.name === compName)
+      if (schemeComp) {
+        const order = new Map(schemeComp.categories.map((c, i) => [c.name.toLowerCase(), i]))
+        catGroups.sort((a, b) => {
+          const aName = (a.headerName as string).replace(/\s*\(.*?\)\s*$/, "").trim().toLowerCase()
+          const bName = (b.headerName as string).replace(/\s*\(.*?\)\s*$/, "").trim().toLowerCase()
+          const aIdx = order.get(aName)
+          const bIdx = order.get(bName)
+          if (aIdx === undefined && bIdx === undefined) return 0
+          if (aIdx === undefined) return 1
+          if (bIdx === undefined) return -1
+          return aIdx - bIdx
+        })
+      }
     }
 
     const csColDef: ColDef = {
@@ -877,32 +994,20 @@ export function SpreadsheetGrid({
            const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
            return preview?.periodGrade ?? ""
          }, valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 700 } },
+      { headerName: activeTab === "midterm" ? "Mid Transmuted" : "Final Transmuted", width: saved[activeTab === "midterm" ? "midtermTransmuted" : "finalTransmuted"] ?? 120, sortable: true, filter: "agNumberColumnFilter",
+        valueGetter: (params) => {
+          const row = params.data as StudentGradeRow
+          const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
+          const grade = preview?.periodGrade
+          if (grade == null || grade <= 0) return ""
+          return transmuteGrade(grade)
+        }, valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 700 } },
       { headerName: "Status", field: "workflowStatus", width: saved["workflowStatus"] ?? 130, sortable: true, filter: "agTextColumnFilter",
         cellRenderer: StatusCellRenderer },
     )
 
     return cols
-  }, [filteredColumns, isEditable, activeTab, catToComponent, catWeightMap, compWeightMap, handleUpdateMaxScore])
-
-  const pinnedTopRowData = useMemo(() => {
-    if (activeTab === "summary") return undefined
-    const row: Record<string, string> = { no: "No.", studentName: "Scores" }
-    for (const col of filteredColumns) {
-      row[`score_${scoreKey(col)}`] = ""
-    }
-    return [row]
-  }, [filteredColumns, activeTab])
-
-  useEffect(() => {
-    const api = gridRef.current?.api
-    if (!api) return
-    const state = Object.entries(colStateRef.current)
-      .filter(([, w]) => w > 0)
-      .map(([colId, width]) => ({ colId, width }))
-    if (state.length > 0) {
-      api.applyColumnState({ state })
-    }
-  }, [colDefs])
+  }, [filteredColumns, isEditable, activeTab, catWeightMap, compWeightMap, handleUpdateMaxScore, columnWidths, effectiveScheme])
 
   const theme = useMemo(() => {
     return themeAlpine.withParams({
@@ -925,7 +1030,7 @@ export function SpreadsheetGrid({
 
       headerBackgroundColor: "var(--muted)",
       headerTextColor: "var(--foreground)",
-      headerCellHoverBackgroundColor: "color-mix(in srgb, var(--muted), black 8%)",
+      headerCellHoverBackgroundColor: darkMode ? "color-mix(in srgb, var(--muted), white 8%)" : "color-mix(in srgb, var(--muted), black 8%)",
 
       rowHoverColor: "color-mix(in srgb, var(--muted), transparent 50%)",
       oddRowBackgroundColor: "color-mix(in srgb, var(--muted), transparent 70%)",
@@ -947,7 +1052,7 @@ export function SpreadsheetGrid({
       cellHorizontalPadding: 12,
 
       browserColorScheme: darkMode ? "dark" : "light",
-    }, darkMode ? "dark" : undefined)
+    })
   }, [darkMode])
 
   const schemeInfo = useMemo(() => {
@@ -961,41 +1066,55 @@ export function SpreadsheetGrid({
     selectedColName
   )
 
+  const [schemeOpen, setSchemeOpen] = useState(false)
+
   const SchemeInfoBanner = useCallback(() => {
     if (!schemeInfo) return null
     const { subjectType, components, labComponents, lectureWeight, laboratoryWeight } = schemeInfo
     return (
-      <div className="rounded-xl border border-border bg-card p-3 text-xs">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <span className="font-semibold text-foreground">Grading Scheme:</span>
-          <span className="text-muted-foreground">{subjectType}</span>
-          {components.map((c) => {
-            const catSum = c.categories.reduce((s, cat) => s + cat.weight, 0)
-            return (
-              <span key={c.name} className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-0.5">
-                {c.name}
-                <span className="font-semibold text-foreground">{c.weight}%</span>
-                {c.categories.length > 0 && (
-                  <span className="text-muted-foreground">
-                    ({c.categories.map((cat) => `${cat.name} ${cat.weight}%`).join(", ")})
-                  </span>
-                )}
-                <span className={catSum === 100 ? "text-emerald-500" : "text-red-500"}>{catSum}%</span>
-              </span>
-            )
-          })}
-          {subjectType === "Lecture with Lab" && labComponents && (
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-0.5">
-              Lecture {lectureWeight}% / Lab {laboratoryWeight}%
-            </span>
-          )}
-          <span className={schemeInfo.totalComp === 100 ? "text-emerald-500" : "text-red-500"}>
-            {schemeInfo.totalComp}% total
-          </span>
-        </div>
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+        <button type="button" onClick={() => setSchemeOpen((v) => !v)}
+          className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-muted/20">
+          <ChevronDown className={`size-3.5 transition-transform ${schemeOpen ? "rotate-0" : "-rotate-90"}`} />
+          Grading Scheme
+          <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-foreground">{subjectType}</span>
+        </button>
+        {schemeOpen && (
+          <div className="border-t border-border px-4 pb-4 pt-3">
+            <div className="space-y-3">
+              {components.map((comp) => {
+                const catSum = comp.categories.reduce((s, cat) => s + cat.weight, 0)
+                return (
+                  <div key={comp.name} className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-foreground">{comp.name}</span>
+                      <span className="text-xs font-medium text-muted-foreground">({comp.weight}%)</span>
+                      <span className={`ml-auto text-xs font-medium ${catSum === 100 ? "text-emerald-500" : "text-red-500"}`}>
+                        {catSum}%
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {comp.categories.map((cat) => (
+                        <span key={cat.name} className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-0.5 text-xs text-muted-foreground">
+                          {cat.name}
+                          <span className="font-semibold text-foreground">{cat.weight}%</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            {subjectType === "Lecture with Lab" && labComponents && (
+              <div className="mt-2 border-t border-border pt-2 text-xs text-muted-foreground">
+                Lecture <span className="font-semibold text-foreground">{lectureWeight}%</span> &middot; Lab <span className="font-semibold text-foreground">{laboratoryWeight}%</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     )
-  }, [schemeInfo])
+  }, [schemeInfo, schemeOpen])
 
   const tabLabels: { key: TabKey; label: string }[] = [
     { key: "midterm", label: "Midterm" },
@@ -1005,8 +1124,20 @@ export function SpreadsheetGrid({
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-border bg-card px-3 py-5 text-center shadow-sm sm:px-5 sm:py-6">
+        <h2 className="text-2xl font-black tracking-tight sm:text-3xl md:text-4xl">{selectedSubject.split(" - ")[0]?.trim()}</h2>
+        <hr className="mx-auto mt-2 w-16 border-t-2 border-primary/30 sm:w-24" />
+        <p className="mt-2 text-lg text-muted-foreground sm:text-xl md:text-2xl">{selectedSubject.split(" - ")[1]?.trim() ?? selectedSubject}</p>
+        {scheduleInfo.section && (
+          <p className="mt-1 text-sm font-semibold text-foreground/80 sm:text-base">{scheduleInfo.section}</p>
+        )}
+        {scheduleInfo.instructor && (
+          <p className="mt-1.5 text-xs text-muted-foreground/70 sm:text-sm">{scheduleInfo.instructor}</p>
+        )}
+      </div>
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+        <div className="relative w-full sm:flex-1 sm:min-w-[200px] sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={studentQuery} onChange={(e) => setStudentQuery(e.target.value)}
             placeholder="Search students..." className="h-9 rounded-xl pl-9 text-sm" />
@@ -1046,7 +1177,6 @@ export function SpreadsheetGrid({
             ref={gridRef}
             rowData={gridData}
             columnDefs={colDefs}
-            pinnedTopRowData={pinnedTopRowData}
           defaultColDef={{
             resizable: true,
             sortable: true,
@@ -1070,36 +1200,30 @@ export function SpreadsheetGrid({
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="outline" onClick={handleRefresh} className="rounded-lg">
-          <RotateCcw className="size-3.5" /> Refresh
-        </Button>
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
         <Button size="sm" variant="outline" onClick={() => autoSave.saveNow({ grades: Array.from(gradeMap.values()), cid: classId, showToast: true })} className="rounded-lg">
-          <Save className="size-3.5" /> Save
+          <Save className="size-3.5 sm:size-4" /> <span className="hidden sm:inline">Save</span>
         </Button>
+        <span className="text-[11px] font-medium text-muted-foreground sm:text-xs">Workflow:</span>
         {activeTab !== "summary" && (
-          <>
-            <Button size="sm" variant="default" onClick={() => handleComputeGrades(activeTab === "midterm" ? "midterm" : "final")} className="rounded-lg shadow-sm ring-1 ring-primary/30">
-              <Calculator className="size-4" /> Compute {activeTab === "midterm" ? "Midterm" : "Final"}
-            </Button>
-            <span className="text-xs text-muted-foreground">Live preview updates automatically as you type</span>
-          </>
+          <Button size="sm" variant="default" onClick={() => handleComputeGrades(activeTab === "midterm" ? "midterm" : "final")} className="ml-auto rounded-lg shadow-sm ring-1 ring-primary/30">
+            <Calculator className="size-3.5 sm:size-4" /> Compute
+          </Button>
         )}
-        <span className="text-xs font-medium text-muted-foreground">Workflow:</span>
-        <Button size="sm" variant="outline" onClick={() => handleUpdateWorkflow("Submitted")} className="rounded-lg">
-          <Send className="size-3.5" /> Submit
+        <Button size="icon" variant="outline" onClick={() => handleUpdateWorkflow("Submitted")} className="size-8 rounded-lg sm:size-auto sm:px-3 sm:py-1.5" title="Submit">
+          <Send className="size-3.5" /> <span className="hidden sm:inline sm:ms-1.5">Submit</span>
         </Button>
-        <Button size="sm" variant="outline" onClick={() => handleUpdateWorkflow("Reviewed")} className="rounded-lg">
-          <CheckCircle2 className="size-3.5" /> Reviewed
+        <Button size="icon" variant="outline" onClick={() => handleUpdateWorkflow("Reviewed")} className="size-8 rounded-lg sm:size-auto sm:px-3 sm:py-1.5" title="Reviewed">
+          <CheckCircle2 className="size-3.5" /> <span className="hidden sm:inline sm:ms-1.5">Reviewed</span>
         </Button>
-        <Button size="sm" variant="outline" onClick={() => handleUpdateWorkflow("Approved")} className="rounded-lg">
-          <CheckCircle2 className="size-3.5" /> Approve
+        <Button size="icon" variant="outline" onClick={() => handleUpdateWorkflow("Approved")} className="size-8 rounded-lg sm:size-auto sm:px-3 sm:py-1.5" title="Approve">
+          <CheckCircle2 className="size-3.5" /> <span className="hidden sm:inline sm:ms-1.5">Approve</span>
         </Button>
-        <Button size="sm" variant="outline" onClick={() => handleUpdateWorkflow("Locked")} className="rounded-lg">
-          <Lock className="size-3.5" /> Lock
+        <Button size="icon" variant="outline" onClick={() => handleUpdateWorkflow("Locked")} className="size-8 rounded-lg sm:size-auto sm:px-3 sm:py-1.5" title="Lock">
+          <Lock className="size-3.5" /> <span className="hidden sm:inline sm:ms-1.5">Lock</span>
         </Button>
-        <Button size="sm" variant="outline" onClick={() => handleUpdateWorkflow("Draft")} className="rounded-lg">
-          <XCircle className="size-3.5" /> Revert
+        <Button size="icon" variant="outline" onClick={() => handleUpdateWorkflow("Draft")} className="size-8 rounded-lg sm:size-auto sm:px-3 sm:py-1.5" title="Revert to Draft">
+          <XCircle className="size-3.5" /> <span className="hidden sm:inline sm:ms-1.5">Revert</span>
         </Button>
       </div>
 

@@ -6,10 +6,12 @@ import {
   UsersRound,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select"
 import { toast } from "sonner"
 
 import { Panel } from "../shared/dashboard-ui"
-import { DataLoader } from "@/components/ui/data-loader"
 import type { PortalModuleProps } from "./types"
 import type { CurriculumRecord, GradeRecord } from "../../data/portal-data"
 import type { GradeColumn, Assessment } from "@/lib/types"
@@ -33,7 +35,6 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
   } | null>(null)
   const [classId, setClassId] = useState("")
   const [computedOnce, setComputedOnce] = useState(false)
-  const [loading, setLoading] = useState(false)
 
   const semesterSubjects = useMemo(() => {
     const seen = new Set<string>()
@@ -70,7 +71,6 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
 
   useEffect(() => {
     if (!classId) return
-    setLoading(true)
     Promise.all([
       fetch(`/api/portal/grades/class/${classId}`).then((r) => r.json()),
       fetch("/api/portal/grading-schemes").then((r) => r.json()),
@@ -104,7 +104,6 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
         }
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
   }, [classId, selectedSubject, curricula, setGrades])
 
   function mergeGradesWithState(serverGrades: GradeRecord[], currentGrades: GradeRecord[]): GradeRecord[] {
@@ -177,7 +176,9 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
         gradeId: grade?.id,
         scores,
         midtermGrade: grade?.midtermGrade,
+        midtermTransmuted: grade?.midtermTransmuted,
         finalGrade: grade?.finalGrade,
+        finalTransmuted: grade?.finalTransmuted,
         transmutedGrade: grade?.transmutedGrade,
         remarks: grade?.remarks,
         workflowStatus: grade?.workflowStatus || "Draft",
@@ -204,10 +205,10 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
             <GraduationCap className="size-4" />
             Spreadsheet Grade Entry
           </p>
-          <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-            Excel-Like Grade Table
+          <h3 className="mt-2 text-2xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+            E-Grades
           </h3>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+          <p className="mt-3 max-w-2xl text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6">
             Edit grades directly in the table. Supports keyboard navigation, copy/paste, sorting, filtering, and auto-save.
             Switch between Midterm and Final periods to enter period-specific scores.
           </p>
@@ -260,42 +261,45 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
           <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <BookMarked className="size-4" /> Subject
           </p>
-          <div className="flex flex-wrap gap-2">
-            {semesterSubjects.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No subjects assigned.</p>
-            ) : (
-              semesterSubjects.map((s) => (
-                <Button key={s.subject} type="button"
-                  variant={selectedSubject === s.subject ? "default" : "outline"}
-                  onClick={() => { setSelectedSubject(s.subject); setSelectedSection(null) }}
-                  className="rounded-xl">
-                  {s.subject}
-                </Button>
-              ))
-            )}
-          </div>
+          <Select
+            value={selectedSubject}
+            onValueChange={(v) => { setSelectedSubject(v); setSelectedSection(null) }}
+          >
+            <SelectTrigger className="w-full rounded-xl">
+              <SelectValue placeholder={semesterSubjects.length === 0 ? "No subjects assigned" : "Select a subject..."} />
+            </SelectTrigger>
+            <SelectContent>
+              {semesterSubjects.map((s) => (
+                <SelectItem key={s.subject} value={s.subject}>{s.subject}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
 
-      {selectedSubject && subjectSections.length > 0 && (
+      {selectedSubject && (
         <div className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
           <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <UsersRound className="size-4" /> Section
           </p>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant={selectedSection === null ? "default" : "outline"}
-              onClick={() => setSelectedSection(null)} className="rounded-xl">All Sections</Button>
-            {subjectSections.map((s) => (
-              <Button key={s} type="button" variant={selectedSection === s ? "default" : "outline"}
-                onClick={() => setSelectedSection(s)} className="rounded-xl">Section {s}</Button>
-            ))}
-          </div>
+          <Select
+            value={selectedSection ?? "all"}
+            onValueChange={(v) => setSelectedSection(v === "all" ? null : v)}
+          >
+            <SelectTrigger className="w-full rounded-xl">
+              <SelectValue placeholder="Select section..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Sections</SelectItem>
+              {subjectSections.map((s) => (
+                <SelectItem key={s} value={s}>Section {s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
 
-      {selectedSubject && loading ? (
-        <DataLoader message="Loading grade data..." />
-      ) : selectedSubject && subjectRoster.length === 0 ? (
+      {selectedSubject && subjectRoster.length === 0 ? (
         <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] px-4 py-8 text-center text-sm text-muted-foreground">
           <GraduationCap className="mx-auto mb-2 size-8 text-muted-foreground/50" />
           <p className="font-medium">No students found</p>

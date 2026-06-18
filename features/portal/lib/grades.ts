@@ -15,7 +15,12 @@ const DEFAULT_CLIENT_TABLE: Record<string, number> = {
 }
 
 export function transmutedToEquivalent(score: number): number {
-  for (const [range, equiv] of Object.entries(DEFAULT_CLIENT_TABLE)) {
+  const entries = Object.entries(DEFAULT_CLIENT_TABLE).sort(([a], [b]) => {
+    const aHigh = a.includes("-") ? Number(a.split("-")[1]) : Number(a)
+    const bHigh = b.includes("-") ? Number(b.split("-")[1]) : Number(b)
+    return bHigh - aHigh
+  })
+  for (const [range, equiv] of entries) {
     if (range.includes("-")) {
       const [low, high] = range.split("-").map(Number)
       if (score >= low && score <= high) return equiv

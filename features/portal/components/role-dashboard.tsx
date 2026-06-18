@@ -136,7 +136,6 @@ export function RoleDashboard({ role }: { role: Role }) {
         const d = json.data
         model.setUsers(d.users ?? model.users)
         model.setFaculty(d.faculty ?? model.faculty)
-        model.setGrades(d.grades ?? model.grades)
         model.setTheses(d.theses ?? model.theses)
         model.setSeminars(d.seminars ?? model.seminars)
         model.setTickets(d.tickets ?? model.tickets)
@@ -177,7 +176,6 @@ export function RoleDashboard({ role }: { role: Role }) {
           const d = json.data
           model.setUsers(d.users ?? model.users)
           model.setFaculty(d.faculty ?? model.faculty)
-          model.setGrades(d.grades ?? model.grades)
           model.setTheses(d.theses ?? model.theses)
           model.setSeminars(d.seminars ?? model.seminars)
           model.setTickets(d.tickets ?? model.tickets)

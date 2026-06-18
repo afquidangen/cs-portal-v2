@@ -7,7 +7,9 @@ export class TransmutationTableRepository extends BaseRepository {
   }
 
   async findActiveBySubjectType(subjectType: "Lecture" | "Lecture with Lab" | "All" = "All") {
-    return this.findOne({ isActive: true, subjectType })
+    const exact = await this.findOne({ isActive: true, subjectType })
+    if (exact) return exact
+    return this.findOne({ isActive: true, subjectType: "All" })
   }
 
   async setDefaultTable(tableId: string) {

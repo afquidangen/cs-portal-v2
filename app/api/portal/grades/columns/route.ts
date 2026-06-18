@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       id: `COL-${Date.now()}`,
       classId: body.classId,
       name: body.name,
-      category: body.category,
+      category: body.category === "Performance" ? "Performance/Recitation" : body.category,
       gradingPeriod: body.gradingPeriod,
       maxScore: body.maxScore ?? 100,
       order: maxOrder + 1,

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
-    "seed:schemes": "tsx scripts/seed-grading-schemes.ts"
+    "seed:schemes": "tsx scripts/seed-grading-schemes.ts",
+    "migrate:performance-category": "tsx scripts/migrate-performance-category.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",

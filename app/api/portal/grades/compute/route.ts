@@ -122,6 +122,12 @@ export async function POST(request: Request) {
       const g = grade as Record<string, unknown>
       const studentId = g.studentId as string
       const scores = (g.scores as Record<string, number>) || {}
+      const absencesMap: Record<string, number> = {}
+      for (const [key, val] of Object.entries(scores)) {
+        if (key.startsWith("absences_")) {
+          absencesMap[key.replace("absences_", "")] = Number(val) || 0
+        }
+      }
 
       const componentsTyped = components as Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number }> }>
       const labComponentsTyped = labComponents as Array<{ name: string; categories: Array<{ name: string; weight: number }> }>
@@ -220,8 +226,8 @@ export async function POST(request: Request) {
         const labWeights: Record<string, number> = {}
         for (const cat of labCategories) labWeights[cat.name] = cat.weight
 
-        const lectureCategoryGrades = computeAllCategoryGrades(lectureAssessmentsByCategory, lectureWeights)
-        const labCategoryGrades = computeAllCategoryGrades(labAssessmentsByCategory, labWeights)
+        const lectureCategoryGrades = computeAllCategoryGrades(lectureAssessmentsByCategory, lectureWeights, absencesMap)
+        const labCategoryGrades = computeAllCategoryGrades(labAssessmentsByCategory, labWeights, absencesMap)
 
         categoryGrades = [...lectureCategoryGrades, ...labCategoryGrades]
         classStanding = computeClassStanding(lectureCategoryGrades, standingCategories)
@@ -269,7 +275,7 @@ export async function POST(request: Request) {
         const standingWeights: Record<string, number> = {}
         for (const cat of standingCategories) standingWeights[cat.name] = cat.weight
 
-        categoryGrades = computeAllCategoryGrades(assessmentsByCategory, standingWeights)
+        categoryGrades = computeAllCategoryGrades(assessmentsByCategory, standingWeights, absencesMap)
         classStanding = computeClassStanding(categoryGrades, standingCategories)
         examGrade = computeExamGrade(examItems)
       }
@@ -295,6 +301,7 @@ export async function POST(request: Request) {
         updates.midtermExam = examGrade
         if (laboratoryGrade !== undefined) updates.midtermLaboratoryGrade = laboratoryGrade
         updates.midtermGrade = periodGrade
+        updates.midtermTransmuted = transmuteGrade(periodGrade, Object.keys(transmutationTable).length > 0 ? transmutationTable : undefined)
         updates.lectureClassStanding = classStanding
         updates.lectureExam = examGrade
         updates.lectureGrade = lectureGrade
@@ -304,6 +311,7 @@ export async function POST(request: Request) {
         updates.finalExam = examGrade
         if (laboratoryGrade !== undefined) updates.finalLaboratoryGrade = laboratoryGrade
         updates.tentativeFinalGrade = periodGrade
+        updates.finalTransmuted = transmuteGrade(periodGrade, Object.keys(transmutationTable).length > 0 ? transmutationTable : undefined)
 
         const existingMidtermGrade = g.midtermGrade as number | undefined
         if (existingMidtermGrade !== undefined && existingMidtermGrade > 0) {

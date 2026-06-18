@@ -168,7 +168,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
     const percentile = Number(gradeForm.finalPercentile)
     if (Number.isNaN(percentile)) return
 
-    const transmuted = percentile >= 97 ? 1.0 : percentile >= 94 ? 1.25 : percentile >= 91 ? 1.5 : percentile >= 88 ? 1.75 : percentile >= 85 ? 2.0 : percentile >= 82 ? 2.25 : percentile >= 79 ? 2.5 : percentile >= 76 ? 2.75 : 3.0
+    const transmuted = percentile >= 97 ? 1.0 : percentile >= 94 ? 1.25 : percentile >= 91 ? 1.5 : percentile >= 88 ? 1.75 : percentile >= 85 ? 2.0 : percentile >= 82 ? 2.25 : percentile >= 79 ? 2.5 : percentile >= 76 ? 2.75 : percentile >= 75 ? 3.0 : percentile >= 72 ? 4.0 : 5.0
 
     const curriculumSubject = studentCurriculum?.terms
       .flatMap((t) => t.subjects)
@@ -219,7 +219,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
     const percentile = Number(gradeForm.finalPercentile)
     if (Number.isNaN(percentile)) return
 
-    const transmuted = percentile >= 97 ? 1.0 : percentile >= 94 ? 1.25 : percentile >= 91 ? 1.5 : percentile >= 88 ? 1.75 : percentile >= 85 ? 2.0 : percentile >= 82 ? 2.25 : percentile >= 79 ? 2.5 : percentile >= 76 ? 2.75 : 3.0
+    const transmuted = percentile >= 97 ? 1.0 : percentile >= 94 ? 1.25 : percentile >= 91 ? 1.5 : percentile >= 88 ? 1.75 : percentile >= 85 ? 2.0 : percentile >= 82 ? 2.25 : percentile >= 79 ? 2.5 : percentile >= 76 ? 2.75 : percentile >= 75 ? 3.0 : percentile >= 72 ? 4.0 : 5.0
 
     const entry: GradeHistoryEntry = {
       subjectCode: gradeForm.subjectCode,

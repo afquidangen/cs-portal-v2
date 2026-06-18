@@ -917,7 +917,6 @@ export function usePortalDashboardModel(role: Role) {
       const d = json.data
       setUsers(d.users ?? users)
       setFaculty(d.faculty ?? faculty)
-      setGrades(d.grades ?? grades)
       setTheses(d.theses ?? theses)
       setSeminars(d.seminars ?? seminars)
       setTickets(d.tickets ?? tickets)
