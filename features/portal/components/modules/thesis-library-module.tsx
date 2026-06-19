@@ -127,9 +127,6 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
             <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
               Thesis Library
             </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Browse, search, and download Computing Studies thesis manuscripts by title, author, adviser, year, or research category.
-            </p>
           </div>
         </div>
       </section>

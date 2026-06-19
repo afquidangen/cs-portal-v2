@@ -10,7 +10,7 @@ export function SaveStatusIndicator({
   status: SaveStatus
   lastSaved: string | null
 }) {
-  if (status === "idle") return null
+  if (status === "idle" && !lastSaved) return null
 
   return (
     <div className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs shadow-sm">
@@ -23,13 +23,20 @@ export function SaveStatusIndicator({
         <>
           <CheckCircle2 className="size-3.5 text-emerald-500" />
           <span className="text-emerald-600 dark:text-emerald-400">
-            Saved{lastSaved ? ` at ${lastSaved}` : ""}
+            Saved at {lastSaved}
           </span>
         </>
-      ) : (
+      ) : status === "failed" ? (
         <>
           <CloudOff className="size-3.5 text-red-500" />
           <span className="text-red-600 dark:text-red-400">Failed to Save</span>
+        </>
+      ) : (
+        <>
+          <Cloud className="size-3.5 text-muted-foreground" />
+          <span className="text-muted-foreground">
+            Saved at {lastSaved}
+          </span>
         </>
       )}
     </div>

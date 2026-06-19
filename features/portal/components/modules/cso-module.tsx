@@ -287,18 +287,19 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
               </a>
             </Button>
           </div>
-          <div className="w-full">
+          <div className="flex justify-center">
             <iframe
-              src={`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(model.csoInfo.facebookLink)}&tabs=timeline&width=500&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`}
-              width="100%"
-              height="500"
-              className="h-[400px] sm:h-[500px]"
+              src={`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(model.csoInfo.facebookLink)}&tabs=timeline&width=500&height=600&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`}
+              width="500"
+              height="600"
+              className="w-full max-w-[500px] h-[400px] sm:h-[500px]"
               style={{ border: "none", overflow: "hidden", display: "block" }}
               scrolling="no"
               frameBorder={0}
               allowFullScreen
               allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
               title="CSSO Facebook Page"
+              loading="lazy"
             />
           </div>
         </div>

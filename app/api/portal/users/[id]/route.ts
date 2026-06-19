@@ -71,7 +71,7 @@ export async function PUT(
       delete body.currentPassword
     }
 
-    const updated = await usersRepository.update({ id }, { $set: body })
+    const updated = await usersRepository.update({ id }, body)
     if (!updated) return notFound("User")
     return success(updated)
   } catch (err) {

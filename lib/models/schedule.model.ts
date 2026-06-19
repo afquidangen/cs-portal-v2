@@ -9,6 +9,7 @@ export interface ISchedule extends Document {
   room: string
   instructor: string
   section: string
+  curriculumId?: string
 }
 
 if (mongoose.models.Schedule) {
@@ -25,6 +26,7 @@ const ScheduleSchema = new Schema<ISchedule>(
     room: String,
     instructor: String,
     section: String,
+    curriculumId: String,
   },
   { timestamps: true }
 )

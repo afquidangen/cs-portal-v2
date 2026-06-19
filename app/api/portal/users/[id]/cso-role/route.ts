@@ -22,7 +22,7 @@ export async function PATCH(
     const updated = body.action === "assign"
       ? currentRoles.includes("csso_officer") ? currentRoles : [...currentRoles, "csso_officer"]
       : currentRoles.filter((r) => r !== "csso_officer")
-    const result = await usersRepository.update({ id }, { $set: { roles: updated } })
+    const result = await usersRepository.update({ id }, { roles: updated })
     if (!result) return notFound("User")
     return success({ roles: updated })
   } catch (err) {

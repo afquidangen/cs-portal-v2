@@ -10,6 +10,7 @@ export interface IFaculty extends Document {
   status: string
   notes: string
   schedule: string[]
+  statusUpdatedAt?: string
 }
 
 const FacultySchema = new Schema<IFaculty>(
@@ -27,6 +28,7 @@ const FacultySchema = new Schema<IFaculty>(
     },
     notes: { type: String, default: "" },
     schedule: [{ type: String }],
+    statusUpdatedAt: { type: String },
   },
   { timestamps: true }
 )

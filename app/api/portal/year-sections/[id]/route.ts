@@ -24,7 +24,7 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const entry = await yearSectionsRepository.update({ id }, { $set: body })
+    const entry = await yearSectionsRepository.update({ id }, body)
     if (!entry) return notFound("Year section")
     return success(entry)
   } catch (err) {

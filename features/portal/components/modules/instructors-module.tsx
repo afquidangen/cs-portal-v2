@@ -1,13 +1,13 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { BookOpen, CheckCircle2, Clock, DoorOpen, GraduationCap, Mail, RefreshCw, ShieldCheck, Trash2, UserRoundCheck, Users } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Panel } from "../shared/dashboard-ui"
-import type { FacultyRecord } from "../../data/portal-data"
+import type { AvailabilityStatus, FacultyRecord } from "../../data/portal-data"
 import type { PortalModuleProps } from "./types"
 
 const STATUS_COLORS: Record<string, { icon: typeof CheckCircle2; className: string }> = {
@@ -29,6 +29,26 @@ const STATUS_COLORS: Record<string, { icon: typeof CheckCircle2; className: stri
   },
 }
 
+const STATUS_FILTERS: { label: string; value: AvailabilityStatus | "All" }[] = [
+  { label: "All", value: "All" },
+  { label: "Available", value: "Available" },
+  { label: "In Class", value: "In Class" },
+  { label: "Consultation", value: "Consultation Only" },
+  { label: "Out of Office", value: "Out of Office" },
+]
+
+function timeAgo(dateStr?: string): string {
+  if (!dateStr) return ""
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return "Just now"
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  return `${days}d ago`
+}
+
 function getInitials(name: string) {
   return name
     .split(" ")
@@ -39,7 +59,15 @@ function getInitials(name: string) {
 }
 
 export function InstructorsModule({ model }: PortalModuleProps) {
-  const { faculty, users, deleteFacultyMember, syncFacultyFromUsers, role } = model
+  const { faculty, users, visibleSchedules, deleteFacultyMember, syncFacultyFromUsers, role } = model
+
+  const [enrollmentFilter, setEnrollmentFilter] = useState("All")
+  const [statusFilter, setStatusFilter] = useState<AvailabilityStatus | "All">("All")
+
+  const myInstructorNames = useMemo(() => {
+    if (role !== "student") return new Set<string>()
+    return new Set(visibleSchedules.map((s) => s.instructor))
+  }, [visibleSchedules, role])
 
   const userByEmail = useMemo(() => {
     const map = new Map<string, (typeof users)[number]>()
@@ -69,12 +97,29 @@ export function InstructorsModule({ model }: PortalModuleProps) {
         email: user?.email ?? fr.email,
         education: fr.education,
         status: fr.status,
+        statusUpdatedAt: fr.statusUpdatedAt,
         notes: fr.notes,
         schedule: fr.schedule,
         photoUrl: user?.photoUrl,
       }
     })
   }, [faculty, userByEmail])
+
+  const enrollmentFilterOptions = useMemo(() => {
+    if (role !== "student") return ["All"]
+    return ["All", "My Instructors"]
+  }, [role])
+
+  const visibleFaculty = useMemo(() => {
+    let filtered = mergedFaculty
+    if (enrollmentFilter === "My Instructors" && role === "student") {
+      filtered = filtered.filter((m) => myInstructorNames.has(m.name))
+    }
+    if (statusFilter !== "All") {
+      filtered = filtered.filter((m) => m.status === statusFilter)
+    }
+    return filtered
+  }, [mergedFaculty, enrollmentFilter, statusFilter, myInstructorNames, role])
 
   function handleDelete(id: string, name: string) {
     model.setPendingConfirm({
@@ -107,9 +152,6 @@ export function InstructorsModule({ model }: PortalModuleProps) {
               <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
                 Instructor Information
               </h3>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Faculty directory with current teaching status, academic background, and contact details.
-              </p>
             </div>
           </div>
           {role === "admin" ? (
@@ -125,8 +167,44 @@ export function InstructorsModule({ model }: PortalModuleProps) {
           ) : null}
         </div>
 
+        <div className="flex flex-wrap items-center gap-3">
+          {role === "student" ? (
+            <div className="flex flex-wrap gap-1.5">
+              {enrollmentFilterOptions.map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => setEnrollmentFilter(opt)}
+                  className={
+                    opt === enrollmentFilter
+                      ? "rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm"
+                      : "rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                  }
+                >
+                  {opt === "All" ? "All Instructors" : "My Instructors"}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <div className="flex flex-wrap gap-1.5">
+            {STATUS_FILTERS.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setStatusFilter(tab.value)}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                  statusFilter === tab.value
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
       <div className="grid gap-4 lg:grid-cols-2">
-        {mergedFaculty.length === 0 ? (
+        {visibleFaculty.length === 0 ? (
           <div className="col-span-full rounded-2xl border border-dashed border-border bg-muted/20 py-10 text-center">
             <UserRoundCheck className="mx-auto size-8 text-muted-foreground" />
             <p className="mt-3 text-sm font-medium text-foreground">No faculty accounts found.</p>
@@ -135,7 +213,7 @@ export function InstructorsModule({ model }: PortalModuleProps) {
             </p>
           </div>
         ) : (
-          mergedFaculty.map((member) => {
+          visibleFaculty.map((member) => {
             const statusColor = STATUS_COLORS[member.status] ?? STATUS_COLORS["Out of Office"]
             const StatusIcon = statusColor.icon
             return (
@@ -162,10 +240,17 @@ export function InstructorsModule({ model }: PortalModuleProps) {
                         {member.position}
                       </p>
                     </div>
-                    <span className={cn("shrink-0 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold", statusColor.className)}>
-                      <StatusIcon className="size-3.5" />
-                      {member.status}
-                    </span>
+                    <div className="flex shrink-0 flex-col items-end gap-0.5">
+                      <span className={cn("inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold", statusColor.className)}>
+                        <StatusIcon className="size-3.5" />
+                        {member.status}
+                      </span>
+                      {member.statusUpdatedAt ? (
+                        <span className="text-[10px] text-muted-foreground/50 whitespace-nowrap">
+                          Updated {timeAgo(member.statusUpdatedAt)}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
 
                   <div className="space-y-1.5 text-sm text-foreground/80">

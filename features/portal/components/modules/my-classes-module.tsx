@@ -1,9 +1,9 @@
 "use client"
 
-import { useMemo } from "react"
-import { BookOpen, CalendarDays, Clock, GraduationCap, Layers3 } from "lucide-react"
+import { useMemo, useState } from "react"
+import { BookOpen, CalendarDays, Clock, GraduationCap, Layers3, UserRound } from "lucide-react"
 
-import { Panel, StatusBadge } from "../shared/dashboard-ui"
+import { Panel, Select } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
 export function MyClassesModule({ model }: PortalModuleProps) {
@@ -26,14 +26,53 @@ export function MyClassesModule({ model }: PortalModuleProps) {
     [enrolledSchedules]
   )
 
-  const groupedByDay = useMemo(() => {
-    const days = ["M", "T", "W", "Th", "F"]
-    const grouped: Record<string, typeof enrolledSchedules> = {}
-    for (const day of days) {
-      grouped[day] = enrolledSchedules.filter((s) => s.day.split(/\s+/).includes(day))
-    }
-    return grouped
+  const [instructorFilter, setInstructorFilter] = useState("All")
+
+  const instructorOptions = useMemo(() => {
+    const names = [...new Set(enrolledSchedules.map((s) => s.instructor))].sort()
+    return ["All", ...names]
   }, [enrolledSchedules])
+
+  const timetableSchedules = useMemo(() => {
+    if (instructorFilter === "All") return enrolledSchedules
+    return enrolledSchedules.filter((s) => s.instructor === instructorFilter)
+  }, [enrolledSchedules, instructorFilter])
+
+  const DAYS_LONG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+  const DAYS_SHORT = ["M", "T", "W", "Th", "F"]
+
+  function parseTimeToMinutes(timeStr: string): number {
+    const m = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i)
+    if (!m) return 0
+    let h = parseInt(m[1]); const min = parseInt(m[2]); const p = m[3].toUpperCase()
+    if (p === "PM" && h !== 12) h += 12
+    if (p === "AM" && h === 12) h = 0
+    return h * 60 + min
+  }
+
+  function getStartTime(range: string): string { return range.split(" - ")[0]?.trim() ?? "" }
+
+  const DAY_INDEX: Record<string, number> = { M: 0, T: 1, W: 2, Th: 3, F: 4 }
+
+  const timeSlots = useMemo(() => {
+    const set = new Set<string>()
+    timetableSchedules.forEach((s) => set.add(getStartTime(s.time)))
+    return Array.from(set).sort((a, b) => parseTimeToMinutes(a) - parseTimeToMinutes(b))
+  }, [timetableSchedules])
+
+  const scheduleGrid = useMemo(() => {
+    const grid: (typeof timetableSchedules)[][] = timeSlots.map(() => DAYS_SHORT.map(() => [] as typeof timetableSchedules))
+    const timeIndex = new Map(timeSlots.map((t, i) => [t, i]))
+    for (const s of timetableSchedules) {
+      const row = timeIndex.get(getStartTime(s.time))
+      if (row === undefined) continue
+      for (const d of s.day.split(/\s+/)) {
+        const col = DAY_INDEX[d]
+        if (col !== undefined) grid[row][col].push(s)
+      }
+    }
+    return grid
+  }, [timetableSchedules, timeSlots])
 
   const hasNoSection = !section
   const hasNoSchedules = enrolledSchedules.length === 0
@@ -54,9 +93,6 @@ export function MyClassesModule({ model }: PortalModuleProps) {
             <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
               My Schedule
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              View your enrolled subjects, class times, instructors, and room assignments in one organized schedule.
-            </p>
           </div>
         </div>
       </section>
@@ -151,33 +187,59 @@ export function MyClassesModule({ model }: PortalModuleProps) {
             </div>
           </Panel>
 
-          {/* Weekly Schedule Grid */}
+          {/* Weekly Schedule Timetable */}
           <Panel
             title="Weekly Class Schedule"
-            eyebrow="Day by day overview"
+            eyebrow="Timetable view"
           >
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-              {Object.entries(groupedByDay).map(([day, classes]) => (
-                <div key={day} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h4 className="font-semibold text-foreground">{day}</h4>
-                    <StatusBadge value={`${classes.length}`} />
-                  </div>
-                  {classes.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No classes</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {classes.map((item) => (
-                        <div key={item.id} className="rounded-xl border border-border bg-muted/30 p-2.5 text-sm">
-                          <p className="font-medium text-foreground">{item.subject}</p>
-                          <p className="text-xs text-foreground/70">{item.time}</p>
-                          <p className="text-xs text-foreground/60">{item.room} &bull; {item.instructor}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+            {instructorOptions.length > 1 ? (
+              <div className="mb-4 w-56">
+                <div className="flex items-center gap-2">
+                  <UserRound className="size-4 shrink-0 text-muted-foreground" />
+                  <Select
+                    value={instructorFilter}
+                    onChange={setInstructorFilter}
+                    options={instructorOptions}
+                    displayValue={instructorFilter === "All" ? "All Instructors" : instructorFilter}
+                  />
                 </div>
-              ))}
+              </div>
+            ) : null}
+
+            <div className="overflow-x-auto rounded-2xl border border-border shadow-sm">
+              <table className="w-full min-w-[800px] text-left text-sm">
+                <thead className="bg-muted text-foreground">
+                  <tr className="border-b border-border">
+                    <th className="w-32 px-4 py-3.5 text-xs font-semibold uppercase tracking-wide text-foreground/80">Time</th>
+                    {DAYS_LONG.map((day) => (
+                      <th key={day} className="px-4 py-3.5 text-xs font-semibold uppercase tracking-wide text-foreground/80">{day}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border bg-card">
+                  {timeSlots.map((slot, row) => (
+                    <tr key={slot} className="transition-colors hover:bg-muted/20">
+                      <td className="whitespace-nowrap px-4 py-4 text-sm font-medium text-muted-foreground">{slot}</td>
+                      {scheduleGrid[row].map((items, col) => (
+                        <td key={col} className="px-3 py-2.5 align-top">
+                          {items.length === 0 ? (
+                            <span className="block pt-2 text-center text-xs text-muted-foreground/20">&mdash;</span>
+                          ) : (
+                            <div className="space-y-2">
+                              {items.map((item) => (
+                                <div key={item.id} className="rounded-lg border-l-[3px] border-l-primary/40 border border-border/60 bg-muted/20 px-3 py-2.5">
+                                  <p className="text-sm font-semibold leading-snug text-foreground">{item.subject}</p>
+                                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground/75">{item.room} &bull; {item.instructor}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </Panel>
         </>

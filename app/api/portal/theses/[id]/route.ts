@@ -25,7 +25,7 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const thesis = await thesesRepository.update({ id }, { $set: body })
+    const thesis = await thesesRepository.update({ id }, body)
     if (!thesis) return notFound("Thesis")
     return success(thesis)
   } catch (err) {

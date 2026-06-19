@@ -24,7 +24,7 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const ticket = await feedbackRepository.update({ id }, { $set: body })
+    const ticket = await feedbackRepository.update({ id }, body)
     if (!ticket) return notFound("Feedback ticket")
     return success(ticket)
   } catch (err) {

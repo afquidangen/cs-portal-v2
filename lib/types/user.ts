@@ -31,7 +31,7 @@ export type UserRecord = {
   birthday?: string
   address?: string
   photoUrl?: string
-  studentType?: "Irregular" | "Regular" | "Overstayed" | "Transferee" | "Shifter"
+  studentType?: "Irregular" | "Regular" | "Transferee" | "Shifter"
   curriculum?: string
   curriculumId?: string
   currentYearLevel?: string

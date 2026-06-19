@@ -184,6 +184,10 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
         remarks: grade?.remarks,
         midtermRemarks: grade?.midtermRemarks,
         finalRemarks: grade?.finalRemarks,
+        midtermReleased: grade?.midtermReleased,
+        finalReleased: grade?.finalReleased,
+        midtermReleaseHistory: grade?.midtermReleaseHistory,
+        finalReleaseHistory: grade?.finalReleaseHistory,
         workflowStatus: grade?.workflowStatus || "Draft",
       }
     })
@@ -211,10 +215,6 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
           <h3 className="mt-2 text-2xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
             E-Grades
           </h3>
-          <p className="mt-3 max-w-2xl text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6">
-            Edit grades directly in the table. Supports keyboard navigation, copy/paste, sorting, filtering, and auto-save.
-            Switch between Midterm and Final periods to enter period-specific scores.
-          </p>
         </div>
       </div>
 

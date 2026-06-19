@@ -140,9 +140,6 @@ export function ProfileModule({ model }: PortalModuleProps) {
             <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
               My Profile
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Manage your personal details, profile photo, and account security settings.
-            </p>
           </div>
         </div>
       </section>

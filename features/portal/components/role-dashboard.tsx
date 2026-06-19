@@ -152,6 +152,7 @@ export function RoleDashboard({ role }: { role: Role }) {
         model.setAuditLogs(d.auditLogs ?? model.auditLogs)
         model.setGalleryItems(d.gallery ?? model.galleryItems)
         model.setCsoInfo(d.csoInfo ?? model.csoInfo)
+        model.setGrades(d.grades ?? model.grades)
         setDataLoading(false)
       } catch (err) {
         if (!cancelled) {
@@ -192,6 +193,7 @@ export function RoleDashboard({ role }: { role: Role }) {
           model.setAuditLogs(d.auditLogs ?? model.auditLogs)
           model.setGalleryItems(d.gallery ?? model.galleryItems)
           model.setCsoInfo(d.csoInfo ?? model.csoInfo)
+          model.setGrades(d.grades ?? model.grades)
         })
         .catch(() => {})
     }
@@ -591,7 +593,7 @@ export function RoleDashboard({ role }: { role: Role }) {
   const facultyActiveStudents = model.facultyClassStudents.filter((s: { enrolled: boolean; id: string; section: string }) => {
     if (!s.enrolled) return false
     const studentUser = model.users.find((u: { id: string; studentType?: string }) => u.id === s.id)
-    if (studentUser?.studentType && ["Irregular", "Transferee", "Shifter", "Overstayed"].includes(studentUser.studentType)) {
+    if (studentUser?.studentType && ["Irregular", "Transferee", "Shifter"].includes(studentUser.studentType)) {
       const sectionGrades = model.grades.filter(
         (g: { studentId: string; section: string; remarks?: string }) =>
           g.studentId === s.id && g.section === model.selectedClassSection

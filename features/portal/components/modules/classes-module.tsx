@@ -248,6 +248,26 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
     return semesters.find((s) => s.id === semesterId)?.semester ?? ""
   }
 
+  const curriculumOptions = useMemo(() => curricula.map((c) => c.name), [curricula])
+
+  function getCurriculumId(name: string): string {
+    return curricula.find((c) => c.name === name)?.id ?? ""
+  }
+
+  function getSubjectsForCurriculum(curriculumId: string, year: string, semesterType: string): string[] {
+    const curriculum = curricula.find((c) => c.id === curriculumId)
+    if (!curriculum) return []
+    const results: string[] = []
+    for (const term of curriculum.terms) {
+      if (term.year === year && term.semester === semesterType) {
+        for (const sub of term.subjects) {
+          results.push(`${sub.code} - ${sub.name}`)
+        }
+      }
+    }
+    return results
+  }
+
   const instructorOptions = useMemo(() => users.filter((u) => u.role === "faculty").map((u) => u.name), [users])
 
   const semesterLabels = useMemo(
@@ -827,7 +847,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
               setScheduleDraft((c) => ({
                 ...c,
                 semesterId: selectedSemesterId,
-                day: "", time: "", subject: "", room: "", instructor: "", section: "",
+                day: "", time: "", subject: "", room: "", instructor: "", section: "", curriculumId: "",
               }))
             }
             if (!o) setAddScheduleOpen(false)
@@ -850,7 +870,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                         value={addScheduleYear}
                         onChange={(v) => {
                           setAddScheduleYear(v)
-                          setScheduleDraft((c) => ({ ...c, section: "" }))
+                          setScheduleDraft((c) => ({ ...c, section: "", curriculumId: "" }))
                         }}
                         options={yearOptionsList}
                       />
@@ -866,6 +886,16 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
+                      <p className="mb-1.5 text-sm font-medium text-foreground">Curriculum *</p>
+                      <Select
+                        value={curricula.find((c) => c.id === scheduleDraft.curriculumId)?.name ?? ""}
+                        onChange={(value) => {
+                          setScheduleDraft((c) => ({ ...c, curriculumId: getCurriculumId(value), subject: "" }))
+                        }}
+                        options={curriculumOptions}
+                      />
+                    </div>
+                    <div>
                       <p className="mb-1.5 text-sm font-medium text-foreground">Instructor *</p>
                       <Select
                         value={scheduleDraft.instructor}
@@ -873,19 +903,24 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                         options={instructorOptions}
                       />
                     </div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <p className="mb-1.5 text-sm font-medium text-foreground">Subject *</p>
                       <Select
                         value={scheduleDraft.subject}
                         onChange={(value) => setScheduleDraft((c) => ({ ...c, subject: value }))}
                         options={
-                          addScheduleYear && selectedSemesterId
+                          addScheduleYear && selectedSemesterId && scheduleDraft.curriculumId
+                            ? getSubjectsForCurriculum(scheduleDraft.curriculumId, addScheduleYear, getSemesterType(selectedSemesterId))
+                            : addScheduleYear && selectedSemesterId
                             ? getCurriculumSubjects(addScheduleYear, getSemesterType(selectedSemesterId))
                             : curriculumSubjectOptions
                         }
                         contentClassName="max-h-48 overflow-y-auto"
                       />
                     </div>
+                    <div />
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
@@ -1004,6 +1039,14 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
+                        <p className="mb-1.5 text-sm font-medium text-foreground">Curriculum</p>
+                        <Select
+                          value={curricula.find((c) => c.id === editingSchedule.curriculumId)?.name ?? ""}
+                          onChange={(value) => setEditingSchedule((c) => ({ ...c!, curriculumId: getCurriculumId(value) }))}
+                          options={curriculumOptions}
+                        />
+                      </div>
+                      <div>
                         <p className="mb-1.5 text-sm font-medium text-foreground">Instructor</p>
                         <Select
                           value={editingSchedule.instructor}
@@ -1011,24 +1054,30 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                           options={instructorOptions}
                         />
                       </div>
-                    <div>
-                      <p className="mb-1.5 text-sm font-medium text-foreground">Subject</p>
-                      <Select
-                        value={editingSchedule.subject}
-                        onChange={(value) => setEditingSchedule((c) => ({ ...c!, subject: value }))}
-                        options={
-                          (() => {
-                            const editYear = yearSections.find((y) => y.sections.includes(editingSchedule.section))?.year
-                            const editSemesterType = getSemesterType(editingSchedule.semesterId)
-                            return editYear && editSemesterType
-                              ? getCurriculumSubjects(editYear, editSemesterType)
-                              : curriculumSubjectOptions
-                          })()
-                        }
-                        contentClassName="max-h-48 overflow-y-auto"
-                      />
                     </div>
-                  </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <p className="mb-1.5 text-sm font-medium text-foreground">Subject *</p>
+                        <Select
+                          value={editingSchedule.subject}
+                          onChange={(value) => setEditingSchedule((c) => ({ ...c!, subject: value }))}
+                          options={
+                            (() => {
+                              const editYear = yearSections.find((y) => y.sections.includes(editingSchedule.section))?.year
+                              const editSemesterType = getSemesterType(editingSchedule.semesterId)
+                              if (editYear && editSemesterType && editingSchedule.curriculumId) {
+                                return getSubjectsForCurriculum(editingSchedule.curriculumId, editYear, editSemesterType)
+                              }
+                              return editYear && editSemesterType
+                                ? getCurriculumSubjects(editYear, editSemesterType)
+                                : curriculumSubjectOptions
+                            })()
+                          }
+                          contentClassName="max-h-48 overflow-y-auto"
+                        />
+                      </div>
+                      <div />
+                    </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
                         <p className="mb-1.5 text-sm font-medium text-foreground">Days</p>

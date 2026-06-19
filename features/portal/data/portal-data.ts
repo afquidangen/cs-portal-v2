@@ -39,7 +39,7 @@ export type UserRecord = {
   address?: string
   photoUrl?: string
   cloudinaryPublicId?: string
-  studentType?: "Irregular" | "Regular" | "Overstayed" | "Transferee" | "Shifter"
+  studentType?: "Irregular" | "Regular" | "Transferee" | "Shifter"
   curriculum?: string
   curriculumId?: string
   currentYearLevel?: string
@@ -68,6 +68,7 @@ export type FacultyRecord = {
   status: AvailabilityStatus
   notes: string
   schedule: string[]
+  statusUpdatedAt?: string
   photoUrl?: string
 }
 
@@ -102,6 +103,10 @@ export type GradeRecord = {
   finalTerm?: number
   gradePercentage?: number
   remarks?: string
+  midtermReleased?: boolean
+  finalReleased?: boolean
+  midtermReleaseHistory?: Array<{ action: "released" | "unreleased" | "re-released"; reason?: string; timestamp: string }>
+  finalReleaseHistory?: Array<{ action: "released" | "unreleased" | "re-released"; reason?: string; timestamp: string }>
   released?: boolean
   deletedAt?: string | null
   updatedAt: string
@@ -187,6 +192,7 @@ export type ScheduleItem = {
   room: string
   instructor: string
   section: string
+  curriculumId?: string
 }
 
 export type CurriculumTerm = {
@@ -229,6 +235,11 @@ export type ClassStudent = {
   firstName?: string
   middleName?: string
   lastName?: string
+  curriculumId?: string
+  curriculum?: string
+  currentYearLevel?: string
+  currentSemester?: string
+  studentType?: string
 }
 
 export type CsoReport = {

@@ -9,6 +9,12 @@ export type CategoryGrade = {
 
 export type GradeWorkflowStatus = "Draft" | "Submitted" | "Reviewed" | "Approved" | "Locked"
 
+export type ReleaseHistoryEntry = {
+  action: "released" | "unreleased" | "re-released"
+  reason?: string
+  timestamp: string
+}
+
 export type GradeRecord = {
   id: string
   studentId: string
@@ -51,6 +57,10 @@ export type GradeRecord = {
   finalTerm?: number
   gradePercentage?: number
 
+  midtermReleased?: boolean
+  finalReleased?: boolean
+  midtermReleaseHistory?: ReleaseHistoryEntry[]
+  finalReleaseHistory?: ReleaseHistoryEntry[]
   workflowStatus?: GradeWorkflowStatus
   released?: boolean
   gradingSchemeId?: string

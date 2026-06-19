@@ -10,6 +10,7 @@ export type FacultyRecord = {
   status: AvailabilityStatus
   notes: string
   schedule: string[]
+  statusUpdatedAt?: string
   createdAt?: string
   updatedAt?: string
 }

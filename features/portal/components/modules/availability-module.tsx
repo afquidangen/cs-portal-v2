@@ -91,6 +91,18 @@ function StatusSummary({ faculty }: { faculty: PortalModuleProps["model"]["facul
   )
 }
 
+function timeAgo(dateStr?: string): string {
+  if (!dateStr) return ""
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return "Just now"
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  return `${days}d ago`
+}
+
 function FacultyCard({
   member,
   showSchedule = true,
@@ -127,10 +139,17 @@ function FacultyCard({
               </p>
             </div>
           </div>
-          <span className={cn("shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-bold", statusUi.className)}>
-            <StatusIcon className="mr-1 inline-block size-3.5" />
-            {member.status}
-          </span>
+          <div className="flex shrink-0 flex-col items-end gap-0.5">
+            <span className={cn("rounded-lg px-2.5 py-1.5 text-xs font-bold", statusUi.className)}>
+              <StatusIcon className="mr-1 inline-block size-3.5" />
+              {member.status}
+            </span>
+            {member.statusUpdatedAt ? (
+              <span className="text-[10px] text-muted-foreground/50 whitespace-nowrap">
+                Updated {timeAgo(member.statusUpdatedAt)}
+              </span>
+            ) : null}
+          </div>
         </div>
         {member.notes ? (
           <p className="mt-2 line-clamp-2 text-xs leading-5 text-foreground/70">{member.notes}</p>
@@ -400,9 +419,6 @@ export function FacultyAvailabilityPanel({ model }: PortalModuleProps) {
               <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
                 My Status
               </h3>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Update your availability so students and staff can quickly see when you are reachable.
-              </p>
             </div>
           </div>
         </div>

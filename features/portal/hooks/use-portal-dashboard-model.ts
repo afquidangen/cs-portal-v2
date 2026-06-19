@@ -37,7 +37,7 @@ import {
 } from "../data/portal-data"
 import type { CsoInfoRecord, SemesterRecord, SubjectRecord } from "@/lib/types"
 import { csvEscape, downloadFile } from "../lib/downloads"
-import { calculateFinalGrade, transmutedToEquivalent } from "../lib/grades"
+import { calculateFinalGrade, computeDeansList, transmutedToEquivalent } from "../lib/grades"
 import { parseGradeWorkbook, parseScheduleWorkbook } from "../lib/xlsx"
 import type { ModuleId } from "../types/navigation"
 
@@ -243,6 +243,7 @@ export function usePortalDashboardModel(role: Role) {
     room: "",
     instructor: "",
     section: "",
+    curriculumId: "",
   })
   const [showAddSemesterForm, setShowAddSemesterForm] = useState(false)
   const [showAddSubjectForm, setShowAddSubjectForm] = useState(false)
@@ -384,7 +385,10 @@ export function usePortalDashboardModel(role: Role) {
         changed = true
         const newEntries = missing.map((u) => ({
           id: u.id, name: u.name, section: u.section ?? "", enrolled: u.status === "Active",
-          firstName: u.firstName, middleName: u.middleName, lastName: u.lastName
+          firstName: u.firstName, middleName: u.middleName, lastName: u.lastName,
+          curriculumId: u.curriculumId, curriculum: u.curriculum,
+          currentYearLevel: u.currentYearLevel, currentSemester: u.currentSemester,
+          studentType: u.studentType,
         }))
         return [...newEntries, ...updated]
       }
@@ -605,8 +609,7 @@ export function usePortalDashboardModel(role: Role) {
       grades.filter(
         (grade) =>
           grade.studentId === profile.id &&
-          grade.released === true &&
-          grade.remarks !== "Passed"
+          grade.released === true
       ),
     [grades, profile.id]
   )
@@ -771,14 +774,19 @@ export function usePortalDashboardModel(role: Role) {
 
   function downloadGradeReport() {
     const rows = [
-      ["Subject", "Code", "Units", "Midterm", "Final Term", "Final Grade"],
+      ["Subject", "Code", "Units", "Midterm", "Mid. Remarks", "Final Term", "Fin. Remarks", "Grade %", "Final Rating", "Equivalent", "Status"],
       ...studentGrades.map((grade) => [
         grade.subject,
         grade.code,
         grade.units,
-        grade.midterm,
-        grade.finalTerm,
-        calculateFinalGrade(grade),
+        grade.midtermReleased && grade.midtermGrade !== undefined ? grade.midtermGrade.toFixed(2) : "",
+        grade.midtermReleased && grade.midtermRemarks ? grade.midtermRemarks : "",
+        grade.finalReleased && grade.tentativeFinalGrade !== undefined ? grade.tentativeFinalGrade.toFixed(2) : "",
+        grade.finalReleased && grade.finalRemarks ? grade.finalRemarks : "",
+        grade.finalReleased && grade.finalGrade !== undefined ? grade.finalGrade.toFixed(2) : "",
+        grade.finalReleased && grade.finalGrade !== undefined ? grade.finalGrade.toFixed(0) : "",
+        grade.finalReleased && grade.transmutedGrade !== undefined ? grade.transmutedGrade.toFixed(2) : "",
+        grade.finalReleased ? (grade.remarks || "Passed") : "",
       ]),
     ]
     downloadFile(
@@ -786,6 +794,123 @@ export function usePortalDashboardModel(role: Role) {
       rows.map((row) => row.map(csvEscape).join(",")).join("\n")
     )
   }
+
+  function downloadGradeReportDocument() {
+    const first = studentGrades[0]
+    const studentName = first?.student ?? profile.name
+    const studentSection = first?.section ?? profileSection
+    const rows = studentGrades.map((grade) => {
+      const midterm = grade.midtermReleased && grade.midtermGrade !== undefined ? grade.midtermGrade.toFixed(2) : "—"
+      const midRem = grade.midtermReleased && grade.midtermRemarks ? grade.midtermRemarks : "—"
+      const finalTerm = grade.finalReleased && grade.tentativeFinalGrade !== undefined ? grade.tentativeFinalGrade.toFixed(2) : "—"
+      const finRem = grade.finalReleased && grade.finalRemarks ? grade.finalRemarks : "—"
+      const gPct = grade.finalReleased && grade.finalGrade !== undefined ? grade.finalGrade.toFixed(2) : "—"
+      const rating = grade.finalReleased && grade.finalGrade !== undefined ? grade.finalGrade.toFixed(0) : "—"
+      const equiv = grade.finalReleased && grade.transmutedGrade !== undefined ? grade.transmutedGrade.toFixed(2) : "—"
+      const status = grade.finalReleased ? (grade.remarks || "Passed") : "—"
+      return `<tr>
+        <td>${escHtml(grade.subject)}</td>
+        <td>${escHtml(grade.code)}</td>
+        <td class="num">${grade.units}</td>
+        <td class="num">${midterm}</td>
+        <td class="num">${midRem}</td>
+        <td class="num">${finalTerm}</td>
+        <td class="num">${finRem}</td>
+        <td class="num">${gPct}</td>
+        <td class="num">${rating}</td>
+        <td class="num">${equiv}</td>
+        <td class="num">${status}</td>
+      </tr>`
+    }).join("\n")
+
+    const gwa = gradeAverage !== "N/A" ? gradeAverage : "—"
+    const activeSem = semesters.find((s) => s.status === "Active")
+    const syLabel = activeSem ? `S.Y. ${activeSem.schoolYearStart}-${activeSem.schoolYearEnd}` : ""
+    const deansResult = computeDeansList(studentGrades, profileUser?.studentType, profileUser?.currentYearLevel)
+    const deansHtml = deansResult.gwa !== null ? (
+      deansResult.eligible
+        ? `<p style="margin-top:0;font-size:16px;font-weight:700;color:#16a34a;">Dean's List</p>
+           <p style="margin-top:4px;font-size:13px;color:#64748b;">Congrats, you're qualified for the Dean's List for the semester.</p>`
+        : deansResult.reasons.length > 0
+          ? `<p style="margin-top:0;font-size:13px;color:#94a3b8;font-style:italic;">${escHtml(deansResult.reasons[0])}</p>`
+          : ""
+    ) : ""
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Grade Report — ${escHtml(studentName)}</title>
+<style>
+  @page { margin: 0.75in 0.5in; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Calibri','Segoe UI',Arial,sans-serif; font-size: 12px; color: #1e293b; padding: 40px; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+  .info-grid { display: flex; gap: 40px; margin-bottom: 28px; font-size: 13px; }
+  .info-grid div { display: flex; flex-direction: column; gap: 2px; }
+  .info-grid .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: #94a3b8; font-weight: 600; }
+  .info-grid .value { font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  th { background: #f1f5f9; text-align: left; padding: 8px 6px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #475569; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+  td { padding: 7px 6px; border-bottom: 1px solid #e2e8f0; }
+  td.num { text-align: center; }
+  .gwa-section { margin-top: 28px; display: flex; align-items: baseline; gap: 12px; }
+  .gwa-section .gwa-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: #94a3b8; font-weight: 600; }
+  .gwa-section .gwa-value { font-size: 28px; font-weight: 800; }
+  .deans-section { margin-top: 16px; }
+  @media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+  <h1>Grade Report</h1>
+  <p class="subtitle">Computer Studies Department — Student Records</p>
+  <div class="info-grid">
+    <div>
+      <span class="label">Student Name</span>
+      <span class="value">${escHtml(studentName)}</span>
+    </div>
+    <div>
+      <span class="label">Section</span>
+      <span class="value">${escHtml(studentSection)}</span>
+    </div>
+    <div>
+      <span class="label">School Year</span>
+      <span class="value">${escHtml(syLabel)}</span>
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>Code</th>
+        <th>Units</th>
+        <th>Midterm</th>
+        <th>Mid. Remarks</th>
+        <th>Final Term</th>
+        <th>Fin. Remarks</th>
+        <th>Grade %</th>
+        <th>Rating</th>
+        <th>Equivalent</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows}
+    </tbody>
+  </table>
+  <div class="gwa-section">
+    <span class="gwa-label">GWA</span>
+    <span class="gwa-value">${gwa}</span>
+  </div>
+  ${deansHtml ? `<div class="deans-section">${deansHtml}</div>` : ""}
+</body>
+</html>`
+
+    downloadFile("student-grade-report.htm", html, "text/html")
+  }
+
+  function escHtml(s: string) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;") }
 
   function downloadGradeTemplate() {
     const rows = [
@@ -933,6 +1058,7 @@ export function usePortalDashboardModel(role: Role) {
       setDownloadables(d.downloadables ?? downloadables)
       setAuditLogs(d.auditLogs ?? auditLogs)
       setGalleryItems(d.gallery ?? galleryItems)
+      setGrades(d.grades ?? grades)
     } catch {
       // Silently fail
     }
@@ -1218,14 +1344,15 @@ export function usePortalDashboardModel(role: Role) {
     status: AvailabilityStatus,
     notes?: string
   ) {
+    const now = new Date().toISOString()
     setFaculty((current) =>
       current.map((member) =>
         member.id === facultyId
-          ? { ...member, status, notes: notes ?? member.notes }
+          ? { ...member, status, notes: notes ?? member.notes, statusUpdatedAt: now }
           : member
       )
     )
-    syncApi("PUT", `/api/portal/faculty/${facultyId}`, { status, notes }).then(() =>
+    syncApi("PUT", `/api/portal/faculty/${facultyId}`, { status, notes, statusUpdatedAt: now }).then(() =>
       toast.success("Faculty status updated.")
     ).catch((e) => {
       toast.error("Failed to update faculty status.")
@@ -1423,9 +1550,9 @@ export function usePortalDashboardModel(role: Role) {
       setRoster((current) => {
         const exists = current.some((s) => s.id === accountId)
         if (exists) return current
-        return [{ id: accountId, name: fullName, section: newUser.section, enrolled: true }, ...current]
+        return [{ id: accountId, name: fullName, section: newUser.section, enrolled: true, studentType: newUser.studentType }, ...current]
       })
-      syncApi("POST", "/api/portal/roster", { id: accountId, name: fullName, section: newUser.section, enrolled: true }).catch((e) =>
+      syncApi("POST", "/api/portal/roster", { id: accountId, name: fullName, section: newUser.section, enrolled: true, studentType: newUser.studentType }).catch((e) =>
         console.error(`Failed to sync roster for ${fullName}:`, e)
       )
     }
@@ -1626,11 +1753,11 @@ export function usePortalDashboardModel(role: Role) {
       setRoster((current) => {
         const exists = current.some((item) => item.id === updatedUser.id)
         if (!exists) {
-          return [{ id: updatedUser.id, name: updatedUser.name, section, enrolled: updatedUser.status === "Active" }, ...current]
+          return [{ id: updatedUser.id, name: updatedUser.name, section, enrolled: updatedUser.status === "Active", curriculumId: updatedUser.curriculumId, curriculum: updatedUser.curriculum, currentYearLevel: updatedUser.currentYearLevel, currentSemester: updatedUser.currentSemester, studentType: updatedUser.studentType }, ...current]
         }
         return current.map((item) =>
           item.id === updatedUser.id
-            ? { ...item, name: updatedUser.name, section, firstName: updatedUser.firstName, middleName: updatedUser.middleName, lastName: updatedUser.lastName }
+            ? { ...item, name: updatedUser.name, section, firstName: updatedUser.firstName, middleName: updatedUser.middleName, lastName: updatedUser.lastName, curriculumId: updatedUser.curriculumId, curriculum: updatedUser.curriculum, currentYearLevel: updatedUser.currentYearLevel, currentSemester: updatedUser.currentSemester, studentType: updatedUser.studentType }
             : item
         )
       })
@@ -1641,7 +1768,14 @@ export function usePortalDashboardModel(role: Role) {
             : grade
         )
       )
-      syncApi("PUT", `/api/portal/roster/${updatedUser.id}`, { name: updatedUser.name, section }).catch((e) =>
+      syncApi("PUT", `/api/portal/roster/${updatedUser.id}`, {
+        name: updatedUser.name, section,
+        curriculumId: updatedUser.curriculumId,
+        curriculum: updatedUser.curriculum,
+        currentYearLevel: updatedUser.currentYearLevel,
+        currentSemester: updatedUser.currentSemester,
+        studentType: updatedUser.studentType,
+      }).catch((e) =>
         console.error(`Failed to sync roster for ${updatedUser.id}:`, e)
       )
       for (const grade of grades) {
@@ -1757,6 +1891,14 @@ export function usePortalDashboardModel(role: Role) {
       )
     )
 
+    setRoster((current) =>
+      current.map((r) =>
+        r.id === studentId
+          ? { ...r, curriculumId: newCurriculumId, curriculum: newCurriculumLabel, currentYearLevel: newYearLevel, currentSemester: newSemester }
+          : r
+      )
+    )
+
     addAuditLog(
       `Changed curriculum for "${student.name}" from ${student.curriculum ?? "N/A"} to ${newCurriculumLabel}`
     )
@@ -1772,6 +1914,14 @@ export function usePortalDashboardModel(role: Role) {
       toast.error("Failed to change curriculum.")
       console.error(e)
     })
+    syncApi("PUT", `/api/portal/roster/${studentId}`, {
+      curriculumId: newCurriculumId,
+      curriculum: newCurriculumLabel,
+      currentYearLevel: newYearLevel,
+      currentSemester: newSemester,
+    }).catch((e) =>
+      console.error(`Failed to sync roster for ${studentId}:`, e)
+    )
   }
 
   function handleAddGradeHistory(studentId: string, entry: GradeHistoryEntry) {
@@ -2158,6 +2308,7 @@ export function usePortalDashboardModel(role: Role) {
       room: scheduleDraft.room.trim() || "TBA",
       instructor: scheduleDraft.instructor.trim() || profile.name,
       section: sectionStr,
+      curriculumId: scheduleDraft.curriculumId || undefined,
     }
     setClassSchedules((current) => [newItem, ...current])
     syncApi("POST", "/api/portal/schedules", newItem).then(() =>
@@ -2203,6 +2354,7 @@ export function usePortalDashboardModel(role: Role) {
       room: "",
       instructor: "",
       section: activeClassSection,
+      curriculumId: "",
     })
     addAuditLog(`Created schedule for "${scheduleDraft.subject}" (${scheduleDraft.section})`)
   }
@@ -3157,6 +3309,7 @@ export function usePortalDashboardModel(role: Role) {
     selectModule,
     handleLogout,
     downloadGradeReport,
+    downloadGradeReportDocument,
     downloadGradeTemplate,
     downloadUserTemplate,
     downloadAttendees,
@@ -3219,6 +3372,8 @@ export function usePortalDashboardModel(role: Role) {
     handleAddGradeHistory,
     handleRemoveGradeHistory,
     handleUpdateGradeHistory,
+    profileStudentType: profileUser?.studentType,
+    profileCurrentYearLevel: profileUser?.currentYearLevel,
     handleAddUser,
     handleFeedbackSubmit,
     handleCreateEvent,

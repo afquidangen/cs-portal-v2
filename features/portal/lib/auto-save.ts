@@ -20,7 +20,7 @@ export function useAutoSave(saveFn: (data: unknown) => Promise<void>, delay = 80
     try {
       await saveFn(data)
       setStatus("saved")
-      setLastSaved(new Date().toLocaleTimeString())
+      setLastSaved(new Date().toLocaleTimeString("en-PH", { timeZone: "Asia/Manila" }))
     } catch {
       setStatus("failed")
     } finally {

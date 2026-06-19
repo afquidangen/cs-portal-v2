@@ -5,10 +5,9 @@ import { Award, BarChart3, BookMarked, ClipboardList, Download, FileSpreadsheet,
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-
 import {
   gradeRemarkOptions,
-  transmutedToEquivalent,
+  computeDeansList,
 } from "../../lib/grades"
 import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
@@ -320,35 +319,14 @@ function computeGradeRecord(record: GradeRecord, scheme: GradingScheme, entries:
 }
 
 export function GradesModule({ model }: PortalModuleProps) {
-  const { downloadGradeReport, allStudentGrades, studentGrades } = model
+  const { downloadGradeReport, downloadGradeReportDocument, allStudentGrades, studentGrades } = model
 
-  const visibleAllGrades = useMemo(
-    () => allStudentGrades.filter((g) => !(g.remarks === "Passed" && g.released)),
-    [allStudentGrades]
+  const visibleAllGrades = allStudentGrades
+
+  const deansListData = useMemo(
+    () => computeDeansList(studentGrades, model.profileStudentType, model.profileCurrentYearLevel),
+    [studentGrades, model.profileStudentType, model.profileCurrentYearLevel]
   )
-
-  function gradePercentile(g: GradeRecord): number | undefined {
-    return g.finalGrade ?? g.transmutedGrade
-  }
-
-  const gwaData = useMemo(() => {
-    const graded = studentGrades.filter(
-      (g) => g.finalGrade !== undefined || g.transmutedGrade !== undefined
-    )
-    if (graded.length === 0) return null
-    const totalUnits = graded.reduce((sum, g) => sum + (g.units || 0), 0)
-    const weightedSum = graded.reduce(
-      (sum, g) => sum + (gradePercentile(g) ?? 0) * (g.units || 0),
-      0
-    )
-    const gwa = Number((weightedSum / totalUnits).toFixed(2))
-    const equivalent = transmutedToEquivalent(gwa)
-    let honors: string | null = null
-    if (equivalent >= 1.0 && equivalent <= 1.19) honors = "With Highest Honors"
-    else if (equivalent >= 1.2 && equivalent <= 1.44) honors = "With High Honors"
-    else if (equivalent >= 1.45 && equivalent <= 1.75) honors = "Dean's Lister"
-    return { gwa, totalUnits, equivalent, honors }
-  }, [studentGrades])
 
   if (model.role === "faculty") {
     return <FacultyGradesPanel model={model} />
@@ -371,13 +349,16 @@ export function GradesModule({ model }: PortalModuleProps) {
           <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
             Grades & Report
           </h3>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Review your released grades, academic standing, equivalent marks, and downloadable grade report.
-          </p>
-          <Button size="sm" onClick={downloadGradeReport} className="mt-4 rounded-lg">
-            <Download className="size-4" />
-            Download CSV
-          </Button>
+          <div className="mt-4 flex gap-2">
+            <Button size="sm" onClick={downloadGradeReport} className="rounded-lg">
+              <Download className="size-4" />
+              Download CSV
+            </Button>
+            <Button size="sm" onClick={downloadGradeReportDocument} variant="outline" className="rounded-lg">
+              <FileSpreadsheet className="size-4" />
+              Download Document
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -391,14 +372,14 @@ export function GradesModule({ model }: PortalModuleProps) {
           },
           {
             label: "Total Units",
-            value: gwaData ? String(gwaData.totalUnits) : "0",
+            value: String(studentGrades.reduce((s, g) => s + (g.units || 0), 0)),
             note: "Released graded units",
             icon: BookMarked,
           },
           {
             label: "GWA Equivalent",
-            value: gwaData ? gwaData.equivalent.toFixed(2) : "N/A",
-            note: gwaData?.honors ?? "Awaiting complete grades",
+            value: deansListData.gwa !== null ? deansListData.gwa.toFixed(2) : "N/A",
+            note: deansListData.honors ?? (deansListData.reasons.length > 0 ? deansListData.reasons[0] : "Awaiting complete grades"),
             icon: Award,
           },
         ].map((item) => {
@@ -421,32 +402,39 @@ export function GradesModule({ model }: PortalModuleProps) {
         })}
       </div>
 
-      {gwaData && (
-        <div className="mb-5 flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card px-5 py-3 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      {deansListData.gwa !== null && (
+        <div className="mb-6 rounded-2xl border border-border/80 bg-gradient-to-b from-card to-muted/20 p-8 shadow-sm">
+          <div className="flex flex-col items-center gap-2 text-center">
+            <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground/50">
               GWA
             </p>
-            <p className="mt-1 text-2xl font-bold text-foreground">
-              {gwaData.equivalent.toFixed(2)}
+            <p className="text-4xl font-extrabold tracking-tight text-foreground">
+              {deansListData.gwa.toFixed(2)}
             </p>
+            {deansListData.eligible ? (
+              <div className="mt-5 flex flex-col items-center gap-2">
+                <div className="inline-flex items-center gap-2.5 rounded-full border border-green-200 bg-green-50 px-6 py-2.5 shadow-sm dark:border-green-700 dark:bg-green-950/20">
+                  <Award className="size-6 text-green-600 dark:text-green-400" />
+                  <span className="text-lg font-bold text-green-700 dark:text-green-300">
+                    Dean's Lister
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Congratulations, CStizen! You're qualified for the Dean's List for the semester.
+                </p>
+              </div>
+            ) : deansListData.reasons.length > 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground/60 italic">
+                {deansListData.reasons[0]}
+              </p>
+            ) : null}
           </div>
-
-          {gwaData.honors && (
-            <div className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 shadow-sm dark:border-amber-800 dark:bg-amber-950">
-              <Award className="size-5 text-amber-600 dark:text-amber-400" />
-              <span className="text-sm font-semibold text-amber-800 dark:text-amber-200">
-                {gwaData.honors}
-              </span>
-            </div>
-          )}
         </div>
       )}
 
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <h4 className="text-base font-bold text-foreground">Grade Records</h4>
-          <p className="text-sm text-muted-foreground">Released grades display full scores; active subjects remain in progress.</p>
         </div>
       </div>
 
@@ -464,10 +452,19 @@ export function GradesModule({ model }: PortalModuleProps) {
                 Midterm
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                Mid. Remarks
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
                 Final Term
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                Fin. Remarks
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
                 Grade %
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                Final Rating
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
                 Equivalent
@@ -482,7 +479,7 @@ export function GradesModule({ model }: PortalModuleProps) {
             {visibleAllGrades.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={10}
                   className="px-4 py-12 text-center text-sm text-muted-foreground"
                 >
                   No grade records yet.
@@ -500,43 +497,64 @@ export function GradesModule({ model }: PortalModuleProps) {
                     </td>
                     <td className="px-4 py-3 text-foreground/80">{grade.units}</td>
 
-                    {grade.released ? (
-                      <>
-                        <td className="px-4 py-3 text-foreground/80">
-                          {grade.midtermGrade !== undefined ? grade.midtermGrade.toFixed(2) : "N/A"}
-                        </td>
-                        <td className="px-4 py-3 text-foreground/80">
-                          {grade.tentativeFinalGrade !== undefined ? grade.tentativeFinalGrade.toFixed(2) : "N/A"}
-                        </td>
-                        <td className="px-4 py-3 text-foreground/80">
-                          {grade.finalGrade !== undefined ? grade.finalGrade.toFixed(2) : "N/A"}
-                        </td>
-                        <td className="px-4 py-3 font-semibold text-foreground">
-                          {grade.transmutedGrade !== undefined ? grade.transmutedGrade.toFixed(2) : "N/A"}
-                        </td>
-                        <td className="px-4 py-3">
-                          <StatusBadge value={grade.remarks || "Passed"} />
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-4 py-3 text-foreground/40">&mdash;</td>
-                        <td className="px-4 py-3 text-foreground/40">&mdash;</td>
-                        <td className="px-4 py-3 text-foreground/40">&mdash;</td>
-                        <td className="px-4 py-3 text-foreground/40">&mdash;</td>
-                        <td className="px-4 py-3">
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                            IN PROGRESS
-                          </span>
-                        </td>
-                      </>
-                    )}
+                    {/* Midterm Grade */}
+                    <td className="px-4 py-3 text-foreground/80">
+                      {grade.midtermReleased && grade.midtermGrade !== undefined
+                        ? grade.midtermGrade.toFixed(2)
+                        : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
+                    </td>
+                    {/* Mid. Remarks */}
+                    <td className="px-4 py-3">
+                      {grade.midtermReleased && grade.midtermRemarks
+                        ? <StatusBadge value={grade.midtermRemarks} />
+                        : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
+                    </td>
+                    {/* Tentative Final */}
+                    <td className="px-4 py-3 text-foreground/80">
+                      {grade.finalReleased && grade.tentativeFinalGrade !== undefined
+                        ? grade.tentativeFinalGrade.toFixed(2)
+                        : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
+                    </td>
+                    {/* Fin. Remarks */}
+                    <td className="px-4 py-3">
+                      {grade.finalReleased && grade.finalRemarks
+                        ? <StatusBadge value={grade.finalRemarks} />
+                        : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
+                    </td>
+                    {/* Percentile */}
+                    <td className="px-4 py-3 text-foreground/80">
+                      {grade.finalReleased && grade.finalGrade !== undefined
+                        ? grade.finalGrade.toFixed(2)
+                        : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
+                    </td>
+                    {/* Final Rating */}
+                    <td className="px-4 py-3 text-foreground/80">
+                      {grade.finalReleased && grade.finalGrade !== undefined
+                        ? grade.finalGrade.toFixed(0)
+                        : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
+                    </td>
+                    {/* Transmuted */}
+                    <td className="px-4 py-3 font-semibold text-foreground">
+                      {grade.finalReleased && grade.transmutedGrade !== undefined
+                        ? grade.transmutedGrade.toFixed(2)
+                        : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
+                    </td>
+                    {/* Remarks */}
+                    <td className="px-4 py-3">
+                      {grade.finalReleased
+                        ? <StatusBadge value={grade.remarks || "Passed"} />
+                        : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
+                    </td>
                   </tr>
                 )
               })
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-6 rounded-xl border border-border/60 bg-muted/30 px-5 py-4 text-xs leading-relaxed text-muted-foreground">
+        <strong className="font-semibold text-foreground/80">Important Disclaimer:</strong> The grades displayed on this portal are for informational purposes only and do not constitute an official academic record. The Final Report issued and signed by the College Registrar remains the sole official documentation of your grades. In the event of any discrepancy between this digital preview and the official report, the Registrar's record shall prevail.
       </div>
     </Panel>
   )
@@ -565,6 +583,7 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
   const [studentQuery, setStudentQuery] = useState("")
   const [gradingSchemes, setGradingSchemes] = useState<GradingScheme[]>([])
   const [transmutationTables, setTransmutationTables] = useState<TransmutationTable[]>([])
+
 
   useEffect(() => {
     let cancelled = false
@@ -745,9 +764,6 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
           <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
             Manage Grades
           </h3>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Select a subject, encode student grades, upload grade sheets, and release finalized records to students.
-          </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button size="sm" onClick={downloadGradeTemplate} className="rounded-lg">
               <Download className="size-4" />
@@ -962,6 +978,7 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
           </div>
         )
       )}
+
     </Panel>
   )
 }

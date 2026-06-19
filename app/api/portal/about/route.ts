@@ -99,7 +99,7 @@ export async function PUT(request: Request) {
 
     let saved
     if (existing) {
-      saved = await aboutRepository.update({ _id: existing._id }, { $set: data })
+      saved = await aboutRepository.update({ _id: existing._id }, data)
     } else {
       saved = await aboutRepository.create(data)
     }

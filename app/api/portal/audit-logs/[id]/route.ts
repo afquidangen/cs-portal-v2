@@ -24,7 +24,7 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const log = await auditLogsRepository.update({ id }, { $set: body })
+    const log = await auditLogsRepository.update({ id }, body)
     if (!log) return notFound("Audit log")
     return success(log)
   } catch (err) {

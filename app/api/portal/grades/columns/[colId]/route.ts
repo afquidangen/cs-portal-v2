@@ -40,7 +40,7 @@ export async function PATCH(
       return badRequest("No valid fields to update.")
     }
 
-    const updated = await gradeColumnRepository.update({ id: colId }, { $set: updates })
+    const updated = await gradeColumnRepository.update({ id: colId }, updates)
     if (!updated) return notFound("Column")
     return success(updated)
   } catch (err) {

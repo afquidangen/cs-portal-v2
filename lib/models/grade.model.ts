@@ -11,6 +11,12 @@ export interface ICategoryGrade {
   grade: number
 }
 
+export type ReleaseHistoryEntry = {
+  action: "released" | "unreleased" | "re-released"
+  reason?: string
+  timestamp: string
+}
+
 export interface IGrade extends Document {
   id: string
   studentId: string
@@ -53,6 +59,10 @@ export interface IGrade extends Document {
   finalTerm?: number
   gradePercentage?: number
 
+  midtermReleased?: boolean
+  finalReleased?: boolean
+  midtermReleaseHistory?: ReleaseHistoryEntry[]
+  finalReleaseHistory?: ReleaseHistoryEntry[]
   workflowStatus: GradeWorkflowStatus
   released: boolean
   gradingSchemeId?: string
@@ -120,6 +130,10 @@ const GradeSchema = new Schema<IGrade>(
     finalTerm: Number,
     gradePercentage: Number,
 
+    midtermReleased: { type: Boolean, default: false },
+    finalReleased: { type: Boolean, default: false },
+    midtermReleaseHistory: { type: [{ action: String, reason: String, timestamp: String }], default: [] },
+    finalReleaseHistory: { type: [{ action: String, reason: String, timestamp: String }], default: [] },
     workflowStatus: {
       type: String,
       enum: ["Draft", "Submitted", "Reviewed", "Approved", "Locked"],

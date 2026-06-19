@@ -1,33 +1,53 @@
 import { connectToDatabase } from "@/lib/mongodb"
 import { GradeModel, UserModel } from "@/lib/models"
 import { success, error, badRequest } from "@/lib/api-response"
-import {
-  computeAllCategoryGrades, computeClassStanding,
-  computeLaboratoryGrade, computePeriodGrade, computeFinalGrade,
-  transmuteGrade, getGradeRemarks,
-} from "@/features/portal/lib/grade-engine"
+import { transmuteGrade, getGradeRemarks } from "@/features/portal/lib/grade-engine"
 
 export const runtime = "nodejs"
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { section, subject } = body
-    if (!section || !subject) {
-      return badRequest("section and subject are required.")
+    const { classId, gradingPeriod } = body
+    if (!classId) {
+      return badRequest("classId is required.")
     }
 
     await connectToDatabase()
 
-    const grades = await GradeModel.find({ section, subject, released: { $ne: true } }).lean()
+    const filter: Record<string, unknown> = { classId }
+    if (gradingPeriod === "midterm") filter.midtermReleased = { $ne: true }
+    if (gradingPeriod === "final") filter.finalReleased = { $ne: true }
+
+    const grades = await GradeModel.find(filter).lean()
     if (grades.length === 0) {
-      return success({ modifiedCount: 0, message: "All grades already released." })
+      return success({ modifiedCount: 0, message: "All grades already released for this period." })
     }
 
-    await GradeModel.updateMany(
-      { section, subject },
-      { $set: { released: true, workflowStatus: "Approved" } }
-    )
+    const setFields: Record<string, unknown> = { released: true }
+    const timestamp = new Date().toISOString()
+    const historyEntry = { action: "released", timestamp }
+
+    if (gradingPeriod === "midterm") {
+      setFields.midtermReleased = true
+      await GradeModel.updateMany(filter, {
+        $set: setFields,
+        $push: { midtermReleaseHistory: historyEntry },
+      })
+    } else if (gradingPeriod === "final") {
+      setFields.finalReleased = true
+      await GradeModel.updateMany(filter, {
+        $set: setFields,
+        $push: { finalReleaseHistory: historyEntry },
+      })
+    } else {
+      setFields.midtermReleased = true
+      setFields.finalReleased = true
+      await GradeModel.updateMany(filter, {
+        $set: setFields,
+        $push: { midtermReleaseHistory: historyEntry, finalReleaseHistory: historyEntry },
+      })
+    }
 
     const studentMap = new Map<string, typeof grades>()
     for (const g of grades) {
@@ -79,7 +99,8 @@ export async function POST(request: Request) {
       }
     }
 
-    return success({ modifiedCount: grades.length })
+    const updatedGrades = await GradeModel.find({ classId, studentId: { $in: grades.map((g) => g.studentId) } }).lean()
+    return success({ modifiedCount: grades.length, grades: updatedGrades })
   } catch (err) {
     return error(err instanceof Error ? err.message : "Unable to release grades.")
   }

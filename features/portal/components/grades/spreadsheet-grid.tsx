@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
-  ChevronDown, Lock, CheckCircle2, Search, Calculator,
-  Send, XCircle, RotateCcw, Save,
+  ChevronDown, Lock, Unlock, CheckCircle2, Search, Calculator,
+  Send, XCircle, RotateCcw, Save, Megaphone,
 } from "lucide-react"
 import { AgGridReact } from "ag-grid-react"
 import type { ColDef, ColGroupDef, CellValueChangedEvent, ColumnResizedEvent, SelectionChangedEvent, GridReadyEvent, ColumnHeaderClickedEvent } from "ag-grid-community"
@@ -18,7 +18,7 @@ import { toast } from "sonner"
 
 import { Panel } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "../modules/types"
-import type { GradeRecord, GradeWorkflowStatus, GradeColumn, GradingPeriod, Assessment } from "@/lib/types"
+import type { GradeRecord, GradeWorkflowStatus, GradeColumn, GradingPeriod, Assessment, ReleaseHistoryEntry } from "@/lib/types"
 import { useAutoSave, type SaveStatus } from "../../lib/auto-save"
 import { computeLivePreview, gradeCategoryMatches, transmuteGrade } from "../../lib/grade-engine"
 import { gradeRemarkOptions } from "../../lib/grades"
@@ -49,6 +49,72 @@ function findGradeColumnBySelection(columns: GradeColumn[], selection: string): 
 
 function gradeColumnLabel(col: GradeColumn | undefined, fallback: string) {
   return col?.displayName || col?.name || fallback
+}
+
+function ReleaseDialog({
+  open, onOpenChange, onConfirm,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  onConfirm: (period: "midterm" | "final" | "both") => Promise<void>
+}) {
+  const [releaseMidterm, setReleaseMidterm] = useState(true)
+  const [releaseFinal, setReleaseFinal] = useState(true)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      setReleaseMidterm(true)
+      setReleaseFinal(true)
+      setLoading(false)
+    }
+  }, [open])
+
+  async function handleConfirm() {
+    const period = releaseMidterm && releaseFinal ? "both" : releaseMidterm ? "midterm" : "final"
+    setLoading(true)
+    await onConfirm(period)
+    setLoading(false)
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Release Grades</DialogTitle>
+          <DialogDescription>
+            Make grades visible to students. Select which periods to release.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <label className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5 hover:bg-muted/30">
+            <input type="checkbox" checked={releaseMidterm} onChange={(e) => setReleaseMidterm(e.target.checked)} className="size-4" />
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-foreground">Release Midterm Grade</span>
+              <span className="text-xs text-muted-foreground">Midterm Semester</span>
+            </div>
+          </label>
+          <label className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5 hover:bg-muted/30">
+            <input type="checkbox" checked={releaseFinal} onChange={(e) => setReleaseFinal(e.target.checked)} className="size-4" />
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-foreground">Release Final Grade</span>
+              <span className="text-xs text-muted-foreground">Finals Semester</span>
+            </div>
+          </label>
+          <p className="text-xs text-muted-foreground">
+            Students will see released period grades immediately.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-lg" disabled={loading}>Cancel</Button>
+          <Button onClick={handleConfirm} className="rounded-lg" disabled={!releaseMidterm && !releaseFinal || loading}>
+            {loading ? "Releasing..." : "Release"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 function EditMaxScoreDialog({
@@ -115,23 +181,10 @@ function StatusCellRenderer(params: { value: string }) {
   )
 }
 
-const remarkColors: Record<string, string> = {
-  Passed:
-    "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-  Failed:
-    "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
-  INC:
-    "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-  Dropped:
-    "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
-  "Unofficial Drop":
-    "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
-}
-
-function RemarksDropdownRenderer(params: { value: string; node: { setDataValue: (field: string, val: string) => void }; colDef: { colId?: string } }) {
+function RemarksDropdownRenderer(params: { value: string; node: { setDataValue: (field: string, val: string) => void }; colDef: { colId?: string }; data: { workflowStatus: string } }) {
   const val = params.value || ""
   const field = params.colDef?.colId || "remarks"
-  const colorClass = remarkColors[val] || ""
+  const isLocked = params.data?.workflowStatus === "Locked"
   const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
@@ -151,14 +204,106 @@ function RemarksDropdownRenderer(params: { value: string; node: { setDataValue: 
     <select
       value={val}
       onChange={onChange}
-      style={{ colorScheme: isDark ? "dark" : "light" }}
-      className={`w-full rounded-md border px-2 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary ${val ? colorClass : "border-border bg-white dark:bg-[#0f172a] text-muted-foreground"}`}
+      disabled={isLocked}
+      style={{ colorScheme: isDark ? "dark" : "light", backgroundColor: isDark ? "#1e293b" : "#fff", color: isDark ? "#fff" : "#000" }}
+      className={`w-full rounded-md border px-2 py-1 text-xs ${isLocked ? "cursor-not-allowed opacity-70" : ""}`}
     >
       <option value="">&mdash;</option>
       {gradeRemarkOptions.map((opt) => (
         <option key={opt} value={opt}>{opt}</option>
       ))}
     </select>
+  )
+}
+
+function ReleaseCellRenderer(params: { value: string; data: { studentName: string; studentId: string; midtermReleased?: boolean; finalReleased?: boolean }; colDef: { colId?: string } }) {
+  const val = params.value
+  const colId = params.colDef?.colId ?? ""
+  const period = colId.startsWith("midtermRelease") ? "midterm" : "final"
+  const released = period === "midterm" ? params.data.midtermReleased : params.data.finalReleased
+
+  if (!released) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-500">
+        Unreleased
+      </span>
+    )
+  }
+
+  const isReReleased = val === "Re-released"
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer ${
+      isReReleased ? "bg-orange-100 text-orange-700" : "bg-emerald-100 text-emerald-700"
+    }`}>
+      {val}
+    </span>
+  )
+}
+
+function UndoReleaseDialog({
+  open, onOpenChange, studentName, period, studentId, alreadyReleased, onConfirm,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  studentName: string
+  period: "midterm" | "final"
+  studentId: string
+  alreadyReleased: boolean
+  onConfirm: (studentId: string, period: "midterm" | "final", action: "release" | "unrelease", reason?: string) => Promise<void>
+}) {
+  const [reason, setReason] = useState("")
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (open) { setReason(""); setLoading(false) }
+  }, [open])
+
+  async function handleConfirm() {
+    if (alreadyReleased && !reason.trim()) return
+    setLoading(true)
+    await onConfirm(studentId, period, alreadyReleased ? "unrelease" : "release", reason.trim() || undefined)
+    setLoading(false)
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>
+            {alreadyReleased ? `Undo Release – ${period === "midterm" ? "Midterm" : "Final"}` : `Re-release – ${period === "midterm" ? "Midterm" : "Final"}`}
+          </DialogTitle>
+          <DialogDescription>
+            {alreadyReleased
+              ? `Unrelease ${period} grades for ${studentName}. The student will no longer see these grades.`
+              : `Re-release ${period} grades for ${studentName}. The student will see updated grades.`}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+            <span className="text-sm font-medium">{studentName}</span>
+          </div>
+          {alreadyReleased && (
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Reason for undoing release *</label>
+              <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                rows={3}
+                placeholder="Explain why you are undoing the release..."
+              />
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-lg" disabled={loading}>Cancel</Button>
+          <Button onClick={handleConfirm} className="rounded-lg" disabled={alreadyReleased && !reason.trim() || loading}>
+            {loading ? "Processing..." : alreadyReleased ? "Undo Release" : "Re-release"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -174,6 +319,8 @@ type LivePreviewEntry = {
   studentId: string
   classStanding: number
   examGrade: number
+  lectureGrade: number
+  laboratoryGrade?: number
   periodGrade: number
   categoryGrades: CategoryPreviewData[]
 }
@@ -194,6 +341,10 @@ type StudentGradeRow = {
   midtermRemarks?: string
   finalRemarks?: string
   workflowStatus: GradeWorkflowStatus
+  midtermReleased?: boolean
+  finalReleased?: boolean
+  midtermReleaseHistory?: ReleaseHistoryEntry[]
+  finalReleaseHistory?: ReleaseHistoryEntry[]
   liveClassStanding?: number
   liveExamGrade?: number
   livePeriodGrade?: number
@@ -258,11 +409,19 @@ export function SpreadsheetGrid({
   const [maxScoreDialogOpen, setMaxScoreDialogOpen] = useState(false)
   const [maxScoreColName, setMaxScoreColName] = useState("")
   const [maxScoreCurrent, setMaxScoreCurrent] = useState(0)
+  const [moreOpen, setMoreOpen] = useState(false)
+  const moreRef = useRef<HTMLDivElement>(null)
+  const [releaseOpen, setReleaseOpen] = useState(false)
+  const [releaseMidterm, setReleaseMidterm] = useState(true)
+  const [releaseFinal, setReleaseFinal] = useState(true)
+  const [releasing, setReleasing] = useState(false)
+  const [studentReleaseOpen, setStudentReleaseOpen] = useState(false)
+  const [studentReleaseTarget, setStudentReleaseTarget] = useState<{ studentId: string; studentName: string; period: "midterm" | "final"; alreadyReleased: boolean } | null>(null)
 
   const undoManager = useRef(new UndoRedoManager())
 
   const gradeMapRef = useRef(gradeMap)
-  const livePreviewDataRef = useRef<LivePreviewEntry[] | null>(null)
+  const [liveData, setLiveData] = useState<Map<string, LivePreviewEntry>>(new Map())
   const dataLoadedRef = useRef(false)
 
   useEffect(() => { gradeMapRef.current = gradeMap }, [gradeMap])
@@ -273,13 +432,9 @@ export function SpreadsheetGrid({
     return { instructor: schedule?.instructor ?? "", section: schedule?.section ?? "" }
   }, [classId, model.visibleSchedules])
 
-  // Force grid refresh once grade data first becomes available
   useEffect(() => {
     if (gradeMap.size > 0 && !dataLoadedRef.current) {
       dataLoadedRef.current = true
-      setTimeout(() => {
-        gridRef.current?.api?.refreshCells({ force: true })
-      }, 0)
     }
   }, [gradeMap])
 
@@ -313,6 +468,18 @@ export function SpreadsheetGrid({
     setSaveStatus(autoSave.status)
     setLastSaved(autoSave.lastSaved)
   }, [autoSave.status, autoSave.lastSaved])
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false)
+      }
+    }
+    if (moreOpen) {
+      document.addEventListener("mousedown", handleClick)
+      return () => document.removeEventListener("mousedown", handleClick)
+    }
+  }, [moreOpen])
 
   const filteredColumns = useMemo(() => {
     if (activeTab === "summary") return []
@@ -355,8 +522,8 @@ export function SpreadsheetGrid({
       subjectType: effectiveScheme?.subjectType ?? "Lecture",
       scores: {},
       categoryGrades: [],
-      workflowStatus: "Draft",
-      released: false,
+      workflowStatus: "Locked",
+      released: true,
       updatedAt: new Date().toISOString(),
     }
     setGrades((prev) => [newGrade, ...prev])
@@ -387,10 +554,6 @@ export function SpreadsheetGrid({
         )
       )
 
-      setTimeout(() => {
-        gridRef.current?.api?.refreshCells({ force: true })
-      }, 0)
-
       autoSave.schedule({ grades: [{ ...grade, scores: updatedScores }], cid: classId })
     } else if (colId?.startsWith("absences_")) {
       const catName = colId.replace("absences_", "")
@@ -408,10 +571,6 @@ export function SpreadsheetGrid({
             : g
         )
       )
-
-      setTimeout(() => {
-        gridRef.current?.api?.refreshCells({ force: true })
-      }, 0)
 
       autoSave.schedule({ grades: [{ ...grade, scores: updatedScores }], cid: classId })
     } else if (colId === "remarks" || colId === "midtermRemarks" || colId === "finalRemarks") {
@@ -509,6 +668,63 @@ export function SpreadsheetGrid({
       )
       toast.success(`Grades ${status.toLowerCase()}.`)
     } catch { toast.error("Failed to update status.") }
+  }
+
+  function isAllLocked() {
+    const studentIds = selectedRows.length > 0
+      ? selectedRows.map((r) => r.studentId)
+      : Array.from(gradeMap.values()).filter((g) => g.classId === classId).map((g) => g.studentId)
+    if (studentIds.length === 0) return false
+    return studentIds.every((sid) => gradeMap.get(sid)?.workflowStatus === "Locked")
+  }
+
+  async function handleToggleLock() {
+    const targetStatus = isAllLocked() ? "Draft" : "Locked"
+    await handleUpdateWorkflow(targetStatus)
+  }
+
+  async function handleRelease(period: "midterm" | "final" | "both") {
+    if (!classId) return
+    try {
+      const periods = period === "both" ? ["midterm", "final"] : [period]
+      let allUpdated: GradeRecord[] = []
+      for (const gradingPeriod of periods) {
+        const res = await fetch("/api/portal/grades/release", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ classId, gradingPeriod }),
+        })
+        const json = await res.json()
+        if (!res.ok) { toast.error(json.error || `Failed to release ${gradingPeriod} grades.`); return }
+        if (json.data?.grades) allUpdated = [...allUpdated, ...json.data.grades]
+      }
+      if (allUpdated.length > 0) {
+        const updatedMap = new Map(allUpdated.map((g: GradeRecord) => [g.studentId, g]))
+        setGrades((prev) => prev.map((g) => updatedMap.get(g.studentId) ?? g))
+      }
+      toast.success("Grades released successfully.")
+    } catch {
+      toast.error("Failed to release grades.")
+    }
+  }
+
+  async function handleStudentRelease(studentId: string, period: "midterm" | "final", action: "release" | "unrelease", reason?: string) {
+    if (!classId) return
+    try {
+      const res = await fetch("/api/portal/grades/student-release", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ classId, studentId, period, action, reason }),
+      })
+      const json = await res.json()
+      if (!res.ok) { toast.error(json.error || "Failed to update release status."); return }
+      if (json.data) {
+        setGrades((prev) => prev.map((g) => g.studentId === studentId ? { ...g, ...json.data } : g))
+      }
+      toast.success(action === "unrelease" ? "Grades unreleased." : "Grades re-released.")
+    } catch {
+      toast.error("Failed to update release status.")
+    }
   }
 
   async function handleExport() {
@@ -762,6 +978,8 @@ export function SpreadsheetGrid({
         studentId: row.studentId,
         classStanding: result.classStanding,
         examGrade: result.examGrade,
+        lectureGrade: result.lectureGrade,
+        laboratoryGrade: result.laboratoryGrade,
         periodGrade: result.periodGrade,
         categoryGrades: result.categoryGrades.map((cg) => ({
           category: cg.category,
@@ -774,7 +992,10 @@ export function SpreadsheetGrid({
     })
   }, [gridData, effectiveScheme, filteredColumns, periodAssessments, activeTab, gradeMap])
 
-  useEffect(() => { livePreviewDataRef.current = livePreviewData }, [livePreviewData])
+  useEffect(() => {
+    const map = new Map(livePreviewData?.map((e) => [e.studentId, e]) ?? [])
+    setLiveData(map)
+  }, [livePreviewData])
 
   const colDefs = useMemo((): (ColDef | ColGroupDef)[] => {
     const saved = columnWidths
@@ -803,6 +1024,44 @@ export function SpreadsheetGrid({
           valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 700 } },
         { headerName: "Status", field: "workflowStatus", width: 130, sortable: true, filter: "agTextColumnFilter",
           cellRenderer: StatusCellRenderer },
+        {
+          headerName: "Release", marryChildren: true,
+          headerClass: "ag-component-group-header",
+          children: [
+            { headerName: "Mid", colId: "midtermReleaseStatus", width: 100, sortable: true, filter: "agTextColumnFilter",
+              valueGetter: (params) => {
+                const row = params.data as StudentGradeRow
+                const history = row.midtermReleaseHistory ?? []
+                const lastAction = history.length > 0 ? history[history.length - 1].action : null
+                if (row.midtermReleased && lastAction === "re-released") return "Re-released"
+                if (row.midtermReleased) return "Released"
+                return "Unreleased"
+              },
+              cellRenderer: ReleaseCellRenderer,
+              onCellClicked: (params) => {
+                const row = params.data as StudentGradeRow
+                setStudentReleaseTarget({ studentId: row.studentId, studentName: row.studentName, period: "midterm", alreadyReleased: !!row.midtermReleased })
+                setStudentReleaseOpen(true)
+              },
+            },
+            { headerName: "Final", colId: "finalReleaseStatus", width: 100, sortable: true, filter: "agTextColumnFilter",
+              valueGetter: (params) => {
+                const row = params.data as StudentGradeRow
+                const history = row.finalReleaseHistory ?? []
+                const lastAction = history.length > 0 ? history[history.length - 1].action : null
+                if (row.finalReleased && lastAction === "re-released") return "Re-released"
+                if (row.finalReleased) return "Released"
+                return "Unreleased"
+              },
+              cellRenderer: ReleaseCellRenderer,
+              onCellClicked: (params) => {
+                const row = params.data as StudentGradeRow
+                setStudentReleaseTarget({ studentId: row.studentId, studentName: row.studentName, period: "final", alreadyReleased: !!row.finalReleased })
+                setStudentReleaseOpen(true)
+              },
+            },
+          ],
+        },
       ]
     }
 
@@ -821,7 +1080,10 @@ export function SpreadsheetGrid({
         width: saved[colId] ?? col.width ?? 120,
         sortable: true,
         filter: "agNumberColumnFilter",
-        editable: isEditable,
+        editable: (params) => {
+          if (!isEditable) return false
+          return (params.data as StudentGradeRow)?.workflowStatus !== "Locked"
+        },
         valueGetter: (params) => {
           const row = params.data as StudentGradeRow
           return row.scores?.[scoreKey(col)] ?? ""
@@ -909,7 +1171,10 @@ export function SpreadsheetGrid({
           width: saved[`absences_${catName}`] ?? 100,
           sortable: true,
           filter: "agNumberColumnFilter",
-          editable: isEditable,
+          editable: (params) => {
+            if (!isEditable) return false
+            return (params.data as StudentGradeRow)?.workflowStatus !== "Locked"
+          },
           valueGetter: (params) => {
             const row = params.data as StudentGradeRow
             return row.scores?.[`absences_${catKey}`] ?? ""
@@ -934,7 +1199,7 @@ export function SpreadsheetGrid({
           editable: false,
           valueGetter: (params) => {
             const row = params.data as StudentGradeRow
-            const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
+            const preview = liveData.get(row.studentId)
             if (!preview?.categoryGrades) return ""
             const match = preview.categoryGrades.find((cg) => gradeCategoryMatches(catName, cg.category))
             return match?.totalStudentScore ?? ""
@@ -953,7 +1218,7 @@ export function SpreadsheetGrid({
           editable: false,
           valueGetter: (params) => {
             const row = params.data as StudentGradeRow
-            const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
+            const preview = liveData.get(row.studentId)
             if (!preview?.categoryGrades) return ""
             const match = preview.categoryGrades.find((cg) => gradeCategoryMatches(catName, cg.category))
             return match?.totalStudentScore ?? ""
@@ -969,7 +1234,7 @@ export function SpreadsheetGrid({
           editable: false,
           valueGetter: (params) => {
             const row = params.data as StudentGradeRow
-            const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
+            const preview = liveData.get(row.studentId)
             if (!preview?.categoryGrades) return ""
             const match = preview.categoryGrades.find((cg) => gradeCategoryMatches(catName, cg.category))
             return match?.weightedScore ?? ""
@@ -1007,59 +1272,48 @@ export function SpreadsheetGrid({
       }
     }
 
-    const csColDef: ColDef = {
-      headerName: "Class Standing", field: "liveClassStanding", width: saved["liveClassStanding"] ?? 130, sortable: true, filter: "agNumberColumnFilter",
-      valueGetter: (params) => {
-        const row = params.data as StudentGradeRow
-        const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
-         return preview?.classStanding ?? ""
-       }, valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 500, backgroundColor: "color-mix(in srgb, var(--accent), transparent 50%)" },
-     }
-     const examColDef: ColDef = {
-       headerName: "Exam Grade", field: "liveExamGrade", width: saved["liveExamGrade"] ?? 110, sortable: true, filter: "agNumberColumnFilter",
+      const lectureColDef: ColDef = {
+        headerName: "Lecture Grade", width: saved["lectureGrade"] ?? 130, sortable: true, filter: "agNumberColumnFilter",
        valueGetter: (params) => {
          const row = params.data as StudentGradeRow
-         const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
-        return preview?.examGrade ?? ""
-      }, valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 500, backgroundColor: "color-mix(in srgb, var(--accent), transparent 50%)" },
-    }
+         const preview = liveData.get(row.studentId)
+         return preview?.lectureGrade ?? ""
+       }, valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 500, backgroundColor: "color-mix(in srgb, var(--accent), transparent 50%)" },
+     }
+     const labGradeColDef: ColDef = {
+       headerName: "Lab Grade", width: saved["labGrade"] ?? 130, sortable: true, filter: "agNumberColumnFilter",
+       valueGetter: (params) => {
+         const row = params.data as StudentGradeRow
+         const preview = liveData.get(row.studentId)
+         return preview?.laboratoryGrade ?? ""
+       }, valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 500, backgroundColor: "color-mix(in srgb, var(--accent), transparent 50%)" },
+     }
 
-    let csPlaced = false
-    let examPlaced = false
     for (const [compName, catGroups] of compCatGroups) {
       const compWt = compWeightMap.get(compName)
-      const isExam = compName.toLowerCase().includes("exam")
-      const extraCol = isExam ? (!examPlaced ? examColDef : null) : (!csPlaced ? csColDef : null)
-      if (extraCol === examColDef) examPlaced = true
-      if (extraCol === csColDef) csPlaced = true
-
-      const children: (ColDef | ColGroupDef)[] = extraCol ? [...catGroups, extraCol] : catGroups
-
-      if (catGroups.length === 1 && !extraCol) {
-        cols.push(...catGroups)
-      } else {
-        cols.push({
-          headerName: compWt != null ? `${compName} (${compWt}%)` : compName,
-          headerClass: "ag-component-group-header",
-          marryChildren: true,
-          children,
-        })
-      }
+      cols.push({
+        headerName: compWt != null ? `${compName} (${compWt}%)` : compName,
+        headerClass: "ag-component-group-header",
+        marryChildren: true,
+        children: catGroups,
+      })
     }
 
-    if (!csPlaced) cols.push(csColDef)
-    if (!examPlaced) cols.push(examColDef)
+    cols.push(lectureColDef)
+    if (effectiveScheme?.subjectType === "Lecture with Lab") {
+      cols.push(labGradeColDef)
+    }
     cols.push(
       { headerName: activeTab === "midterm" ? "Midterm Grade" : "Final Period Grade", field: "livePeriodGrade", width: saved["livePeriodGrade"] ?? 130, sortable: true, filter: "agNumberColumnFilter",
         valueGetter: (params) => {
           const row = params.data as StudentGradeRow
-           const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
+           const preview = liveData.get(row.studentId)
            return preview?.periodGrade ?? ""
          }, valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 700 } },
       { headerName: activeTab === "midterm" ? "Mid Transmuted" : "Final Transmuted", width: saved[activeTab === "midterm" ? "midtermTransmuted" : "finalTransmuted"] ?? 120, sortable: true, filter: "agNumberColumnFilter",
         valueGetter: (params) => {
           const row = params.data as StudentGradeRow
-          const preview = livePreviewDataRef.current?.find((p) => p.studentId === row.studentId)
+          const preview = liveData.get(row.studentId)
           const grade = preview?.periodGrade
           if (grade == null || grade <= 0) return ""
           return transmuteGrade(grade)
@@ -1068,10 +1322,50 @@ export function SpreadsheetGrid({
         cellRenderer: RemarksDropdownRenderer },
       { headerName: "Status", field: "workflowStatus", width: saved["workflowStatus"] ?? 130, sortable: true, filter: "agTextColumnFilter",
         cellRenderer: StatusCellRenderer },
+      {
+        headerName: "Release", marryChildren: true,
+        headerClass: "ag-component-group-header",
+        children: [
+          {
+            headerName: "Midterm", colId: "midtermReleaseStatus", width: 120, sortable: true, filter: "agTextColumnFilter",
+            valueGetter: (params) => {
+              const row = params.data as StudentGradeRow
+              const history = row.midtermReleaseHistory ?? []
+              const lastAction = history.length > 0 ? history[history.length - 1].action : null
+              if (row.midtermReleased && lastAction === "re-released") return "Re-released"
+              if (row.midtermReleased) return "Released"
+              return "Unreleased"
+            },
+            cellRenderer: ReleaseCellRenderer,
+            onCellClicked: (params) => {
+              const row = params.data as StudentGradeRow
+              setStudentReleaseTarget({ studentId: row.studentId, studentName: row.studentName, period: "midterm", alreadyReleased: !!row.midtermReleased })
+              setStudentReleaseOpen(true)
+            },
+          },
+          {
+            headerName: "Final", colId: "finalReleaseStatus", width: 120, sortable: true, filter: "agTextColumnFilter",
+            valueGetter: (params) => {
+              const row = params.data as StudentGradeRow
+              const history = row.finalReleaseHistory ?? []
+              const lastAction = history.length > 0 ? history[history.length - 1].action : null
+              if (row.finalReleased && lastAction === "re-released") return "Re-released"
+              if (row.finalReleased) return "Released"
+              return "Unreleased"
+            },
+            cellRenderer: ReleaseCellRenderer,
+            onCellClicked: (params) => {
+              const row = params.data as StudentGradeRow
+              setStudentReleaseTarget({ studentId: row.studentId, studentName: row.studentName, period: "final", alreadyReleased: !!row.finalReleased })
+              setStudentReleaseOpen(true)
+            },
+          },
+        ],
+      },
     )
 
     return cols
-  }, [filteredColumns, isEditable, activeTab, catWeightMap, compWeightMap, handleUpdateMaxScore, columnWidths, effectiveScheme])
+  }, [filteredColumns, isEditable, activeTab, catWeightMap, compWeightMap, handleUpdateMaxScore, columnWidths, effectiveScheme, liveData])
 
   const theme = useMemo(() => {
     return themeAlpine.withParams({
@@ -1188,15 +1482,15 @@ export function SpreadsheetGrid({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-border bg-card px-3 py-5 text-center shadow-sm sm:px-5 sm:py-6">
-        <h2 className="text-2xl font-black tracking-tight sm:text-3xl md:text-4xl">{selectedSubject.split(" - ")[0]?.trim()}</h2>
-        <hr className="mx-auto mt-2 w-16 border-t-2 border-primary/30 sm:w-24" />
-        <p className="mt-2 text-lg text-muted-foreground sm:text-xl md:text-2xl">{selectedSubject.split(" - ")[1]?.trim() ?? selectedSubject}</p>
+      <div className="rounded-xl border border-border bg-card px-4 py-5 text-center shadow-sm sm:px-6 sm:py-6">
+        <h2 className="text-xl font-black tracking-tight sm:text-2xl md:text-3xl">
+          {selectedSubject.split(" - ")[0]?.trim()}{selectedSubject.includes(" - ") ? ": " : ""}{selectedSubject.split(" - ")[1]?.trim() ?? selectedSubject}
+        </h2>
         {scheduleInfo.section && (
-          <p className="mt-1 text-sm font-semibold text-foreground/80 sm:text-base">{scheduleInfo.section}</p>
+          <p className="mt-2 text-sm font-semibold text-muted-foreground sm:text-base">{scheduleInfo.section}</p>
         )}
         {scheduleInfo.instructor && (
-          <p className="mt-1.5 text-xs text-muted-foreground/70 sm:text-sm">{scheduleInfo.instructor}</p>
+          <p className="mt-1.5 text-xs text-muted-foreground/60 sm:text-sm"><span className="font-medium">Faculty:</span> {scheduleInfo.instructor}</p>
         )}
         <div className="mt-3 flex items-center justify-center gap-2">
           <span className={`inline-block rounded-full px-3 py-0.5 text-xs font-bold uppercase tracking-wider ${
@@ -1206,7 +1500,13 @@ export function SpreadsheetGrid({
               ? "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300"
               : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
           }`}>
-            {activeTab === "midterm" ? "Midterm Grading Period" : activeTab === "final" ? "Final Grading Period" : "Summary"}
+            {(() => {
+            const active = (model.semesters as Array<{ semester: string; schoolYearStart: number; schoolYearEnd: number; status: string }>)?.find((s) => s.status === "Active")
+            const semLabel = active?.semester === "First Semester" ? "1st Semester" : active?.semester === "Second Semester" ? "2nd Semester" : active?.semester ?? ""
+            const sy = active ? `${active.schoolYearStart}-${active.schoolYearEnd}` : ""
+            const label = activeTab === "midterm" ? "Midterm" : activeTab === "final" ? "Finals" : "Midterm and Finals"
+            return sy ? `${label} | ${semLabel}, S.Y. ${sy}` : label
+          })()}
           </span>
         </div>
       </div>
@@ -1216,9 +1516,6 @@ export function SpreadsheetGrid({
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={studentQuery} onChange={(e) => setStudentQuery(e.target.value)}
             placeholder="Search students..." className="h-9 rounded-xl pl-9 text-sm" />
-        </div>
-        <div className="flex items-center gap-2">
-          <SaveStatusIndicator status={saveStatus} lastSaved={lastSaved} />
         </div>
       </div>
 
@@ -1247,12 +1544,13 @@ export function SpreadsheetGrid({
         saveStatus={saveStatus}
       />
 
-      <div className="rounded-xl border border-border shadow-sm overflow-hidden" style={{ width: "100%" }}>
+      <div className="rounded-xl border border-border shadow-sm" style={{ width: "100%" }}>
           <AgGridReact
             ref={gridRef}
             rowData={gridData}
             columnDefs={colDefs}
             domLayout="autoHeight"
+            suppressHorizontalScroll={true}
           defaultColDef={{
             resizable: true,
             sortable: true,
@@ -1277,32 +1575,58 @@ export function SpreadsheetGrid({
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-        <Button size="sm" variant="outline" onClick={() => autoSave.saveNow({ grades: Array.from(gradeMap.values()), cid: classId, showToast: true })} className="rounded-lg">
-          <Save className="size-3.5 sm:size-4" /> <span className="hidden sm:inline">Save</span>
-        </Button>
-        <span className="text-[11px] font-medium text-muted-foreground sm:text-xs">Workflow:</span>
+        {/* Data actions */}
         {activeTab !== "summary" && (
-          <Button size="sm" variant="default" onClick={() => handleComputeGrades(activeTab === "midterm" ? "midterm" : "final")} className="ml-auto rounded-lg shadow-sm ring-1 ring-primary/30">
-            <Calculator className="size-3.5 sm:size-4" /> Compute
+          <Button size="default" variant="default" onClick={() => handleComputeGrades(activeTab === "midterm" ? "midterm" : "final")} className="rounded-lg shadow-sm ring-1 ring-primary/30">
+            <Calculator className="size-4" /> Compute
           </Button>
         )}
-        <Button size="icon" variant="outline" onClick={() => handleUpdateWorkflow("Submitted")} className="size-8 rounded-lg sm:size-auto sm:px-3 sm:py-1.5" title="Submit">
-          <Send className="size-3.5" /> <span className="hidden sm:inline sm:ms-1.5">Submit</span>
+        <Button size="default" variant="outline" onClick={() => autoSave.saveNow({ grades: Array.from(gradeMap.values()), cid: classId, showToast: true })} className="rounded-lg shadow-sm">
+          <Save className="size-4" /> Save
         </Button>
-        <Button size="icon" variant="outline" onClick={() => handleUpdateWorkflow("Reviewed")} className="size-8 rounded-lg sm:size-auto sm:px-3 sm:py-1.5" title="Reviewed">
-          <CheckCircle2 className="size-3.5" /> <span className="hidden sm:inline sm:ms-1.5">Reviewed</span>
+        <SaveStatusIndicator status={saveStatus} lastSaved={lastSaved} />
+
+        {/* Divider */}
+        <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
+
+        {/* Workflow actions */}
+        <span className="text-[11px] font-medium text-muted-foreground sm:text-xs">Workflow:</span>
+        <Button size="default" variant="outline" onClick={() => handleUpdateWorkflow("Submitted")} className="rounded-lg">
+          <Send className="size-4" /> Submit
         </Button>
-        <Button size="icon" variant="outline" onClick={() => handleUpdateWorkflow("Approved")} className="size-8 rounded-lg sm:size-auto sm:px-3 sm:py-1.5" title="Approve">
-          <CheckCircle2 className="size-3.5" /> <span className="hidden sm:inline sm:ms-1.5">Approve</span>
+        <Button size="default" variant="outline" onClick={handleToggleLock} className="rounded-lg">
+          {isAllLocked() ? <Unlock className="size-4" /> : <Lock className="size-4" />} {isAllLocked() ? "Unlock" : "Lock"}
         </Button>
-        <Button size="icon" variant="outline" onClick={() => handleUpdateWorkflow("Locked")} className="size-8 rounded-lg sm:size-auto sm:px-3 sm:py-1.5" title="Lock">
-          <Lock className="size-3.5" /> <span className="hidden sm:inline sm:ms-1.5">Lock</span>
+        <Button size="default" variant="outline" onClick={() => setReleaseOpen(true)} className="rounded-lg">
+          <Megaphone className="size-4" /> Release
         </Button>
-        <Button size="icon" variant="outline" onClick={() => handleUpdateWorkflow("Draft")} className="size-8 rounded-lg sm:size-auto sm:px-3 sm:py-1.5" title="Revert to Draft">
-          <XCircle className="size-3.5" /> <span className="hidden sm:inline sm:ms-1.5">Revert</span>
-        </Button>
+
+        {/* More dropdown */}
+        <div className="relative">
+          <Button size="default" variant="outline" onClick={() => setMoreOpen((v) => !v)} className="rounded-lg">
+            <ChevronDown className="size-4" /> More
+          </Button>
+          {moreOpen && (
+            <div ref={moreRef} className="absolute right-0 bottom-full z-50 mb-1 flex min-w-[160px] flex-col rounded-lg border border-border bg-card shadow-lg">
+              <button onClick={() => { handleUpdateWorkflow("Reviewed"); setMoreOpen(false) }} className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted">
+                <CheckCircle2 className="size-4" /> Reviewed
+              </button>
+              <button onClick={() => { handleUpdateWorkflow("Approved"); setMoreOpen(false) }} className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted">
+                <CheckCircle2 className="size-4" /> Approve
+              </button>
+              <button onClick={() => { handleUpdateWorkflow("Draft"); setMoreOpen(false) }} className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted">
+                <XCircle className="size-4" /> Revert
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
+      <ReleaseDialog
+        open={releaseOpen}
+        onOpenChange={setReleaseOpen}
+        onConfirm={handleRelease}
+      />
       <EditMaxScoreDialog
         open={maxScoreDialogOpen}
         onOpenChange={setMaxScoreDialogOpen}
@@ -1322,6 +1646,18 @@ export function SpreadsheetGrid({
         columnName={selectedColumnLabel} onConfirm={handleDeleteColumn} />
       <DeleteRowDialog open={deleteRowOpen} onOpenChange={setDeleteRowOpen}
         rowCount={selectedRows.length} onConfirm={handleDeleteRow} />
+
+      {studentReleaseTarget && (
+        <UndoReleaseDialog
+          open={studentReleaseOpen}
+          onOpenChange={setStudentReleaseOpen}
+          studentName={studentReleaseTarget.studentName}
+          period={studentReleaseTarget.period}
+          studentId={studentReleaseTarget.studentId}
+          alreadyReleased={studentReleaseTarget.alreadyReleased}
+          onConfirm={handleStudentRelease}
+        />
+      )}
 
       {templatesOpen && (
         <TemplateSelector classId={classId} open={templatesOpen} onClose={() => setTemplatesOpen(false)}

@@ -5,4 +5,9 @@ export type ClassStudent = {
   enrolled: boolean
   createdAt?: string
   updatedAt?: string
+  curriculumId?: string
+  curriculum?: string
+  currentYearLevel?: string
+  currentSemester?: string
+  studentType?: string
 }

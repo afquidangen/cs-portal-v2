@@ -6,6 +6,8 @@ export type ScheduleItem = {
   room: string
   instructor: string
   section: string
+  semesterId?: string
+  curriculumId?: string
   createdAt?: string
   updatedAt?: string
 }

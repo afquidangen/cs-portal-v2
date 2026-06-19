@@ -67,7 +67,7 @@ export async function PUT(
       }
     }
 
-    const report = await csoReportsRepository.update({ id }, { $set: body })
+    const report = await csoReportsRepository.update({ id }, body)
     if (!report) return notFound("CSO report")
     return success(report)
   } catch (err) {

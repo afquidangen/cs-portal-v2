@@ -215,9 +215,6 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
             <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
               Student Roster
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Select a subject and section to review enrolled students, draft grade status, and roster actions.
-            </p>
           </div>
         </div>
       </section>
@@ -499,4 +496,4 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
   )
 }
 
-const irregularTypes = ["Irregular", "Transferee", "Shifter", "Overstayed"]
+const irregularTypes = ["Irregular", "Transferee", "Shifter"]
