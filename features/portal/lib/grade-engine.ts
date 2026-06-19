@@ -352,7 +352,6 @@ export function computeLivePreview(params: {
   periodGrade: number
   finalGrade?: number
   transmutedGrade?: number
-  remarks?: string
 } {
   const { scores, columns, assessments, studentId, components, labComponents, subjectType, lectureWeight, laboratoryWeight, midtermGrade } = params
 
@@ -475,8 +474,6 @@ export function computeLivePreview(params: {
     transmutedGrade = transmuteGrade(finalGrade)
   }
 
-  const remarks = transmutedGrade !== undefined ? getGradeRemarks(transmutedGrade) : undefined
-
   return {
     categoryGrades,
     classStanding,
@@ -486,6 +483,5 @@ export function computeLivePreview(params: {
     periodGrade,
     finalGrade,
     transmutedGrade,
-    remarks,
   }
 }

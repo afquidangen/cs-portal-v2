@@ -1,5 +1,6 @@
 import { gradesRepository } from "@/features/portal/repositories/grades.repository"
 import { gradeColumnRepository } from "@/features/portal/repositories/grade-column.repository"
+import { schedulesRepository } from "@/features/portal/repositories/schedules.repository"
 import { error, badRequest } from "@/lib/api-response"
 import { requireFacultyOrAdmin } from "@/lib/api-auth"
 import * as XLSX from "xlsx"
@@ -121,21 +122,35 @@ export async function GET(request: Request) {
     const finalWS = buildPeriodSheet(finalCols, "Final")
 
     // --- Summary ---
-    const summaryHeaders = [
-      "Student ID", "Student Name", "Section",
-      "Midterm Grade", "Midterm Transmuted",
-      "Tentative Final", "Final Transmuted",
-      "Final Grade", "Transmuted Grade",
-      "Remarks", "Status",
+    const scheduleInfo = (await schedulesRepository.findAll({ id: classId })) as Array<Record<string, unknown>>
+    const subjectTitle = scheduleInfo[0]?.subject as string ?? ""
+    const instructorName = scheduleInfo[0]?.instructor as string ?? ""
+
+    const summaryHeaderRows = [
+      [`Subject: ${subjectTitle}`, "", "", "", "", "", "", ""],
+      [`Instructor: ${instructorName}`, "", "", "", "", "", "", ""],
+      [],
+      ["No.", "Names", "Course & Year", "Midterm Grade", "Tentative Final Grade", "Final Rating", "Transmuted Grade", "Remarks"],
     ]
-    const summaryRows = gradesData.map((grade) => [
-      grade.studentId || "", grade.student || "", grade.section || "",
-      grade.midtermGrade ?? "", grade.midtermTransmuted ?? "",
-      grade.tentativeFinalGrade ?? "", grade.finalTransmuted ?? "",
-      grade.finalGrade ?? "", grade.transmutedGrade ?? "",
-      grade.remarks || "", grade.workflowStatus || "Draft",
+
+    const summaryRows = gradesData.map((grade, i) => [
+      i + 1,
+      grade.student || "",
+      grade.section || "",
+      grade.midtermGrade ?? "",
+      grade.tentativeFinalGrade ?? "",
+      grade.finalGrade != null ? Math.round(Number(grade.finalGrade)) : "",
+      grade.transmutedGrade ?? "",
+      grade.remarks || "",
     ])
-    const summaryWS = XLSX.utils.aoa_to_sheet([summaryHeaders, ...summaryRows])
+
+    const summaryWS = XLSX.utils.aoa_to_sheet([...summaryHeaderRows, ...summaryRows])
+
+    // Merge title cells for better appearance
+    summaryWS["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } },
+    ]
 
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, midtermWS, "Midterm")

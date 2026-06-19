@@ -313,7 +313,7 @@ function computeGradeRecord(record: GradeRecord, scheme: GradingScheme, entries:
     finalTransmuted: tentativeFinalGrade,
     midterm: transmuteFromEntries(midtermGrade, entries),
     finalTerm: transmuteFromEntries(tentativeFinalGrade, entries),
-    remarks: transmutedGrade !== undefined ? (transmutedGrade <= 3 ? "Passed" : "Failed") : record.remarks,
+    remarks: record.remarks,
     gradingSchemeId: scheme.id,
     subjectType: scheme.subjectType,
   }

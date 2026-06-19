@@ -16,11 +16,12 @@ import {
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
 
-import { Panel, StatusBadge } from "../shared/dashboard-ui"
+import { Panel } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "../modules/types"
 import type { GradeRecord, GradeWorkflowStatus, GradeColumn, GradingPeriod, Assessment } from "@/lib/types"
 import { useAutoSave, type SaveStatus } from "../../lib/auto-save"
 import { computeLivePreview, gradeCategoryMatches, transmuteGrade } from "../../lib/grade-engine"
+import { gradeRemarkOptions } from "../../lib/grades"
 import { UndoRedoManager, buildSnapshot } from "../../lib/undo-redo"
 import { SpreadsheetToolbar, type ToolbarAction } from "./spreadsheet-toolbar"
 import { RenameColumnDialog } from "./rename-column-dialog"
@@ -95,12 +96,6 @@ function EditMaxScoreDialog({
   )
 }
 
-function RemarksCellRenderer(params: { value: string }) {
-  const val = params.value
-  if (!val) return null
-  return <StatusBadge value={val} />
-}
-
 function StatusCellRenderer(params: { value: string }) {
   const val = params.value
   if (!val) return null
@@ -117,6 +112,53 @@ function StatusCellRenderer(params: { value: string }) {
       {val === "Approved" ? <CheckCircle2 className="size-3" /> : null}
       {val}
     </span>
+  )
+}
+
+const remarkColors: Record<string, string> = {
+  Passed:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  Failed:
+    "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+  INC:
+    "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+  Dropped:
+    "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+  "Unofficial Drop":
+    "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+}
+
+function RemarksDropdownRenderer(params: { value: string; node: { setDataValue: (field: string, val: string) => void }; colDef: { colId?: string } }) {
+  const val = params.value || ""
+  const field = params.colDef?.colId || "remarks"
+  const colorClass = remarkColors[val] || ""
+  const [isDark, setIsDark] = useState(false)
+
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains("dark"))
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"))
+    })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
+    return () => observer.disconnect()
+  }, [])
+
+  const onChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    params.node.setDataValue(field, e.target.value)
+  }
+
+  return (
+    <select
+      value={val}
+      onChange={onChange}
+      style={{ colorScheme: isDark ? "dark" : "light" }}
+      className={`w-full rounded-md border px-2 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary ${val ? colorClass : "border-border bg-white dark:bg-[#0f172a] text-muted-foreground"}`}
+    >
+      <option value="">&mdash;</option>
+      {gradeRemarkOptions.map((opt) => (
+        <option key={opt} value={opt}>{opt}</option>
+      ))}
+    </select>
   )
 }
 
@@ -149,6 +191,8 @@ type StudentGradeRow = {
   finalTransmuted?: number
   transmutedGrade?: number
   remarks?: string
+  midtermRemarks?: string
+  finalRemarks?: string
   workflowStatus: GradeWorkflowStatus
   liveClassStanding?: number
   liveExamGrade?: number
@@ -175,6 +219,8 @@ export function SpreadsheetGrid({
   darkMode,
   assessments,
   gradingScheme,
+  activeTab,
+  setActiveTab,
 }: {
   model: PortalModuleProps["model"]
   selectedSubject: string
@@ -193,12 +239,12 @@ export function SpreadsheetGrid({
   darkMode: boolean
   assessments: Assessment[]
   gradingScheme?: { components: Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number }> }>; labComponents?: Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number }> }>; lectureWeight?: number; laboratoryWeight?: number; subjectType: "Lecture" | "Lecture with Lab" } | null
+  activeTab: TabKey
+  setActiveTab: (tab: TabKey) => void
 }) {
   const gridRef = useRef<AgGridReact>(null)
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
   const isEditable = model.role === "faculty" || model.role === "admin"
-
-  const [activeTab, setActiveTab] = useState<TabKey>("midterm")
   const [selectedRows, setSelectedRows] = useState<StudentGradeRow[]>([])
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle")
   const [lastSaved, setLastSaved] = useState<string | null>(null)
@@ -368,6 +414,18 @@ export function SpreadsheetGrid({
       }, 0)
 
       autoSave.schedule({ grades: [{ ...grade, scores: updatedScores }], cid: classId })
+    } else if (colId === "remarks" || colId === "midtermRemarks" || colId === "finalRemarks") {
+      const grade = gradeMap.get(row.studentId)
+      if (!grade) return
+      const val = String(newValue)
+      setGrades((prev) =>
+        prev.map((g) =>
+          g.studentId === row.studentId
+            ? { ...g, [colId]: val, updatedAt: new Date().toISOString() }
+            : g
+        )
+      )
+      autoSave.schedule({ grades: [{ ...grade, [colId]: val }], cid: classId })
     }
   }
 
@@ -727,18 +785,22 @@ export function SpreadsheetGrid({
         { headerName: "Student Name", field: "studentName", width: saved["studentName"] ?? 220, sortable: true, filter: "agTextColumnFilter", pinned: "left" },
         { headerName: "Midterm Grade", field: "midtermGrade", width: 130, sortable: true, filter: "agNumberColumnFilter",
           valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 600 } },
+        { headerName: "Mid. Remarks", field: "midtermRemarks", colId: "midtermRemarks", width: 150, sortable: true, filter: "agTextColumnFilter",
+          cellRenderer: RemarksDropdownRenderer },
         { headerName: "Tentative Final", field: "finalGrade", width: 130, sortable: true, filter: "agNumberColumnFilter",
           valueFormatter: (params) => {
             const row = params.data as StudentGradeRow
             const grade = gradeMapRef.current.get(row.studentId)
             return fmtNum(grade?.tentativeFinalGrade)
           }, cellStyle: { fontWeight: 600 } },
-        { headerName: "Final %", field: "finalGrade", width: 120, sortable: true, filter: "agNumberColumnFilter",
+        { headerName: "Fin. Remarks", field: "finalRemarks", colId: "finalRemarks", width: 150, sortable: true, filter: "agTextColumnFilter",
+          cellRenderer: RemarksDropdownRenderer },
+        { headerName: "Percentile", field: "finalGrade", width: 120, sortable: true, filter: "agNumberColumnFilter",
           valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 700 } },
+        { headerName: "Final Rating", field: "finalGrade", width: 120, sortable: true, filter: "agNumberColumnFilter",
+          valueFormatter: (params) => { const n = Number(params.value); return isNaN(n) ? "" : n.toFixed(0) }, cellStyle: { fontWeight: 700 } },
         { headerName: "Transmuted", field: "transmutedGrade", width: 120, sortable: true, filter: "agNumberColumnFilter",
           valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 700 } },
-        { headerName: "Remarks", field: "remarks", width: 120, sortable: true, filter: "agTextColumnFilter",
-          cellRenderer: RemarksCellRenderer },
         { headerName: "Status", field: "workflowStatus", width: 130, sortable: true, filter: "agTextColumnFilter",
           cellRenderer: StatusCellRenderer },
       ]
@@ -1002,6 +1064,8 @@ export function SpreadsheetGrid({
           if (grade == null || grade <= 0) return ""
           return transmuteGrade(grade)
         }, valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 700 } },
+      { headerName: "Remarks", field: activeTab === "midterm" ? "midtermRemarks" : "finalRemarks", colId: activeTab === "midterm" ? "midtermRemarks" : "finalRemarks", width: saved["remarks"] ?? 150, sortable: true, filter: "agTextColumnFilter",
+        cellRenderer: RemarksDropdownRenderer },
       { headerName: "Status", field: "workflowStatus", width: saved["workflowStatus"] ?? 130, sortable: true, filter: "agTextColumnFilter",
         cellRenderer: StatusCellRenderer },
     )
@@ -1134,6 +1198,17 @@ export function SpreadsheetGrid({
         {scheduleInfo.instructor && (
           <p className="mt-1.5 text-xs text-muted-foreground/70 sm:text-sm">{scheduleInfo.instructor}</p>
         )}
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <span className={`inline-block rounded-full px-3 py-0.5 text-xs font-bold uppercase tracking-wider ${
+            activeTab === "midterm"
+              ? "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"
+              : activeTab === "final"
+              ? "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300"
+              : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+          }`}>
+            {activeTab === "midterm" ? "Midterm Grading Period" : activeTab === "final" ? "Final Grading Period" : "Summary"}
+          </span>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1172,11 +1247,12 @@ export function SpreadsheetGrid({
         saveStatus={saveStatus}
       />
 
-      <div className="rounded-xl border border-border shadow-sm overflow-hidden" style={{ height: "min(600px, 70vh)", width: "100%" }}>
+      <div className="rounded-xl border border-border shadow-sm overflow-hidden" style={{ width: "100%" }}>
           <AgGridReact
             ref={gridRef}
             rowData={gridData}
             columnDefs={colDefs}
+            domLayout="autoHeight"
           defaultColDef={{
             resizable: true,
             sortable: true,

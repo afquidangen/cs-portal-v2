@@ -8,9 +8,9 @@ import { requireFacultyOrAdmin } from "@/lib/api-auth"
 import type { GradingPeriod } from "@/lib/types"
 import {
   computeAllCategoryGrades, computeClassStanding,
-  computeLectureGrade, computeExamGrade,
+  computeLectureGrade,   computeExamGrade,
   computeLaboratoryGrade, computePeriodGrade, computeFinalGrade,
-  transmuteGrade, getGradeRemarks, gradeCategoryMatches,
+  transmuteGrade, gradeCategoryMatches,
 } from "@/features/portal/lib/grade-engine"
 import type { CategoryGradeResult } from "@/features/portal/lib/grade-engine"
 
@@ -317,10 +317,8 @@ export async function POST(request: Request) {
         if (existingMidtermGrade !== undefined && existingMidtermGrade > 0) {
           const finalGrade = computeFinalGrade(existingMidtermGrade, periodGrade)
           const transmuted = transmuteGrade(finalGrade, Object.keys(transmutationTable).length > 0 ? transmutationTable : undefined)
-          const remarks = getGradeRemarks(transmuted)
           updates.finalGrade = finalGrade
           updates.transmutedGrade = transmuted
-          updates.remarks = remarks
         }
       }
 

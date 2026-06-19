@@ -42,6 +42,8 @@ export type GradeRecord = {
   finalGrade?: number
   transmutedGrade?: number
   remarks?: string
+  midtermRemarks?: string
+  finalRemarks?: string
 
   midtermTransmuted?: number
   midterm?: number

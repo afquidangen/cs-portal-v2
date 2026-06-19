@@ -35,6 +35,7 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
   } | null>(null)
   const [classId, setClassId] = useState("")
   const [computedOnce, setComputedOnce] = useState(false)
+  const [activeTab, setActiveTab] = useState<"midterm" | "final" | "summary">("midterm")
 
   const semesterSubjects = useMemo(() => {
     const seen = new Set<string>()
@@ -181,6 +182,8 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
         finalTransmuted: grade?.finalTransmuted,
         transmutedGrade: grade?.transmutedGrade,
         remarks: grade?.remarks,
+        midtermRemarks: grade?.midtermRemarks,
+        finalRemarks: grade?.finalRemarks,
         workflowStatus: grade?.workflowStatus || "Draft",
       }
     })
@@ -310,25 +313,27 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
           </p>
         </div>
       ) : selectedSubject ? (
-        <SpreadsheetGrid
-          model={model}
-          selectedSubject={selectedSubject}
-          classId={classId}
-          gradeColumns={gradeColumns}
-          setGradeColumns={setGradeColumns}
-          gridData={gridData}
-          gradeMap={gradeMap}
-          setGrades={setGrades}
-          roster={roster}
-          subjectRoster={subjectRoster}
-          studentQuery={studentQuery}
-          setStudentQuery={setStudentQuery}
-          computedOnce={computedOnce}
-          setComputedOnce={setComputedOnce}
-          darkMode={darkMode}
-          assessments={assessments}
-          gradingScheme={gradingScheme}
-        />
+          <SpreadsheetGrid
+            model={model}
+            selectedSubject={selectedSubject}
+            classId={classId}
+            gradeColumns={gradeColumns}
+            setGradeColumns={setGradeColumns}
+            gridData={gridData}
+            gradeMap={gradeMap}
+            setGrades={setGrades}
+            roster={roster}
+            subjectRoster={subjectRoster}
+            studentQuery={studentQuery}
+            setStudentQuery={setStudentQuery}
+            computedOnce={computedOnce}
+            setComputedOnce={setComputedOnce}
+            darkMode={darkMode}
+            assessments={assessments}
+            gradingScheme={gradingScheme}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+          />
       ) : null}
     </Panel>
   )

@@ -44,6 +44,8 @@ export interface IGrade extends Document {
   finalGrade?: number
   transmutedGrade?: number
   remarks?: string
+  midtermRemarks?: string
+  finalRemarks?: string
 
   midtermTransmuted?: number
   midterm?: number
@@ -109,6 +111,8 @@ const GradeSchema = new Schema<IGrade>(
     finalGrade: Number,
     transmutedGrade: Number,
     remarks: String,
+    midtermRemarks: String,
+    finalRemarks: String,
 
     midtermTransmuted: Number,
     midterm: Number,

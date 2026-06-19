@@ -93,6 +93,8 @@ export type GradeRecord = {
   finalGrade?: number
   transmutedGrade?: number
   gradingSchemeId?: string
+  midtermRemarks?: string
+  finalRemarks?: string
   workflowStatus?: "Draft" | "Submitted" | "Reviewed" | "Approved" | "Locked"
   midtermTransmuted?: number
   midterm?: number
