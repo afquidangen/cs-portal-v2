@@ -66,6 +66,7 @@ export interface IGrade extends Document {
   workflowStatus: GradeWorkflowStatus
   released: boolean
   gradingSchemeId?: string
+  semesterId?: string
 
   updatedAt: string
   deletedAt?: string | null
@@ -141,6 +142,7 @@ const GradeSchema = new Schema<IGrade>(
     },
     released: { type: Boolean, default: false },
     gradingSchemeId: String,
+    semesterId: { type: String },
 
     updatedAt: String,
     deletedAt: { type: String, default: null },

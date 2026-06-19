@@ -228,7 +228,7 @@ export function Select({
         </SelectTrigger>
 
         <SelectContent className={cn("border border-border bg-white text-black shadow-2xl dark:bg-[#0f1b2b] dark:text-white", contentClassName)}>
-          {[...new Set(options)].map((option) => (
+          {[...new Set(options)].filter(Boolean).map((option) => (
             <SelectItem
               key={option}
               value={option}

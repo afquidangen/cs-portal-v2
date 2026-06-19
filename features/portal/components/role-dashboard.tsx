@@ -91,6 +91,8 @@ import { ProfileModule } from "./modules/profile-module"
 
 import { QuickLinksModule } from "./modules/quick-links-module"
 import { SchedulePanel } from "./modules/schedule-panel"
+import { SemesterHistoryModule } from "./modules/semester-history-module"
+import { SemesterManagementModule } from "./modules/semester-management-module"
 import { MyClassesModule } from "./modules/my-classes-module"
 import { SeminarsModule } from "./modules/seminars-module"
 import { TemplatesModule } from "./modules/templates-module"
@@ -466,6 +468,8 @@ export function RoleDashboard({ role }: { role: Role }) {
       "grading-admin": <GradingAdminModule />,
       schedule: <SchedulePanel model={model} />,
       curriculum: <CurriculumModule model={model} />,
+      "semester-admin": <SemesterManagementModule model={model} />,
+      "semester-history": <SemesterHistoryModule model={model} />,
       "quick-links": <QuickLinksModule model={model} />,
       "grade-history": <GradeHistoryModule model={model} />,
       users: <UsersModule model={model} />,
@@ -509,7 +513,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       role === "admin"
         ? [
             { label: "Workspace", items: pick(["overview", "profile"]) },
-            { label: "Academic Setup", items: pick(["academic", "classes", "curriculum", "grading-admin"]) },
+            { label: "Academic Setup", items: pick(["academic", "semester-admin", "classes", "curriculum", "grading-admin"]) },
             { label: "People & Records", items: pick(["users", "irregular-students", "instructors", "availability", "audit"]) },
             { label: "Communications", items: pick(["announcements", "feedback", "templates"]) },
             { label: "Resources", items: pick(["thesis", "quick-links", "cso"]) },
@@ -531,7 +535,7 @@ export function RoleDashboard({ role }: { role: Role }) {
               ]
             : [
                 { label: "Workspace", items: pick(["overview", "profile"]) },
-                { label: "My Academics", items: pick(["my-classes", "grades", "curriculum", "grade-history", "thesis"]) },
+                { label: "My Academics", items: pick(["my-classes", "grades", "semester-history", "curriculum", "grade-history", "thesis"]) },
                 { label: "Campus Support", items: pick(["instructors", "availability", "announcements", "seminars", "feedback"]) },
                 { label: "Resources", items: pick(["quick-links", "cso"]) },
               ]

@@ -103,6 +103,18 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
     return null
   }
 
+  function isRetake(code: string, subjectName: string): boolean {
+    const matches = studentGradeHistory.filter(
+      (h) => h.subjectCode === code || h.subjectName === subjectName
+    )
+    if (matches.length > 1) return true
+    if (matches.length === 1) {
+      const r = matches[0].remarks.toUpperCase()
+      return ["FAILED", "INC", "DROP", "UNOFFICIAL DROP"].includes(r)
+    }
+    return false
+  }
+
   const totalUnits = allTerms.reduce(
     (sum, t) => sum + t.subjects.reduce((s, sub) => s + sub.total, 0),
     0
@@ -247,6 +259,11 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
                                   <svg className="size-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg>
                                 ) : null}
                                 {status.label}
+                                {isRetake(subject.code, subject.name) && status.label === "Current" && (
+                                  <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                                    RETAKE
+                                  </span>
+                                )}
                               </span>
                             ) : (
                               <span className="text-xs text-muted-foreground">—</span>

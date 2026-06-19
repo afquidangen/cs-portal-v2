@@ -1,5 +1,6 @@
 import { semestersRepository } from "@/features/portal/repositories/semesters.repository"
 import { success, error, notFound } from "@/lib/api-response"
+import { SemesterModel } from "@/lib/models"
 
 export const runtime = "nodejs"
 
@@ -24,6 +25,9 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
+    if (body.status === "Active") {
+      await SemesterModel.updateMany({ status: "Active" }, { $set: { status: "Inactive" } })
+    }
     const semester = await semestersRepository.update({ id }, body)
     if (!semester) return notFound("Semester")
     return success(semester)

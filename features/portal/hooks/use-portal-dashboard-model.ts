@@ -2511,6 +2511,7 @@ export function usePortalDashboardModel(role: Role) {
       schoolYearStart: newSemester.schoolYearStart,
       schoolYearEnd: newSemester.schoolYearEnd,
       status: newSemester.status,
+      gradingPeriod: "Midterm" as const,
     }
     setSemesters((current) => [semesterData, ...current])
     setNewSemester({
@@ -2553,6 +2554,79 @@ export function usePortalDashboardModel(role: Role) {
     })
     if (item) addAuditLog(`Deleted semester "${item.semester}"`)
   }
+
+  function archiveSemester(id: string) {
+    const item = semesters.find((s) => s.id === id)
+    setSemesters((current) =>
+      current.map((s) => (s.id === id ? { ...s, status: "Archived" as const, archivedAt: new Date().toISOString() } : s))
+    )
+    syncApi("POST", `/api/portal/semesters/${id}/archive`).then(() =>
+      toast.success("Semester archived.")
+    ).catch((e) => {
+      toast.error("Failed to archive semester.")
+      console.error(e)
+    })
+    if (item) addAuditLog(`Archived semester "${item.semester}"`)
+  }
+
+  function unarchiveSemester(id: string) {
+    const item = semesters.find((s) => s.id === id)
+    setSemesters((current) =>
+      current.map((s) => (s.id === id ? { ...s, status: "Inactive" as const, archivedAt: undefined } : s))
+    )
+    syncApi("POST", `/api/portal/semesters/${id}/unarchive`).then(() =>
+      toast.success("Semester unarchived.")
+    ).catch((e) => {
+      toast.error("Failed to unarchive semester.")
+      console.error(e)
+    })
+    if (item) addAuditLog(`Unarchived semester "${item.semester}"`)
+  }
+
+  function activateSemester(id: string) {
+    const item = semesters.find((s) => s.id === id)
+    setSemesters((current) =>
+      current.map((s) => (s.id === id ? { ...s, status: "Active" as const } : { ...s, status: "Inactive" as const }))
+    )
+    syncApi("POST", `/api/portal/semesters/${id}/activate`).then(() =>
+      toast.success("Semester activated.")
+    ).catch((e) => {
+      toast.error("Failed to activate semester.")
+      console.error(e)
+    })
+    if (item) addAuditLog(`Activated semester "${item.semester}"`)
+  }
+
+  function setGradingPeriod(id: string, gradingPeriod: "Midterm" | "Final") {
+    const item = semesters.find((s) => s.id === id)
+    setSemesters((current) =>
+      current.map((s) => (s.id === id ? { ...s, gradingPeriod } : s))
+    )
+    syncApi("PATCH", `/api/portal/semesters/${id}/grading-period`, { gradingPeriod }).then(() =>
+      toast.success("Grading period updated.")
+    ).catch((e) => {
+      toast.error("Failed to update grading period.")
+      console.error(e)
+    })
+    if (item) addAuditLog(`Set grading period to ${gradingPeriod} for "${item.semester}"`)
+  }
+
+  function setSemesterEndDate(id: string, endDate: string) {
+    const item = semesters.find((s) => s.id === id)
+    setSemesters((current) =>
+      current.map((s) => (s.id === id ? { ...s, endDate } : s))
+    )
+    syncApi("PATCH", `/api/portal/semesters/${id}/end-date`, { endDate }).then(() =>
+      toast.success("Semester end date updated.")
+    ).catch((e) => {
+      toast.error("Failed to update end date.")
+      console.error(e)
+    })
+    if (item) addAuditLog(`Set end date for "${item.semester}" to ${endDate}`)
+  }
+
+  const activeSemester = semesters.find((s) => s.status === "Active")
+  const archivedSemesters = semesters.filter((s) => s.status === "Archived")
 
   function handleAddSubject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -3357,6 +3431,13 @@ export function usePortalDashboardModel(role: Role) {
     handleAddSemester,
     handleUpdateSemester,
     handleDeleteSemester,
+    archiveSemester,
+    unarchiveSemester,
+    activateSemester,
+    setGradingPeriod,
+    setSemesterEndDate,
+    activeSemester,
+    archivedSemesters,
     handleAddSubject,
     handleUpdateSubject,
     handleDeleteSubject,

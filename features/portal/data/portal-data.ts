@@ -108,6 +108,7 @@ export type GradeRecord = {
   midtermReleaseHistory?: Array<{ action: "released" | "unreleased" | "re-released"; reason?: string; timestamp: string }>
   finalReleaseHistory?: Array<{ action: "released" | "unreleased" | "re-released"; reason?: string; timestamp: string }>
   released?: boolean
+  semesterId?: string
   deletedAt?: string | null
   updatedAt: string
 }

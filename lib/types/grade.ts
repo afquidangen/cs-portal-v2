@@ -64,6 +64,7 @@ export type GradeRecord = {
   workflowStatus?: GradeWorkflowStatus
   released?: boolean
   gradingSchemeId?: string
+  semesterId?: string
 
   updatedAt: string
   deletedAt?: string | null

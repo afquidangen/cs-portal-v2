@@ -5,7 +5,10 @@ export interface ISemester extends Document {
   semester: "First Semester" | "Midyear" | "Second Semester"
   schoolYearStart: number
   schoolYearEnd: number
-  status: "Active" | "Inactive"
+  status: "Active" | "Inactive" | "Archived"
+  gradingPeriod: "Midterm" | "Final"
+  endDate?: string
+  archivedAt?: string
 }
 
 if (mongoose.models.Semester) {
@@ -18,7 +21,10 @@ const SemesterSchema = new Schema<ISemester>(
     semester: { type: String, enum: ["First Semester", "Midyear", "Second Semester"], required: true },
     schoolYearStart: { type: Number, required: true },
     schoolYearEnd: { type: Number, required: true },
-    status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
+    status: { type: String, enum: ["Active", "Inactive", "Archived"], default: "Active" },
+    gradingPeriod: { type: String, enum: ["Midterm", "Final"], default: "Midterm" },
+    endDate: { type: String },
+    archivedAt: { type: String },
   },
   { timestamps: true }
 )
