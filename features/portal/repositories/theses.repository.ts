@@ -15,8 +15,14 @@ export class ThesesRepository extends BaseRepository {
     await connectToDatabase()
     const regex = new RegExp(query, "i")
     return ThesisModel.find({
+      isDeleted: { $ne: true },
       $or: [{ title: regex }, { authors: regex }, { tags: regex }],
     }).lean()
+  }
+
+  async findTrashed(): Promise<unknown[]> {
+    await connectToDatabase()
+    return ThesisModel.find({ isDeleted: true }).sort({ deletedAt: -1 }).lean()
   }
 }
 

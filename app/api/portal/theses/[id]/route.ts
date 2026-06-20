@@ -1,6 +1,7 @@
 import { thesesRepository } from "@/features/portal/repositories/theses.repository"
 import { success, error, notFound } from "@/lib/api-response"
-import { deleteFile } from "@/lib/cloudinary"
+import { connectToDatabase } from "@/lib/mongodb"
+import { ThesisModel } from "@/lib/models"
 
 export const runtime = "nodejs"
 
@@ -34,7 +35,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -42,13 +43,20 @@ export async function DELETE(
     const thesis = await thesesRepository.findById(id)
     if (!thesis) return notFound("Thesis")
 
-    const record = thesis as Record<string, unknown>
-    const pdfUrl = record.pdfUrl as string | undefined
-    if (pdfUrl) {
-      await deleteFile(pdfUrl)
-    }
+    const { deletedBy } = await request.json().catch(() => ({}))
 
-    await thesesRepository.delete({ id })
+    await connectToDatabase()
+    await ThesisModel.collection.updateOne(
+      { id },
+      {
+        $set: {
+          isDeleted: true,
+          deletedAt: new Date(),
+          deletedBy: deletedBy || null,
+        },
+      }
+    )
+
     return success({ deleted: true })
   } catch (err) {
     return error(err instanceof Error ? err.message : "Unable to delete thesis.")

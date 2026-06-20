@@ -152,6 +152,7 @@ export function usePortalDashboardModel(role: Role) {
   const [faculty, setFaculty] = useState<FacultyRecord[]>([])
   const [grades, setGrades] = useState<GradeRecord[]>([])
   const [theses, setTheses] = useState<ThesisRecord[]>([])
+  const [trashedTheses, setTrashedTheses] = useState<ThesisRecord[]>([])
   const [seminars, setSeminars] = useState<SeminarRecord[]>([])
   const [tickets, setTickets] = useState<FeedbackTicket[]>([])
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
@@ -227,6 +228,7 @@ export function usePortalDashboardModel(role: Role) {
   const [selectedCurriculumId, setSelectedCurriculumId] = useState("")
   const [curriculumFilter, setCurriculumFilter] = useState("All")
   const [showThesisUploadForm, setShowThesisUploadForm] = useState(false)
+  const [showThesisTrash, setShowThesisTrash] = useState(false)
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false)
   const [newSectionName, setNewSectionName] = useState("")
   const [studentDraft, setStudentDraft] = useState({
@@ -2002,17 +2004,63 @@ export function usePortalDashboardModel(role: Role) {
   }
 
   function confirmAndDeleteThesis(thesisId: string) {
+    const thesis = theses.find((t) => t.id === thesisId)
     setPendingConfirm({
-      title: "Delete Thesis",
-      description: "Are you sure you want to delete this thesis record? This action cannot be undone.",
+      title: "Move to Trash Bin",
+      description: "Are you sure you want to move this thesis to the trash bin? You can restore it later.",
       variant: "destructive",
+      confirmLabel: "Move to Trash",
       onConfirm: () => {
         setTheses((current) => current.filter((item) => item.id !== thesisId))
-        void syncApi("DELETE", `/api/portal/theses/${thesisId}`)
-        addAuditLog(`Deleted thesis record "${thesisId}"`)
+        if (thesis) {
+          setTrashedTheses((current) => [
+            { ...thesis, isDeleted: true, deletedAt: new Date().toISOString(), deletedBy: profile.name },
+            ...current,
+          ])
+        }
+        void syncApi("DELETE", `/api/portal/theses/${thesisId}`, { deletedBy: profile.name })
+        addAuditLog(`Moved thesis "${thesisId}" to trash bin`)
         setPendingConfirm(null)
       },
     })
+  }
+
+  async function handleRestoreThesis(id: string) {
+    const item = trashedTheses.find((t) => t.id === id)
+    setTrashedTheses((current) => current.filter((t) => t.id !== id))
+    try {
+      await syncApi("PATCH", `/api/portal/theses/trash/${id}`)
+      toast.success("Thesis restored successfully")
+      if (item) {
+        setTheses((current) => [{ ...item, isDeleted: false, deletedAt: null, deletedBy: undefined }, ...current])
+        addAuditLog(`Restored thesis "${item.title}" from trash bin`)
+      }
+    } catch (e) {
+      toast.error("Failed to restore thesis.")
+      console.error(e)
+    }
+  }
+
+  async function handlePermanentDeleteThesis(id: string) {
+    const item = trashedTheses.find((t) => t.id === id)
+    setTrashedTheses((current) => current.filter((t) => t.id !== id))
+    try {
+      await syncApi("DELETE", `/api/portal/theses/trash/${id}`)
+      toast.success("Thesis permanently deleted.")
+      if (item) addAuditLog(`Permanently deleted thesis "${item.title}"`)
+    } catch (e) {
+      toast.error("Failed to permanently delete thesis.")
+      console.error(e)
+    }
+  }
+
+  async function fetchTrashedTheses() {
+    try {
+      const res = await syncApi<{ data: ThesisRecord[] }>("GET", "/api/portal/theses/trash")
+      setTrashedTheses(res.data ?? [])
+    } catch (e) {
+      console.error("Failed to fetch trashed theses", e)
+    }
   }
 
   function undoTicketResolution(ticketId: string) {
@@ -3250,6 +3298,8 @@ export function usePortalDashboardModel(role: Role) {
     setGrades,
     theses,
     setTheses,
+    trashedTheses,
+    setTrashedTheses,
     seminars,
     setSeminars,
     tickets,
@@ -3292,6 +3342,8 @@ export function usePortalDashboardModel(role: Role) {
     setCurriculumFilter,
     showThesisUploadForm,
     setShowThesisUploadForm,
+    showThesisTrash,
+    setShowThesisTrash,
     showAnnouncementForm,
     setShowAnnouncementForm,
     newSectionName,
@@ -3413,6 +3465,9 @@ export function usePortalDashboardModel(role: Role) {
     deleteAllUsersPermanently,
     handleUpdateUser,
     confirmAndDeleteThesis,
+    handleRestoreThesis,
+    handlePermanentDeleteThesis,
+    fetchTrashedTheses,
     undoTicketResolution,
     handleSaveProfile,
     handleChangePassword,

@@ -12,6 +12,9 @@ export interface IThesis extends Document {
   pdfUrl: string
   fileName: string
   cloudinaryPublicId?: string
+  isDeleted?: boolean
+  deletedAt?: Date | null
+  deletedBy?: string
 }
 
 const ThesisSchema = new Schema<IThesis>(
@@ -27,6 +30,9 @@ const ThesisSchema = new Schema<IThesis>(
     pdfUrl: String,
     fileName: String,
     cloudinaryPublicId: String,
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
+    deletedBy: String,
   },
   { timestamps: true }
 )

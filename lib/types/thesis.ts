@@ -10,6 +10,9 @@ export type ThesisRecord = {
   pdfUrl: string
   fileName: string
   cloudinaryPublicId?: string
+  isDeleted?: boolean
+  deletedAt?: string | null
+  deletedBy?: string
   createdAt?: string
   updatedAt?: string
 }
