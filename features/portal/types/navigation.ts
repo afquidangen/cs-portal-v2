@@ -27,6 +27,8 @@ export type ModuleId =
   | "grading-admin"
   | "semester-admin"
   | "semester-history"
+  | "admin-semester-archive"
+  | "faculty-semester-archive"
 
 export type NavItem = {
   id: ModuleId

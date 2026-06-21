@@ -33,6 +33,13 @@ export interface IUser extends Document {
       semester: string
       units?: number
     }[]
+  semesterGwas?: Array<{
+    semesterId: string
+    semester: string
+    schoolYearStart: number
+    schoolYearEnd: number
+    gwa: number | null
+  }>
   advisoryClass?: string
   employmentType?: string
   academicTitle?: string
@@ -91,6 +98,15 @@ const UserSchema = new Schema<IUser>(
         editReason: String,
         editedBy: String,
         editedAt: String,
+      },
+    ],
+    semesterGwas: [
+      {
+        semesterId: String,
+        semester: String,
+        schoolYearStart: Number,
+        schoolYearEnd: Number,
+        gwa: { type: Number, default: null },
       },
     ],
     advisoryClass: String,

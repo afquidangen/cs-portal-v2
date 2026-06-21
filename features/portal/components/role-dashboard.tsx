@@ -100,6 +100,8 @@ import { ThesisLibraryModule } from "./modules/thesis-library-module"
 import { UsersModule } from "./modules/users-module"
 import { ManageGradesModule } from "./modules/manage-grades-module"
 import { GradingAdminModule } from "./modules/grading-admin-module"
+import { AdminSemesterArchiveModule } from "./modules/admin-semester-archive-module"
+import { FacultySemesterArchiveModule } from "./modules/faculty-semester-archive-module"
 
 export function RoleDashboard({ role }: { role: Role }) {
   const model = usePortalDashboardModel(role)
@@ -470,6 +472,8 @@ export function RoleDashboard({ role }: { role: Role }) {
       curriculum: <CurriculumModule model={model} />,
       "semester-admin": <SemesterManagementModule model={model} />,
       "semester-history": <SemesterHistoryModule model={model} />,
+      "admin-semester-archive": <AdminSemesterArchiveModule model={model} />,
+      "faculty-semester-archive": <FacultySemesterArchiveModule model={model} />,
       "quick-links": <QuickLinksModule model={model} />,
       "grade-history": <GradeHistoryModule model={model} />,
       users: <UsersModule model={model} />,

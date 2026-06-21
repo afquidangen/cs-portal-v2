@@ -45,6 +45,13 @@ export type UserRecord = {
   currentYearLevel?: string
   currentSemester?: string
   gradeHistory?: GradeHistoryEntry[]
+  semesterGwas?: Array<{
+    semesterId: string
+    semester: string
+    schoolYearStart: number
+    schoolYearEnd: number
+    gwa: number | null
+  }>
   advisoryClass?: string
   employmentType?: "Part Time" | "Regular"
   academicTitle?: string

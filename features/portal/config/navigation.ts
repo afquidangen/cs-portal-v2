@@ -48,6 +48,7 @@ export const roleNavigation: Record<Role, NavItem[]> = {
     { id: "instructors", label: "Instructor Info", icon: Network },
     { id: "announcements", label: "Announcements", icon: Bell },
     { id: "cso", label: "CSSO Section", icon: FileArchive },
+    { id: "faculty-semester-archive", label: "Semester Archive", icon: History },
     { id: "quick-links", label: "Quick Links", icon: LinkIcon },
     { id: "profile", label: "Profile", icon: UserCircle },
   ],
@@ -65,6 +66,7 @@ export const roleNavigation: Record<Role, NavItem[]> = {
     { id: "semester-admin", label: "Semester Management", icon: CalendarDays },
     { id: "audit", label: "Audit Logs", icon: Database },
     { id: "grading-admin", label: "Grading Rules", icon: Settings },
+    { id: "admin-semester-archive", label: "Semester Archive", icon: History },
     { id: "quick-links", label: "Quick Links", icon: LinkIcon },
   ],
   csso_officer: [

@@ -37,11 +37,10 @@ export async function POST(
     }
 
     const updated = await semestersRepository.update({ id }, {
-      status: "Archived",
-      archivedAt: new Date().toISOString(),
+      status: "Inactive",
     })
     return success(updated)
   } catch (err) {
-    return error(err instanceof Error ? err.message : "Unable to archive semester.")
+    return error(err instanceof Error ? err.message : "Unable to inactivate semester.")
   }
 }

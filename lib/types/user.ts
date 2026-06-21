@@ -16,6 +16,14 @@ export type GradeHistoryEntry = {
   editedAt?: string
 }
 
+export type SemesterGwaEntry = {
+  semesterId: string
+  semester: string
+  schoolYearStart: number
+  schoolYearEnd: number
+  gwa: number | null
+}
+
 export type UserRecord = {
   id: string
   name: string
@@ -37,6 +45,7 @@ export type UserRecord = {
   currentYearLevel?: string
   currentSemester?: string
   gradeHistory?: GradeHistoryEntry[]
+  semesterGwas?: SemesterGwaEntry[]
   advisoryClass?: string
   employmentType?: "Part Time" | "Regular"
   academicTitle?: string

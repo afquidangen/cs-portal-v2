@@ -1,8 +1,9 @@
 "use client"
 
-import { useMemo } from "react"
-import { BookOpen } from "lucide-react"
+import { useMemo, useState } from "react"
+import { BookOpen, Pencil, Trophy } from "lucide-react"
 
+import { cn } from "@/lib/utils"
 import { Panel, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 import type { GradeHistoryEntry, GradeRecord } from "../../data/portal-data"
@@ -96,6 +97,15 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
       })
   }, [history])
 
+  const semesterGwas = useMemo(() => {
+    const gwas = studentUser?.semesterGwas ?? []
+    const map = new Map<string, number | null>()
+    for (const g of gwas) {
+      map.set(g.semester, g.gwa)
+    }
+    return map
+  }, [studentUser?.semesterGwas])
+
   const totalUnits = useMemo(() => {
     return history.reduce((sum, entry) => {
       if (entry.units !== undefined) return sum + entry.units
@@ -109,6 +119,9 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
       return sum + 3
     }, 0)
   }, [history, model.curricula])
+
+  const [editingGwaSemester, setEditingGwaSemester] = useState<string | null>(null)
+  const [editGwaValue, setEditGwaValue] = useState("")
 
   return (
     <Panel title="Grades Registry" eyebrow="Grades Registry">
@@ -140,69 +153,120 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
             </div>
           </div>
 
-          {grouped.map((group) => (
-            <div key={`${group.yearLevel}-${group.semester}`}>
-              <div className="mb-3 flex items-center gap-3">
-                <div className="h-6 w-1 rounded-full bg-primary/60" />
-                <p className="text-sm font-bold text-foreground">
-                  {YEAR_MAP[group.yearLevel] ?? group.yearLevel} &mdash; {group.semester}
-                </p>
-                <span className="text-xs text-muted-foreground">
-                  {group.entries.length} {group.entries.length === 1 ? "subject" : "subjects"}
-                </span>
-              </div>
-              <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted text-foreground">
-                    <tr className="border-b border-border">
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                        Code
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                        Subject
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                        Final %
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                        Trans. Grade
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                        Remarks
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                        Section
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border bg-card">
-                    {group.entries.map((entry, idx) => (
-                      <tr key={idx} className="transition-colors hover:bg-muted/50">
-                        <td className="px-4 py-3 font-medium text-foreground">
-                          {entry.subjectCode}
-                        </td>
-                        <td className="px-4 py-3 text-foreground/80">
-                          {entry.subjectName}
-                        </td>
-                        <td className="px-4 py-3 text-center text-foreground">
-                          {entry.finalPercentile}
-                        </td>
-                        <td className="px-4 py-3 text-center text-foreground">
-                          {entry.transmutedGrade.toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <StatusBadge value={entry.remarks} />
-                        </td>
-                        <td className="px-4 py-3 text-foreground/60 text-xs">
-                          {entry.section ?? "—"}
-                        </td>
+          {grouped.map((group) => {
+            const gwa = semesterGwas.get(group.semester)
+            return (
+              <div key={`${group.yearLevel}-${group.semester}`}>
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="h-6 w-1 rounded-full bg-primary/60" />
+                  <p className="text-sm font-bold text-foreground">
+                    {YEAR_MAP[group.yearLevel] ?? group.yearLevel} &mdash; {group.semester}
+                  </p>
+                  <span className="text-xs text-muted-foreground">
+                    {group.entries.length} {group.entries.length === 1 ? "subject" : "subjects"}
+                  </span>
+                  {editingGwaSemester === group.semester ? (
+                    <div className="inline-flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="1.00"
+                        max="5.00"
+                        value={editGwaValue}
+                        onChange={(e) => setEditGwaValue(e.target.value)}
+                        className="h-7 w-20 rounded-md border border-border bg-background px-2 text-xs font-mono tabular-nums outline-none focus:border-primary"
+                      />
+                      <button
+                        onClick={() => {
+                          const parsed = parseFloat(editGwaValue)
+                          const semRec = (model.semesters as Array<{ id: string; semester: string; schoolYearStart: number; schoolYearEnd: number }> | undefined)?.find((s) => s.semester === group.semester)
+                          model.handleSaveGwa(
+                            studentUser?.id ?? "",
+                            semRec?.id ?? "",
+                            group.semester,
+                            semRec?.schoolYearStart ?? 0,
+                            semRec?.schoolYearEnd ?? 0,
+                            isNaN(parsed) ? null : parsed
+                          )
+                          setEditingGwaSemester(null)
+                        }}
+                        className="rounded-md bg-primary px-2 py-1 text-[10px] font-bold text-primary-foreground hover:bg-primary/90 transition-colors"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setEditingGwaSemester(null)}
+                        className="rounded-md border border-border px-2 py-1 text-[10px] font-medium text-muted-foreground hover:bg-muted transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-1.5">
+                      {gwa !== undefined && gwa !== null ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                          <Trophy className="size-3" />
+                          GWA: {gwa.toFixed(2)}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          GWA: —
+                        </span>
+                      )}
+                      <button
+                        onClick={() => {
+                          setEditingGwaSemester(group.semester)
+                          setEditGwaValue(gwa !== undefined && gwa !== null ? gwa.toFixed(2) : "")
+                        }}
+                        className="rounded-md p-1 text-muted-foreground hover:bg-muted transition-colors"
+                        title="Set GWA"
+                      >
+                        <Pencil className="size-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted text-foreground">
+                      <tr className="border-b border-border">
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                          Subject Code
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                          Subject Title
+                        </th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                          Final Grade
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                          Remarks
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-border bg-card">
+                      {group.entries.map((entry, idx) => (
+                        <tr key={idx} className="transition-colors hover:bg-muted/50">
+                          <td className="px-4 py-3 font-medium text-foreground">
+                            {entry.subjectCode}
+                          </td>
+                          <td className="px-4 py-3 text-foreground/80">
+                            {entry.subjectName}
+                          </td>
+                          <td className="px-4 py-3 text-center font-mono tabular-nums text-foreground">
+                            {entry.transmutedGrade.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <StatusBadge value={entry.remarks} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </Panel>

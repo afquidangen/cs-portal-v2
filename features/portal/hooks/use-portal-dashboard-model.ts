@@ -521,9 +521,10 @@ export function usePortalDashboardModel(role: Role) {
 
   const facultySubjects = useMemo(() => {
     const facultyName = profileUser?.name ?? profile.name
+    const activeIds = new Set(semesters.filter((s) => s.status === "Active").map((s) => s.id))
     const seen = new Set<string>()
     return classSchedules
-      .filter((item) => item.instructor === facultyName)
+      .filter((item) => item.instructor === facultyName && (!item.semesterId || activeIds.has(item.semesterId)))
       .map((item) => {
         const code = item.subject.split(" - ")[0]?.trim() ?? item.subject
         const label = item.subject
@@ -546,14 +547,18 @@ export function usePortalDashboardModel(role: Role) {
           ),
         ],
       }))
-  }, [classSchedules, profileUser, profile.name])
+  }, [classSchedules, profileUser, profile.name, semesters])
 
   const profileSection = roster.find((s) => s.id === profile.id && s.enrolled)?.section ?? profileUser?.section ?? ""
   const visibleSchedules = useMemo(() => {
+    const activeIds = new Set(semesters.filter((s) => s.status === "Active").map((s) => s.id))
+    const belongsToActive = (item: ScheduleItem) =>
+      !item.semesterId || activeIds.has(item.semesterId)
+
     if (role === "faculty") {
       const facultyName = profileUser?.name ?? profile.name
       return classSchedules.filter((item) =>
-        item.instructor === facultyName
+        item.instructor === facultyName && belongsToActive(item)
       )
     }
     if (role === "student") {
@@ -580,11 +585,11 @@ export function usePortalDashboardModel(role: Role) {
       if (allSections.length === 0) return []
       return classSchedules.filter((item) => {
         const code = normalize(item.subject.split(" - ")[0]?.trim() ?? "")
-        return allSections.some((sec) => item.section.includes(sec)) && !passedCodes.has(code)
+        return allSections.some((sec) => item.section.includes(sec)) && !passedCodes.has(code) && belongsToActive(item)
       })
     }
     return classSchedules
-  }, [classSchedules, role, profileSection, profileUser, profile.name, grades, profile.id, users])
+  }, [classSchedules, role, profileSection, profileUser, profile.name, grades, profile.id, users, semesters])
 
   const selectedScheduleStudents = useMemo(
     () =>
@@ -1199,7 +1204,9 @@ export function usePortalDashboardModel(role: Role) {
         updatedAt: now,
       }
       setGrades((current) => [newGrade, ...current])
-      void syncApi("POST", "/api/portal/grades", newGrade)
+      syncApi("POST", "/api/portal/grades", newGrade).catch(() => {
+        setGrades((current) => current.filter((g) => g.id !== newId))
+      })
     }
 
     const existingRoster = roster.find(
@@ -2005,6 +2012,36 @@ export function usePortalDashboardModel(role: Role) {
     }
   }
 
+  function handleSaveGwa(
+    studentId: string,
+    semesterId: string,
+    semester: string,
+    schoolYearStart: number,
+    schoolYearEnd: number,
+    gwa: number | null
+  ) {
+    setUsers((current) =>
+      current.map((u) => {
+        if (u.id !== studentId) return u
+        const existing = u.semesterGwas ?? []
+        const idx = existing.findIndex((g) => g.semesterId === semesterId)
+        const entry = { semesterId, semester, schoolYearStart, schoolYearEnd, gwa }
+        const updated = idx >= 0
+          ? existing.map((g, i) => (i === idx ? entry : g))
+          : [...existing, entry]
+        return { ...u, semesterGwas: updated }
+      })
+    )
+    syncApi("PUT", "/api/portal/grades/registry/gwa", {
+      studentId, semesterId, semester, schoolYearStart, schoolYearEnd, gwa,
+    }).then(() => {
+      toast.success("GWA saved.")
+    }).catch((e) => {
+      toast.error("Failed to save GWA.")
+      console.error(e)
+    })
+  }
+
   function confirmAndDeleteThesis(thesisId: string) {
     const thesis = theses.find((t) => t.id === thesisId)
     setPendingConfirm({
@@ -2283,6 +2320,19 @@ export function usePortalDashboardModel(role: Role) {
       )
     )
 
+    const nameParts = studentDraft.name.trim().split(/\s+/)
+    syncApi("POST", "/api/portal/users", {
+      id: studentDraft.id.trim(),
+      name: studentDraft.name.trim(),
+      email: `${studentDraft.id.trim()}@student.local`,
+      role: "student",
+      firstName: nameParts[0] ?? "",
+      lastName: nameParts.slice(1).join(" ") ?? "",
+      section: studentDraft.section,
+      password: "ispsc@student2026",
+      status: "Active",
+    }).catch(() => {})
+
     resetStudentDraft(studentDraft.section)
   }
 
@@ -2391,7 +2441,9 @@ export function usePortalDashboardModel(role: Role) {
             updatedAt: now,
           }
           setGrades((current) => [newGrade, ...current])
-          void syncApi("POST", "/api/portal/grades", newGrade)
+          syncApi("POST", "/api/portal/grades", newGrade).catch(() => {
+            setGrades((current) => current.filter((g) => g.id !== newId))
+          })
         }
       }
     }
@@ -2605,6 +2657,20 @@ export function usePortalDashboardModel(role: Role) {
     if (item) addAuditLog(`Deleted semester "${item.semester}"`)
   }
 
+  function inactivateSemester(id: string) {
+    const item = semesters.find((s) => s.id === id)
+    setSemesters((current) =>
+      current.map((s) => (s.id === id ? { ...s, status: "Inactive" as const } : s))
+    )
+    syncApi("POST", `/api/portal/semesters/${id}/inactivate`).then(() =>
+      toast.success("Semester marked as ended.")
+    ).catch((e) => {
+      toast.error("Failed to mark semester as ended.")
+      console.error(e)
+    })
+    if (item) addAuditLog(`Marked semester "${item.semester}" as ended`)
+  }
+
   function archiveSemester(id: string) {
     const item = semesters.find((s) => s.id === id)
     setSemesters((current) =>
@@ -2676,6 +2742,8 @@ export function usePortalDashboardModel(role: Role) {
   }
 
   const activeSemester = semesters.find((s) => s.status === "Active")
+  const activeSemesterIds = useMemo(() => new Set(semesters.filter((s) => s.status === "Active").map((s) => s.id)), [semesters])
+  const inactiveSemesters = semesters.filter((s) => s.status === "Inactive")
   const archivedSemesters = semesters.filter((s) => s.status === "Archived")
 
   function handleAddSubject(event: FormEvent<HTMLFormElement>) {
@@ -3488,12 +3556,15 @@ export function usePortalDashboardModel(role: Role) {
     handleAddSemester,
     handleUpdateSemester,
     handleDeleteSemester,
+    inactivateSemester,
     archiveSemester,
     unarchiveSemester,
     activateSemester,
     setGradingPeriod,
     setSemesterEndDate,
     activeSemester,
+    activeSemesterIds,
+    inactiveSemesters,
     archivedSemesters,
     handleAddSubject,
     handleUpdateSubject,
@@ -3510,6 +3581,7 @@ export function usePortalDashboardModel(role: Role) {
     handleAddGradeHistory,
     handleRemoveGradeHistory,
     handleUpdateGradeHistory,
+    handleSaveGwa,
     profileStudentType: profileUser?.studentType,
     profileCurrentYearLevel: profileUser?.currentYearLevel,
     handleAddUser,

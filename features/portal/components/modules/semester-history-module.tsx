@@ -36,14 +36,26 @@ export function SemesterHistoryModule({ model }: PortalModuleProps) {
   const { archivedSemesters, grades, classSchedules } = model
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
+  const studentUser = model.users.find((u) => u.id === model.profile.id)
+  const semesterGwas = useMemo(() => {
+    const gwas = studentUser?.semesterGwas ?? []
+    const map = new Map<string, number | null>()
+    for (const g of gwas) {
+      map.set(g.semester, g.gwa)
+    }
+    return map
+  }, [studentUser?.semesterGwas])
+
   const semestersWithData = useMemo(() => {
     return archivedSemesters.map((sem) => {
       const semGrades = getSemesterGrades(sem, grades, classSchedules)
-      const gwa = computeGWA(semGrades)
+      const computedGwa = computeGWA(semGrades)
+      const storedGwa = semesterGwas.get(sem.semester)
+      const gwa = storedGwa !== undefined && storedGwa !== null ? storedGwa : computedGwa
       const completed = semGrades.filter((g) => g.remarks === "Passed").length
       return { semester: sem, grades: semGrades, gwa, completed }
     })
-  }, [archivedSemesters, grades, classSchedules])
+  }, [archivedSemesters, grades, classSchedules, semesterGwas])
 
   if (archivedSemesters.length === 0) {
     return (

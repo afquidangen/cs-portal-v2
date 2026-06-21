@@ -1,20 +1,24 @@
 "use client"
 
 import { type FormEvent, useMemo, useState } from "react"
-import { Archive, ArchiveRestore, CalendarDays, CheckCircle2, Clock, GraduationCap, Plus, RotateCcw, Timer } from "lucide-react"
+import { Archive, ArchiveRestore, CalendarDays, CheckCircle2, Clock, Download, GraduationCap, Plus, RotateCcw, Timer, ToggleLeft, ToggleRight } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Panel } from "../shared/dashboard-ui"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import type { PortalModuleProps } from "./types"
+import type { GradeRecord, ScheduleItem } from "../../data/portal-data"
+import type { SemesterRecord } from "@/lib/types"
 
 export function SemesterManagementModule({ model }: PortalModuleProps) {
   const {
     activeSemester,
+    inactiveSemesters,
     archivedSemesters,
     semesters,
     setSemesters,
+    inactivateSemester,
     archiveSemester,
     unarchiveSemester,
     activateSemester,
@@ -31,6 +35,7 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
   } = model
 
   const [archiveTarget, setArchiveTarget] = useState<string | null>(null)
+  const [inactiveTarget, setInactiveTarget] = useState<string | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [endDateValue, setEndDateValue] = useState(activeSemester?.endDate?.split("T")[0] ?? "")
 
@@ -40,6 +45,12 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
     if (diff <= 0) return 0
     return Math.ceil(diff / 86400000)
   }, [activeSemester?.endDate])
+
+  function handleMarkInactive() {
+    if (!inactiveTarget) return
+    inactivateSemester(inactiveTarget)
+    setInactiveTarget(null)
+  }
 
   function handleArchive() {
     if (!archiveTarget) return
@@ -52,10 +63,87 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
     setSemesterEndDate(activeSemester.id, new Date(endDateValue).toISOString())
   }
 
+  function getSemesterSchedules(sem: SemesterRecord): ScheduleItem[] {
+    return classSchedules.filter((s) => s.semesterId === sem.id)
+  }
+
+  function getSemesterGrades(sem: SemesterRecord): GradeRecord[] {
+    const direct = grades.filter((g) => g.semesterId === sem.id)
+    if (direct.length > 0) return direct
+    const pairs = new Set(
+      classSchedules
+        .filter((s) => s.semesterId === sem.id)
+        .map((s) => `${s.section}|${s.subject}`)
+    )
+    return grades.filter((g) => pairs.has(`${g.section}|${g.subject}`))
+  }
+
+  function downloadCsv(sem: SemesterRecord) {
+    const semSchedules = getSemesterSchedules(sem)
+    const semGrades = getSemesterGrades(sem)
+
+    const instructorMap = new Map<string, string>()
+    for (const s of semSchedules) {
+      const key = `${s.section}|${s.subject}`
+      if (!instructorMap.has(key)) instructorMap.set(key, s.instructor)
+    }
+
+    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`
+    const rows: string[] = []
+
+    rows.push(esc(`Semester Archive Report - ${sem.semester} A.Y. ${sem.schoolYearStart}-${sem.schoolYearEnd}`))
+    rows.push("")
+
+    rows.push("SCHEDULES")
+    rows.push(["Day", "Time", "Subject", "Section", "Room", "Instructor"].map(esc).join(","))
+    for (const s of semSchedules) {
+      rows.push([s.day, s.time, s.subject, s.section, s.room, s.instructor].map(esc).join(","))
+    }
+    rows.push("")
+
+    const seen = new Set<string>()
+    const rosterEntries: { section: string; student: string }[] = []
+    for (const g of semGrades) {
+      const key = `${g.section}|${g.student}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        rosterEntries.push({ section: g.section, student: g.student })
+      }
+    }
+    rows.push("STUDENT ROSTER")
+    rows.push(["Section", "Student Name"].map(esc).join(","))
+    for (const r of rosterEntries.sort((a, b) => a.section.localeCompare(b.section) || a.student.localeCompare(b.student))) {
+      rows.push([r.section, r.student].map(esc).join(","))
+    }
+    rows.push("")
+
+    rows.push("GRADE RECORDS")
+    rows.push(["Student", "Subject Code", "Subject", "Section", "Instructor", "Final Grade", "Transmuted", "Remarks"].map(esc).join(","))
+    for (const g of [...semGrades].sort((a, b) => a.student.localeCompare(b.student))) {
+      const instructor = instructorMap.get(`${g.section}|${g.subject}`) ?? ""
+      rows.push([
+        g.student, g.code, g.subject, g.section, instructor,
+        String(g.finalGrade ?? g.tentativeFinalGrade ?? ""),
+        String(g.transmutedGrade ?? ""),
+        g.remarks ?? "",
+      ].map(esc).join(","))
+    }
+
+    const csv = rows.join("\n")
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `archive-${sem.id}-report.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <Panel title="Semester Management" className="[&>div:first-child]:hidden">
       <div className="space-y-6">
-        {/* Header */}
         <div className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 sm:px-6">
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
           <div className="relative flex items-center gap-4">
@@ -129,21 +217,20 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
                 </div>
               </div>
 
-              {/* Archive Button */}
+              {/* Status Toggle */}
               <div className="rounded-xl border-2 border-destructive/20 bg-destructive/[0.03] p-3 flex items-end">
                 <Button
                   size="sm"
                   variant="destructive"
-                  onClick={() => setArchiveTarget(activeSemester.id)}
+                  onClick={() => setInactiveTarget(activeSemester.id)}
                   className="w-full"
                 >
-                  <Archive className="size-4" />
-                  Mark as Done
+                  <ToggleRight className="size-4" />
+                  Mark as Ended
                 </Button>
               </div>
             </div>
 
-            {/* Summary stats */}
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
                 <GraduationCap className="size-4" />
@@ -160,6 +247,42 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
             <CalendarDays className="mx-auto size-8 text-muted-foreground" />
             <p className="mt-3 text-sm font-medium text-foreground">No active semester</p>
             <p className="mt-1 text-xs text-muted-foreground">Create a new semester to get started.</p>
+          </div>
+        )}
+
+        {/* Inactive Semesters */}
+        {inactiveSemesters.length > 0 && (
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <h4 className="text-sm font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                Ended Semesters ({inactiveSemesters.length})
+              </h4>
+            </div>
+            <div className="space-y-2">
+              {inactiveSemesters.map((sem) => (
+                <div
+                  key={sem.id}
+                  className="flex items-center justify-between rounded-xl border border-border bg-card p-3"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {sem.semester}, A.Y. {sem.schoolYearStart}-{sem.schoolYearEnd}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Ended — ready for archival</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => activateSemester(sem.id)}>
+                      <RotateCcw className="size-4" />
+                      Reactivate
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => setArchiveTarget(sem.id)}>
+                      <Archive className="size-4" />
+                      Archive
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -198,6 +321,10 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
                     <Button size="sm" variant="outline" onClick={() => activateSemester(sem.id)}>
                       <RotateCcw className="size-4" />
                       Activate
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => downloadCsv(sem)}>
+                      <Download className="size-4" />
+                      Download CSV
                     </Button>
                   </div>
                 </div>
@@ -273,6 +400,21 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
         </div>
       </div>
 
+      {/* Mark as Ended Confirmation */}
+      <ConfirmDialog
+        open={inactiveTarget !== null}
+        onOpenChange={(open) => { if (!open) setInactiveTarget(null) }}
+        title="Mark Semester as Ended?"
+        description={
+          inactiveTarget
+            ? `Set "${semesters.find(s => s.id === inactiveTarget)?.semester}" to ended. This will hide it from active student and faculty views.`
+            : ""
+        }
+        variant="destructive"
+        confirmLabel="Mark as Ended"
+        onConfirm={handleMarkInactive}
+      />
+
       {/* Archive Confirmation Modal */}
       <ConfirmDialog
         open={archiveTarget !== null}
@@ -280,7 +422,7 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
         title="Archive Semester?"
         description={
           archiveTarget
-            ? `Mark "${semesters.find(s => s.id === archiveTarget)?.semester}" as done and move it to the archive. Students will still be able to view their grades for this semester.`
+            ? `Archive "${semesters.find(s => s.id === archiveTarget)?.semester}" permanently. Students and faculty will still be able to view grades and records for this semester.`
             : ""
         }
         variant="destructive"
