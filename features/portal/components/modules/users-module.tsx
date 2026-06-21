@@ -920,7 +920,6 @@ export function UsersModule({ model }: PortalModuleProps) {
                         <p className="mb-1.5 text-sm font-medium text-foreground">Curriculum *</p>
                       <Select
                         value={newUser.curriculum}
-                        displayValue={newUser.curriculum.split(" - ")[0]}
                         onChange={(value) => {
                           const curr = curricula.find(
                             (c) => `${c.id} - ${c.name} - ${c.major}` === value
@@ -1084,10 +1083,6 @@ export function UsersModule({ model }: PortalModuleProps) {
                     value={(() => {
                       const c = curricula.find((cr) => cr.id === changeCurriculumUser.newCurriculumId)
                       return c ? `${c.id} - ${c.name} - ${c.major}` : ""
-                    })()}
-                    displayValue={(() => {
-                      const c = curricula.find((cr) => cr.id === changeCurriculumUser.newCurriculumId)
-                      return c ? c.id : ""
                     })()}
                     onChange={(value) => {
                       const curr = curricula.find(
@@ -1741,14 +1736,6 @@ export function UsersModule({ model }: PortalModuleProps) {
                                 return c ? `${c.id} - ${c.name} - ${c.major}` : editUser.curriculum ?? ""
                               })()
                             : editUser.curriculum ?? ""
-                        }
-                        displayValue={
-                          editUser.curriculumId
-                            ? (() => {
-                                const c = curricula.find((cr) => cr.id === editUser.curriculumId)
-                                return c ? c.id : ""
-                              })()
-                            : editUser.curriculum?.split(" - ")[0] ?? ""
                         }
                         onChange={(value) => {
                           const curr = curricula.find(

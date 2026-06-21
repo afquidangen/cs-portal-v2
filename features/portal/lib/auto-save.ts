@@ -13,7 +13,7 @@ export function useAutoSave(saveFn: (data: unknown) => Promise<void>, delay = 80
 
   const flush = useCallback(async () => {
     const data = pendingRef.current
-    if (data === null) return
+    if (data === null || savingRef.current) return
     pendingRef.current = null
     savingRef.current = true
     setStatus("saving")
@@ -21,8 +21,9 @@ export function useAutoSave(saveFn: (data: unknown) => Promise<void>, delay = 80
       await saveFn(data)
       setStatus("saved")
       setLastSaved(new Date().toLocaleTimeString("en-PH", { timeZone: "Asia/Manila" }))
-    } catch {
+    } catch (e) {
       setStatus("failed")
+      throw e
     } finally {
       savingRef.current = false
     }
@@ -30,6 +31,7 @@ export function useAutoSave(saveFn: (data: unknown) => Promise<void>, delay = 80
 
   const schedule = useCallback(
     (data: unknown) => {
+      if (savingRef.current) return
       pendingRef.current = data
       if (timerRef.current) clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => {

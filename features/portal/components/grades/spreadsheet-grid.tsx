@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
-  ChevronDown, Lock, Unlock, CheckCircle2, Search, Calculator,
-  Send, XCircle, RotateCcw, Save, Megaphone,
+  ChevronDown, Search, Save, Megaphone,
 } from "lucide-react"
 import { AgGridReact } from "ag-grid-react"
 import type { ColDef, ColGroupDef, CellValueChangedEvent, ColumnResizedEvent, SelectionChangedEvent, GridReadyEvent, ColumnHeaderClickedEvent } from "ag-grid-community"
@@ -162,29 +161,9 @@ function EditMaxScoreDialog({
   )
 }
 
-function StatusCellRenderer(params: { value: string }) {
-  const val = params.value
-  if (!val) return null
-  return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-      val === "Draft" ? "bg-amber-100 text-amber-700" :
-      val === "Submitted" ? "bg-blue-100 text-blue-700" :
-      val === "Reviewed" ? "bg-violet-100 text-violet-700" :
-      val === "Approved" ? "bg-emerald-100 text-emerald-700" :
-      val === "Locked" ? "bg-gray-100 text-gray-700" :
-      "bg-muted text-muted-foreground"
-    }`}>
-      {val === "Locked" ? <Lock className="size-3" /> : null}
-      {val === "Approved" ? <CheckCircle2 className="size-3" /> : null}
-      {val}
-    </span>
-  )
-}
-
-function RemarksDropdownRenderer(params: { value: string; node: { setDataValue: (field: string, val: string) => void }; colDef: { colId?: string }; data: { workflowStatus: string } }) {
+function RemarksDropdownRenderer(params: { value: string; node: { setDataValue: (field: string, val: string) => void }; colDef: { colId?: string } }) {
   const val = params.value || ""
   const field = params.colDef?.colId || "remarks"
-  const isLocked = params.data?.workflowStatus === "Locked"
   const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
@@ -204,9 +183,8 @@ function RemarksDropdownRenderer(params: { value: string; node: { setDataValue: 
     <select
       value={val}
       onChange={onChange}
-      disabled={isLocked}
       style={{ colorScheme: isDark ? "dark" : "light", backgroundColor: isDark ? "#1e293b" : "#fff", color: isDark ? "#fff" : "#000" }}
-      className={`w-full rounded-md border px-2 py-1 text-xs ${isLocked ? "cursor-not-allowed opacity-70" : ""}`}
+      className="w-full rounded-md border px-2 py-1 text-xs"
     >
       <option value="">&mdash;</option>
       {gradeRemarkOptions.map((opt) => (
@@ -409,8 +387,6 @@ export function SpreadsheetGrid({
   const [maxScoreDialogOpen, setMaxScoreDialogOpen] = useState(false)
   const [maxScoreColName, setMaxScoreColName] = useState("")
   const [maxScoreCurrent, setMaxScoreCurrent] = useState(0)
-  const [moreOpen, setMoreOpen] = useState(false)
-  const moreRef = useRef<HTMLDivElement>(null)
   const [releaseOpen, setReleaseOpen] = useState(false)
   const [releaseMidterm, setReleaseMidterm] = useState(true)
   const [releaseFinal, setReleaseFinal] = useState(true)
@@ -421,10 +397,9 @@ export function SpreadsheetGrid({
   const undoManager = useRef(new UndoRedoManager())
 
   const gradeMapRef = useRef(gradeMap)
+  gradeMapRef.current = gradeMap
   const [liveData, setLiveData] = useState<Map<string, LivePreviewEntry>>(new Map())
   const dataLoadedRef = useRef(false)
-
-  useEffect(() => { gradeMapRef.current = gradeMap }, [gradeMap])
 
   const scheduleInfo = useMemo(() => {
     if (!classId || !model.visibleSchedules) return { instructor: "", section: "" }
@@ -440,14 +415,20 @@ export function SpreadsheetGrid({
 
   const saveGradeData = useCallback(async (data: unknown) => {
     const { grades: gradeData, cid, showToast } = data as { grades: GradeRecord[]; cid: string; showToast?: boolean }
+    if (!cid) {
+      if (showToast) toast.error("No class selected.")
+      throw new Error("No classId provided")
+    }
     const res = await fetch(`/api/portal/grades/class/${cid}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ grades: gradeData }),
     })
     if (!res.ok) {
+      const text = await res.text().catch(() => "")
+      console.error("[GradeSaveError]", res.status, text)
       if (showToast) toast.error("Failed to save grades.")
-      throw new Error("Failed to save")
+      throw new Error(`Failed to save: ${res.status} ${text}`)
     }
     const json = await res.json()
     if (json.data?.grades) {
@@ -468,18 +449,6 @@ export function SpreadsheetGrid({
     setSaveStatus(autoSave.status)
     setLastSaved(autoSave.lastSaved)
   }, [autoSave.status, autoSave.lastSaved])
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
-        setMoreOpen(false)
-      }
-    }
-    if (moreOpen) {
-      document.addEventListener("mousedown", handleClick)
-      return () => document.removeEventListener("mousedown", handleClick)
-    }
-  }, [moreOpen])
 
   const filteredColumns = useMemo(() => {
     if (activeTab === "summary") return []
@@ -522,8 +491,7 @@ export function SpreadsheetGrid({
       subjectType: effectiveScheme?.subjectType ?? "Lecture",
       scores: {},
       categoryGrades: [],
-      workflowStatus: "Locked",
-      released: true,
+      workflowStatus: "Draft",
       updatedAt: new Date().toISOString(),
     }
     setGrades((prev) => [newGrade, ...prev])
@@ -646,41 +614,6 @@ export function SpreadsheetGrid({
       setComputedOnce(true)
       toast.success(`Grades computed successfully (${period} period).`)
     } catch { toast.error("Failed to compute grades.") }
-  }
-
-  async function handleUpdateWorkflow(status: GradeWorkflowStatus) {
-    if (!classId) return
-    const studentIds = selectedRows.length > 0 ? selectedRows.map((r) => r.studentId) : undefined
-    try {
-      const res = await fetch("/api/portal/grades/status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ classId, status, studentIds }),
-      })
-      const json = await res.json()
-      if (!res.ok) { toast.error(json.error || "Failed to update status."); return }
-      setGrades((prev) =>
-        prev.map((g) =>
-          (studentIds ? studentIds.includes(g.studentId) : g.classId === classId)
-            ? { ...g, workflowStatus: status, released: status === "Approved" || status === "Locked" }
-            : g
-        )
-      )
-      toast.success(`Grades ${status.toLowerCase()}.`)
-    } catch { toast.error("Failed to update status.") }
-  }
-
-  function isAllLocked() {
-    const studentIds = selectedRows.length > 0
-      ? selectedRows.map((r) => r.studentId)
-      : Array.from(gradeMap.values()).filter((g) => g.classId === classId).map((g) => g.studentId)
-    if (studentIds.length === 0) return false
-    return studentIds.every((sid) => gradeMap.get(sid)?.workflowStatus === "Locked")
-  }
-
-  async function handleToggleLock() {
-    const targetStatus = isAllLocked() ? "Draft" : "Locked"
-    await handleUpdateWorkflow(targetStatus)
   }
 
   async function handleRelease(period: "midterm" | "final" | "both") {
@@ -1016,15 +949,26 @@ export function SpreadsheetGrid({
           }, cellStyle: { fontWeight: 600 } },
         { headerName: "Fin. Remarks", field: "finalRemarks", colId: "finalRemarks", width: 150, sortable: true, filter: "agTextColumnFilter",
           cellRenderer: RemarksDropdownRenderer },
-        { headerName: "Percentile", field: "finalGrade", width: 120, sortable: true, filter: "agNumberColumnFilter",
-          valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 700 } },
-        { headerName: "Final Rating", field: "finalGrade", width: 120, sortable: true, filter: "agNumberColumnFilter",
-          valueFormatter: (params) => { const n = Number(params.value); return isNaN(n) ? "" : n.toFixed(0) }, cellStyle: { fontWeight: 700 } },
-        { headerName: "Transmuted", field: "transmutedGrade", width: 120, sortable: true, filter: "agNumberColumnFilter",
-          valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 700 } },
-        { headerName: "Status", field: "workflowStatus", width: 130, sortable: true, filter: "agTextColumnFilter",
-          cellRenderer: StatusCellRenderer },
-        {
+        { headerName: "Percentile", width: 120, sortable: true, filter: "agNumberColumnFilter",
+          valueFormatter: (params) => {
+            const row = params.data as StudentGradeRow
+            const grade = gradeMapRef.current.get(row.studentId)
+            return fmtNum(grade?.finalGrade ?? grade?.tentativeFinalGrade)
+          }, cellStyle: { fontWeight: 700 } },
+        { headerName: "Final Rating", width: 120, sortable: true, filter: "agNumberColumnFilter",
+          valueFormatter: (params) => {
+            const row = params.data as StudentGradeRow
+            const grade = gradeMapRef.current.get(row.studentId)
+            const n = Number(grade?.finalGrade ?? grade?.tentativeFinalGrade)
+            return isNaN(n) ? "" : n.toFixed(0)
+          }, cellStyle: { fontWeight: 700 } },
+        { headerName: "Transmuted", width: 120, sortable: true, filter: "agNumberColumnFilter",
+          valueFormatter: (params) => {
+            const row = params.data as StudentGradeRow
+            const grade = gradeMapRef.current.get(row.studentId)
+              return fmtNum(grade?.transmutedGrade ?? grade?.finalTransmuted)
+            }, cellStyle: { fontWeight: 700 } },
+          {
           headerName: "Release", marryChildren: true,
           headerClass: "ag-component-group-header",
           children: [
@@ -1082,7 +1026,7 @@ export function SpreadsheetGrid({
         filter: "agNumberColumnFilter",
         editable: (params) => {
           if (!isEditable) return false
-          return (params.data as StudentGradeRow)?.workflowStatus !== "Locked"
+          return true
         },
         valueGetter: (params) => {
           const row = params.data as StudentGradeRow
@@ -1173,7 +1117,7 @@ export function SpreadsheetGrid({
           filter: "agNumberColumnFilter",
           editable: (params) => {
             if (!isEditable) return false
-            return (params.data as StudentGradeRow)?.workflowStatus !== "Locked"
+            return true
           },
           valueGetter: (params) => {
             const row = params.data as StudentGradeRow
@@ -1320,8 +1264,6 @@ export function SpreadsheetGrid({
         }, valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 700 } },
       { headerName: "Remarks", field: activeTab === "midterm" ? "midtermRemarks" : "finalRemarks", colId: activeTab === "midterm" ? "midtermRemarks" : "finalRemarks", width: saved["remarks"] ?? 150, sortable: true, filter: "agTextColumnFilter",
         cellRenderer: RemarksDropdownRenderer },
-      { headerName: "Status", field: "workflowStatus", width: saved["workflowStatus"] ?? 130, sortable: true, filter: "agTextColumnFilter",
-        cellRenderer: StatusCellRenderer },
       {
         headerName: "Release", marryChildren: true,
         headerClass: "ag-component-group-header",
@@ -1575,51 +1517,52 @@ export function SpreadsheetGrid({
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-        {/* Data actions */}
-        {activeTab !== "summary" && (
-          <Button size="default" variant="default" onClick={() => handleComputeGrades(activeTab === "midterm" ? "midterm" : "final")} className="rounded-lg shadow-sm ring-1 ring-primary/30">
-            <Calculator className="size-4" /> Compute
-          </Button>
-        )}
-        <Button size="default" variant="outline" onClick={() => autoSave.saveNow({ grades: Array.from(gradeMap.values()), cid: classId, showToast: true })} className="rounded-lg shadow-sm">
+        <Button size="default" variant="default" onClick={async () => {
+          let gradesToSave: GradeRecord[] = Array.from(gradeMap.values())
+          if (activeTab !== "summary") {
+            const period = activeTab === "midterm" ? "midterm" : "final"
+            gradesToSave = gradesToSave.map((g) => {
+              const result = computeLivePreview({
+                scores: g.scores || {},
+                columns: filteredColumns,
+                assessments: periodAssessments,
+                studentId: g.studentId,
+                components: effectiveScheme?.components || [],
+                labComponents: effectiveScheme?.labComponents,
+                subjectType: effectiveScheme?.subjectType || "Lecture",
+                lectureWeight: effectiveScheme?.lectureWeight,
+                laboratoryWeight: effectiveScheme?.laboratoryWeight,
+                midtermGrade: period === "final" ? (g.midtermGrade ?? undefined) : undefined,
+              })
+              const updated = { ...g, categoryGrades: result.categoryGrades, updatedAt: new Date().toISOString() } as GradeRecord & Record<string, unknown>
+              if (period === "midterm") {
+                updated.midtermClassStanding = result.classStanding
+                updated.midtermExam = result.examGrade
+                updated.midtermGrade = result.periodGrade
+                updated.midtermTransmuted = transmuteGrade(result.periodGrade)
+                updated.lectureGrade = result.lectureGrade
+                if (result.laboratoryGrade !== undefined) updated.midtermLaboratoryGrade = result.laboratoryGrade
+              } else {
+                updated.finalClassStanding = result.classStanding
+                updated.finalExam = result.examGrade
+                updated.tentativeFinalGrade = result.periodGrade
+                updated.finalTransmuted = transmuteGrade(result.periodGrade)
+                if (result.laboratoryGrade !== undefined) updated.finalLaboratoryGrade = result.laboratoryGrade
+                if (result.finalGrade !== undefined) { updated.finalGrade = result.finalGrade; updated.transmutedGrade = result.transmutedGrade }
+              }
+              return updated
+            })
+            setGrades((prev) => prev.map((g) => gradesToSave.find((c) => c.studentId === g.studentId) ?? g))
+          }
+          await autoSave.saveNow({ grades: gradesToSave, cid: classId, showToast: true })
+        }} className="rounded-lg shadow-sm">
           <Save className="size-4" /> Save
         </Button>
         <SaveStatusIndicator status={saveStatus} lastSaved={lastSaved} />
 
-        {/* Divider */}
-        <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
-
-        {/* Workflow actions */}
-        <span className="text-[11px] font-medium text-muted-foreground sm:text-xs">Workflow:</span>
-        <Button size="default" variant="outline" onClick={() => handleUpdateWorkflow("Submitted")} className="rounded-lg">
-          <Send className="size-4" /> Submit
-        </Button>
-        <Button size="default" variant="outline" onClick={handleToggleLock} className="rounded-lg">
-          {isAllLocked() ? <Unlock className="size-4" /> : <Lock className="size-4" />} {isAllLocked() ? "Unlock" : "Lock"}
-        </Button>
         <Button size="default" variant="outline" onClick={() => setReleaseOpen(true)} className="rounded-lg">
           <Megaphone className="size-4" /> Release
         </Button>
-
-        {/* More dropdown */}
-        <div className="relative">
-          <Button size="default" variant="outline" onClick={() => setMoreOpen((v) => !v)} className="rounded-lg">
-            <ChevronDown className="size-4" /> More
-          </Button>
-          {moreOpen && (
-            <div ref={moreRef} className="absolute right-0 bottom-full z-50 mb-1 flex min-w-[160px] flex-col rounded-lg border border-border bg-card shadow-lg">
-              <button onClick={() => { handleUpdateWorkflow("Reviewed"); setMoreOpen(false) }} className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted">
-                <CheckCircle2 className="size-4" /> Reviewed
-              </button>
-              <button onClick={() => { handleUpdateWorkflow("Approved"); setMoreOpen(false) }} className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted">
-                <CheckCircle2 className="size-4" /> Approve
-              </button>
-              <button onClick={() => { handleUpdateWorkflow("Draft"); setMoreOpen(false) }} className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted">
-                <XCircle className="size-4" /> Revert
-              </button>
-            </div>
-          )}
-        </div>
       </div>
 
       <ReleaseDialog

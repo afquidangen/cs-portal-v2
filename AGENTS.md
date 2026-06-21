@@ -65,4 +65,9 @@ Equivalent to `MG × 0.50 + FG × 0.50`.
 - `app/api/portal/grades/compute/route.ts` — server‑side batch compute endpoint
 - `features/portal/components/modules/grades-module.tsx` — client‑side live preview
 - `scripts/seed-grading-schemes.ts` — default scheme definitions
+
+### Percentile Column Fix
+- **Problem:** Summary tab "Percentile" column read `field: "finalGrade"` from row data. Compute endpoint only writes `finalGrade` when `midtermGrade > 0`, so after computing only the final period, `finalGrade` stays undefined and the column shows blank.
+- **Fix:** Changed `valueFormatter` to read from `gradeMapRef.current` (same as "Tentative Final" column), falling back to `tentativeFinalGrade` when `finalGrade` is undefined. No grade logic changed — purely a display fix.
+- **File:** `features/portal/components/grades/spreadsheet-grid.tsx` line 1019-1024
 <!-- END:grading-architecture -->

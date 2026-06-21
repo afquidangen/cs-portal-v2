@@ -201,7 +201,6 @@ export function Select({
   label,
   className,
   contentClassName,
-  displayValue,
 }: {
   value: string
   onChange: (value: string) => void
@@ -209,7 +208,6 @@ export function Select({
   label?: string
   className?: string
   contentClassName?: string
-  displayValue?: string
 }) {
   return (
     <label className="grid gap-1.5 text-sm text-foreground/80">
@@ -222,9 +220,7 @@ export function Select({
           "h-11 rounded-lg border bg-white text-black shadow-sm transition-all duration-200 hover:bg-slate-50 focus:ring-2 focus:ring-ring/20 dark:bg-[#0f1b2b] dark:text-white dark:hover:bg-secondary",
           className ?? "border-border"
         )}>
-          <SelectValue placeholder="Select option">
-            {displayValue || undefined}
-          </SelectValue>
+          <SelectValue placeholder="Select option" />
         </SelectTrigger>
 
         <SelectContent className={cn("border border-border bg-white text-black shadow-2xl dark:bg-[#0f1b2b] dark:text-white", contentClassName)}>

@@ -80,7 +80,10 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
         if (gradesJson.data?.columns) setGradeColumns(gradesJson.data.columns)
         if (gradesJson.data?.assessments) setAssessments(gradesJson.data.assessments)
         if (gradesJson.data?.grades) {
-          setGrades((prev) => mergeGradesWithState(gradesJson.data.grades, prev))
+          setGrades((prev) => {
+            const filtered = prev.filter((g) => g.classId !== classId)
+            return [...filtered, ...gradesJson.data.grades]
+          })
         }
         const code = selectedSubject.split(" - ")[0]?.trim() ?? selectedSubject
         const gradeTypes = new Set(gradesJson.data?.grades?.map((g: { subjectType: string }) => g.subjectType) ?? [])
@@ -106,19 +109,6 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
       })
       .catch(() => {})
   }, [classId, selectedSubject, curricula, setGrades])
-
-  function mergeGradesWithState(serverGrades: GradeRecord[], currentGrades: GradeRecord[]): GradeRecord[] {
-    const serverMap = new Map(serverGrades.map((g) => [g.studentId, g]))
-    const currentMap = new Map(currentGrades.map((g) => [g.studentId, g]))
-    const merged = new Map(serverMap)
-    for (const [studentId, g] of currentMap) {
-      if (merged.has(studentId)) {
-        merged.set(studentId, { ...merged.get(studentId)!, ...g })
-      }
-    }
-    return Array.from(merged.values())
-  }
-
   const subjectRoster = useMemo(() => {
     if (subjectSections.length === 0) return []
     const sectionSet = new Set(selectedSection ? [selectedSection] : subjectSections)
@@ -312,7 +302,7 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
               : `Roster has ${roster.length} student(s), subject sections: [${subjectSections.join(", ")}]${selectedSection ? `, selected: "${selectedSection}"` : ""}. No roster entries match these sections.`}
           </p>
         </div>
-      ) : selectedSubject ? (
+      ) : selectedSubject && classId ? (
           <SpreadsheetGrid
             model={model}
             selectedSubject={selectedSubject}
@@ -334,6 +324,10 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
             activeTab={activeTab}
             setActiveTab={setActiveTab}
           />
+      ) : selectedSubject ? (
+        <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
+          Loading class data...
+        </div>
       ) : null}
     </Panel>
   )

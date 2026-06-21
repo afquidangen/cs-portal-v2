@@ -56,7 +56,7 @@ export class BaseRepository {
     update: Record<string, unknown>
   ): Promise<unknown | null> {
     await connectToDatabase()
-    return this.model.findOneAndUpdate(filter, { $set: update }, { new: true }).lean()
+    return this.model.findOneAndUpdate(filter, { $set: update }, { returnDocument: "after" }).lean()
   }
 
   async delete(filter: Record<string, unknown>): Promise<boolean> {
@@ -78,7 +78,7 @@ export class BaseRepository {
     return this.model
       .findOneAndUpdate(filter, { $set: data } as Record<string, unknown>, {
         upsert: true,
-        new: true,
+        returnDocument: "after",
       })
       .lean()
   }

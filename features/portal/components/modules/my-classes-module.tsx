@@ -200,7 +200,6 @@ export function MyClassesModule({ model }: PortalModuleProps) {
                     value={instructorFilter}
                     onChange={setInstructorFilter}
                     options={instructorOptions}
-                    displayValue={instructorFilter === "All" ? "All Instructors" : instructorFilter}
                   />
                 </div>
               </div>

@@ -5,12 +5,13 @@ import { transmutationTableRepository } from "@/features/portal/repositories/tra
 import { assessmentRepository } from "@/features/portal/repositories/assessment.repository"
 import { success, error, badRequest } from "@/lib/api-response"
 import { requireFacultyOrAdmin } from "@/lib/api-auth"
+import { UserModel } from "@/lib/models"
 import type { GradingPeriod } from "@/lib/types"
 import {
   computeAllCategoryGrades, computeClassStanding,
   computeLectureGrade,   computeExamGrade,
   computeLaboratoryGrade, computePeriodGrade, computeFinalGrade,
-  transmuteGrade, gradeCategoryMatches,
+  transmuteGrade, getGradeRemarks, gradeCategoryMatches,
 } from "@/features/portal/lib/grade-engine"
 import type { CategoryGradeResult } from "@/features/portal/lib/grade-engine"
 
@@ -322,11 +323,58 @@ export async function POST(request: Request) {
         }
       }
 
-      const updated = await gradesRepository.upsert(
-        { classId, studentId: g.studentId as string },
-        updates
-      )
+      const existingGrade = await gradesRepository.findOne({ classId, studentId: g.studentId as string })
+      let updated: unknown
+      if (existingGrade) {
+        updated = await gradesRepository.update(
+          { classId, studentId: g.studentId as string },
+          updates
+        )
+      } else {
+        updated = await gradesRepository.create({
+          ...g,
+          ...updates,
+          id: `GRD-${Date.now()}-${g.studentId as string}-${Math.random().toString(36).slice(2, 10)}`,
+        })
+      }
       updatedGrades.push(updated)
+    }
+
+    if (period === "final") {
+      for (const result of updatedGrades) {
+        const r = result as Record<string, unknown>
+        const studentId = r.studentId as string
+        const finalGrade = r.finalGrade as number | undefined
+        if (finalGrade === undefined) continue
+        const transmuted = r.transmutedGrade as number | undefined
+        const user = await UserModel.findOne({ id: studentId })
+        if (!user) continue
+        const history = user.gradeHistory ? [...user.gradeHistory] : []
+        const existingIdx = (history as Array<Record<string, unknown>>).findIndex(
+          (h) => h.subjectCode === (r.code as string)
+        )
+        const entry: Record<string, unknown> = {
+          subjectCode: r.code,
+          subjectName: r.subject,
+          finalPercentile: finalGrade,
+          transmutedGrade: transmuted ?? 0,
+          remarks: getGradeRemarks(transmuted ?? 5.0),
+          section: r.section,
+        }
+        if (existingIdx >= 0) {
+          (history as Array<Record<string, unknown>>)[existingIdx] = {
+            ...(history as Array<Record<string, unknown>>)[existingIdx],
+            ...entry,
+          }
+        } else {
+          const u = user as unknown as Record<string, unknown>
+          entry.curriculumId = (u.curriculumId as string) ?? ""
+          entry.yearLevel = (u.currentYearLevel as string) ?? ""
+          entry.semester = (u.currentSemester as string) ?? ""
+          ;(history as Array<Record<string, unknown>>).push(entry)
+        }
+        await UserModel.updateOne({ id: studentId }, { $set: { gradeHistory: history } })
+      }
     }
 
     return success({ grades: updatedGrades })

@@ -627,7 +627,7 @@ export function usePortalDashboardModel(role: Role) {
   }, [studentGrades])
 
   const allStudentGrades = useMemo(
-    () => grades.filter((grade) => grade.studentId === profile.id),
+    () => grades.filter((grade) => grade.studentId === profile.id && grade.released === true),
     [grades, profile.id]
   )
 
@@ -1554,9 +1554,6 @@ export function usePortalDashboardModel(role: Role) {
         if (exists) return current
         return [{ id: accountId, name: fullName, section: newUser.section, enrolled: true, studentType: newUser.studentType }, ...current]
       })
-      syncApi("POST", "/api/portal/roster", { id: accountId, name: fullName, section: newUser.section, enrolled: true, studentType: newUser.studentType }).catch((e) =>
-        console.error(`Failed to sync roster for ${fullName}:`, e)
-      )
     }
 
     if (newUser.role === "faculty") {
@@ -1593,6 +1590,11 @@ export function usePortalDashboardModel(role: Role) {
         return { type: "error", message: ((errData as Record<string, unknown>).error as string) || "Failed to create user." }
       }
       addAuditLog(`Created ${newUser.role} account "${fullName}" (${newUser.email})`)
+      if (newUser.role === "student") {
+        syncApi("POST", "/api/portal/roster", { id: accountId, name: fullName, section: newUser.section, enrolled: true, studentType: newUser.studentType }).catch((e) =>
+          console.error(`Failed to sync roster for ${fullName}:`, e)
+        )
+      }
       return { type: "success" }
     } catch (e) {
       setUsers((current) => current.filter((u) => u.id !== accountId))

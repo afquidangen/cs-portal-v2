@@ -51,14 +51,33 @@ export async function PUT(
     }
     const results = []
     for (const grade of body.grades) {
-      const updated = await gradesRepository.upsert(
-        { classId, studentId: grade.studentId },
-        { ...grade, classId }
-      )
+      const { __v: _v, _id, id: _clientId, ...upsertData } = grade
+      if (upsertData.scores) {
+        const cleanedScores: Record<string, number> = {}
+        for (const [key, value] of Object.entries(upsertData.scores as Record<string, unknown>)) {
+          cleanedScores[key] = Number(value) || 0
+        }
+        upsertData.scores = cleanedScores
+      }
+      const existing = await gradesRepository.findOne({ classId, studentId: grade.studentId })
+      let updated: unknown
+      if (existing) {
+        updated = await gradesRepository.update(
+          { classId, studentId: grade.studentId },
+          { ...upsertData, classId }
+        )
+      } else {
+        updated = await gradesRepository.create({
+          ...upsertData,
+          classId,
+          id: `GRD-${Date.now()}-${grade.studentId}-${Math.random().toString(36).slice(2, 10)}`,
+        })
+      }
       results.push(updated)
     }
     return success({ grades: results })
   } catch (err) {
+    console.error("[GradeSaveError]", err)
     return error(err instanceof Error ? err.message : "Unable to update grades.")
   }
 }

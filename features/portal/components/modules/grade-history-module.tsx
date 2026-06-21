@@ -5,7 +5,7 @@ import { BookOpen } from "lucide-react"
 
 import { Panel, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
-import type { GradeHistoryEntry } from "../../data/portal-data"
+import type { GradeHistoryEntry, GradeRecord } from "../../data/portal-data"
 
 const YEAR_ORDER: Record<string, number> = {
   "1st Year": 1, "First Year": 1,
@@ -41,7 +41,41 @@ function sortSemester(a: string, b: string) {
 
 export function GradeHistoryModule({ model }: PortalModuleProps) {
   const studentUser = model.users.find((u) => u.id === model.profile.id)
-  const history = useMemo(() => studentUser?.gradeHistory ?? [], [studentUser?.gradeHistory])
+  const activeSemester = useMemo(
+    () => (model.semesters as Array<{ semester: string; status: string }> | undefined)?.find((s) => s.status === "Active"),
+    [model.semesters]
+  )
+
+  const history = useMemo(() => {
+    const base = studentUser?.gradeHistory ? [...studentUser.gradeHistory] : []
+    const releasedGrades = (model.allStudentGrades as GradeRecord[] | undefined)?.filter(
+      (g) => g.finalGrade !== undefined && g.transmutedGrade !== undefined
+    ) ?? []
+    if (releasedGrades.length === 0) return base
+    const curriculumId = studentUser?.curriculumId ?? ""
+    const yearLevel = model.profileCurrentYearLevel ?? ""
+    const semester = activeSemester?.semester ?? ""
+    for (const grade of releasedGrades) {
+      const existingIdx = base.findIndex((h) => h.subjectCode === grade.code)
+      const entry: GradeHistoryEntry = {
+        subjectCode: grade.code,
+        subjectName: grade.subject,
+        finalPercentile: grade.finalGrade!,
+        transmutedGrade: grade.transmutedGrade!,
+        remarks: grade.remarks || "Passed",
+        curriculumId,
+        yearLevel,
+        semester,
+        section: grade.section,
+      }
+      if (existingIdx >= 0) {
+        base[existingIdx] = { ...base[existingIdx], ...entry }
+      } else {
+        base.push(entry)
+      }
+    }
+    return base
+  }, [studentUser?.gradeHistory, model.allStudentGrades, activeSemester])
 
   const grouped = useMemo(() => {
     const map = new Map<string, GradeHistoryEntry[]>()
