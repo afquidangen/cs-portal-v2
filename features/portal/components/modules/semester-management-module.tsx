@@ -1,7 +1,7 @@
 "use client"
 
-import { type FormEvent, useMemo, useState } from "react"
-import { Archive, ArchiveRestore, CalendarDays, CheckCircle2, Clock, Download, GraduationCap, Plus, RotateCcw, Timer, ToggleLeft, ToggleRight } from "lucide-react"
+import { type FormEvent, useEffect, useMemo, useState } from "react"
+import { Archive, ArchiveRestore, CalendarDays, CheckCircle2, Clock, Download, GraduationCap, Plus, RotateCcw, Timer, ToggleLeft, ToggleRight, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -24,6 +24,7 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
     activateSemester,
     setGradingPeriod,
     setSemesterEndDate,
+    handleDeleteSemester,
     handleAddSemester,
     newSemester,
     setNewSemester,
@@ -36,8 +37,13 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
 
   const [archiveTarget, setArchiveTarget] = useState<string | null>(null)
   const [inactiveTarget, setInactiveTarget] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [endDateValue, setEndDateValue] = useState(activeSemester?.endDate?.split("T")[0] ?? "")
+
+  useEffect(() => {
+    setEndDateValue(activeSemester?.endDate?.split("T")[0] ?? "")
+  }, [activeSemester])
 
   const daysRemaining = useMemo(() => {
     if (!activeSemester?.endDate) return null
@@ -58,8 +64,14 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
     setArchiveTarget(null)
   }
 
+  function handleDelete() {
+    if (!deleteTarget) return
+    handleDeleteSemester(deleteTarget)
+    setDeleteTarget(null)
+  }
+
   function handleEndDateSave() {
-    if (!activeSemester) return
+    if (!activeSemester || !endDateValue) return
     setSemesterEndDate(activeSemester.id, new Date(endDateValue).toISOString())
   }
 
@@ -241,6 +253,13 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
                 <strong className="text-foreground">{grades.filter(g => g.semesterId === activeSemester.id).length}</strong> grade records
               </span>
             </div>
+
+            <div className="mt-4 flex justify-end border-t border-border pt-3">
+              <Button size="sm" variant="destructive" onClick={() => setDeleteTarget(activeSemester.id)}>
+                <Trash2 className="size-4" />
+                Delete Semester
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="rounded-2xl border-2 border-dashed border-border bg-muted/10 p-8 text-center">
@@ -278,6 +297,10 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
                     <Button size="sm" variant="destructive" onClick={() => setArchiveTarget(sem.id)}>
                       <Archive className="size-4" />
                       Archive
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => setDeleteTarget(sem.id)}>
+                      <Trash2 className="size-4" />
+                      Delete
                     </Button>
                   </div>
                 </div>
@@ -325,6 +348,10 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
                     <Button size="sm" variant="outline" onClick={() => downloadCsv(sem)}>
                       <Download className="size-4" />
                       Download CSV
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => setDeleteTarget(sem.id)}>
+                      <Trash2 className="size-4" />
+                      Delete
                     </Button>
                   </div>
                 </div>
@@ -428,6 +455,21 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
         variant="destructive"
         confirmLabel="Archive Semester"
         onConfirm={handleArchive}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}
+        title="Delete Semester?"
+        description={
+          deleteTarget
+            ? `Permanently delete "${semesters.find(s => s.id === deleteTarget)?.semester}"? This action cannot be undone.`
+            : ""
+        }
+        variant="destructive"
+        confirmLabel="Delete Semester"
+        onConfirm={handleDelete}
       />
     </Panel>
   )

@@ -2629,6 +2629,7 @@ export function usePortalDashboardModel(role: Role) {
     ).catch((e) => {
       toast.error("Failed to create semester.")
       console.error(e)
+      setSemesters((current) => current.filter((s) => s.id !== semesterData.id))
     })
   }
 
