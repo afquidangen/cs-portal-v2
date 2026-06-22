@@ -323,6 +323,14 @@ export async function POST(request: Request) {
         }
       }
 
+      if (period === "final") {
+        if (updates.transmutedGrade !== undefined) {
+          updates.remarks = getGradeRemarks(updates.transmutedGrade as number)
+        } else if (updates.finalTransmuted !== undefined) {
+          updates.remarks = getGradeRemarks(updates.finalTransmuted as number)
+        }
+      }
+
       const existingGrade = await gradesRepository.findOne({ classId, studentId: g.studentId as string })
       let updated: unknown
       if (existingGrade) {
