@@ -62,7 +62,7 @@ export async function getPortalDashboardData(): Promise<PortalDashboardData> {
     announcementsRepository.findAll(),
     schedulesRepository.findAll(),
     curriculaRepository.findAll(),
-    rosterRepository.findAll({}, true),
+    rosterRepository.findAll({}),
     csoReportsRepository.findAll(),
     semestersRepository.findAll(),
     subjectsRepository.findAll(),

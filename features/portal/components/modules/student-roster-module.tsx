@@ -137,6 +137,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
       { id: string; studentId: string; student: string; section: string; released: boolean }
     >()
     for (const g of grades) {
+      if (g.deletedAt) continue
       if (
         g.subject === selectedSubject &&
         (selectedSection ? g.section === selectedSection : sectionOptions.includes(g.section))

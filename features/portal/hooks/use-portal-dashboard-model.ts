@@ -383,7 +383,7 @@ export function usePortalDashboardModel(role: Role) {
       })
 
       const missing = users.filter(
-        (u) => u.role === "student" && u.section && !rosterIds.has(u.id)
+        (u) => u.role === "student" && u.section && !u.deletedAt && !rosterIds.has(u.id)
       )
       if (missing.length > 0) {
         changed = true
