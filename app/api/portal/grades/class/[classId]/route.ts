@@ -59,6 +59,15 @@ export async function PUT(
         }
         upsertData.scores = cleanedScores
       }
+      const specialRemarks = ["INC", "FAILED", "DROPPED"]
+      const finalRemarks = upsertData.finalRemarks as string | undefined
+      const midtermRemarks = upsertData.midtermRemarks as string | undefined
+      if (finalRemarks && specialRemarks.includes(finalRemarks)) {
+        upsertData.remarks = finalRemarks
+      } else if (midtermRemarks && specialRemarks.includes(midtermRemarks)) {
+        upsertData.remarks = midtermRemarks
+      }
+
       const existing = await gradesRepository.findOne({ classId, studentId: grade.studentId })
       let updated: unknown
       if (existing) {

@@ -34,6 +34,28 @@ export async function POST(
         { $or: orConditions },
         { $set: { semesterId: id } }
       )
+      await GradeModel.updateMany(
+        { $or: orConditions, remarks: null },
+        [
+          {
+            $set: {
+              remarks: {
+                $cond: [
+                  { $lte: ["$transmutedGrade", 3] },
+                  "Passed",
+                  {
+                    $cond: [
+                      { $gt: ["$transmutedGrade", 3] },
+                      "Failed",
+                      null
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      )
     }
 
     const updated = await semestersRepository.update({ id }, {

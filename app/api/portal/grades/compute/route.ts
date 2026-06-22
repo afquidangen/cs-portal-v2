@@ -324,7 +324,14 @@ export async function POST(request: Request) {
       }
 
       if (period === "final") {
-        if (updates.transmutedGrade !== undefined) {
+        const special = ["INC", "FAILED", "DROPPED"]
+        const fin = g.finalRemarks as string | undefined
+        const mid = g.midtermRemarks as string | undefined
+        if (fin && special.includes(fin)) {
+          updates.remarks = fin
+        } else if (mid && special.includes(mid)) {
+          updates.remarks = mid
+        } else if (updates.transmutedGrade !== undefined) {
           updates.remarks = getGradeRemarks(updates.transmutedGrade as number)
         } else if (updates.finalTransmuted !== undefined) {
           updates.remarks = getGradeRemarks(updates.finalTransmuted as number)

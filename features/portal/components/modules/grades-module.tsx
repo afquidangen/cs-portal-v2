@@ -439,7 +439,7 @@ export function GradesModule({ model }: PortalModuleProps) {
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-border shadow-sm">
-        <table className="w-full min-w-[820px] text-left text-sm">
+        <table className="w-full min-w-[740px] text-left text-sm">
           <thead className="bg-muted text-foreground">
             <tr className="border-b border-border">
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
@@ -469,9 +469,6 @@ export function GradesModule({ model }: PortalModuleProps) {
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
                 Equivalent
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-                Status
-              </th>
             </tr>
           </thead>
 
@@ -479,7 +476,7 @@ export function GradesModule({ model }: PortalModuleProps) {
             {visibleAllGrades.length === 0 ? (
               <tr>
                 <td
-                  colSpan={10}
+                  colSpan={9}
                   className="px-4 py-12 text-center text-sm text-muted-foreground"
                 >
                   No grade records yet.
@@ -537,12 +534,6 @@ export function GradesModule({ model }: PortalModuleProps) {
                     <td className="px-4 py-3 font-semibold text-foreground">
                       {grade.finalReleased && grade.transmutedGrade !== undefined
                         ? grade.transmutedGrade.toFixed(2)
-                        : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
-                    </td>
-                    {/* Remarks */}
-                    <td className="px-4 py-3">
-                      {grade.finalReleased
-                        ? <StatusBadge value={grade.remarks || "Passed"} />
                         : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
                     </td>
                   </tr>

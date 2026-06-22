@@ -545,14 +545,25 @@ export function SpreadsheetGrid({
       const grade = gradeMap.get(row.studentId)
       if (!grade) return
       const val = String(newValue)
+      const updates: Record<string, unknown> = { [colId]: val, updatedAt: new Date().toISOString() }
+      if (colId === "midtermRemarks" || colId === "finalRemarks") {
+        const newFinal = colId === "finalRemarks" ? val : grade.finalRemarks
+        const newMidterm = colId === "midtermRemarks" ? val : grade.midtermRemarks
+        const special = ["INC", "FAILED", "DROPPED"]
+        if (newFinal && special.includes(newFinal)) {
+          updates.remarks = newFinal
+        } else if (newMidterm && special.includes(newMidterm)) {
+          updates.remarks = newMidterm
+        }
+      }
       setGrades((prev) =>
         prev.map((g) =>
           g.studentId === row.studentId
-            ? { ...g, [colId]: val, updatedAt: new Date().toISOString() }
+            ? { ...g, ...updates }
             : g
         )
       )
-      autoSave.schedule({ grades: [{ ...grade, [colId]: val }], cid: classId })
+      autoSave.schedule({ grades: [{ ...grade, ...updates }], cid: classId })
     }
   }
 

@@ -62,8 +62,8 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
     const gradeRecord = grades.find(
       (g: GradeRecord) => g.studentId === profile.id && (g.code === code || g.subject === subjectName)
     )
-    if (gradeRecord && gradeRecord.released) {
-      const r = (gradeRecord.remarks ?? "").toLowerCase()
+    if (gradeRecord && (gradeRecord.released || gradeRecord.finalReleased || gradeRecord.midtermReleased)) {
+      const r = (gradeRecord.finalRemarks || gradeRecord.midtermRemarks || gradeRecord.remarks || "").toLowerCase()
       if (r === "passed") return { label: "Passed", className: "text-green-600 dark:text-green-400" }
       if (r === "inc") return { label: "INC", className: "text-red-600 dark:text-red-400" }
       if (r === "dropped") return { label: "DRP", className: "text-amber-600 dark:text-amber-400" }
@@ -77,6 +77,17 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
       (h) => (h.subjectCode === code || h.subjectName === subjectName) && h.yearLevel === year && h.semester === semester
     )
     if (historyEntry) {
+      const allGradeRecords = grades.filter(
+        (g: GradeRecord) => g.studentId === profile.id && (g.code === code || g.subject === subjectName)
+      )
+      for (const gr of allGradeRecords) {
+        const pr = (gr.finalRemarks || gr.midtermRemarks || "").toLowerCase()
+        if (pr === "failed") return { label: "Failed", className: "text-red-600 dark:text-red-400" }
+        if (pr === "inc") return { label: "INC", className: "text-red-600 dark:text-red-400" }
+        if (pr === "dropped") return { label: "DRP", className: "text-amber-600 dark:text-amber-400" }
+        if (pr === "unofficial drop") return { label: "UDRP", className: "text-orange-600 dark:text-orange-400" }
+        if (pr === "passed") return { label: "Passed", className: "text-green-600 dark:text-green-400" }
+      }
       const r = historyEntry.remarks.toUpperCase()
       if (r === "FAILED") {
         return { label: "FAILED", className: "text-red-600 dark:text-red-400" }

@@ -63,7 +63,7 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
         subjectName: grade.subject,
         finalPercentile: grade.finalGrade!,
         transmutedGrade: grade.transmutedGrade!,
-        remarks: grade.remarks || "Passed",
+        remarks: grade.finalRemarks || grade.midtermRemarks || grade.remarks || "Passed",
         curriculumId,
         yearLevel,
         semester,

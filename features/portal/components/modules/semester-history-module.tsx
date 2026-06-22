@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Archive, BookOpen, CalendarDays, ChevronDown, ChevronRight, GraduationCap, Trophy } from "lucide-react"
+import { Archive, CalendarDays, ChevronDown, ChevronRight, GraduationCap, Trophy } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Panel } from "../shared/dashboard-ui"
@@ -22,6 +22,14 @@ function getSemesterGrades(
       .map((s) => `${s.section}|${s.subject}`)
   )
   return grades.filter((g) => pairs.has(`${g.section}|${g.subject}`))
+}
+
+function getRemarks(g: GradeRecord): string {
+  if (g.remarks) return g.remarks
+  if (g.transmutedGrade != null && g.transmutedGrade > 0) {
+    return g.transmutedGrade <= 3.0 ? "Passed" : "Failed"
+  }
+  return "---"
 }
 
 function computeGWA(grades: GradeRecord[]): number | null {
@@ -52,7 +60,7 @@ export function SemesterHistoryModule({ model }: PortalModuleProps) {
       const computedGwa = computeGWA(semGrades)
       const storedGwa = semesterGwas.get(sem.semester)
       const gwa = storedGwa !== undefined && storedGwa !== null ? storedGwa : computedGwa
-      const completed = semGrades.filter((g) => g.remarks === "Passed").length
+      const completed = semGrades.filter((g) => getRemarks(g) === "Passed").length
       return { semester: sem, grades: semGrades, gwa, completed }
     })
   }, [archivedSemesters, grades, classSchedules, semesterGwas])
@@ -153,13 +161,13 @@ export function SemesterHistoryModule({ model }: PortalModuleProps) {
                                     <td className="px-3 py-2 text-center">
                                       <span className={cn(
                                         "inline-block rounded-full px-2 py-0.5 text-[10px] font-bold",
-                                        g.remarks === "Passed"
+                                        getRemarks(g) === "Passed"
                                           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-                                          : g.remarks === "Failed"
+                                          : getRemarks(g) === "Failed"
                                           ? "bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-300"
                                           : "bg-muted text-muted-foreground"
                                       )}>
-                                        {g.remarks ?? "---"}
+                                        {getRemarks(g)}
                                       </span>
                                     </td>
                                   </tr>
@@ -178,12 +186,7 @@ export function SemesterHistoryModule({ model }: PortalModuleProps) {
                               </span>
                             </div>
                           )}
-                          <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-muted/20 px-4 py-2">
-                            <BookOpen className="size-4 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground">
-                              <strong className="text-foreground">{completed}</strong> of <strong className="text-foreground">{semGrades.length}</strong> subjects completed
-                            </span>
-                          </div>
+
                         </div>
                       </>
                     )}
