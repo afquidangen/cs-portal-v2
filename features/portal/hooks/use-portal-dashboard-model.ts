@@ -171,6 +171,7 @@ export function usePortalDashboardModel(role: Role) {
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([])
 
   const prevUsersRef = useRef<UserRecord[]>([])
+  const pendingCurriculumUpdates = useRef<Map<string, Promise<unknown>>>(new Map())
   useEffect(() => {
     const prev = prevUsersRef.current
     const updates: Array<{ scheduleId: string; newName: string }> = []
@@ -2810,6 +2811,23 @@ export function usePortalDashboardModel(role: Role) {
     if (item) addAuditLog(`Deleted subject "${item.name}"`)
   }
 
+  function enqueueCurriculumUpdate(curriculumId: string, updated: CurriculumRecord): Promise<unknown> {
+    const snapshot = curricula.find((c) => c.id === curriculumId)
+    const prev = pendingCurriculumUpdates.current.get(curriculumId) ?? Promise.resolve()
+    const next = prev.then(() =>
+      syncApi("PUT", `/api/portal/curricula/${curriculumId}`, updated)
+    ).catch(async (e) => {
+      if (snapshot) {
+        setCurricula((current) =>
+          current.map((c) => (c.id === curriculumId ? snapshot : c))
+        )
+      }
+      throw e
+    })
+    pendingCurriculumUpdates.current.set(curriculumId, next.catch(() => undefined))
+    return next
+  }
+
   function handleAddTermToCurriculum(
     curriculumId: string,
     year: string,
@@ -2821,7 +2839,10 @@ export function usePortalDashboardModel(role: Role) {
     setCurricula((current) =>
       current.map((c) => (c.id === curriculumId ? updated : c))
     )
-    syncApi("PUT", `/api/portal/curricula/${curriculumId}`, updated).catch((e) => {
+    enqueueCurriculumUpdate(curriculumId, updated).then(() => {
+      toast.success("Term added.")
+      addAuditLog(`Added term "${year} - ${semester}" to curriculum "${curr.name}"`)
+    }).catch((e) => {
       console.error("Failed to sync term:", e)
       toast.error("Failed to sync term.")
     })
@@ -2833,11 +2854,15 @@ export function usePortalDashboardModel(role: Role) {
   ) {
     const curr = curricula.find((c) => c.id === curriculumId)
     if (!curr) return
+    const deletedTerm = curr.terms[termIndex]
     const updated = { ...curr, terms: curr.terms.filter((_, i) => i !== termIndex) }
     setCurricula((current) =>
       current.map((c) => (c.id === curriculumId ? updated : c))
     )
-    syncApi("PUT", `/api/portal/curricula/${curriculumId}`, updated).catch((e) => {
+    enqueueCurriculumUpdate(curriculumId, updated).then(() => {
+      toast.success("Term deleted.")
+      if (deletedTerm) addAuditLog(`Deleted term "${deletedTerm.year} - ${deletedTerm.semester}" from curriculum "${curr.name}"`)
+    }).catch((e) => {
       console.error("Failed to sync term deletion:", e)
       toast.error("Failed to sync term deletion.")
     })
@@ -2861,7 +2886,10 @@ export function usePortalDashboardModel(role: Role) {
     setCurricula((current) =>
       current.map((c) => (c.id === curriculumId ? updated : c))
     )
-    syncApi("PUT", `/api/portal/curricula/${curriculumId}`, updated).catch((e) => {
+    enqueueCurriculumUpdate(curriculumId, updated).then(() => {
+      toast.success(`Subject "${subject.code}" added.`)
+      addAuditLog(`Added subject "${subject.code} - ${subject.name}" to curriculum "${curr.name}"`)
+    }).catch((e) => {
       console.error("Failed to sync subject:", e)
       toast.error("Failed to sync subject.")
     })
@@ -2891,7 +2919,10 @@ export function usePortalDashboardModel(role: Role) {
     setCurricula((current) =>
       current.map((c) => (c.id === curriculumId ? updated : c))
     )
-    syncApi("PUT", `/api/portal/curricula/${curriculumId}`, updated).catch((e) => {
+    enqueueCurriculumUpdate(curriculumId, updated).then(() => {
+      toast.success(`Subject "${subject.code}" updated.`)
+      addAuditLog(`Updated subject "${subject.code} - ${subject.name}" in curriculum "${curr.name}"`)
+    }).catch((e) => {
       console.error("Failed to sync subject update:", e)
       toast.error("Failed to sync subject update.")
     })
@@ -2904,6 +2935,7 @@ export function usePortalDashboardModel(role: Role) {
   ) {
     const curr = curricula.find((c) => c.id === curriculumId)
     if (!curr) return
+    const deletedSubject = curr.terms[termIndex]?.subjects[subjectIndex]
     const updated = {
       ...curr,
       terms: curr.terms.map((term, i) =>
@@ -2918,7 +2950,10 @@ export function usePortalDashboardModel(role: Role) {
     setCurricula((current) =>
       current.map((c) => (c.id === curriculumId ? updated : c))
     )
-    syncApi("PUT", `/api/portal/curricula/${curriculumId}`, updated).catch((e) => {
+    enqueueCurriculumUpdate(curriculumId, updated).then(() => {
+      toast.success("Subject deleted.")
+      if (deletedSubject) addAuditLog(`Deleted subject "${deletedSubject.code} - ${deletedSubject.name}" from curriculum "${curr.name}"`)
+    }).catch((e) => {
       console.error("Failed to sync subject deletion:", e)
       toast.error("Failed to sync subject deletion.")
     })
@@ -2927,7 +2962,7 @@ export function usePortalDashboardModel(role: Role) {
   function handleAddCurriculum(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!newCurriculum.name.trim() || !newCurriculum.major.trim()) return
-    const curriculumData = {
+    const curriculumData: CurriculumRecord = {
       id: newCurriculum.id.trim() || `CURR-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       name: newCurriculum.name.trim(),
       major: newCurriculum.major.trim(),

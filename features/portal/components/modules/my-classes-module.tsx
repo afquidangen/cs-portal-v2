@@ -110,7 +110,7 @@ export function MyClassesModule({ model }: PortalModuleProps) {
         </Panel>
       ) : hasNoSchedules ? (
         /* ── Section assigned but no schedules ── */
-        <Panel title="Classes" eyebrow={`${section} \u2022 No schedules yet`}>
+        <Panel title="Classes" eyebrow={`${section} · No schedules yet`}>
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <GraduationCap className="mb-4 size-12 text-muted-foreground/40" />
             <p className="text-base font-medium text-foreground">No classes scheduled yet</p>
@@ -161,7 +161,7 @@ export function MyClassesModule({ model }: PortalModuleProps) {
           {/* Enrolled Subjects Table */}
           <Panel
             title="My Enrolled Subjects"
-            eyebrow={`${section} \u2022 ${enrolledSubjectNames.length} subjects`}
+            eyebrow={`${section} · ${enrolledSubjectNames.length} subjects`}
           >
             <div className="overflow-x-auto rounded-2xl border border-border">
               <table className="w-full text-left text-sm">

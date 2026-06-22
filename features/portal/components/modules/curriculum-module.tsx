@@ -192,7 +192,7 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
       {/* Term selector */}
       <Panel
         title={`${enrolledCurriculum.name}`}
-        eyebrow={`${enrolledCurriculum.major} \u2022 ${totalSubjects} subjects`}
+        eyebrow={`${enrolledCurriculum.major} · ${totalSubjects} subjects`}
         actions={
           <div className="flex gap-2">
             <Button size="sm" variant="outline" className="rounded-xl" onClick={() => model.refreshDashboardData()}>
@@ -595,7 +595,7 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
       {selectedCurriculum ? (
         <Panel
           title={selectedCurriculum.name}
-          eyebrow={`${selectedCurriculum.major} \u2022 ${selectedTotalSubjects} total subjects`}
+          eyebrow={`${selectedCurriculum.major} · ${selectedTotalSubjects} total subjects`}
           actions={
             <Button
               type="button"
@@ -669,7 +669,7 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
                 <div>
                   <h4 className="text-lg font-semibold text-foreground">{activeYearGroup.year}</h4>
                   <p className="text-sm text-foreground/70">
-                    {activeYearGroup.totalSubjects} subjects \u2022 {activeYearGroup.totalUnits} units
+                    {activeYearGroup.totalSubjects} subjects · {activeYearGroup.totalUnits} units
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -707,7 +707,7 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
                         <div>
                           <h5 className="font-semibold text-foreground">{term.semester}</h5>
                           <p className="text-sm text-foreground/70">
-                            {term.subjects.length} subjects \u2022{" "}
+                            {term.subjects.length} subjects ·{" "}
                             {term.subjects.reduce((s, sub) => s + sub.total, 0)} units
                           </p>
                         </div>
@@ -890,11 +890,11 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
           <div className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Year level</label>
-              <Select value={newTermYear} onChange={setNewTermYear} options={["First Year", "Second Year", "Third Year", "Fourth Year", "Fifth Year"]} />
+              <Select value={newTermYear} onChange={setNewTermYear} options={["First Year", "Second Year", "Third Year", "Fourth Year"]} />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Semester</label>
-              <Select value={newTermSemester} onChange={setNewTermSemester} options={["First Semester", "Second Semester", "Summer Term"]} />
+              <Select value={newTermSemester} onChange={setNewTermSemester} options={["First Semester", "Second Semester", "Midyear"]} />
             </div>
           </div>
           <DialogFooter className="mt-2 gap-2">

@@ -80,7 +80,7 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
         ))}
       </div>
 
-      <Panel title="Student Management" eyebrow={`${selectedClassSection} \u2022 ${facultyClassStudents.length} students`}>
+      <Panel title="Student Management" eyebrow={`${selectedClassSection} · ${facultyClassStudents.length} students`}>
         <form onSubmit={handleSaveStudent} className="edu-bg-soft-glacier mb-5 flex flex-wrap items-end gap-3 rounded-xl border border-[var(--edu-border-glacier)] p-4">
           <div className="min-w-0 flex-1">
             <label className="mb-1 block text-sm font-medium text-foreground">Student ID</label>
@@ -489,7 +489,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
       {adminTab === "Roster" ? (
         <Panel
           title="Student Roster"
-          eyebrow={`${selectedClassYear} \u2022 ${sectionRoster.length} students`}
+          eyebrow={`${selectedClassYear} · ${sectionRoster.length} students`}
         >
           <div className="mb-5 grid gap-3 md:grid-cols-4">
             {[

@@ -393,12 +393,12 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
         <Panel
           title={
             selectedStudent
-              ? `${selectedStudent.name} \u2022 Curriculum`
+              ? `${selectedStudent.name} · Curriculum`
               : "Curriculum Editor"
           }
           eyebrow={
             selectedStudent
-              ? `${selectedStudent.id} \u2022 ${selectedStudent.currentYearLevel ?? "N/A"} \u2022 ${selectedStudent.currentSemester ?? "N/A"}`
+              ? `${selectedStudent.id} · ${selectedStudent.currentYearLevel ?? "N/A"} · ${selectedStudent.currentSemester ?? "N/A"}`
               : "Select a student to manage their curriculum progress"
           }
         >

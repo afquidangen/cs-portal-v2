@@ -300,7 +300,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
           {/* Roster table */}
           <Panel
             title="Student Roster"
-            eyebrow={`${selectedSubject} \u2022 ${sectionOptions.join(", ")} \u2022 ${rosterStudents.length} students`}
+            eyebrow={`${selectedSubject} · ${sectionOptions.join(", ")} · ${rosterStudents.length} students`}
           >
             <div className="mb-3 flex justify-end">
               <Button
