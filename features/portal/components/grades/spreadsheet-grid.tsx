@@ -1164,6 +1164,22 @@ export function SpreadsheetGrid({
         children = [absencesColDef, scoreColDef]
       } else {
         const isExam = gradeCategoryMatches("exam", catName)
+        const examContribColDef: ColDef = {
+          headerName: "40%",
+          colId: `exam_contrib_${catName}`,
+          width: saved[`exam_contrib_${catName}`] ?? 70,
+          sortable: true,
+          filter: "agNumberColumnFilter",
+          editable: false,
+          valueGetter: (params) => {
+            const row = params.data as StudentGradeRow
+            const preview = liveData.get(row.studentId)
+            if (!preview) return ""
+            return preview.examGrade != null ? preview.examGrade * 0.4 : ""
+          },
+          valueFormatter: (params) => params.value == null ? "" : Number(params.value).toFixed(2),
+          cellStyle: { fontWeight: 500, backgroundColor: "color-mix(in srgb, var(--accent), transparent 70%)" },
+        }
         const psColDef: ColDef = {
           headerName: "PS",
           colId: `ps_${catName}`,
@@ -1194,10 +1210,10 @@ export function SpreadsheetGrid({
             const match = preview.categoryGrades.find((cg) => gradeCategoryMatches(catName, cg.category))
             return match?.weightedScore ?? ""
           },
-          valueFormatter: (params) => params.value == null ? "" : String(Math.round(Number(params.value))),
+          valueFormatter: (params) => params.value == null ? "" : Number(params.value).toFixed(2),
           cellStyle: { fontWeight: 500, backgroundColor: "color-mix(in srgb, var(--accent), transparent 70%)" },
         }
-        const extraCols = isExam ? [] : [psColDef, wsColDef]
+        const extraCols = isExam ? [examContribColDef] : [psColDef, wsColDef]
         children = [...colDefs, ...extraCols]
       }
       compCatGroups.get(compName)!.push({

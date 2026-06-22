@@ -195,7 +195,7 @@ function computePeriodGrade(
   const hasScores = periodSets.some((set) => Object.prototype.hasOwnProperty.call(scores, set.key))
 
   function computeWS(percentageScore: number, categoryWeight: number): number {
-    return Number(((percentageScore * 50 + 50) * categoryWeight).toFixed(4))
+    return (percentageScore * 50 + 50) * categoryWeight
   }
 
   function wsComponentGrade(component: SchemeComponent) {
@@ -209,8 +209,7 @@ function computePeriodGrade(
       const catWeight = category.weight / 100
       wsValues.push(computeWS(percentage, catWeight))
     }
-    const rawSum = wsValues.reduce((s, v) => s + v, 0)
-    return Number(rawSum.toFixed(2))
+    return wsValues.reduce((s, v) => s + v, 0)
   }
 
   const standingComponents = scheme.components.filter(
@@ -244,9 +243,7 @@ function computePeriodGrade(
   )
   const examWeight = (examComponent?.weight ?? 40) / 100
 
-  const lectureGrade = Number(
-    (standingGrade + examGrade * examWeight).toFixed(2)
-  )
+  const lectureGrade = standingGrade + examGrade * examWeight
 
   let laboratoryGrade: number | undefined
   if (scheme.subjectType === "Lecture with Lab") {
@@ -254,11 +251,11 @@ function computePeriodGrade(
       component,
       grade: wsComponentGrade(component),
     }))
-    laboratoryGrade = Number(labComponents.reduce((sum, item) => sum + item.grade * (item.component.weight / 100), 0).toFixed(2))
+    laboratoryGrade = labComponents.reduce((sum, item) => sum + item.grade * (item.component.weight / 100), 0)
   }
 
   const periodGrade = scheme.subjectType === "Lecture with Lab"
-    ? Number((lectureGrade * ((scheme.lectureWeight ?? 40) / 100) + (laboratoryGrade ?? 0) * ((scheme.laboratoryWeight ?? 60) / 100)).toFixed(2))
+    ? lectureGrade * ((scheme.lectureWeight ?? 40) / 100) + (laboratoryGrade ?? 0) * ((scheme.laboratoryWeight ?? 60) / 100)
     : lectureGrade
 
   const categoryGrades = periodSets.map((set) => {
@@ -286,7 +283,7 @@ function computeGradeRecord(record: GradeRecord, scheme: GradingScheme, entries:
   const midtermGrade = midterm.hasScores ? midterm.periodGrade : undefined
   const tentativeFinalGrade = finalTerm.hasScores ? finalTerm.periodGrade : undefined
   const finalGrade = midtermGrade !== undefined && tentativeFinalGrade !== undefined
-    ? Number(((midtermGrade + tentativeFinalGrade) / 2).toFixed(2))
+    ? (midtermGrade + tentativeFinalGrade) / 2
     : undefined
   const transmutedGrade = transmuteFromEntries(finalGrade, entries)
 

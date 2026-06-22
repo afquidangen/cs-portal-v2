@@ -101,13 +101,13 @@ export function computeCategoryGrade(
 ): { percentageScore: number; weightedScore: number; grade: number } {
   if (totalPossibleScore === 0) {
     const w = categoryWeight ?? 0
-    return { percentageScore: 0, weightedScore: Number((50 * w).toFixed(4)), grade: 0 }
+    return { percentageScore: 0, weightedScore: 50 * w, grade: 0 }
   }
   const percentageScore = totalStudentScore / totalPossibleScore
-  const grade = Number((percentageScore * 100).toFixed(2))
+  const grade = percentageScore * 100
   let weightedScore: number
   if (categoryWeight !== undefined) {
-    weightedScore = Number(((percentageScore * 50 + 50) * categoryWeight).toFixed(4))
+    weightedScore = (percentageScore * 50 + 50) * categoryWeight
   } else {
     weightedScore = grade
   }
@@ -171,7 +171,7 @@ export function computeClassStanding(
       }
     }
   }
-  return Number(rawSum.toFixed(2))
+  return rawSum
 }
 
 export function computeLectureGrade(
@@ -180,9 +180,7 @@ export function computeLectureGrade(
   classStandingWeight = 60,
   examWeight = 40
 ): number {
-  return Number(
-    ((classStanding * classStandingWeight) / 100 + (examScore * examWeight) / 100).toFixed(2)
-  )
+  return (classStanding * classStandingWeight) / 100 + (examScore * examWeight) / 100
 }
 
 export function computeLaboratoryGrade(
@@ -202,7 +200,7 @@ export function computeLaboratoryGrade(
       }
     }
   }
-  return Number(rawSum.toFixed(2))
+  return rawSum
 }
 
 export function computePeriodGrade(
@@ -214,19 +212,14 @@ export function computePeriodGrade(
   if (laboratoryGrade === undefined) {
     return lectureGrade
   }
-  return Number(
-    (
-      (lectureGrade * lectureWeight) / 100 +
-      (laboratoryGrade * laboratoryWeight) / 100
-    ).toFixed(2)
-  )
+  return (lectureGrade * lectureWeight) / 100 + (laboratoryGrade * laboratoryWeight) / 100
 }
 
 export function computeFinalGrade(
   midtermGrade: number,
   tentativeFinalGrade: number
 ): number {
-  return Number(((midtermGrade + tentativeFinalGrade) / 2).toFixed(2))
+  return (midtermGrade + tentativeFinalGrade) / 2
 }
 
 const DEFAULT_TRANSMUTATION: Record<string, number> = {
@@ -285,7 +278,7 @@ export function computeExamGrade(
   const totalStudentScore = assessmentsOrColumns.reduce((s, a) => s + a.studentScore, 0)
   const totalPossibleScore = assessmentsOrColumns.reduce((s, a) => s + a.maxScore, 0)
   if (totalPossibleScore === 0) return 0
-  return Number(((totalStudentScore / totalPossibleScore) * 50 + 50).toFixed(2))
+  return (totalStudentScore / totalPossibleScore) * 50 + 50
 }
 
 function buildComponentAssessments(
