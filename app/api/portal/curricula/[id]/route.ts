@@ -24,7 +24,8 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const curriculum = await curriculaRepository.update({ id }, body)
+    const { _id, __v, createdAt, updatedAt, ...clean } = body
+    const curriculum = await curriculaRepository.update({ id }, clean)
     if (!curriculum) return notFound("Curriculum")
     return success(curriculum)
   } catch (err) {

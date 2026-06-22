@@ -472,7 +472,18 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
             }}
             className="mb-5 space-y-4 rounded-2xl border border-border bg-muted/30 p-4"
           >
-            <div className="grid gap-3 md:grid-cols-4">
+            <div className="grid gap-3 md:grid-cols-5">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Curriculum ID</label>
+                <Input
+                  value={newCurriculum.id}
+                  onChange={(e) =>
+                    setNewCurriculum((s) => ({ ...s, id: e.target.value }))
+                  }
+                  placeholder="Auto-generated if empty"
+                  className="h-10 rounded-2xl"
+                />
+              </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground">Name *</label>
                 <Input

@@ -25,10 +25,11 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    if (body.status === "Active") {
+    const { _id, __v, createdAt, updatedAt, ...clean } = body
+    if (clean.status === "Active") {
       await SemesterModel.updateMany({ status: "Active" }, { $set: { status: "Inactive" } })
     }
-    const semester = await semestersRepository.update({ id }, body)
+    const semester = await semestersRepository.update({ id }, clean)
     if (!semester) return notFound("Semester")
     return success(semester)
   } catch (err) {

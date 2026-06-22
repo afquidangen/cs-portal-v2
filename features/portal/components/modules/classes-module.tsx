@@ -222,28 +222,6 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
     const found = yearSections.find((y) => y.year === selectedScheduleYear)
     return ["All Sections", ...(found?.sections ?? [])]
   }, [selectedScheduleYear, yearSections])
-  const curriculumSubjectOptions = useMemo(() => {
-    return curricula.flatMap((c) =>
-      c.terms.flatMap((t) =>
-        t.subjects.map((s) => `${s.code} - ${s.name}`)
-      )
-    )
-  }, [curricula])
-
-  function getCurriculumSubjects(year: string, semesterType: string): string[] {
-    const results: string[] = []
-    for (const c of curricula) {
-      for (const term of c.terms) {
-        if (term.year === year && term.semester === semesterType) {
-          for (const sub of term.subjects) {
-            results.push(`${sub.code} - ${sub.name}`)
-          }
-        }
-      }
-    }
-    return results
-  }
-
   function getSemesterType(semesterId: string): string {
     return semesters.find((s) => s.id === semesterId)?.semester ?? ""
   }
@@ -913,9 +891,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                         options={
                           addScheduleYear && selectedSemesterId && scheduleDraft.curriculumId
                             ? getSubjectsForCurriculum(scheduleDraft.curriculumId, addScheduleYear, getSemesterType(selectedSemesterId))
-                            : addScheduleYear && selectedSemesterId
-                            ? getCurriculumSubjects(addScheduleYear, getSemesterType(selectedSemesterId))
-                            : curriculumSubjectOptions
+                            : []
                         }
                         contentClassName="max-h-48 overflow-y-auto"
                       />
@@ -1068,9 +1044,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                               if (editYear && editSemesterType && editingSchedule.curriculumId) {
                                 return getSubjectsForCurriculum(editingSchedule.curriculumId, editYear, editSemesterType)
                               }
-                              return editYear && editSemesterType
-                                ? getCurriculumSubjects(editYear, editSemesterType)
-                                : curriculumSubjectOptions
+                              return []
                             })()
                           }
                           contentClassName="max-h-48 overflow-y-auto"
