@@ -54,7 +54,8 @@ export async function POST(
               }
             }
           }
-        ]
+        ],
+        { updatePipeline: true }
       )
     }
 
