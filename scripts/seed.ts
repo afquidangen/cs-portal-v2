@@ -138,6 +138,7 @@ async function seed() {
       password: "admintest123",
       role: "admin" as const,
       title: "System Administrator - CS Department",
+      course: "Bachelor of Science in Computer Science (BSCS)",
     },
     {
       id: "ADM-002",
@@ -146,6 +147,7 @@ async function seed() {
       password: "admintest123",
       role: "admin" as const,
       title: "Assistant Portal Administrator",
+      course: "Bachelor of Science in Computer Science (BSCS)",
     },
   ]
 

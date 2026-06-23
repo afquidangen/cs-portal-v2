@@ -48,6 +48,7 @@ import {
 } from "../shared/dashboard-ui"
 import type { GradeHistoryEntry, UserRecord } from "../../data/portal-data"
 import type { PortalModuleProps } from "./types"
+import { COURSE_OPTIONS } from "@/lib/constants/courses"
 
 const PAGE_SIZE = 8
 
@@ -765,6 +766,17 @@ export function UsersModule({ model }: PortalModuleProps) {
                     setNewUser((current) => ({ ...current, role: value as "student" | "faculty" | "admin" }))
                   }}
                   options={["student", "faculty", "admin"]}
+                />
+              </div>
+
+              <div>
+                <p className="mb-1.5 text-sm font-medium text-foreground">Course *</p>
+                <Select
+                  value={newUser.course}
+                  onChange={(value) =>
+                    setNewUser((current) => ({ ...current, course: value }))
+                  }
+                  options={[...COURSE_OPTIONS]}
                 />
               </div>
 
@@ -1594,6 +1606,17 @@ export function UsersModule({ model }: PortalModuleProps) {
                   onChange={(e) =>
                     setEditUser({ ...editUser, email: e.target.value })
                   }
+                />
+              </div>
+
+              <div>
+                <p className="mb-1.5 text-sm font-medium text-foreground">Course</p>
+                <Select
+                  value={editUser.course ?? COURSE_OPTIONS[0]}
+                  onChange={(value) =>
+                    setEditUser({ ...editUser, course: value })
+                  }
+                  options={[...COURSE_OPTIONS]}
                 />
               </div>
 

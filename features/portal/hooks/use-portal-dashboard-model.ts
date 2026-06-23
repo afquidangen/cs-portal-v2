@@ -312,6 +312,7 @@ export function usePortalDashboardModel(role: Role) {
     advisoryClass: "",
     employmentType: "Regular",
     academicTitle: "MIT",
+    course: "Bachelor of Science in Computer Science (BSCS)",
   })
   const [feedbackDraft, setFeedbackDraft] = useState({
     category: "Academic",
@@ -1497,7 +1498,7 @@ export function usePortalDashboardModel(role: Role) {
       curriculumId: newUser.role === "student" ? newUser.curriculumId : undefined,
       currentYearLevel: newUser.role === "student" ? newUser.currentYearLevel : undefined,
       currentSemester: newUser.role === "student" ? newUser.currentSemester : undefined,
-      course: newUser.role === "student" ? "BSCS" : undefined,
+      course: newUser.course,
       year: newUser.role === "student" ? Number(newUser.year) : undefined,
       section: newUser.role === "student" ? newUser.section : undefined,
       advisoryClass: newUser.role === "faculty" && newUser.hasAdvisory ? newUser.advisoryClass : undefined,
@@ -1555,6 +1556,7 @@ export function usePortalDashboardModel(role: Role) {
       advisoryClass: "",
       employmentType: "Regular",
       academicTitle: "MIT",
+      course: "Bachelor of Science in Computer Science (BSCS)",
     })
 
     if (newUser.role === "student") {
