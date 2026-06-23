@@ -518,7 +518,7 @@ export function RoleDashboard({ role }: { role: Role }) {
         ? [
             { label: "Workspace", items: pick(["overview", "profile"]) },
             { label: "Academic Setup", items: pick(["academic", "semester-admin", "classes", "curriculum", "grading-admin"]) },
-            { label: "People & Records", items: pick(["users", "irregular-students", "instructors", "availability", "audit"]) },
+            { label: "People & Records", items: pick(["users", "instructors", "availability", "audit"]) },
             { label: "Communications", items: pick(["announcements", "feedback", "templates"]) },
             { label: "Resources", items: pick(["thesis", "quick-links", "cso"]) },
           ]

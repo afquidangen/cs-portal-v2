@@ -12,15 +12,7 @@ export function MyClassesModule({ model }: PortalModuleProps) {
 
   const section = profileSection
 
-  const enrolledSchedules = useMemo(
-    () => {
-      if (!section) return []
-      return visibleSchedules.filter((s) =>
-        s.section.includes(section)
-      )
-    },
-    [visibleSchedules, section]
-  )
+  const enrolledSchedules = visibleSchedules
 
   const enrolledSubjectNames = useMemo(
     () => [...new Set(enrolledSchedules.map((s) => s.subject))],
@@ -79,8 +71,8 @@ export function MyClassesModule({ model }: PortalModuleProps) {
     return grid
   }, [timetableSchedules, timeSlots])
 
-  const hasNoSection = !section
-  const hasNoSchedules = enrolledSchedules.length === 0
+  const hasNoSection = !section && visibleSchedules.length === 0
+  const hasNoSchedules = !hasNoSection && visibleSchedules.length === 0
 
   return (
     <div className="space-y-5">
@@ -176,6 +168,7 @@ export function MyClassesModule({ model }: PortalModuleProps) {
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Instructor</th>
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Schedule</th>
                     <th className="hidden sm:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Room</th>
+                    <th className="hidden sm:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Section</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border bg-card">
@@ -185,6 +178,7 @@ export function MyClassesModule({ model }: PortalModuleProps) {
                       <td className="px-4 py-3 text-foreground/80">{item.instructor}</td>
                       <td className="px-4 py-3 text-foreground/80">{item.day}, {formatScheduleTime(item.time)}</td>
                       <td className="hidden sm:table-cell px-4 py-3 text-foreground/80">{item.room}</td>
+                      <td className="hidden sm:table-cell px-4 py-3 text-foreground/80">{item.section}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -56,7 +56,6 @@ export const roleNavigation: Record<Role, NavItem[]> = {
     { id: "overview", label: "Home", icon: LayoutDashboard },
     { id: "profile", label: "Admin Profile", icon: UserCircle },
     { id: "users", label: "User Management", icon: Users },
-    { id: "irregular-students", label: "Non-Regular Students", icon: Users },
     { id: "academic", label: "Academic Setup", icon: Settings },
     { id: "classes", label: "Classes", icon: GraduationCap },
     { id: "thesis", label: "Thesis Management", icon: BookMarked },
