@@ -152,6 +152,7 @@ const GradeSchema = new Schema<IGrade>(
 
 GradeSchema.index({ classId: 1, studentId: 1 })
 GradeSchema.index({ studentId: 1 })
+GradeSchema.index({ studentId: 1, code: 1, semesterId: 1 }, { unique: true })
 
 export const GradeModel =
   (mongoose.models.Grade as Model<IGrade> | undefined) ??

@@ -12,16 +12,40 @@ import type { SemesterRecord } from "@/lib/types"
 function getSemesterGrades(
   semester: SemesterRecord,
   grades: GradeRecord[],
-  schedules: { section: string; subject: string; semesterId: string }[]
+  schedules: { section: string; subject: string; semesterId: string }[],
+  studentId: string
 ): GradeRecord[] {
-  const direct = grades.filter((g) => g.semesterId === semester.id)
-  if (direct.length > 0) return direct
+  const direct = grades.filter(
+    (g) => g.studentId === studentId && g.semesterId === semester.id
+  )
+  if (direct.length > 0) {
+    const seen = new Map<string, GradeRecord>()
+    for (const g of direct) {
+      const existing = seen.get(g.code)
+      if (!existing) {
+        seen.set(g.code, g)
+      } else if (
+        (g.finalGrade != null && existing.finalGrade == null) ||
+        (g.transmutedGrade != null && existing.transmutedGrade == null)
+      ) {
+        seen.set(g.code, g)
+      }
+    }
+    return [...seen.values()]
+  }
   const pairs = new Set(
     schedules
       .filter((s) => s.semesterId === semester.id)
       .map((s) => `${s.section}|${s.subject}`)
   )
-  return grades.filter((g) => pairs.has(`${g.section}|${g.subject}`))
+  const seen = new Set<string>()
+  return grades.filter((g) => {
+    if (g.studentId !== studentId) return false
+    if (!pairs.has(`${g.section}|${g.subject}`)) return false
+    if (seen.has(g.code)) return false
+    seen.add(g.code)
+    return true
+  })
 }
 
 function getRemarks(g: GradeRecord): string {
@@ -56,7 +80,7 @@ export function SemesterHistoryModule({ model }: PortalModuleProps) {
 
   const semestersWithData = useMemo(() => {
     return archivedSemesters.map((sem) => {
-      const semGrades = getSemesterGrades(sem, grades, classSchedules)
+      const semGrades = getSemesterGrades(sem, grades, classSchedules, model.profile.id)
       const computedGwa = computeGWA(semGrades)
       const storedGwa = semesterGwas.get(sem.semester)
       const gwa = storedGwa !== undefined && storedGwa !== null ? storedGwa : computedGwa
@@ -153,7 +177,7 @@ export function SemesterHistoryModule({ model }: PortalModuleProps) {
                                     <td className="px-3 py-2 text-foreground">{g.subject}</td>
                                     <td className="px-3 py-2 text-right text-muted-foreground">{g.units}</td>
                                     <td className="px-3 py-2 text-right font-mono tabular-nums text-foreground">
-                                      {g.finalGrade ?? g.tentativeFinalGrade ?? "---"}
+                                      {g.finalGrade != null ? g.finalGrade.toFixed(2) : g.tentativeFinalGrade != null ? g.tentativeFinalGrade.toFixed(2) : "---"}
                                     </td>
                                     <td className="px-3 py-2 text-right font-mono tabular-nums text-foreground">
                                       {g.transmutedGrade ?? "---"}

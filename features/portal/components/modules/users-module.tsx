@@ -1777,11 +1777,11 @@ export function UsersModule({ model }: PortalModuleProps) {
                     <div>
                       <p className="mb-1.5 text-sm font-medium text-foreground">Semester</p>
                       <Select
-                        value={editUser.currentSemester ?? "First Semester"}
+                        value={editUser.currentSemester ?? activeSemester?.semester ?? ""}
                         onChange={(value) =>
                           setEditUser({ ...editUser, currentSemester: value })
                         }
-                        options={semesterOptions}
+                        options={activeSemester ? [activeSemester.semester] : []}
                       />
                     </div>
                   </div>

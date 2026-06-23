@@ -13,6 +13,7 @@ import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 import type { GradeRecord } from "@/lib/types/grade"
 import type { GradingScheme, SchemeComponent, TransmutationEntry, TransmutationTable } from "@/lib/types"
+import type { ScheduleItem, ClassStudent, CurriculumRecord, UserRecord } from "../../data/portal-data"
 
 type GradingPeriod = "midterm" | "final"
 type GradeColumnSet = {
@@ -316,13 +317,104 @@ function computeGradeRecord(record: GradeRecord, scheme: GradingScheme, entries:
 }
 
 export function GradesModule({ model }: PortalModuleProps) {
-  const { downloadGradeReport, downloadGradeReportDocument, allStudentGrades, studentGrades } = model
+  const { downloadGradeReport, downloadGradeReportDocument } = model
 
-  const visibleAllGrades = allStudentGrades
+  const profileUser = (model.users as UserRecord[] | undefined)?.find(
+    (u) => u.id === model.profile.id
+  )
+
+  const visibleGrades = useMemo(() => {
+    const active = model.activeSemester
+    if (!active) return []
+
+    const activeSchedules = (model.classSchedules as ScheduleItem[])
+      .filter((s) => s.semesterId === active.id)
+    const activeScheduleIds = new Set(activeSchedules.map((s) => s.id))
+    const activePairs = new Set(
+      activeSchedules.map((s) => `${s.section}|${s.subject}`)
+    )
+
+    const allActive = (model.grades as GradeRecord[]).filter((g) => {
+      if (g.studentId !== model.profile.id) return false
+      if (g.deletedAt) return false
+      return (
+        g.semesterId === active.id ||
+        (g.classId && activeScheduleIds.has(g.classId)) ||
+        activePairs.has(`${g.section}|${g.subject}`)
+      )
+    })
+
+    const gradeMap = new Map<string, GradeRecord>()
+    for (const g of allActive) {
+      const existing = gradeMap.get(g.code)
+      if (!existing || (g.released && !existing.released)) {
+        gradeMap.set(g.code, g)
+      }
+    }
+
+    const studentSections = [
+      model.profileSection,
+      ...(model.roster as ClassStudent[])
+        .filter((r) => r.id === model.profile.id && r.enrolled)
+        .map((r) => r.section),
+    ].filter(Boolean)
+
+    const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
+    const passedCodes = new Set(
+      (profileUser?.gradeHistory ?? [])
+        .filter((h) => h.remarks?.toLowerCase() === "passed")
+        .map((h) => normalize(h.subjectCode))
+    )
+
+    const yearLevel = profileUser?.currentYearLevel ?? ""
+    const curriculumTerms =
+      (model.curricula as CurriculumRecord[])
+        .find((c) => c.id === profileUser?.curriculumId)
+        ?.terms ?? []
+
+    for (const schedule of activeSchedules) {
+      const code = schedule.subject.split(" - ")[0]?.trim() ?? schedule.subject
+      const matchesSection = studentSections.some((sec) =>
+        schedule.section.includes(sec)
+      )
+      if (!matchesSection) continue
+      if (passedCodes.has(code)) continue
+      if (gradeMap.has(code)) continue
+
+      let units = 0
+      const term = curriculumTerms.find(
+        (t) => t.year === yearLevel && t.semester === active.semester
+      )
+      if (term) {
+        const sub = term.subjects.find((s) => s.code === code)
+        if (sub) units = sub.total
+      }
+
+      gradeMap.set(code, {
+        id: `pending-${schedule.id}`,
+        studentId: model.profile.id,
+        student: model.profile.name,
+        section: schedule.section,
+        subject: schedule.subject,
+        code,
+        units,
+        classId: schedule.id,
+        semesterId: active.id,
+        released: false,
+        updatedAt: "",
+      } as GradeRecord)
+    }
+
+    return [...gradeMap.values()]
+  }, [
+    model.activeSemester, model.classSchedules, model.grades,
+    model.profile, model.profileSection, model.roster,
+    profileUser, model.curricula,
+  ])
 
   const deansListData = useMemo(
-    () => computeDeansList(studentGrades, model.profileStudentType, model.profileCurrentYearLevel),
-    [studentGrades, model.profileStudentType, model.profileCurrentYearLevel]
+    () => computeDeansList(visibleGrades, model.profileStudentType, model.profileCurrentYearLevel),
+    [visibleGrades, model.profileStudentType, model.profileCurrentYearLevel]
   )
 
   if (model.role === "faculty") {
@@ -363,13 +455,13 @@ export function GradesModule({ model }: PortalModuleProps) {
         {[
           {
             label: "Visible Records",
-            value: String(visibleAllGrades.length),
+            value: String(visibleGrades.length),
             note: "Current grade rows",
             icon: ListChecks,
           },
           {
             label: "Total Units",
-            value: String(studentGrades.reduce((s, g) => s + (g.units || 0), 0)),
+            value: String(visibleGrades.reduce((s, g) => s + (g.units || 0), 0)),
             note: "Released graded units",
             icon: BookMarked,
           },
@@ -470,7 +562,7 @@ export function GradesModule({ model }: PortalModuleProps) {
           </thead>
 
           <tbody className="divide-y divide-border bg-card">
-            {visibleAllGrades.length === 0 ? (
+            {visibleGrades.length === 0 ? (
               <tr>
                 <td
                   colSpan={9}
@@ -480,7 +572,7 @@ export function GradesModule({ model }: PortalModuleProps) {
                 </td>
               </tr>
             ) : (
-              visibleAllGrades.map((grade) => {
+              visibleGrades.map((grade) => {
                 return (
                   <tr key={grade.id} className="transition-colors hover:bg-muted/50">
                     <td className="px-4 py-3">
