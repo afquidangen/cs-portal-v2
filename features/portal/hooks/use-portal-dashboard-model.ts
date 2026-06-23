@@ -1605,6 +1605,60 @@ export function usePortalDashboardModel(role: Role) {
         syncApi("POST", "/api/portal/roster", { id: accountId, name: fullName, section: newUser.section, enrolled: true, studentType: newUser.studentType }).catch((e) =>
           console.error(`Failed to sync roster for ${fullName}:`, e)
         )
+
+        const curriculum = curricula.find((c) => c.id === newUser.curriculumId)
+        if (curriculum) {
+          const term = curriculum.terms.find(
+            (t) => t.year === newUser.currentYearLevel && t.semester === newUser.currentSemester
+          )
+          if (term?.subjects?.length) {
+            const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
+            const passedCodes = new Set(
+              (users.find((u) => u.id === accountId)?.gradeHistory ?? [])
+                .filter((h) => h.remarks?.toLowerCase() === "passed")
+                .map((h) => normalize(h.subjectCode))
+            )
+            const now = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+            let enrolledCount = 0
+
+            for (const subject of term.subjects) {
+              const normCode = normalize(subject.code)
+              if (passedCodes.has(normCode)) continue
+
+              const exists = grades.some(
+                (g) => g.studentId === accountId && normalize(g.code) === normCode
+              )
+              if (exists) continue
+
+              const gradeId = `GRD-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+              const newGrade: GradeRecord = {
+                id: gradeId,
+                studentId: accountId,
+                student: fullName,
+                section: newUser.section,
+                subject: `${subject.code} - ${subject.name}`,
+                code: subject.code,
+                units: subject.total,
+                midtermTransmuted: undefined,
+                midterm: 0,
+                finalTransmuted: undefined,
+                finalTerm: 0,
+                released: false,
+                updatedAt: now,
+              }
+              setGrades((current) => [newGrade, ...current])
+              syncApi("POST", "/api/portal/grades", newGrade).catch((e) => {
+                console.error(`Failed to auto-enroll ${fullName} in ${subject.code}:`, e)
+                setGrades((current) => current.filter((g) => g.id !== gradeId))
+              })
+              enrolledCount++
+            }
+
+            if (enrolledCount > 0) {
+              addAuditLog(`Auto-enrolled ${fullName} in ${enrolledCount} subject(s) for ${newUser.currentYearLevel} - ${newUser.currentSemester}`)
+            }
+          }
+        }
       }
       return { type: "success" }
     } catch (e) {
@@ -1940,6 +1994,20 @@ export function usePortalDashboardModel(role: Role) {
   }
 
   function handleAddGradeHistory(studentId: string, entry: GradeHistoryEntry) {
+    if (entry.remarks?.toLowerCase() === "passed") {
+      const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
+      const normCode = normalize(entry.subjectCode)
+      const gradesToRemove = grades.filter(
+        (g) => g.studentId === studentId && normalize(g.code) === normCode
+      )
+      for (const grade of gradesToRemove) {
+        setGrades((current) => current.filter((g) => g.id !== grade.id))
+        syncApi("DELETE", `/api/portal/grades/${grade.id}`, {}).catch((e) =>
+          console.error(`Failed to delete grade ${grade.id}:`, e)
+        )
+      }
+    }
+
     setUsers((current) =>
       current.map((u) =>
         u.id === studentId
@@ -1986,6 +2054,23 @@ export function usePortalDashboardModel(role: Role) {
   }
 
   function handleUpdateGradeHistory(studentId: string, index: number, entry: GradeHistoryEntry) {
+    const oldEntry = users.find((u) => u.id === studentId)?.gradeHistory?.[index]
+    const wasAlreadyPassed = oldEntry?.remarks?.toLowerCase() === "passed"
+
+    if (entry.remarks?.toLowerCase() === "passed" && !wasAlreadyPassed) {
+      const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
+      const normCode = normalize(entry.subjectCode)
+      const gradesToRemove = grades.filter(
+        (g) => g.studentId === studentId && normalize(g.code) === normCode
+      )
+      for (const grade of gradesToRemove) {
+        setGrades((current) => current.filter((g) => g.id !== grade.id))
+        syncApi("DELETE", `/api/portal/grades/${grade.id}`, {}).catch((e) =>
+          console.error(`Failed to delete grade ${grade.id}:`, e)
+        )
+      }
+    }
+
     setUsers((current) =>
       current.map((u) =>
         u.id === studentId

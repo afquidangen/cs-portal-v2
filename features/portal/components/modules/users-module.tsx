@@ -87,6 +87,7 @@ export function UsersModule({ model }: PortalModuleProps) {
     handleUpdateUser,
     users,
     yearSections,
+    activeSemester,
   } = model
 
   const [editUser, setEditUser] = useState<(UserRecord & { password?: string }) | null>(null)
@@ -955,7 +956,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                             currentSemester: value,
                           }))
                         }
-                        options={semesterOptions}
+                        options={activeSemester ? [activeSemester.semester] : []}
                       />
                     </div>
                   </div>
