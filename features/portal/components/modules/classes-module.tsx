@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog"
 
 import type { ScheduleItem } from "../../data/portal-data"
-import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
+import { Panel, Select } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
 function getInitials(name: string) {
@@ -190,9 +190,6 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
   const [selectedSemesterId, setSelectedSemesterId] = useState(
     semesters.find((s) => s.status === "Active")?.id ?? semesters[0]?.id ?? ""
   )
-  const [rosterDraft, setRosterDraft] = useState({ id: "", name: "", section: "" })
-  const [editingRosterId, setEditingRosterId] = useState<string | null>(null)
-  const [deleteRosterId, setDeleteRosterId] = useState<string | null>(null)
   const [selectedRosterSection, setSelectedRosterSection] = useState("All Sections")
   const [selectedScheduleYear, setSelectedScheduleYear] = useState("All Years")
   const [selectedScheduleSection, setSelectedScheduleSection] = useState("All Sections")
@@ -596,9 +593,9 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                 <thead className="sticky top-0 z-10 bg-muted text-foreground">
                   <tr className="border-b border-border">
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Student</th>
+                    <th className="hidden sm:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Course</th>
+                    <th className="hidden sm:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Year Level</th>
                     <th className="hidden sm:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Section</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Status</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border bg-card">
@@ -618,31 +615,9 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                           </div>
                         </div>
                       </td>
+                      <td className="hidden sm:table-cell px-4 py-3 text-foreground/80">{user?.course || "—"}</td>
+                      <td className="hidden sm:table-cell px-4 py-3 text-foreground/80">{student.currentYearLevel || "—"}</td>
                       <td className="hidden sm:table-cell px-4 py-3 text-foreground/80">{student.section}</td>
-                      <td className="px-4 py-3">
-                        <label className="flex cursor-pointer items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={student.enrolled}
-                            onChange={(e) => handleToggleEnrolled(student.id, e.target.checked)}
-                            className="size-4 rounded border-border accent-primary"
-                          />
-                          <StatusBadge value={student.enrolled ? "Active" : "Inactive"} />
-                        </label>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-1.5">
-                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => {
-                            setEditingRosterId(student.id)
-                            setRosterDraft({ id: student.id, name: student.name, section: student.section })
-                          }}>
-                            <Pencil className="size-3.5" />
-                          </Button>
-                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDeleteRosterId(student.id)}>
-                            <Trash2 className="size-3.5" />
-                          </Button>
-                        </div>
-                      </td>
                     </tr>
                   )})}
                 </tbody>
@@ -650,70 +625,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
             </div>
           )}
 
-          {/* Edit roster student dialog */}
-          <Dialog open={!!editingRosterId} onOpenChange={(o) => { if (!o) { setEditingRosterId(null); setRosterDraft({ id: "", name: "", section: selectedYear?.sections[0] ?? "" }) } }}>
-            <DialogContent className="w-[95vw] sm:max-w-sm">
-              <DialogHeader>
-                <DialogTitle>Edit Student</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Student ID</label>
-                  <Input value={rosterDraft.id} onChange={(e) => setRosterDraft((c) => ({ ...c, id: e.target.value }))} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Full name</label>
-                  <Input value={rosterDraft.name} onChange={(e) => setRosterDraft((c) => ({ ...c, name: e.target.value }))} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Section</label>
-                  <Select
-                    value={rosterDraft.section}
-                    onChange={(value) => setRosterDraft((c) => ({ ...c, section: value }))}
-                    options={yearSections.flatMap((y) => y.sections)}
-                  />
-                </div>
-              </div>
-              <DialogFooter className="mt-2 gap-2">
-                <Button variant="ghost" onClick={() => { setEditingRosterId(null); setRosterDraft({ id: "", name: "", section: selectedYear?.sections[0] ?? "" }) }}>Cancel</Button>
-                <Button onClick={() => {
-                  if (!editingRosterId) return
-                  setRoster((current) => current.map((s) =>
-                    s.id === editingRosterId ? { ...s, id: rosterDraft.id, name: rosterDraft.name, section: rosterDraft.section, enrolled: s.enrolled } : s
-                  ))
-                  setUsers((current) => current.map((u) =>
-                    u.id === editingRosterId ? { ...u, id: rosterDraft.id, name: rosterDraft.name, section: rosterDraft.section } : u
-                  ))
-                  setEditingRosterId(null)
-                  setRosterDraft({ id: "", name: "", section: selectedYear?.sections[0] ?? "" })
-                }}>
-                  <Pencil className="mr-1.5 size-4" /> Save
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
 
-          {/* Delete roster student confirmation */}
-          <Dialog open={!!deleteRosterId} onOpenChange={(o) => { if (!o) setDeleteRosterId(null) }}>
-            <DialogContent className="w-[95vw] sm:max-w-sm">
-              <DialogHeader>
-                <DialogTitle>Remove Student</DialogTitle>
-              </DialogHeader>
-              <p className="text-sm text-muted-foreground">Remove this student from the roster? This will also remove their grade records.</p>
-              <DialogFooter className="mt-2 gap-2">
-                <Button variant="ghost" onClick={() => setDeleteRosterId(null)}>Cancel</Button>
-                <Button variant="destructive" onClick={() => {
-                  if (deleteRosterId) {
-                    handleDeleteRosterStudent(deleteRosterId)
-                    setUsers((current) => current.filter((u) => u.id !== deleteRosterId))
-                  }
-                  setDeleteRosterId(null)
-                }}>
-                  <Trash2 className="mr-1.5 size-4" /> Remove
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </Panel>
       ) : null}
 

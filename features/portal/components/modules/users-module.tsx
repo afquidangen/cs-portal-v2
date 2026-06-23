@@ -1395,7 +1395,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                         <Select
                           value={gradeHistoryEntry.remarks}
                           onChange={(value) => setGradeHistoryEntry((prev) => ({ ...prev, remarks: value }))}
-                          options={["FAILED", "INC", "DROP", "UNOFFICIAL DROP"]}
+                          options={["PASSED", "FAILED", "INC", "DROP", "UNOFFICIAL DROP"]}
                         />
                       </div>
                       <div>

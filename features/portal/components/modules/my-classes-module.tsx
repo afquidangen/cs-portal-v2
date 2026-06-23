@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import { BookOpen, CalendarDays, Clock, GraduationCap, Layers3, UserRound } from "lucide-react"
 
 import { Panel, Select } from "../shared/dashboard-ui"
+import { formatScheduleTime } from "@/components/ui/time-picker"
 import type { PortalModuleProps } from "./types"
 
 export function MyClassesModule({ model }: PortalModuleProps) {
@@ -56,15 +57,19 @@ export function MyClassesModule({ model }: PortalModuleProps) {
 
   const timeSlots = useMemo(() => {
     const set = new Set<string>()
-    timetableSchedules.forEach((s) => set.add(getStartTime(s.time)))
-    return Array.from(set).sort((a, b) => parseTimeToMinutes(a) - parseTimeToMinutes(b))
+    timetableSchedules.forEach((s) => set.add(s.time))
+    return Array.from(set).sort((a, b) => {
+      const [hA, mA] = getStartTime(a).split(":").map(Number)
+      const [hB, mB] = getStartTime(b).split(":").map(Number)
+      return (hA * 60 + mA) - (hB * 60 + mB)
+    })
   }, [timetableSchedules])
 
   const scheduleGrid = useMemo(() => {
     const grid: (typeof timetableSchedules)[][] = timeSlots.map(() => DAYS_SHORT.map(() => [] as typeof timetableSchedules))
     const timeIndex = new Map(timeSlots.map((t, i) => [t, i]))
     for (const s of timetableSchedules) {
-      const row = timeIndex.get(getStartTime(s.time))
+      const row = timeIndex.get(s.time)
       if (row === undefined) continue
       for (const d of s.day.split(/\s+/)) {
         const col = DAY_INDEX[d]
@@ -178,7 +183,7 @@ export function MyClassesModule({ model }: PortalModuleProps) {
                     <tr key={item.id} className="transition-colors hover:bg-muted/50">
                       <td className="px-4 py-3 font-medium text-foreground">{item.subject}</td>
                       <td className="px-4 py-3 text-foreground/80">{item.instructor}</td>
-                      <td className="px-4 py-3 text-foreground/80">{item.day}, {item.time}</td>
+                      <td className="px-4 py-3 text-foreground/80">{item.day}, {formatScheduleTime(item.time)}</td>
                       <td className="hidden sm:table-cell px-4 py-3 text-foreground/80">{item.room}</td>
                     </tr>
                   ))}
@@ -218,7 +223,7 @@ export function MyClassesModule({ model }: PortalModuleProps) {
                 <tbody className="divide-y divide-border bg-card">
                   {timeSlots.map((slot, row) => (
                     <tr key={slot} className="transition-colors hover:bg-muted/20">
-                      <td className="whitespace-nowrap px-4 py-4 text-sm font-medium text-muted-foreground">{slot}</td>
+                      <td className="whitespace-nowrap px-4 py-4 text-sm font-medium text-muted-foreground">{formatScheduleTime(slot)}</td>
                       {scheduleGrid[row].map((items, col) => (
                         <td key={col} className="px-3 py-2.5 align-top">
                           {items.length === 0 ? (
