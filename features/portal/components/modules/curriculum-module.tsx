@@ -36,6 +36,10 @@ import { cn } from "@/lib/utils"
 /* ──────────────────────────────────────────────
    Student mode
    ────────────────────────────────────────────── */
+function normalize(str: string) {
+  return str.trim().toLowerCase().replace(/[^a-z0-9]/g, "")
+}
+
 function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps["model"]> }) {
   const { curricula, grades, profile, users } = model
   const [activeTermIdx, setActiveTermIdx] = useState(0)
@@ -53,85 +57,65 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
   const allTerms = enrolledCurriculum?.terms ?? []
   const studentGradeHistory = studentUser?.gradeHistory ?? []
 
+  function codeMatches(a: string, b: string) {
+    return normalize(a) === normalize(b)
+  }
+
+  function statusLabel(remarks: string): { label: string; className: string } {
+    const r = remarks.toLowerCase()
+    if (r === "passed") return { label: "Passed", className: "text-green-600 dark:text-green-400" }
+    if (r === "inc") return { label: "INC", className: "text-red-600 dark:text-red-400" }
+    if (r === "dropped") return { label: "DRP", className: "text-amber-600 dark:text-amber-400" }
+    if (r === "unofficial drop") return { label: "UDRP", className: "text-orange-600 dark:text-orange-400" }
+    return { label: "Failed", className: "text-red-600 dark:text-red-400" }
+  }
+
+  function deriveRemarks(grade: GradeRecord): string {
+    const mr = grade.midtermRemarks
+    const fr = grade.finalRemarks
+    const mrLower = String(mr ?? "").toLowerCase()
+    const frLower = String(fr ?? "").toLowerCase()
+    const bothPassed = fr && mr && frLower === "passed" && mrLower === "passed"
+    return bothPassed ? "passed" : (mr && mrLower !== "passed" ? mrLower : frLower || (grade.remarks || "").toLowerCase())
+  }
+
   function getSubjectStatus(
     code: string,
     subjectName: string,
     year: string,
     semester: string
   ): { label: string; className: string } | null {
+    // 1. Check released grade records — any year/semester
     const gradeRecord = grades.find(
-      (g: GradeRecord) => g.studentId === profile.id && (g.code === code || g.subject === subjectName)
+      (g: GradeRecord) => g.studentId === profile.id && (g.released || g.finalReleased || g.midtermReleased) && codeMatches(g.code, code)
     )
-    if (gradeRecord && (gradeRecord.released || gradeRecord.finalReleased || gradeRecord.midtermReleased)) {
-      const mr = gradeRecord.midtermRemarks
-      const fr = gradeRecord.finalRemarks
-      const mrLower = String(mr ?? "").toLowerCase()
-      const frLower = String(fr ?? "").toLowerCase()
-      const bothPassed = fr && mr && frLower === "passed" && mrLower === "passed"
-      const r = bothPassed ? "passed" : (mr && mrLower !== "passed" ? mrLower : frLower || (gradeRecord.remarks || "").toLowerCase())
-      if (r === "passed") return { label: "Passed", className: "text-green-600 dark:text-green-400" }
-      if (r === "inc") return { label: "INC", className: "text-red-600 dark:text-red-400" }
-      if (r === "dropped") return { label: "DRP", className: "text-amber-600 dark:text-amber-400" }
-      if (r === "unofficial drop") return { label: "UDRP", className: "text-orange-600 dark:text-orange-400" }
-      if (r === "failed") return { label: "Failed", className: "text-red-600 dark:text-red-400" }
-      if ((gradeRecord.gradePercentage ?? 0) >= 75) return { label: "Passed", className: "text-green-600 dark:text-green-400" }
-      return { label: "Failed", className: "text-red-600 dark:text-red-400" }
+    if (gradeRecord) {
+      const r = deriveRemarks(gradeRecord)
+      if (r === "passed" || (gradeRecord.gradePercentage ?? 0) >= 75) {
+        return { label: "Passed", className: "text-green-600 dark:text-green-400" }
+      }
+      return statusLabel(r)
     }
 
-    const historyEntry = studentGradeHistory.find(
-      (h) => (h.subjectCode === code || h.subjectName === subjectName) && h.yearLevel === year && h.semester === semester
-    )
+    // 2. Check student grade history — any year/semester
+    const historyEntry = studentGradeHistory.find((h) => codeMatches(h.subjectCode, code))
     if (historyEntry) {
-      const allGradeRecords = grades.filter(
-        (g: GradeRecord) => g.studentId === profile.id && (g.code === code || g.subject === subjectName)
-      )
-      for (const gr of allGradeRecords) {
-        const mr = gr.midtermRemarks
-        const fr = gr.finalRemarks
-        const mrLower = String(mr ?? "").toLowerCase()
-        const frLower = String(fr ?? "").toLowerCase()
-        const bothPassed = fr && mr && frLower === "passed" && mrLower === "passed"
-        const pr = bothPassed ? "passed" : (mr && mrLower !== "passed" ? mrLower : frLower)
-        if (pr === "failed") return { label: "Failed", className: "text-red-600 dark:text-red-400" }
-        if (pr === "inc") return { label: "INC", className: "text-red-600 dark:text-red-400" }
-        if (pr === "dropped") return { label: "DRP", className: "text-amber-600 dark:text-amber-400" }
-        if (pr === "unofficial drop") return { label: "UDRP", className: "text-orange-600 dark:text-orange-400" }
-        if (pr === "passed") return { label: "Passed", className: "text-green-600 dark:text-green-400" }
-      }
-      const r = historyEntry.remarks.toUpperCase()
-      if (r === "FAILED") {
-        return { label: "FAILED", className: "text-red-600 dark:text-red-400" }
-      }
-      if (r === "INC") {
-        return { label: "INC", className: "text-red-600 dark:text-red-400" }
-      }
-      if (r === "DROP") {
-        return { label: "DRP", className: "text-amber-600 dark:text-amber-400" }
-      }
-      if (r === "UNOFFICIAL DROP") {
-        return { label: "UDRP", className: "text-orange-600 dark:text-orange-400" }
-      }
-      return { label: "Passed", className: "text-green-600 dark:text-green-400" }
+      return statusLabel(historyEntry.remarks)
     }
 
-    if (
-      studentUser?.currentYearLevel === year &&
-      studentUser?.currentSemester === semester
-    ) {
+    // 3. Current term fallback
+    if (studentUser?.currentYearLevel === year && studentUser?.currentSemester === semester) {
       return { label: "Current", className: "text-blue-600 dark:text-blue-400" }
     }
 
     return null
   }
 
-  function isRetake(code: string, subjectName: string): boolean {
-    const matches = studentGradeHistory.filter(
-      (h) => h.subjectCode === code || h.subjectName === subjectName
-    )
+  function isRetake(code: string): boolean {
+    const matches = studentGradeHistory.filter((h) => codeMatches(h.subjectCode, code))
     if (matches.length > 1) return true
     if (matches.length === 1) {
-      const r = matches[0].remarks.toUpperCase()
-      return ["FAILED", "INC", "DROP", "UNOFFICIAL DROP"].includes(r)
+      return ["FAILED", "INC", "DROP", "UNOFFICIAL DROP"].includes(matches[0].remarks.toUpperCase())
     }
     return false
   }
@@ -147,6 +131,27 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
   const semesterOptions = allTerms
     .filter((term) => term.year === selectedYear)
     .map((term) => term.semester)
+
+  const progress = useMemo(() => {
+    let completedUnits = 0
+    let completedSubjects = 0
+    for (const term of allTerms) {
+      for (const subject of term.subjects) {
+        const status = getSubjectStatus(subject.code, subject.name, term.year, term.semester)
+        if (status?.label === "Passed") {
+          completedUnits += subject.total
+          completedSubjects++
+        }
+      }
+    }
+    return {
+      completedUnits,
+      completedSubjects,
+      remainingUnits: totalUnits - completedUnits,
+      remainingSubjects: totalSubjects - completedSubjects,
+      completionPct: totalSubjects > 0 ? Math.round((completedSubjects / totalSubjects) * 100) : 0,
+    }
+  }, [allTerms, grades, studentGradeHistory, profile.id, studentUser?.currentYearLevel, studentUser?.currentSemester])
 
   if (!enrolledCurriculum) {
     return (
@@ -208,6 +213,30 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
             </article>
           )
         })}
+      </div>
+
+      {/* Progress */}
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Completion Progress</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{progress.completedSubjects} of {totalSubjects} subjects completed ({progress.completionPct}%)</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Remaining</p>
+            <p className="text-sm font-semibold text-foreground">{progress.remainingSubjects} subjects · {progress.remainingUnits} units</p>
+          </div>
+        </div>
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all duration-500"
+            style={{ width: `${Math.min(progress.completionPct, 100)}%` }}
+          />
+        </div>
+        <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+          <span>{progress.completedUnits} units completed</span>
+          <span>{progress.remainingUnits} units remaining</span>
+        </div>
       </div>
 
       {/* Term selector */}
@@ -280,7 +309,7 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
                                   <svg className="size-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg>
                                 ) : null}
                                 {status.label}
-                                {isRetake(subject.code, subject.name) && status.label === "Current" && (
+                                {isRetake(subject.code) && status.label === "Current" && (
                                   <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
                                     RETAKE
                                   </span>
