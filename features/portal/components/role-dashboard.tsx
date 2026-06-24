@@ -755,11 +755,13 @@ export function RoleDashboard({ role }: { role: Role }) {
       ? "Awaiting grade release"
       : "No grades yet"
 
-  const semesterTotalUnits = model.currentSemesterTotalUnits ?? 0
-  const semesterPassedUnits = model.currentSemesterPassedUnits ?? 0
-  const unitsDisplay = semesterTotalUnits > 0
-    ? `${semesterPassedUnits} / ${semesterTotalUnits}`
-    : gwaPending ? "Pending" : "N/A"
+  const completedUnits = model.totalCompletedUnits ?? 0
+  const totalUnits = model.totalCurriculumUnits ?? 0
+  const unitsDisplay = totalUnits > 0
+    ? `${completedUnits} / ${totalUnits} Units`
+    : completedUnits > 0
+      ? `${completedUnits} Units`
+      : "N/A"
 
   const enrolledSubjectCount = useMemo(() => {
     const activeSem = model.activeSemester
@@ -837,7 +839,7 @@ export function RoleDashboard({ role }: { role: Role }) {
     {
       label: "Units Taken",
       value: unitsDisplay,
-      helper: "Passed / Total (current semester)",
+      helper: "Cumulative completed / Total curriculum",
       icon: Layers3,
       accent: "emerald",
       sparkline: adminSparklineData,

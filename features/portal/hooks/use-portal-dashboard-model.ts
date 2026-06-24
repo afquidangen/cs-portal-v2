@@ -629,6 +629,46 @@ export function usePortalDashboardModel(role: Role) {
     [currentSemesterGrades]
   )
 
+  const totalCompletedUnits = useMemo(() => {
+    const studentUser = users.find((u) => u.id === profile.id)
+    const gradeHistory = studentUser?.gradeHistory ?? []
+    const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
+    const seen = new Set<string>()
+    let total = 0
+
+    const inGrades = new Set<string>()
+
+    for (const g of allStudentGrades) {
+      const key = normalize(g.code)
+      inGrades.add(key)
+      const r = (g.finalRemarks || "").toLowerCase()
+      if (r !== "passed") continue
+      if (seen.has(key)) continue
+      seen.add(key)
+      total += g.units || 3
+    }
+
+    for (const h of gradeHistory) {
+      if (h.remarks?.toLowerCase() !== "passed") continue
+      const key = normalize(h.subjectCode)
+      if (seen.has(key) || inGrades.has(key)) continue
+      seen.add(key)
+      total += h.units ?? 3
+    }
+
+    return total
+  }, [users, profile.id, allStudentGrades])
+
+  const totalCurriculumUnits = useMemo(() => {
+    const studentUser = users.find((u) => u.id === profile.id)
+    const curriculum = curricula.find((c) => c.id === studentUser?.curriculumId)
+    if (!curriculum) return 0
+    return curriculum.terms.reduce(
+      (sum, term) => sum + term.subjects.reduce((s, sub) => s + (sub.total || 0), 0),
+      0
+    )
+  }, [users, profile.id, curricula])
+
   const filteredTheses = useMemo(() => {
     const search = query.toLowerCase()
     return theses.filter((thesis) => {
@@ -3369,6 +3409,8 @@ export function usePortalDashboardModel(role: Role) {
     currentSemesterGwaPending,
     currentSemesterTotalUnits,
     currentSemesterPassedUnits,
+    totalCompletedUnits,
+    totalCurriculumUnits,
     gradeAverage,
     filteredTheses,
     filteredSeminars,

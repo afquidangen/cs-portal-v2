@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Award, BarChart3, BookMarked, ClipboardList, Download, FileSpreadsheet, GraduationCap, ListChecks, Search, Send, Upload, UsersRound } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -769,6 +769,31 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
     }
   }, [])
 
+  const prevSchemeIdsRef = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    prevSchemeIdsRef.current = new Set(gradingSchemes.map((s) => s.id))
+  }, [gradingSchemes])
+
+  useEffect(() => {
+    async function refetchSchemes() {
+      try {
+        const res = await fetch("/api/portal/grading-schemes")
+        const json = await res.json()
+        if (!json.data) return
+        const newSchemes = json.data as GradingScheme[]
+        const newIds = new Set(newSchemes.map((s) => s.id))
+        const oldIds = prevSchemeIdsRef.current
+        const changed = newIds.size !== oldIds.size || [...newIds].some((id) => !oldIds.has(id))
+        if (changed) setGradingSchemes(newSchemes)
+      } catch { /* poll silently */ }
+    }
+    const onVisibility = () => { if (document.visibilityState === "visible") refetchSchemes() }
+    document.addEventListener("visibilitychange", onVisibility)
+    const interval = setInterval(refetchSchemes, 60000)
+    return () => { document.removeEventListener("visibilitychange", onVisibility); clearInterval(interval) }
+  }, [])
+
   const scheduleSemesters = useMemo(() => {
     const semesterIds = new Set(visibleSchedules.map((s) => s.semesterId))
     return semesters.filter((sem) => semesterIds.has(sem.id))
@@ -1253,6 +1278,21 @@ function SectionTable({
     })
     syncGrade(record, isNew)
   }
+
+  const prevSchemeIdRef = useRef(scheme.id)
+
+  useEffect(() => {
+    if (prevSchemeIdRef.current !== scheme.id && prevSchemeIdRef.current !== "") {
+      for (const student of students) {
+        const existing = gradeMap.get(student.id)
+        if (existing) {
+          const next = computeGradeRecord(existing, scheme, transmutationEntries, columnSets)
+          commitGrade(next, false)
+        }
+      }
+    }
+    prevSchemeIdRef.current = scheme.id
+  }, [scheme.id])
 
   function updateStudentScore(student: (typeof students)[number], column: GradeColumnSet, value: string) {
     const existing = gradeMap.get(student.id)

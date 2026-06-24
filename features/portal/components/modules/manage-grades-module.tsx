@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   BookMarked, ClipboardList, FileSpreadsheet, GraduationCap,
   UsersRound,
@@ -36,6 +36,7 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
   const [classId, setClassId] = useState("")
   const [computedOnce, setComputedOnce] = useState(false)
   const [activeTab, setActiveTab] = useState<"midterm" | "final" | "summary">("midterm")
+  const prevSchemeIdRef = useRef<string | null>(null)
 
   const semesterSubjects = useMemo(() => {
     const seen = new Set<string>()
@@ -104,11 +105,66 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
         const activeScheme = schemes.find((s) => s.isActive && (s as { subjectType: string }).subjectType === st)
           ?? schemes.find((s) => s.isActive)
         if (activeScheme) {
+          prevSchemeIdRef.current = (activeScheme as { id: string }).id ?? null
           setGradingScheme(activeScheme as typeof gradingScheme)
         }
       })
       .catch(() => {})
   }, [classId, selectedSubject, curricula, setGrades])
+
+  useEffect(() => {
+    if (!classId) return
+    async function checkAndRecompute() {
+      try {
+        const res = await fetch("/api/portal/grading-schemes")
+        const json = await res.json()
+        const schemes: Array<Record<string, unknown>> = json.data ?? []
+        const code = selectedSubject.split(" - ")[0]?.trim() ?? selectedSubject
+        let st: string
+        if (curricula && curricula.length > 0) {
+          const foundLab = curricula.some((c) =>
+            c.terms.some((t) =>
+              t.subjects.some((s) =>
+                s.lab > 0 && ((s.code && code.includes(s.code)) || (s.name && code.includes(s.name)))
+              )
+            )
+          )
+          st = foundLab ? "Lecture with Lab" : "Lecture"
+        } else {
+          st = "Lecture"
+        }
+        const active = schemes.find((s) => s.isActive && (s as Record<string, string>).subjectType === st)
+          ?? schemes.find((s) => s.isActive)
+        if (!active) return
+        const newId = (active as Record<string, string>).id
+        if (prevSchemeIdRef.current && prevSchemeIdRef.current !== newId) {
+          setGradingScheme(active as typeof gradingScheme)
+          await fetch("/api/portal/grades/compute", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ classId, gradingPeriod: "midterm" }),
+          })
+          await fetch("/api/portal/grades/compute", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ classId, gradingPeriod: "final" }),
+          })
+          const gRes = await fetch(`/api/portal/grades/class/${classId}`)
+          const gJson = await gRes.json()
+          if (gJson.data?.grades) {
+            setGrades((prev) => {
+              const filtered = prev.filter((g) => g.classId !== classId)
+              return [...filtered, ...gJson.data.grades]
+            })
+          }
+        }
+        prevSchemeIdRef.current = newId
+      } catch { /* poll silently */ }
+    }
+    const onVisibility = () => { if (document.visibilityState === "visible") checkAndRecompute() }
+    document.addEventListener("visibilitychange", onVisibility)
+    const interval = setInterval(checkAndRecompute, 60000)
+    return () => { document.removeEventListener("visibilitychange", onVisibility); clearInterval(interval) }
+  }, [classId, selectedSubject, curricula, setGrades])
+
   const subjectRoster = useMemo(() => {
     if (subjectSections.length === 0) return []
     const sectionSet = new Set(selectedSection ? [selectedSection] : subjectSections)
