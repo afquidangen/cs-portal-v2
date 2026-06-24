@@ -63,7 +63,12 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
       (g: GradeRecord) => g.studentId === profile.id && (g.code === code || g.subject === subjectName)
     )
     if (gradeRecord && (gradeRecord.released || gradeRecord.finalReleased || gradeRecord.midtermReleased)) {
-      const r = (gradeRecord.finalRemarks || gradeRecord.midtermRemarks || gradeRecord.remarks || "").toLowerCase()
+      const mr = gradeRecord.midtermRemarks
+      const fr = gradeRecord.finalRemarks
+      const mrLower = String(mr ?? "").toLowerCase()
+      const frLower = String(fr ?? "").toLowerCase()
+      const bothPassed = fr && mr && frLower === "passed" && mrLower === "passed"
+      const r = bothPassed ? "passed" : (mr && mrLower !== "passed" ? mrLower : frLower || (gradeRecord.remarks || "").toLowerCase())
       if (r === "passed") return { label: "Passed", className: "text-green-600 dark:text-green-400" }
       if (r === "inc") return { label: "INC", className: "text-red-600 dark:text-red-400" }
       if (r === "dropped") return { label: "DRP", className: "text-amber-600 dark:text-amber-400" }
@@ -81,7 +86,12 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
         (g: GradeRecord) => g.studentId === profile.id && (g.code === code || g.subject === subjectName)
       )
       for (const gr of allGradeRecords) {
-        const pr = (gr.finalRemarks || gr.midtermRemarks || "").toLowerCase()
+        const mr = gr.midtermRemarks
+        const fr = gr.finalRemarks
+        const mrLower = String(mr ?? "").toLowerCase()
+        const frLower = String(fr ?? "").toLowerCase()
+        const bothPassed = fr && mr && frLower === "passed" && mrLower === "passed"
+        const pr = bothPassed ? "passed" : (mr && mrLower !== "passed" ? mrLower : frLower)
         if (pr === "failed") return { label: "Failed", className: "text-red-600 dark:text-red-400" }
         if (pr === "inc") return { label: "INC", className: "text-red-600 dark:text-red-400" }
         if (pr === "dropped") return { label: "DRP", className: "text-amber-600 dark:text-amber-400" }

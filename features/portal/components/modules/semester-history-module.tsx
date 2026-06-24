@@ -54,11 +54,13 @@ function getRemarks(g: GradeRecord): string {
   const frLower = fr?.toLowerCase()
   const mrLower = mr?.toLowerCase()
 
-  // Only "Passed" if both midterm and finals passed
+  // Only "Passed" if both periods explicitly passed
   if (fr && mr && frLower === "passed" && mrLower === "passed") return "Passed"
-  // Midterm exists and is non-passing — surface it
+  // Midterm non-passing — surface it
   if (mr && mrLower !== "passed") return mr
-  // Final exists — return as-is
+  // Final non-passing — surface it
+  if (fr && frLower !== "passed") return fr
+  // Final "Passed" with no midterm data — return as-is
   if (fr) return fr
 
   if (g.transmutedGrade != null && g.transmutedGrade > 0) {

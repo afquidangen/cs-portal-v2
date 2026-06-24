@@ -63,7 +63,13 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
         subjectName: grade.subject,
         finalPercentile: grade.finalGrade!,
         transmutedGrade: grade.transmutedGrade!,
-        remarks: grade.finalRemarks || grade.midtermRemarks || grade.remarks || "Passed",
+        remarks: grade.midtermRemarks && grade.finalRemarks
+          ? (grade.finalRemarks.toLowerCase() === "passed" && grade.midtermRemarks.toLowerCase() === "passed"
+            ? "Passed"
+            : grade.midtermRemarks.toLowerCase() !== "passed"
+              ? grade.midtermRemarks
+              : grade.finalRemarks)
+          : grade.finalRemarks || grade.midtermRemarks || grade.remarks || "Passed",
         curriculumId,
         yearLevel,
         semester,
