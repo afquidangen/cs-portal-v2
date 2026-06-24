@@ -5,13 +5,14 @@ import { transmutationTableRepository } from "@/features/portal/repositories/tra
 import { assessmentRepository } from "@/features/portal/repositories/assessment.repository"
 import { success, error, badRequest } from "@/lib/api-response"
 import { requireFacultyOrAdmin } from "@/lib/api-auth"
-import { UserModel } from "@/lib/models"
+import { UserModel, CurriculumModel } from "@/lib/models"
 import type { GradingPeriod } from "@/lib/types"
 import {
   computeAllCategoryGrades, computeClassStanding,
   computeLectureGrade,   computeExamGrade,
   computeLaboratoryGrade, computePeriodGrade, computeFinalGrade,
   transmuteGrade, getGradeRemarks, gradeCategoryMatches,
+  findCurriculumSubjectPosition,
 } from "@/features/portal/lib/grade-engine"
 import type { CategoryGradeResult } from "@/features/portal/lib/grade-engine"
 
@@ -302,7 +303,9 @@ export async function POST(request: Request) {
         updates.midtermExam = examGrade
         if (laboratoryGrade !== undefined) updates.midtermLaboratoryGrade = laboratoryGrade
         updates.midtermGrade = periodGrade
-        updates.midtermTransmuted = transmuteGrade(periodGrade, Object.keys(transmutationTable).length > 0 ? transmutationTable : undefined)
+        const midtermTransmuted = transmuteGrade(periodGrade, Object.keys(transmutationTable).length > 0 ? transmutationTable : undefined)
+        updates.midtermTransmuted = midtermTransmuted
+        updates.midtermRemarks = getGradeRemarks(midtermTransmuted)
         updates.lectureClassStanding = classStanding
         updates.lectureExam = examGrade
         updates.lectureGrade = lectureGrade
@@ -324,17 +327,23 @@ export async function POST(request: Request) {
       }
 
       if (period === "final") {
-        const special = ["INC", "FAILED", "DROPPED"]
-        const fin = g.finalRemarks as string | undefined
-        const mid = g.midtermRemarks as string | undefined
-        if (fin && special.includes(fin)) {
-          updates.remarks = fin
-        } else if (mid && special.includes(mid)) {
-          updates.remarks = mid
-        } else if (updates.transmutedGrade !== undefined) {
-          updates.remarks = getGradeRemarks(updates.transmutedGrade as number)
+        if (updates.transmutedGrade !== undefined) {
+          const r = getGradeRemarks(updates.transmutedGrade as number)
+          updates.remarks = r
+          updates.finalRemarks = r
         } else if (updates.finalTransmuted !== undefined) {
-          updates.remarks = getGradeRemarks(updates.finalTransmuted as number)
+          const r = getGradeRemarks(updates.finalTransmuted as number)
+          updates.remarks = r
+          updates.finalRemarks = r
+        }
+
+        if (!updates.remarks) {
+          const special = ["INC", "FAILED", "DROPPED"]
+          const existingRemarks = (g.remarks as string | undefined) ?? ""
+          if (existingRemarks && special.includes(existingRemarks)) {
+            updates.remarks = existingRemarks
+            updates.finalRemarks = existingRemarks
+          }
         }
       }
 
@@ -356,36 +365,62 @@ export async function POST(request: Request) {
     }
 
     if (period === "final") {
+      const curriculaCache = new Map<string, unknown>()
+
       for (const result of updatedGrades) {
         const r = result as Record<string, unknown>
         const studentId = r.studentId as string
+        const code = r.code as string
         const finalGrade = r.finalGrade as number | undefined
         if (finalGrade === undefined) continue
         const transmuted = r.transmutedGrade as number | undefined
         const user = await UserModel.findOne({ id: studentId })
         if (!user) continue
+
+        const u = user as unknown as Record<string, unknown>
+        const userCurriculumId = (u.curriculumId as string) ?? ""
+        let curriculumTerms: unknown = null
+        if (userCurriculumId) {
+          if (curriculaCache.has(userCurriculumId)) {
+            curriculumTerms = curriculaCache.get(userCurriculumId)
+          } else {
+            const curriculum = await CurriculumModel.findOne({ id: userCurriculumId }).lean()
+            const terms = (curriculum as Record<string, unknown> | null)?.terms ?? null
+            curriculaCache.set(userCurriculumId, terms)
+            curriculumTerms = terms
+          }
+        }
+
+        const position = findCurriculumSubjectPosition(
+          curriculumTerms as { terms: Array<{ year: string; semester: string; subjects: Array<{ code: string }> }> } | null,
+          code
+        )
+
         const history = user.gradeHistory ? [...user.gradeHistory] : []
         const existingIdx = (history as Array<Record<string, unknown>>).findIndex(
-          (h) => h.subjectCode === (r.code as string)
+          (h) => h.subjectCode === code
         )
         const entry: Record<string, unknown> = {
-          subjectCode: r.code,
+          subjectCode: code,
           subjectName: r.subject,
           finalPercentile: finalGrade,
           transmutedGrade: transmuted ?? 0,
           remarks: getGradeRemarks(transmuted ?? 5.0),
           section: r.section,
+          curriculumId: userCurriculumId,
+          yearLevel: position?.yearLevel ?? (u.currentYearLevel as string) ?? "",
+          semester: position?.semester ?? (u.currentSemester as string) ?? "",
         }
         if (existingIdx >= 0) {
-          (history as Array<Record<string, unknown>>)[existingIdx] = {
-            ...(history as Array<Record<string, unknown>>)[existingIdx],
+          const existing = (history as Array<Record<string, unknown>>)[existingIdx]
+          const merged = {
             ...entry,
+            yearLevel: existing.yearLevel || entry.yearLevel,
+            semester: existing.semester || entry.semester,
+            curriculumId: existing.curriculumId || entry.curriculumId,
           }
+          ;(history as Array<Record<string, unknown>>)[existingIdx] = { ...existing, ...merged }
         } else {
-          const u = user as unknown as Record<string, unknown>
-          entry.curriculumId = (u.curriculumId as string) ?? ""
-          entry.yearLevel = (u.currentYearLevel as string) ?? ""
-          entry.semester = (u.currentSemester as string) ?? ""
           ;(history as Array<Record<string, unknown>>).push(entry)
         }
         await UserModel.updateOne({ id: studentId }, { $set: { gradeHistory: history } })

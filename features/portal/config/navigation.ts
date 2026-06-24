@@ -42,7 +42,6 @@ export const roleNavigation: Record<Role, NavItem[]> = {
     { id: "schedule", label: "Class Schedule", icon: CalendarDays },
     { id: "student-roster", label: "Student Roster", icon: BookMarked },
     { id: "thesis", label: "Thesis Library", icon: BookOpen },
-    { id: "grades", label: "Grades (Legacy)", icon: FileSpreadsheet },
     { id: "manage-grades", label: "E-Grades", icon: FileSpreadsheet },
     { id: "availability", label: "My Status", icon: CheckCircle2 },
     { id: "instructors", label: "Instructor Info", icon: Network },

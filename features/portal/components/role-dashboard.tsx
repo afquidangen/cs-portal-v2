@@ -525,7 +525,7 @@ export function RoleDashboard({ role }: { role: Role }) {
         : role === "faculty"
           ? [
               { label: "Workspace", items: pick(["overview", "profile"]) },
-              { label: "Teaching", items: pick(["schedule", "student-roster", "grades", "manage-grades", "availability"]) },
+              { label: "Teaching", items: pick(["schedule", "student-roster", "manage-grades", "availability"]) },
               { label: "Academic Records", items: pick(["instructors", "thesis", "faculty-semester-archive"]) },
               { label: "Communications", items: pick(["announcements", "feedback"]) },
               { label: "Resources", items: pick(["quick-links", "cso"]) },
@@ -727,14 +727,14 @@ export function RoleDashboard({ role }: { role: Role }) {
       sparkline: adminSparklineData,
     },
     {
-      label: "Grade Records",
-      value: String(model.facultyGradeRecords.length),
-      helper: "Grades module",
+      label: "Grading Sections",
+      value: String(model.facultyClassSections.length),
+      helper: "Active sections",
       icon: BarChart3,
       accent: "violet",
       sparkline: adminSparklineData,
     },
-  ], [facultyStatus, facultyAvailabilityUi.helper, facultyAvailabilityUi.icon, facultyAvailabilityUi.accent, model.visibleSchedules.length, model.facultySubjects.length, facultyActiveStudents.length, model.facultyGradeRecords.length, adminSparklineData])
+  ], [facultyStatus, facultyAvailabilityUi.helper, facultyAvailabilityUi.icon, facultyAvailabilityUi.accent, model.visibleSchedules.length, model.facultySubjects.length, facultyActiveStudents.length, model.facultyClassSections.length, adminSparklineData])
 
   const studentFirstName = model.profile.name.split(" ")[0] || model.profile.name
   const studentUser = model.users.find((u: { id: string }) => u.id === model.profile.id)

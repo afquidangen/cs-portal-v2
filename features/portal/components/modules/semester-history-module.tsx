@@ -49,9 +49,23 @@ function getSemesterGrades(
 }
 
 function getRemarks(g: GradeRecord): string {
-  if (g.remarks) return g.remarks
+  const fr = g.finalRemarks || g.remarks
+  const mr = g.midtermRemarks
+  const frLower = fr?.toLowerCase()
+  const mrLower = mr?.toLowerCase()
+
+  // Only "Passed" if both midterm and finals passed
+  if (fr && mr && frLower === "passed" && mrLower === "passed") return "Passed"
+  // Midterm exists and is non-passing — surface it
+  if (mr && mrLower !== "passed") return mr
+  // Final exists — return as-is
+  if (fr) return fr
+
   if (g.transmutedGrade != null && g.transmutedGrade > 0) {
     return g.transmutedGrade <= 3.0 ? "Passed" : "Failed"
+  }
+  if (g.finalGrade != null && g.finalGrade > 0) {
+    return g.finalGrade >= 75 ? "Passed" : "Failed"
   }
   return "---"
 }

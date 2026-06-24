@@ -478,3 +478,20 @@ export function computeLivePreview(params: {
     transmutedGrade,
   }
 }
+
+export function findCurriculumSubjectPosition(
+  curriculum: {
+    terms: Array<{ year: string; semester: string; subjects: Array<{ code: string }> }>
+  } | null,
+  subjectCode: string
+): { yearLevel: string; semester: string } | null {
+  if (!curriculum) return null
+  for (const term of curriculum.terms) {
+    for (const sub of term.subjects) {
+      if (sub.code === subjectCode) {
+        return { yearLevel: term.year, semester: term.semester }
+      }
+    }
+  }
+  return null
+}

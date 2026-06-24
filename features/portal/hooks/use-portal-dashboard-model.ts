@@ -38,7 +38,7 @@ import {
 import type { CsoInfoRecord, SemesterRecord, SubjectRecord } from "@/lib/types"
 import { csvEscape, downloadFile } from "../lib/downloads"
 import { calculateFinalGrade, computeDeansList, transmutedToEquivalent } from "../lib/grades"
-import { parseGradeWorkbook, parseScheduleWorkbook } from "../lib/xlsx"
+import { parseScheduleWorkbook } from "../lib/xlsx"
 import type { ModuleId } from "../types/navigation"
 
 type SessionUser = {
@@ -79,52 +79,6 @@ function getProfileFullName(details: ProfileDetails) {
     .map((part) => part.trim())
     .filter(Boolean)
     .join(" ")
-}
-
-function buildGradeFromImport(
-  imported: {
-    student: string
-    section: string
-    subject: string
-    code: string
-    midtermTransmuted?: number
-    midtermEquivalent?: number
-    finalTransmuted?: number
-    finalEquivalent?: number
-    remarks?: string
-  },
-  studentId: string,
-  index: number
-): GradeRecord {
-  const midterm = imported.midtermEquivalent ?? 5
-  const finalTerm = imported.finalEquivalent ?? 5
-  const gradePercentage =
-    imported.midtermTransmuted !== undefined &&
-    imported.finalTransmuted !== undefined
-      ? Number(
-          ((imported.midtermTransmuted + imported.finalTransmuted) / 2).toFixed(
-            2
-          )
-        )
-      : undefined
-
-  return {
-    id: `GR-UP-${Date.now()}-${index}`,
-    studentId,
-    student: imported.student,
-    section: imported.section,
-    subject: imported.subject,
-    code: imported.code,
-    units: 3,
-    midtermTransmuted: imported.midtermTransmuted,
-    midterm,
-    finalTransmuted: imported.finalTransmuted,
-    finalTerm,
-    gradePercentage,
-    remarks: imported.remarks || "Passed",
-    released: false,
-    updatedAt: new Date().toISOString(),
-  }
 }
 
 export function usePortalDashboardModel(role: Role) {
@@ -510,16 +464,6 @@ export function usePortalDashboardModel(role: Role) {
           facultyClassSections.includes(student.section)
       ),
     [activeClassSection, facultyClassSections, roster]
-  )
-
-  const facultyGradeRecords = useMemo(
-    () =>
-      grades.filter(
-        (grade) =>
-          grade.section === activeGradeSection &&
-          facultyClassSections.includes(grade.section)
-      ),
-    [activeGradeSection, facultyClassSections, grades]
   )
 
   const facultySubjects = useMemo(() => {
@@ -922,37 +866,6 @@ export function usePortalDashboardModel(role: Role) {
 
   function escHtml(s: string) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;") }
 
-  function downloadGradeTemplate() {
-    const rows = [
-      [
-        "Student ID",
-        "Student Name",
-        "Section",
-        "Subject Code",
-        "Midterm %",
-        "Midterm Equivalent",
-        "Final %",
-        "Final Equivalent",
-        "Remarks",
-      ],
-      ...facultyClassStudents.map((student) => [
-        student.id,
-        student.name,
-        student.section,
-        "CS304",
-        "",
-        "",
-        "",
-        "",
-        "Passed",
-      ]),
-    ]
-    downloadFile(
-      "grade-template.csv",
-      rows.map((row) => row.map(csvEscape).join(",")).join("\n")
-    )
-  }
-
   function downloadUserTemplate(roleName: Role) {
     const rows = [
       ["Name", "Email", "Role", "Course", "Year", "Section"],
@@ -980,68 +893,6 @@ export function usePortalDashboardModel(role: Role) {
     link.href = thesis.pdfUrl
     link.download = thesis.fileName || `${thesis.title}.pdf`
     link.click()
-  }
-
-  function updateGrade(
-    id: string,
-    field: string,
-    value: string
-  ) {
-    const percentile = Number(value)
-    if (Number.isNaN(percentile)) return
-    const equiv = transmutedToEquivalent(percentile)
-    const now = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
-
-    let updated: GradeRecord | undefined
-    setGrades((current) =>
-      current.map((grade) => {
-        if (grade.id !== id) return grade
-
-        const nextGrade = {
-          ...grade,
-          [field]: equiv,
-          ...(field === "midterm" ? { midtermTransmuted: percentile } : {}),
-          ...(field === "finalTerm" ? { finalTransmuted: percentile } : {}),
-          updatedAt: now,
-        }
-
-        const mt = field === "midterm" ? percentile : nextGrade.midtermTransmuted
-        const ft = field === "finalTerm" ? percentile : nextGrade.finalTransmuted
-        nextGrade.gradePercentage =
-          mt !== undefined && ft !== undefined
-            ? Number((((mt as number) + (ft as number)) / 2).toFixed(2))
-            : nextGrade.gradePercentage
-
-        updated = nextGrade
-        return nextGrade
-      })
-    )
-
-    if (updated) {
-      syncApi("PUT", `/api/portal/grades/${id}`, updated).catch((e) =>
-        console.error(`Failed to sync grade ${id}:`, e)
-      )
-    }
-  }
-
-  function updateGradeRemarks(id: string, remarks: string) {
-    const now = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
-
-    let updated: GradeRecord | undefined
-    setGrades((current) =>
-      current.map((grade) => {
-        if (grade.id !== id) return grade
-        const nextGrade = { ...grade, remarks, updatedAt: now }
-        updated = nextGrade
-        return nextGrade
-      })
-    )
-
-    if (updated) {
-      syncApi("PUT", `/api/portal/grades/${id}`, updated).catch((e) =>
-        console.error(`Failed to sync grade remarks ${id}:`, e)
-      )
-    }
   }
 
   async function refreshDashboardData() {
@@ -1072,53 +923,6 @@ export function usePortalDashboardModel(role: Role) {
     } catch {
       // Silently fail
     }
-  }
-
-  async function releaseGradesForSection(section: string, subject?: string) {
-    const label = subject ? `${section} - ${subject}` : section
-
-    setGrades((current) =>
-      current.map((grade) =>
-        grade.section === section && (!subject || grade.subject === subject)
-          ? { ...grade, released: true }
-          : grade
-      )
-    )
-
-    try {
-      await syncApi("POST", "/api/portal/grades/release", { section, subject })
-      addAuditLog(`Released grades for ${label}`)
-      await refreshDashboardData()
-    } catch (e) {
-      console.error("Failed to release grades:", e)
-    }
-  }
-
-  function handleCreateGrade(studentId: string, studentName: string) {
-    if (!selectedScheduleEntry) return
-    const exists = grades.some(
-      (g) => g.studentId === studentId && g.subject === selectedScheduleEntry.subject
-    )
-    if (exists) return
-
-    const newId = `GRD-${Date.now()}`
-    const newGrade: GradeRecord = {
-      id: newId,
-      studentId,
-      student: studentName,
-      section: selectedScheduleEntry.section,
-      subject: selectedScheduleEntry.subject,
-      code: selectedScheduleEntry.subject.split(" - ")[0]?.trim() ?? selectedScheduleEntry.subject,
-      units: 3,
-      midtermTransmuted: undefined,
-      midterm: 0,
-      finalTransmuted: undefined,
-      finalTerm: 0,
-      released: false,
-    updatedAt: new Date().toISOString(),
-    }
-    setGrades((current) => [newGrade, ...current])
-    void syncApi("POST", "/api/portal/grades", newGrade)
   }
 
   function handleUnenrollFromSubject(studentId: string, section: string, gradeId?: string) {
@@ -2609,91 +2413,6 @@ export function usePortalDashboardModel(role: Role) {
     if (item) addAuditLog(`Deleted schedule for "${item.subject}" (${item.section})`)
   }
 
-  async function handleGradeWorkbookUpload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    try {
-      const importedRows = await parseGradeWorkbook(file)
-      if (!importedRows.length) {
-        toast.error("No grade rows were found in the uploaded workbook.")
-        return
-      }
-
-      const knownStudents = new Map(
-        roster.map((student) => [normalizeName(student.name), student])
-      )
-      const importedStudents = new Map<string, ClassStudent>()
-
-      importedRows.forEach((row, index) => {
-        const key = normalizeName(row.student)
-        if (knownStudents.has(key) || importedStudents.has(key)) return
-
-        importedStudents.set(key, {
-          id: `UP-${String(Date.now()).slice(-5)}-${index + 1}`,
-          name: row.student,
-          section: row.section || activeGradeSection,
-          enrolled: true,
-        })
-      })
-
-      if (importedStudents.size) {
-        setRoster((current) => [...Array.from(importedStudents.values()), ...current])
-      }
-
-      setGrades((current) => {
-        const nextGrades = [...current]
-
-        importedRows.forEach((row, index) => {
-          const student =
-            knownStudents.get(normalizeName(row.student)) ??
-            importedStudents.get(normalizeName(row.student))
-
-          if (!student) return
-
-          const importedGrade = buildGradeFromImport(
-            {
-              ...row,
-              section: row.section || activeGradeSection,
-            },
-            student.id,
-            index
-          )
-          const existingIndex = nextGrades.findIndex(
-            (grade) =>
-              grade.studentId === student.id &&
-              grade.section === importedGrade.section &&
-              grade.code === importedGrade.code
-          )
-
-          if (existingIndex >= 0) {
-            nextGrades[existingIndex] = {
-              ...nextGrades[existingIndex],
-              ...importedGrade,
-              id: nextGrades[existingIndex].id,
-            }
-          } else {
-            nextGrades.unshift(importedGrade)
-          }
-        })
-
-        return nextGrades
-      })
-
-      setSelectedGradeSection(importedRows[0]?.section || activeGradeSection)
-      setUploadName(file.name)
-      addAuditLog(`Uploaded grade workbook "${file.name}" (${importedRows.length} students)`)
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Unable to read the uploaded grade workbook."
-      )
-    } finally {
-      event.target.value = ""
-    }
-  }
-
   function handleAddSemester(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const semesterData = {
@@ -3590,7 +3309,6 @@ export function usePortalDashboardModel(role: Role) {
     allClassSections,
     facultyClassSections,
     facultyClassStudents,
-    facultyGradeRecords,
     facultySubjects,
     visibleSchedules,
     selectedScheduleEntry,
@@ -3640,15 +3358,10 @@ export function usePortalDashboardModel(role: Role) {
     handleLogout,
     downloadGradeReport,
     downloadGradeReportDocument,
-    downloadGradeTemplate,
     downloadUserTemplate,
     downloadAttendees,
     downloadThesisDetails,
-    updateGrade,
-    updateGradeRemarks,
     refreshDashboardData,
-    releaseGradesForSection,
-    handleCreateGrade,
     handleUnenrollFromSubject,
     handleAddStudentToSubject,
     handleUpsertCompletedGrade,
@@ -3686,7 +3399,6 @@ export function usePortalDashboardModel(role: Role) {
     handleUpdateSchedule,
     handleDeleteSchedule,
     handleScheduleUpload,
-    handleGradeWorkbookUpload,
     handleAddSemester,
     handleUpdateSemester,
     handleDeleteSemester,

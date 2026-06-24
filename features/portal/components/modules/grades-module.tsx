@@ -601,11 +601,25 @@ export function GradesModule({ model }: PortalModuleProps) {
                         ? grade.tentativeFinalGrade.toFixed(2)
                         : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
                     </td>
-                    {/* Fin. Remarks */}
+                    {/* Fin. Remarks — only "Passed" if both midterm and finals passed */}
                     <td className="px-4 py-3">
-                      {grade.finalReleased && grade.finalRemarks
-                        ? <StatusBadge value={grade.finalRemarks} />
-                        : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
+                      {(() => {
+                        const fr = grade.finalRemarks || grade.remarks
+                        const mr = grade.midtermRemarks
+                        const frLower = fr?.toLowerCase()
+                        const mrLower = mr?.toLowerCase()
+                        const bothPassed = frLower === "passed" && mrLower === "passed"
+                        const value = grade.finalReleased
+                          ? bothPassed
+                            ? "Passed"
+                            : mr && mrLower !== "passed"
+                              ? mr
+                              : fr
+                          : null
+                        return value
+                          ? <StatusBadge value={value} />
+                          : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>
+                      })()}
                     </td>
                     {/* Percentile */}
                     <td className="px-4 py-3 text-foreground/80">

@@ -1,7 +1,5 @@
 "use client"
 
-import { transmutedToEquivalent } from "./grades"
-
 type ZipEntry = {
   name: string
   compressionMethod: number
@@ -15,18 +13,6 @@ export type XlsxSheet = {
     rowNumber: number
     cells: Record<string, string>
   }[]
-}
-
-export type ImportedGradeRow = {
-  student: string
-  section: string
-  subject: string
-  code: string
-  midtermTransmuted?: number
-  midtermEquivalent?: number
-  finalTransmuted?: number
-  finalEquivalent?: number
-  remarks?: string
 }
 
 export type ImportedScheduleRow = {
@@ -217,61 +203,6 @@ function toNumber(value?: string) {
   if (!cleaned || cleaned.startsWith("#")) return undefined
   const numeric = Number(cleaned)
   return Number.isFinite(numeric) ? numeric : undefined
-}
-
-function toEquivalent(value?: string, fallbackPercent?: number) {
-  const numeric = toNumber(value)
-  if (numeric && numeric >= 1 && numeric <= 5) return numeric
-  if (fallbackPercent !== undefined) return transmutedToEquivalent(fallbackPercent)
-  return undefined
-}
-
-function normalizeRemark(value?: string) {
-  if (!value || value.startsWith("#")) return ""
-  const remark = value.trim().toLowerCase()
-
-  if (remark === "d" || remark.includes("dropped")) return "Dropped"
-  if (remark.includes("unofficial")) return "Unofficial Dropped"
-  if (remark.includes("inc")) return "INC"
-  if (remark.includes("pass")) return "Passed"
-
-  return value.trim()
-}
-
-export async function parseGradeWorkbook(file: File) {
-  const sheets = await readXlsxWorkbook(file)
-  const classRecord =
-    sheets.find((sheet) => sheet.name.toLowerCase().includes("class record")) ??
-    sheets[0]
-
-  if (!classRecord) return []
-
-  const metadata = classRecord.rows.find((row) => row.rowNumber === 2)?.cells ?? {}
-  const subject = metadata.B || "Uploaded Subject"
-  const code = metadata.D || "CS"
-  const section = metadata.J || ""
-
-  return classRecord.rows
-    .map((row): ImportedGradeRow | null => {
-      const student = row.cells.B
-      if (!student || student.startsWith("#") || !toNumber(row.cells.A)) return null
-
-      const midtermTransmuted = toNumber(row.cells.AY)
-      const finalTransmuted = toNumber(row.cells.CW)
-
-      return {
-        student,
-        section,
-        subject,
-        code,
-        midtermTransmuted,
-        midtermEquivalent: toEquivalent(row.cells.AZ, midtermTransmuted),
-        finalTransmuted,
-        finalEquivalent: toEquivalent(row.cells.CX, finalTransmuted),
-        remarks: normalizeRemark(row.cells.DE || row.cells.CY || row.cells.BA),
-      }
-    })
-    .filter((row): row is ImportedGradeRow => Boolean(row))
 }
 
 function normalizeHeader(value: string) {
