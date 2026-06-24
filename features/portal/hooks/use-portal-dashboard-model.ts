@@ -583,6 +583,52 @@ export function usePortalDashboardModel(role: Role) {
     [grades, profile.id]
   )
 
+  const currentSemesterAllGrades = useMemo(
+    () => {
+      const active = semesters.find((s) => s.status === "Active")
+      if (!active) return []
+      return grades.filter(
+        (grade) =>
+          grade.studentId === profile.id &&
+          grade.semesterId === active.id
+      )
+    },
+    [grades, profile.id, semesters]
+  )
+
+  const currentSemesterGrades = useMemo(
+    () => currentSemesterAllGrades.filter((g) => g.released === true),
+    [currentSemesterAllGrades]
+  )
+
+  const currentSemesterGwaPending = useMemo(
+    () => currentSemesterAllGrades.some((g) => g.released === false),
+    [currentSemesterAllGrades]
+  )
+
+  const currentSemesterGwa = useMemo(() => {
+    if (!currentSemesterGrades.length || currentSemesterGwaPending) return null
+    const average =
+      currentSemesterGrades.reduce(
+        (sum, grade) => sum + calculateFinalGrade(grade),
+        0
+      ) / currentSemesterGrades.length
+    return Number(average.toFixed(2))
+  }, [currentSemesterGrades, currentSemesterGwaPending])
+
+  const currentSemesterTotalUnits = useMemo(
+    () => currentSemesterGrades.reduce((s, g) => s + (g.units || 0), 0),
+    [currentSemesterGrades]
+  )
+
+  const currentSemesterPassedUnits = useMemo(
+    () =>
+      currentSemesterGrades
+        .filter((g) => g.remarks === "Passed")
+        .reduce((s, g) => s + (g.units || 0), 0),
+    [currentSemesterGrades]
+  )
+
   const filteredTheses = useMemo(() => {
     const search = query.toLowerCase()
     return theses.filter((thesis) => {
@@ -3317,6 +3363,12 @@ export function usePortalDashboardModel(role: Role) {
     selectedScheduleGrades,
     studentGrades,
     allStudentGrades,
+    currentSemesterAllGrades,
+    currentSemesterGrades,
+    currentSemesterGwa,
+    currentSemesterGwaPending,
+    currentSemesterTotalUnits,
+    currentSemesterPassedUnits,
     gradeAverage,
     filteredTheses,
     filteredSeminars,

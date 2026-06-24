@@ -360,17 +360,66 @@ export function GradesModule({ model }: PortalModuleProps) {
     ].filter(Boolean)
 
     const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
-    const passedCodes = new Set(
-      (profileUser?.gradeHistory ?? [])
-        .filter((h) => h.remarks?.toLowerCase() === "passed")
+    const finalizedStatuses = new Set(["passed", "failed", "inc", "dropped", "unofficial drop", "unofficial dropped"])
+    const gradeHistory = profileUser?.gradeHistory ?? []
+
+    // Source 1: Grade History (primary)
+    const historyFinalizedCodes = new Set(
+      gradeHistory
+        .filter((h) => finalizedStatuses.has(h.remarks?.toLowerCase()))
         .map((h) => normalize(h.subjectCode))
     )
 
+    // Source 2: All released grades across semesters (backup for when gradeHistory isn't populated)
+    const allGrades = (model.allStudentGrades as GradeRecord[] ?? [])
+    const gradesFinalizedCodes = new Set(
+      allGrades
+        .filter((g) => {
+          if (g.semesterId === active.id) return false
+          const r = (g.remarks || g.finalRemarks || "").toLowerCase()
+          return finalizedStatuses.has(r)
+        })
+        .map((g) => normalize(g.code))
+    )
+
+    // Union: history takes precedence, grades fill gaps
+    const finalizedCodes = new Set([...historyFinalizedCodes, ...gradesFinalizedCodes])
+
+    // Retake detection: non-passing finalizations that have active schedules
+    const historyRetakeCodes = new Set(
+      gradeHistory
+        .filter((h) => {
+          const r = h.remarks?.toLowerCase()
+          return r !== "passed" && r !== undefined && finalizedStatuses.has(r)
+        })
+        .map((h) => normalize(h.subjectCode))
+    )
+    const gradesRetakeCodes = new Set(
+      allGrades
+        .filter((g) => {
+          if (g.semesterId === active.id) return false
+          const r = (g.remarks || g.finalRemarks || "").toLowerCase()
+          return r !== "passed" && finalizedStatuses.has(r)
+        })
+        .map((g) => normalize(g.code))
+    )
+    const retakeCodes = new Set(
+      [...historyRetakeCodes, ...gradesRetakeCodes].filter((code) =>
+        activeSchedules.some((s) => {
+          const sCode = normalize(s.subject.split(" - ")[0]?.trim() ?? "")
+          return sCode === code
+        })
+      )
+    )
+
     const yearLevel = profileUser?.currentYearLevel ?? ""
-    const curriculumTerms =
+    const curriculum =
       (model.curricula as CurriculumRecord[])
         .find((c) => c.id === profileUser?.curriculumId)
-        ?.terms ?? []
+    const curriculumTerms = curriculum?.terms ?? []
+    const curriculumTerm = curriculumTerms.find(
+      (t) => t.year === yearLevel && t.semester === active.semester
+    )
 
     for (const schedule of activeSchedules) {
       const code = schedule.subject.split(" - ")[0]?.trim() ?? schedule.subject
@@ -378,15 +427,12 @@ export function GradesModule({ model }: PortalModuleProps) {
         schedule.section.includes(sec)
       )
       if (!matchesSection) continue
-      if (passedCodes.has(code)) continue
+      if (finalizedCodes.has(normalize(code)) && !retakeCodes.has(normalize(code))) continue
       if (gradeMap.has(code)) continue
 
       let units = 0
-      const term = curriculumTerms.find(
-        (t) => t.year === yearLevel && t.semester === active.semester
-      )
-      if (term) {
-        const sub = term.subjects.find((s) => s.code === code)
+      if (curriculumTerm) {
+        const sub = curriculumTerm.subjects.find((s) => s.code === code)
         if (sub) units = sub.total
       }
 
@@ -405,9 +451,34 @@ export function GradesModule({ model }: PortalModuleProps) {
       } as GradeRecord)
     }
 
+    // Curriculum-based subject initialization (for subjects without schedules)
+    if (profileUser?.curriculumId && curriculumTerm) {
+      for (const sub of curriculumTerm.subjects) {
+        const code = sub.code
+        const normCode = normalize(code)
+        if (gradeMap.has(code)) continue
+        if (finalizedCodes.has(normCode) && !retakeCodes.has(normCode)) continue
+
+        gradeMap.set(code, {
+          id: `pending-curriculum-${code}`,
+          studentId: model.profile.id,
+          student: model.profile.name,
+          section: studentSections[0] ?? "TBD",
+          subject: `${code} - ${sub.name}`,
+          code,
+          units: sub.total,
+          classId: "",
+          semesterId: active.id,
+          released: false,
+          updatedAt: "",
+        } as GradeRecord)
+      }
+    }
+
     return [...gradeMap.values()]
   }, [
     model.activeSemester, model.classSchedules, model.grades,
+    model.allStudentGrades,
     model.profile, model.profileSection, model.roster,
     profileUser, model.curricula,
   ])

@@ -742,12 +742,65 @@ export function RoleDashboard({ role }: { role: Role }) {
   const studentYearLevel = studentUser?.currentYearLevel ?? (studentUser?.year ? `Year ${studentUser.year}` : "N/A")
   const studentSection = model.profileSection || studentUser?.section || "N/A"
 
-  const allStudentGrades = model.allStudentGrades ?? []
-  const totalUnits = allStudentGrades.reduce((s: number, g: { units: number }) => s + (g.units ?? 0), 0)
-  const passedUnits = allStudentGrades
-    .filter((g: { released?: boolean; remarks?: string }) => g.released && g.remarks === "Passed")
-    .reduce((s: number, g: { units: number }) => s + (g.units ?? 0), 0)
-  const unitsDisplay = totalUnits > 0 ? `${passedUnits} / ${totalUnits}` : "N/A"
+  const semesterGwa = model.currentSemesterGwa
+  const gwaPending = model.currentSemesterGwaPending
+  const gwaDisplay = semesterGwa !== null
+    ? semesterGwa.toFixed(2)
+    : gwaPending
+      ? "GWA Pending"
+      : "N/A"
+  const gwaHelper = semesterGwa !== null
+    ? "General weighted average"
+    : gwaPending
+      ? "Awaiting grade release"
+      : "No grades yet"
+
+  const semesterTotalUnits = model.currentSemesterTotalUnits ?? 0
+  const semesterPassedUnits = model.currentSemesterPassedUnits ?? 0
+  const unitsDisplay = semesterTotalUnits > 0
+    ? `${semesterPassedUnits} / ${semesterTotalUnits}`
+    : gwaPending ? "Pending" : "N/A"
+
+  const enrolledSubjectCount = useMemo(() => {
+    const activeSem = model.activeSemester
+    if (!activeSem || !studentUser?.curriculumId) {
+      return new Set(model.visibleSchedules.map((s: { subject: string }) => s.subject)).size
+    }
+    const curriculum = (model.curricula ?? []).find(
+      (c: { id: string }) => c.id === studentUser.curriculumId
+    )
+    if (!curriculum) {
+      return new Set(model.visibleSchedules.map((s: { subject: string }) => s.subject)).size
+    }
+    const term = curriculum.terms.find(
+      (t: { year: string; semester: string }) =>
+        t.year === studentUser.currentYearLevel && t.semester === activeSem.semester
+    )
+    if (!term) {
+      return new Set(model.visibleSchedules.map((s: { subject: string }) => s.subject)).size
+    }
+
+    const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
+    const finalizedStatuses = new Set(["passed", "failed", "inc", "dropped", "unofficial drop", "unofficial dropped"])
+
+    // Collect finalized codes from grade history
+    const finalizedCodes = new Set(
+      (studentUser?.gradeHistory ?? [])
+        .filter((h) => finalizedStatuses.has(h.remarks?.toLowerCase()))
+        .map((h) => normalize(h.subjectCode))
+    )
+
+    // Also check all released grades across semesters (excluding current)
+    for (const g of (model.allStudentGrades ?? [])) {
+      if ((g as any).semesterId === activeSem.id) continue
+      const r = ((g as any).remarks || (g as any).finalRemarks || "").toLowerCase()
+      if (finalizedStatuses.has(r)) {
+        finalizedCodes.add(normalize((g as any).code))
+      }
+    }
+
+    return term.subjects.filter((s) => !finalizedCodes.has(normalize(s.code))).length
+  }, [model.activeSemester, model.curricula, studentUser, model.visibleSchedules, model.allStudentGrades])
 
   const studentProfileFacts = [
     { label: "Program", value: studentCourse, icon: BookOpen },
@@ -759,15 +812,15 @@ export function RoleDashboard({ role }: { role: Role }) {
   const studentOverviewCards = useMemo(() => [
     {
       label: "Current GWA",
-      value: model.gradeAverage,
-      helper: "General weighted average",
+      value: gwaDisplay,
+      helper: gwaHelper,
       icon: BarChart3,
       accent: "blue",
       sparkline: adminSparklineData,
     },
     {
       label: "Enrolled Subjects",
-      value: String(new Set(model.visibleSchedules.map((s: { subject: string }) => s.subject)).size),
+      value: String(enrolledSubjectCount),
       helper: "Currently enrolled this semester",
       icon: BookOpen,
       accent: "sky",
@@ -784,12 +837,12 @@ export function RoleDashboard({ role }: { role: Role }) {
     {
       label: "Units Taken",
       value: unitsDisplay,
-      helper: "Passed / Total",
+      helper: "Passed / Total (current semester)",
       icon: Layers3,
       accent: "emerald",
       sparkline: adminSparklineData,
     },
-  ], [model.gradeAverage, model.visibleSchedules, model.studentTickets, unitsDisplay, adminSparklineData])
+  ], [gwaDisplay, gwaHelper, enrolledSubjectCount, model.studentTickets, unitsDisplay, adminSparklineData])
 
   const studentTodaySchedules = model.visibleSchedules.filter(
     (item: { day: string }) => item.day === todayLabel
