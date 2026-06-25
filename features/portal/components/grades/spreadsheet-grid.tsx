@@ -1561,7 +1561,7 @@ export function SpreadsheetGrid({
         saveStatus={saveStatus}
       />
 
-      <div className="rounded-xl border border-border shadow-sm" style={{ width: "100%" }}>
+      <div className="overflow-hidden rounded-xl border border-border shadow-sm" style={{ width: "100%" }}>
           <AgGridReact
             ref={gridRef}
             rowData={gridData}

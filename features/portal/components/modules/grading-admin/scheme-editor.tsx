@@ -2,6 +2,7 @@ import { useMemo, useState } from "react"
 import { AlertTriangle, Plus, Save, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { GradingScheme } from "@/lib/types"
 
 type SchemeComponent = GradingScheme["components"][number]
@@ -167,11 +168,15 @@ export function SchemeEditor({ scheme, onSave, onCancel }: { scheme: GradingSche
         </div>
         <div>
           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Subject Type</label>
-          <select value={draft.subjectType} onChange={(e) => updateField("subjectType", e.target.value as "Lecture" | "Lecture with Lab")}
-            className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background">
-            <option value="Lecture">Lecture</option>
-            <option value="Lecture with Lab">Lecture with Lab</option>
-          </select>
+          <Select value={draft.subjectType} onValueChange={(value) => updateField("subjectType", value as "Lecture" | "Lecture with Lab")}>
+            <SelectTrigger className="rounded-xl">
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Lecture">Lecture</SelectItem>
+              <SelectItem value="Lecture with Lab">Lecture with Lab</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex items-end gap-2">
           <label className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm">
@@ -210,31 +215,42 @@ export function SchemeEditor({ scheme, onSave, onCancel }: { scheme: GradingSche
           {draft.components.map((comp, ci) => {
             const catSum = comp.categories.reduce((s, c) => s + c.weight, 0)
             return (
-            <div key={ci} className="rounded-xl border border-border bg-muted/30 p-4">
+            <div key={ci} className="rounded-xl border border-border border-l-2 border-l-primary/20 bg-muted/30 p-4">
               <div className="mb-3 flex items-center gap-3">
                 <Input placeholder="Component name" value={comp.name} onChange={(e) => updateComponent(ci, "name", e.target.value)} className="flex-1 rounded-lg" />
                 <div className="flex items-center gap-1 text-sm">
-                  <Input type="number" value={comp.weight} onChange={(e) => { const r = e.target.value; if (r === "") return; updateComponent(ci, "weight", Number(r)) }} className="w-20 rounded-lg text-center" />%
+                  <div className="relative">
+                    <Input type="number" value={comp.weight} onChange={(e) => { const r = e.target.value; if (r === "") return; updateComponent(ci, "weight", Number(r)) }} className="w-20 rounded-lg pr-6 text-right" />
+                    <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+                  </div>
                 </div>
-                <select value={comp.isExam ? "exam" : "component"} onChange={(e) => updateComponent(ci, "isExam", e.target.value === "exam")}
-                  className="h-10 rounded-lg border border-input bg-background px-2 text-xs">
-                  <option value="component">Component</option>
-                  <option value="exam">Exam</option>
-                </select>
+                <Select value={comp.isExam ? "exam" : "component"} onValueChange={(value) => updateComponent(ci, "isExam", value === "exam")}>
+                  <SelectTrigger className="h-10 w-[110px] rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="component">Component</SelectItem>
+                    <SelectItem value="exam">Exam</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Button size="sm" variant="ghost" onClick={() => removeComponent(ci)}><Trash2 className="size-4 text-destructive" /></Button>
               </div>
               <div className="ml-4 space-y-2">
                 {comp.categories.map((cat, cati) => (
                   <div key={cati} className="flex items-center gap-2">
                     <Input placeholder="Category name" value={cat.name} onChange={(e) => updateCategory(ci, cati, "name", e.target.value)} className="flex-1 rounded-lg" />
-                    <Input type="number" value={cat.weight} onChange={(e) => { const r = e.target.value; if (r === "") return; updateCategory(ci, cati, "weight", Number(r)) }} className="w-20 rounded-lg text-center" />%
-                    <select value={cat.isAttendance ? "attendance" : "regular"} onChange={(e) => updateCategory(ci, cati, "isAttendance", e.target.value === "attendance")}
-                      className="h-10 rounded-lg border border-input bg-background px-2 text-xs">
-                      <option value="regular">Regular</option>
-                      <option value="attendance">Attendance</option>
-                    </select>
+                    <Input type="number" value={cat.weight} onChange={(e) => { const r = e.target.value; if (r === "") return; updateCategory(ci, cati, "weight", Number(r)) }} className="w-20 rounded-lg text-right" /><span className="text-xs text-muted-foreground">%</span>
+                    <Select value={cat.isAttendance ? "attendance" : "regular"} onValueChange={(value) => updateCategory(ci, cati, "isAttendance", value === "attendance")}>
+                      <SelectTrigger className="h-10 w-[120px] rounded-lg">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="regular">Regular</SelectItem>
+                        <SelectItem value="attendance">Attendance</SelectItem>
+                      </SelectContent>
+                    </Select>
                     {cat.isAttendance && (
-                      <Input type="number" step="0.1" min="0" value={cat.penaltyPerAbsence ?? 0.6} onChange={(e) => { const r = e.target.value; if (r === "") return; updateCategory(ci, cati, "penaltyPerAbsence", Number(r)) }} className="w-16 rounded-lg text-center" title="Penalty per absence" />
+                      <Input type="number" step="0.1" min="0" value={cat.penaltyPerAbsence ?? 0.6} onChange={(e) => { const r = e.target.value; if (r === "") return; updateCategory(ci, cati, "penaltyPerAbsence", Number(r)) }} className="w-16 rounded-lg text-right" title="Penalty per absence" />
                     )}
                     <Button size="sm" variant="ghost" onClick={() => removeCategory(ci, cati)}><Trash2 className="size-3.5 text-destructive" /></Button>
                   </div>
@@ -263,31 +279,42 @@ export function SchemeEditor({ scheme, onSave, onCancel }: { scheme: GradingSche
             {(draft.labComponents ?? []).map((comp, ci) => {
               const catSum = comp.categories.reduce((s, c) => s + c.weight, 0)
               return (
-              <div key={ci} className="rounded-xl border border-border bg-muted/30 p-4">
+              <div key={ci} className="rounded-xl border border-border border-l-2 border-l-primary/20 bg-muted/30 p-4">
                 <div className="mb-3 flex items-center gap-3">
                   <Input placeholder="Component name" value={comp.name} onChange={(e) => updateLabComponent(ci, "name", e.target.value)} className="flex-1 rounded-lg" />
-                  <div className="flex items-center gap-1 text-sm">
-                    <Input type="number" value={comp.weight} onChange={(e) => { const r = e.target.value; if (r === "") return; updateLabComponent(ci, "weight", Number(r)) }} className="w-20 rounded-lg text-center" />%
+                <div className="flex items-center gap-1 text-sm">
+                  <div className="relative">
+                    <Input type="number" value={comp.weight} onChange={(e) => { const r = e.target.value; if (r === "") return; updateLabComponent(ci, "weight", Number(r)) }} className="w-20 rounded-lg pr-6 text-right" />
+                    <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
                   </div>
-                  <select value={comp.isExam ? "exam" : "component"} onChange={(e) => updateLabComponent(ci, "isExam", e.target.value === "exam")}
-                    className="h-10 rounded-lg border border-input bg-background px-2 text-xs">
-                    <option value="component">Component</option>
-                    <option value="exam">Exam</option>
-                  </select>
+                  </div>
+                  <Select value={comp.isExam ? "exam" : "component"} onValueChange={(value) => updateLabComponent(ci, "isExam", value === "exam")}>
+                    <SelectTrigger className="h-10 w-[110px] rounded-lg">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="component">Component</SelectItem>
+                      <SelectItem value="exam">Exam</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <Button size="sm" variant="ghost" onClick={() => removeLabComponent(ci)}><Trash2 className="size-4 text-destructive" /></Button>
                 </div>
                 <div className="ml-4 space-y-2">
                   {comp.categories.map((cat, cati) => (
                     <div key={cati} className="flex items-center gap-2">
                       <Input placeholder="Category name" value={cat.name} onChange={(e) => updateLabCategory(ci, cati, "name", e.target.value)} className="flex-1 rounded-lg" />
-                      <Input type="number" value={cat.weight} onChange={(e) => { const r = e.target.value; if (r === "") return; updateLabCategory(ci, cati, "weight", Number(r)) }} className="w-20 rounded-lg text-center" />%
-                        <select value={cat.isAttendance ? "attendance" : "regular"} onChange={(e) => updateLabCategory(ci, cati, "isAttendance", e.target.value === "attendance")}
-                          className="h-10 rounded-lg border border-input bg-background px-2 text-xs">
-                          <option value="regular">Regular</option>
-                          <option value="attendance">Attendance</option>
-                        </select>
+                      <Input type="number" value={cat.weight} onChange={(e) => { const r = e.target.value; if (r === "") return; updateLabCategory(ci, cati, "weight", Number(r)) }} className="w-20 rounded-lg text-right" /><span className="text-xs text-muted-foreground">%</span>
+                        <Select value={cat.isAttendance ? "attendance" : "regular"} onValueChange={(value) => updateLabCategory(ci, cati, "isAttendance", value === "attendance")}>
+                          <SelectTrigger className="h-10 w-[120px] rounded-lg">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="regular">Regular</SelectItem>
+                            <SelectItem value="attendance">Attendance</SelectItem>
+                          </SelectContent>
+                        </Select>
                       {cat.isAttendance && (
-                        <Input type="number" step="0.1" min="0" value={cat.penaltyPerAbsence ?? 0.6} onChange={(e) => { const r = e.target.value; if (r === "") return; updateLabCategory(ci, cati, "penaltyPerAbsence", Number(r)) }} className="w-16 rounded-lg text-center" title="Penalty per absence" />
+                        <Input type="number" step="0.1" min="0" value={cat.penaltyPerAbsence ?? 0.6} onChange={(e) => { const r = e.target.value; if (r === "") return; updateLabCategory(ci, cati, "penaltyPerAbsence", Number(r)) }} className="w-16 rounded-lg text-right" title="Penalty per absence" />
                       )}
                       <Button size="sm" variant="ghost" onClick={() => removeLabCategory(ci, cati)}><Trash2 className="size-3.5 text-destructive" /></Button>
                     </div>

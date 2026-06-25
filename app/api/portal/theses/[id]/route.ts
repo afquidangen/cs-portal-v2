@@ -2,6 +2,7 @@ import { thesesRepository } from "@/features/portal/repositories/theses.reposito
 import { success, error, notFound } from "@/lib/api-response"
 import { connectToDatabase } from "@/lib/mongodb"
 import { ThesisModel } from "@/lib/models"
+import { uploadFile, destroyFile } from "@/lib/cloudinary"
 
 export const runtime = "nodejs"
 
@@ -26,6 +27,19 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
+
+    if (typeof body.pdfUrl === "string" && body.pdfUrl.startsWith("data:")) {
+      const result = await uploadFile(body.pdfUrl, `thesis-${Date.now()}`, "theses")
+      body.pdfUrl = result.secureUrl
+      body.cloudinaryPublicId = result.publicId
+
+      const existing = await thesesRepository.findById(id) as Record<string, unknown> | null
+      if (existing) {
+        const oldPublicId = existing.cloudinaryPublicId as string | undefined
+        if (oldPublicId) await destroyFile(oldPublicId, "raw").catch(() => {})
+      }
+    }
+
     const thesis = await thesesRepository.update({ id }, body)
     if (!thesis) return notFound("Thesis")
     return success(thesis)

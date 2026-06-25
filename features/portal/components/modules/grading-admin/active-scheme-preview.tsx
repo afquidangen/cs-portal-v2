@@ -20,23 +20,30 @@ export function ActiveSchemePreview({ schemes }: { schemes: GradingScheme[] }) {
             {s.components.map((comp) => {
               const catTotal = comp.categories.reduce((sum, c) => sum + c.weight, 0)
               return (
-                <span key={comp.name} className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs">
-                  {comp.name}: <strong>{comp.weight}%</strong>
+                <span key={comp.name} className="rounded-md bg-muted px-2 py-1 text-xs">
+                  <span className="font-medium text-foreground">{comp.name}</span>: <strong>{comp.weight}%</strong>
                   {comp.categories.length > 0 && (
-                    <span className="text-muted-foreground">
-                      ({comp.categories.map((c) => `${c.name} ${c.weight}%`).join(", ")})
+                    <span className="ml-1.5 inline-flex flex-wrap gap-1">
+                      {comp.categories.map((c) => (
+                        <span key={c.name} className="text-muted-foreground">
+                          {c.name} {c.weight}%
+                        </span>
+                      ))}
                     </span>
                   )}
-                  <span className="text-muted-foreground">{catTotal}%</span>
                 </span>
               )
             })}
             {s.subjectType === "Lecture with Lab" && s.labComponents?.map((comp) => (
-              <span key={comp.name} className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs">
-                {comp.name}: <strong>{comp.weight}%</strong>
+              <span key={comp.name} className="rounded-md bg-muted px-2 py-1 text-xs">
+                <span className="font-medium text-foreground">{comp.name}</span>: <strong>{comp.weight}%</strong>
                 {comp.categories.length > 0 && (
-                  <span className="text-muted-foreground">
-                    ({comp.categories.map((c) => `${c.name} ${c.weight}%`).join(", ")})
+                  <span className="ml-1.5 inline-flex flex-wrap gap-1">
+                    {comp.categories.map((c) => (
+                      <span key={c.name} className="text-muted-foreground">
+                        {c.name} {c.weight}%
+                      </span>
+                    ))}
                   </span>
                 )}
               </span>

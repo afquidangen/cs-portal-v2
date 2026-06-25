@@ -1129,27 +1129,60 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
       )}
 
       {/* Grade tables */}
-      {selectedSubject && filteredRosterBySection.length > 0 ? (
-        selectedSection === null ? (
-          /* All sections stacked */
-          <div className="space-y-6">
-            {filteredRosterBySection.map(([section, students]) => (
-              <SectionTable
-                key={section}
-                section={section}
-                students={students}
-                gradeMap={gradeMap}
-                selectedSubject={selectedSubject}
-                updateGrade={updateGrade}
-                updateGradeRemarks={updateGradeRemarks}
-                setGrades={setGrades}
-                scheme={activeScheme}
-                columnSets={columnSets}
-                transmutationEntries={activeTransmutationEntries}
-              />
-            ))}
-          </div>
-        ) : (() => {
+      {selectedSubject && subjectSections.length > 0 ? (
+        selectedSection === null ? (() => {
+          const q = studentQuery.toLowerCase().trim()
+          const visibleSections = subjectSections
+            .map((section) => {
+              let students = subjectRoster.filter((s) => s.section === section)
+              if (q) {
+                students = students.filter((s) => {
+                  const displayName = s.lastName
+                    ? `${s.lastName}, ${s.firstName ?? ""}${s.middleName ? ` ${s.middleName}` : ""}`
+                    : s.name
+                  return displayName.toLowerCase().includes(q)
+                })
+              }
+              const sorted = [...students].sort((a, b) => {
+                const aLast = a.lastName ?? a.name.split(" ").pop() ?? ""
+                const bLast = b.lastName ?? b.name.split(" ").pop() ?? ""
+                const cmp = aLast.localeCompare(bLast)
+                if (cmp !== 0) return cmp
+                const aFirst = a.firstName ?? a.name
+                const bFirst = b.firstName ?? b.name
+                return aFirst.localeCompare(bFirst)
+              })
+              return [section, sorted] as [string, typeof subjectRoster]
+            })
+            .filter(([, students]) => students.length > 0)
+          if (visibleSections.length === 0) {
+            return (
+              <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] px-4 py-12 text-center text-sm text-muted-foreground">
+                <GraduationCap className="mx-auto mb-2 size-8 text-muted-foreground/50" />
+                No students enrolled for this subject.
+              </div>
+            )
+          }
+          return (
+            <div className="space-y-6">
+              {visibleSections.map(([section, students]) => (
+                <SectionTable
+                  key={section}
+                  section={section}
+                  students={students}
+                  gradeMap={gradeMap}
+                  selectedSubject={selectedSubject}
+                  updateGrade={updateGrade}
+                  updateGradeRemarks={updateGradeRemarks}
+                  setGrades={setGrades}
+                  scheme={activeScheme}
+                  columnSets={columnSets}
+                  transmutationEntries={activeTransmutationEntries}
+                />
+              ))}
+            </div>
+          )
+        })() : (() => {
           const students = filteredRosterBySection.find(([sec]) => sec === selectedSection)?.[1] ?? []
           return (
             <SectionTable

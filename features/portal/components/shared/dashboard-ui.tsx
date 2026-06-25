@@ -122,18 +122,18 @@ export function Metric({
           <p className="break-words text-xs font-semibold uppercase leading-4 tracking-[0.08em] text-muted-foreground sm:tracking-[0.14em]">
             {label}
           </p>
-          <p className="mt-3 truncate text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+          <p className="mt-3 truncate text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             {value}
           </p>
         </div>
 
         <span
           className={cn(
-            "flex size-10 shrink-0 items-center justify-center rounded-xl border shadow-sm ring-4 ring-white/50 sm:size-12 dark:ring-white/5",
+            "flex size-12 shrink-0 items-center justify-center rounded-xl border shadow-sm ring-4 ring-white/50 sm:size-14 dark:ring-white/5",
             current.icon
           )}
         >
-          <Icon className="size-4 sm:size-5" strokeWidth={2.1} />
+          <Icon className="size-5 sm:size-6" strokeWidth={2.5} />
         </span>
       </div>
     </div>

@@ -962,7 +962,7 @@ export function RoleDashboard({ role }: { role: Role }) {
           className={cn(
             "edu-sidebar-shell fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col border-r border-sidebar-border text-sidebar-foreground shadow-2xl shadow-blue-950/10 transition-all duration-300 md:sticky md:top-0 md:h-screen md:translate-x-0",
             model.sidebarOpen ? "translate-x-0" : "-translate-x-full",
-            effectivelyCollapsed ? "w-[88px]" : "w-[min(282px,92vw)]"
+            effectivelyCollapsed ? "w-[120px]" : "w-[min(282px,92vw)]"
           )}
         >
           <div className="border-b border-sidebar-border px-4 py-4">
@@ -998,20 +998,25 @@ export function RoleDashboard({ role }: { role: Role }) {
               </div>
 
               {!isMediumScreen ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="hidden rounded-xl text-white/80 hover:bg-white/10 hover:text-white lg:inline-flex"
-                    onClick={() => setDesktopSidebarCollapsed((prev) => !prev)}
-                    aria-label="Toggle sidebar width"
-                  >
-                    {desktopSidebarCollapsed ? (
-                      <PanelLeftOpen className="size-4" />
-                    ) : (
-                      <PanelLeftClose className="size-4" />
-                    )}
-                  </Button>
+                  <div className="group relative flex items-center">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="hidden rounded-xl text-white/80 hover:bg-white/10 hover:text-white lg:inline-flex"
+                      onClick={() => setDesktopSidebarCollapsed((prev) => !prev)}
+                      aria-label="Toggle sidebar width"
+                    >
+                      {desktopSidebarCollapsed ? (
+                        <PanelLeftOpen className="size-4" />
+                      ) : (
+                        <PanelLeftClose className="size-4" />
+                      )}
+                    </Button>
+                    <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-medium text-black opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 dark:bg-black dark:text-white">
+                      {desktopSidebarCollapsed ? "Expand sidebar" : "Close sidebar"}
+                    </span>
+                  </div>
                 ) : null}
             </div>
 

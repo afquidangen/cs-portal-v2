@@ -7,9 +7,17 @@ export class AnnouncementsRepository extends BaseRepository {
     super(AnnouncementModel)
   }
 
+  async findAll(filter: Record<string, unknown> = {}, includeDeleted = false) {
+    await connectToDatabase()
+    const query = includeDeleted
+      ? filter
+      : { ...filter, isDeleted: { $ne: true } }
+    return this.model.find(query).sort({ createdAt: -1 }).lean()
+  }
+
   async findRecent(limit = 5) {
     await connectToDatabase()
-    return AnnouncementModel.find().sort({ date: -1 }).limit(limit).lean()
+    return AnnouncementModel.find().sort({ createdAt: -1 }).limit(limit).lean()
   }
 }
 

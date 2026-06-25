@@ -694,4 +694,21 @@
   border-bottom: 1px solid var(--primary);
 }
 
+.ag-body-vertical-scroll {
+  display: none !important;
+  width: 0 !important;
+}
+.ag-body-horizontal-scroll {
+  display: none !important;
+  height: 0 !important;
+}
+.ag-layout-auto-height .ag-body-viewport {
+  overflow: visible !important;
+  overflow-y: visible !important;
+}
+.ag-layout-auto-height .ag-center-cols-viewport {
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
 

@@ -561,7 +561,6 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
   return (
     <>
     <div className="space-y-8">
-      <Panel title="Quick Links" eyebrow="Portal resources">
         {isAdmin && (
           <div className="mb-4">
             <button

@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Plus, Save, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { TransmutationTable, TransmutationEntry } from "@/lib/types"
 
 export function TransmutationEditor({ table, onSave, onCancel }: { table: TransmutationTable; onSave: (t: TransmutationTable) => void; onCancel: () => void }) {
@@ -40,12 +41,16 @@ export function TransmutationEditor({ table, onSave, onCancel }: { table: Transm
         </div>
         <div>
           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Subject Type</label>
-          <select value={draft.subjectType} onChange={(e) => setDraft((prev) => ({ ...prev, subjectType: e.target.value as "Lecture" | "Lecture with Lab" | "All" }))}
-            className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background">
-            <option value="All">All</option>
-            <option value="Lecture">Lecture</option>
-            <option value="Lecture with Lab">Lecture with Lab</option>
-          </select>
+          <Select value={draft.subjectType} onValueChange={(value) => setDraft((prev) => ({ ...prev, subjectType: value as "Lecture" | "Lecture with Lab" | "All" }))}>
+            <SelectTrigger className="rounded-xl">
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All</SelectItem>
+              <SelectItem value="Lecture">Lecture</SelectItem>
+              <SelectItem value="Lecture with Lab">Lecture with Lab</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex items-end gap-2">
           <label className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm">
@@ -64,9 +69,9 @@ export function TransmutationEditor({ table, onSave, onCancel }: { table: Transm
           <table className="w-full text-left text-sm">
             <thead className="bg-muted text-foreground">
               <tr className="border-b border-border">
-                <th className="px-4 py-2 text-xs font-semibold uppercase">Min %</th>
-                <th className="px-4 py-2 text-xs font-semibold uppercase">Max %</th>
-                <th className="px-4 py-2 text-xs font-semibold uppercase">Equivalent</th>
+                <th className="px-4 py-2 text-right text-xs font-semibold uppercase">Min %</th>
+                <th className="px-4 py-2 text-right text-xs font-semibold uppercase">Max %</th>
+                <th className="px-4 py-2 text-center text-xs font-semibold uppercase">Equivalent</th>
                 <th className="px-4 py-2"></th>
               </tr>
             </thead>
@@ -74,13 +79,13 @@ export function TransmutationEditor({ table, onSave, onCancel }: { table: Transm
               {draft.entries.map((entry, i) => (
                 <tr key={i}>
                   <td className="px-4 py-2">
-                    <Input type="number" value={entry.min} onChange={(e) => updateEntry(i, "min", Number(e.target.value))} className="w-24 rounded-lg" />
-                  </td>
-                  <td className="px-4 py-2">
-                    <Input type="number" value={entry.max} onChange={(e) => updateEntry(i, "max", Number(e.target.value))} className="w-24 rounded-lg" />
-                  </td>
-                  <td className="px-4 py-2">
-                    <Input type="number" step="0.25" value={entry.equivalent} onChange={(e) => updateEntry(i, "equivalent", Number(e.target.value))} className="w-24 rounded-lg" />
+                      <Input type="number" value={entry.min} onChange={(e) => updateEntry(i, "min", Number(e.target.value))} className="w-24 rounded-lg text-right" />
+                    </td>
+                    <td className="px-4 py-2">
+                      <Input type="number" value={entry.max} onChange={(e) => updateEntry(i, "max", Number(e.target.value))} className="w-24 rounded-lg text-right" />
+                    </td>
+                    <td className="px-4 py-2 text-center">
+                      <Input type="number" step="0.25" value={entry.equivalent} onChange={(e) => updateEntry(i, "equivalent", Number(e.target.value))} className="w-24 rounded-lg text-center" />
                   </td>
                   <td className="px-4 py-2">
                     <Button size="sm" variant="ghost" onClick={() => removeEntry(i)}><Trash2 className="size-3.5 text-destructive" /></Button>

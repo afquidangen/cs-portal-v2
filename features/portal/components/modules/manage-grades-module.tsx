@@ -64,6 +64,17 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
       .map((s) => s.section)
   }, [visibleSchedules, selectedSubject, selectedSemesterId])
 
+  const scheduleBySection = useMemo(() => {
+    const map = new Map<string, string>()
+    if (!selectedSubject) return map
+    for (const s of visibleSchedules) {
+      if (s.subject !== selectedSubject) continue
+      if (selectedSemesterId && s.semesterId !== selectedSemesterId) continue
+      if (!map.has(s.section)) map.set(s.section, s.id)
+    }
+    return map
+  }, [visibleSchedules, selectedSubject, selectedSemesterId])
+
   useEffect(() => {
     if (selectedSubject && subjectSections.length > 0) {
       const schedule = visibleSchedules.find(
@@ -113,6 +124,26 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
       })
       .catch(() => {})
   }, [classId, selectedSubject, curricula, setGrades])
+
+  useEffect(() => {
+    if (!selectedSubject || selectedSection !== null || !classId) return
+    const otherIds = subjectSections
+      .map((section) => scheduleBySection.get(section))
+      .filter((cid): cid is string => !!cid && cid !== classId)
+    for (const cid of otherIds) {
+      fetch(`/api/portal/grades/class/${cid}`)
+        .then((r) => r.json())
+        .then((json) => {
+          if (json.data?.grades) {
+            setGrades((prev) => {
+              const filtered = prev.filter((g) => g.classId !== cid)
+              return [...filtered, ...json.data.grades]
+            })
+          }
+        })
+        .catch(() => {})
+    }
+  }, [selectedSubject, selectedSection, classId, subjectSections, scheduleBySection, setGrades])
 
   const prevActiveModuleRef = useRef(model.activeModule)
 
@@ -321,46 +352,51 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
         </div>
       )}
 
-      {selectedSemesterId && (
+      {(selectedSemesterId || selectedSubject) && (
         <div className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            <BookMarked className="size-4" /> Subject
-          </p>
-          <Select
-            value={selectedSubject}
-            onValueChange={(v) => { setSelectedSubject(v); setSelectedSection(null) }}
-          >
-            <SelectTrigger className="w-full rounded-xl">
-              <SelectValue placeholder={semesterSubjects.length === 0 ? "No subjects assigned" : "Select a subject..."} />
-            </SelectTrigger>
-            <SelectContent>
-              {semesterSubjects.map((s) => (
-                <SelectItem key={s.subject} value={s.subject}>{s.subject}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {selectedSubject && (
-        <div className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            <UsersRound className="size-4" /> Section
-          </p>
-          <Select
-            value={selectedSection ?? "all"}
-            onValueChange={(v) => setSelectedSection(v === "all" ? null : v)}
-          >
-            <SelectTrigger className="w-full rounded-xl">
-              <SelectValue placeholder="Select section..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Sections</SelectItem>
-              {subjectSections.map((s) => (
-                <SelectItem key={s} value={s}>Section {s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="grid gap-4 md:grid-cols-2">
+            {selectedSemesterId && (
+              <div>
+                <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <BookMarked className="size-4" /> Subject
+                </p>
+                <Select
+                  value={selectedSubject}
+                  onValueChange={(v) => { setSelectedSubject(v); setSelectedSection(null) }}
+                >
+                  <SelectTrigger className="w-full rounded-xl">
+                    <SelectValue placeholder={semesterSubjects.length === 0 ? "No subjects assigned" : "Select a subject..."} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {semesterSubjects.map((s) => (
+                      <SelectItem key={s.subject} value={s.subject}>{s.subject}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {selectedSubject && (
+              <div>
+                <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <UsersRound className="size-4" /> Section
+                </p>
+                <Select
+                  value={selectedSection ?? "all"}
+                  onValueChange={(v) => setSelectedSection(v === "all" ? null : v)}
+                >
+                  <SelectTrigger className="w-full rounded-xl">
+                    <SelectValue placeholder="Select section..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sections ({subjectSections.length})</SelectItem>
+                    {subjectSections.map((s) => (
+                      <SelectItem key={s} value={s}>Section {s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -399,27 +435,79 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
             </button>
           </div>
           {egradesTab === "gradesheet" ? (
-            <SpreadsheetGrid
-              model={model}
-              selectedSubject={selectedSubject}
-              classId={classId}
-              gradeColumns={gradeColumns}
-              setGradeColumns={setGradeColumns}
-              gridData={gridData}
-              gradeMap={gradeMap}
-              setGrades={setGrades}
-              roster={roster}
-              subjectRoster={subjectRoster}
-              studentQuery={studentQuery}
-              setStudentQuery={setStudentQuery}
-              computedOnce={computedOnce}
-              setComputedOnce={setComputedOnce}
-              darkMode={darkMode}
-              assessments={assessments}
-              gradingScheme={gradingScheme}
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-            />
+            selectedSection === null ? (
+              <div className="space-y-10">
+                {subjectSections.map((section, idx) => {
+                  const sectionClassId = scheduleBySection.get(section)
+                  if (!sectionClassId) return null
+                  const sectionData = gridData
+                    .filter((row) => row.section === section)
+                    .map((row, i) => ({ ...row, no: i + 1 }))
+                  if (sectionData.length === 0) return null
+                  const sectionStudentIds = new Set(
+                    subjectRoster.filter((s) => s.section === section).map((s) => s.id)
+                  )
+                  const sectionGradeMap = new Map(
+                    [...gradeMap.entries()].filter(([id]) => sectionStudentIds.has(id))
+                  )
+                  return (
+                    <div key={section}>
+                      {idx > 0 && (
+                        <div className="relative">
+                          <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-border" />
+                          </div>
+                        </div>
+                      )}
+                      <SpreadsheetGrid
+                        key={sectionClassId}
+                        model={model}
+                        selectedSubject={selectedSubject}
+                        classId={sectionClassId}
+                        gradeColumns={gradeColumns}
+                        setGradeColumns={setGradeColumns}
+                        gridData={sectionData}
+                        gradeMap={sectionGradeMap}
+                        setGrades={setGrades}
+                        roster={roster}
+                        subjectRoster={subjectRoster.filter((s) => s.section === section)}
+                        studentQuery={studentQuery}
+                        setStudentQuery={setStudentQuery}
+                        computedOnce={computedOnce}
+                        setComputedOnce={setComputedOnce}
+                        darkMode={darkMode}
+                        assessments={assessments}
+                        gradingScheme={gradingScheme}
+                        activeTab={activeTab}
+                        setActiveTab={setActiveTab}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <SpreadsheetGrid
+                model={model}
+                selectedSubject={selectedSubject}
+                classId={classId}
+                gradeColumns={gradeColumns}
+                setGradeColumns={setGradeColumns}
+                gridData={gridData}
+                gradeMap={gradeMap}
+                setGrades={setGrades}
+                roster={roster}
+                subjectRoster={subjectRoster}
+                studentQuery={studentQuery}
+                setStudentQuery={setStudentQuery}
+                computedOnce={computedOnce}
+                setComputedOnce={setComputedOnce}
+                darkMode={darkMode}
+                assessments={assessments}
+                gradingScheme={gradingScheme}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+              />
+            )
           ) : (
             <GradingWorkbookTab
               classId={classId}

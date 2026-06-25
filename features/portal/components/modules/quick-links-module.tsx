@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { useRef, useState } from "react"
-import { Download, ExternalLink, FileText, Loader2, Pencil, Plus, Trash2, Upload, X } from "lucide-react"
+import { Download, ExternalLink, FileText, Globe, Link2, Loader2, Pencil, Plus, Trash2, Upload, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +18,7 @@ import {
 
 import { Panel } from "../shared/dashboard-ui"
 import type { QuickLinkRecord } from "@/lib/types"
+import { toast } from "sonner"
 import type { PortalModuleProps } from "./types"
 
 export function QuickLinksModule({ model }: PortalModuleProps) {
@@ -126,7 +127,7 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
         setDownloadables((current) => [json.data, ...current])
       }
     } catch {
-      window.alert("Failed to upload file.")
+      toast.error("Failed to upload file")
       setDownloadableUploading(false)
       return
     }
@@ -134,7 +135,7 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
     setDownloadableDraft({ label: "", fileName: "", fileSize: 0, fileData: "" })
     setShowDownloadableForm(false)
     setDownloadableUploading(false)
-    window.alert("PDF uploaded successfully.")
+    toast.success("PDF uploaded successfully")
   }
 
   function handleCloseDialog(open: boolean) {
@@ -172,48 +173,69 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
     return (
       <div
         key={link._id ?? link.label}
-        className="group relative flex items-center justify-between rounded-xl border border-border bg-card p-3 shadow-sm transition hover:bg-muted sm:p-4"
+        className="group relative flex flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-4"
       >
-        <button
-          type="button"
-          onClick={() => handleFileDownload(link)}
-          className="flex flex-1 items-center gap-3 text-sm font-medium text-foreground text-left"
-        >
-          <Download className="size-4 shrink-0 text-primary" />
-          <span className="min-w-0 truncate">{link.label}</span>
-          <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
-            {link.fileName?.endsWith(".pdf") ? "PDF" : link.fileName?.split(".").pop()?.toUpperCase()}
-            {link.fileSize ? ` \u00B7 ${formatFileSize(link.fileSize)}` : ""}
+        <div className="flex items-start gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <FileText className="size-5" />
           </span>
-        </button>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-foreground">{link.label}</p>
+            {link.fileSize ? (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {formatFileSize(link.fileSize)}
+              </p>
+            ) : null}
+          </div>
+        </div>
 
-            {isAdmin && (
-              <div className="ml-2 flex gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
-                <button
-                  type="button"
-                  onClick={() => handleDeleteDownloadable(link._id!)}
-                  className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
-                  title="Delete file"
-                >
-                  <Trash2 className="size-4" />
-                </button>
-              </div>
-            )}
+        <div className="flex items-center justify-end gap-1.5">
+          <button
+            type="button"
+            onClick={() => handleFileDownload(link)}
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-primary transition hover:bg-primary/10"
+            title="Download file"
+          >
+            <Download className="size-3.5" />
+            Download
+          </button>
+
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => handleDeleteDownloadable(link._id!)}
+              className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+              title="Delete file"
+            >
+              <Trash2 className="size-4" />
+            </button>
+          )}
+        </div>
       </div>
     )
   }
 
   function renderQuickLink(link: QuickLinkRecord) {
+    const domain = link.href
+      ? (() => {
+          try {
+            return new URL(link.href).hostname.replace(/^www\./, "")
+          } catch {
+            return link.href
+          }
+        })()
+      : ""
+
     return (
       <div
         key={link._id ?? link.label}
-        className="group relative flex items-center justify-between rounded-xl border border-border bg-card p-3 shadow-sm transition hover:bg-muted sm:p-4"
+        className="group relative flex flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-4"
       >
         <a
           href={link.href}
           target="_blank"
           rel="noreferrer"
-          className="flex flex-1 items-center gap-3 text-sm font-medium text-foreground"
+          className="flex items-start gap-3"
         >
           {link.imageUrl ? (
             <Image
@@ -224,13 +246,21 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
               className="size-10 shrink-0 rounded-lg object-contain"
             />
           ) : (
-            <ExternalLink className="size-4 shrink-0 text-primary" />
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Link2 className="size-5" />
+            </span>
           )}
-          <span className="min-w-0 truncate">{link.label}</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-foreground">{link.label}</p>
+            <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+              <Globe className="size-3 shrink-0" />
+              <span className="truncate">{domain}</span>
+            </p>
+          </div>
         </a>
 
         {isAdmin && (
-          <div className="ml-2 flex gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+          <div className="flex items-center justify-end gap-1">
             <button
               type="button"
               onClick={() => {
@@ -259,55 +289,75 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
 
   return (
     <>
-    <div className="space-y-8">
-      <Panel title="Quick Links" eyebrow="Portal resources">
-        {isAdmin && (
-          <div className="mb-4">
-            <button
-              type="button"
-              onClick={() => setShowQuickLinkForm(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border p-3 text-sm text-muted-foreground transition hover:border-primary/50 hover:text-primary sm:gap-3 sm:p-5"
-            >
-              <Plus className="size-4 sm:size-5" />
-              <span className="font-medium">Add Quick Link</span>
-            </button>
+      <div className="space-y-5">
+        <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left shadow-sm sm:px-6">
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
+          <div className="relative flex max-w-4xl flex-col items-start gap-4 sm:flex-row sm:items-center">
+            <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
+              <Link2 className="size-8" />
+            </div>
+            <div>
+              <p className="inline-flex items-center justify-start gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                <ExternalLink className="size-4" />
+                Portal Resources
+              </p>
+              <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
+                Quick Links &amp; Downloads
+              </h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground sm:text-base">
+                Access commonly used portal resources and downloadable files.
+              </p>
+            </div>
           </div>
-        )}
-        {quickLinks.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            No quick links available.
-          </p>
-        ) : (
-          <div className="grid gap-3 md:grid-cols-2">
-            {quickLinks.map(renderQuickLink)}
-          </div>
-        )}
-      </Panel>
+        </section>
 
-      <Panel title="Downloadables" eyebrow="ISPSC resources">
-        {isAdmin && (
-          <div className="mb-4">
-            <button
-              type="button"
-              onClick={() => setShowDownloadableForm(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border p-3 text-sm text-muted-foreground transition hover:border-primary/50 hover:text-primary sm:gap-3 sm:p-5"
-            >
-              <Upload className="size-4 sm:size-5" />
-              <span className="font-medium">Upload PDF</span>
-            </button>
-          </div>
-        )}
-        {downloadables.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            No downloadable files available.
-          </p>
-        ) : (
-          <div className="grid gap-3 md:grid-cols-2">
-            {downloadables.map(renderDownloadableFile)}
-          </div>
-        )}
-      </Panel>
+        <Panel title="Quick Links" eyebrow="Portal resources">
+          {isAdmin && (
+            <div className="mb-4">
+              <button
+                type="button"
+                onClick={() => setShowQuickLinkForm(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border p-3 text-sm text-muted-foreground transition hover:border-primary/50 hover:text-primary sm:gap-3 sm:p-5"
+              >
+                <Plus className="size-4 sm:size-5" />
+                <span className="font-medium">Add Quick Link</span>
+              </button>
+            </div>
+          )}
+          {quickLinks.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No quick links available.
+            </p>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {quickLinks.map(renderQuickLink)}
+            </div>
+          )}
+        </Panel>
 
+        <Panel title="Downloadables" eyebrow="ISPSC resources">
+          {isAdmin && (
+            <div className="mb-4">
+              <button
+                type="button"
+                onClick={() => setShowDownloadableForm(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border p-3 text-sm text-muted-foreground transition hover:border-primary/50 hover:text-primary sm:gap-3 sm:p-5"
+              >
+                <Upload className="size-4 sm:size-5" />
+                <span className="font-medium">Upload PDF</span>
+              </button>
+            </div>
+          )}
+          {downloadables.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No downloadable files available.
+            </p>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {downloadables.map(renderDownloadableFile)}
+            </div>
+          )}
+        </Panel>
       </div>
 
       {/* Quick Links Dialog */}

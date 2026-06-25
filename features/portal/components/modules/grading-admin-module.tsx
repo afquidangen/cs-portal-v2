@@ -125,8 +125,8 @@ export function GradingAdminModule() {
 
           <div className="space-y-3">
             {schemes.map((scheme) => (
-              <div key={scheme.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-sm">
-                <div>
+              <div key={scheme.id} className="flex items-start justify-between gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+                <div className="min-w-0">
                   <p className="font-semibold text-foreground">{scheme.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {scheme.subjectType} &middot; {scheme.components.length} component(s) &middot;
@@ -140,7 +140,7 @@ export function GradingAdminModule() {
                     ))}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex shrink-0 gap-2">
                   <Button size="sm" variant="outline" onClick={() => setEditingScheme(scheme)} className="rounded-lg">Edit</Button>
                   <Button size="sm" variant="outline" onClick={() => deleteScheme(scheme.id)} className="rounded-lg text-destructive">Delete</Button>
                 </div>
@@ -165,8 +165,8 @@ export function GradingAdminModule() {
 
           <div className="space-y-3">
             {tables.map((table) => (
-              <div key={table.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-sm">
-                <div>
+              <div key={table.id} className="flex items-start justify-between gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+                <div className="min-w-0">
                   <p className="font-semibold text-foreground">{table.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {table.subjectType} &middot; {table.entries.length} entr{table.entries.length === 1 ? "y" : "ies"} &middot;
@@ -175,7 +175,7 @@ export function GradingAdminModule() {
                   <div className="mt-1 flex flex-wrap gap-1">
                     {table.entries.slice(0, 5).map((e, i) => (
                       <span key={i} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                        {e.min}-{e.max}% &rarr; {e.equivalent}
+                        {e.min}–{e.max}% &rarr; {e.equivalent}
                       </span>
                     ))}
                     {table.entries.length > 5 && (
@@ -183,7 +183,7 @@ export function GradingAdminModule() {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex shrink-0 gap-2">
                   <Button size="sm" variant="outline" onClick={() => setEditingTable(table)} className="rounded-lg">Edit</Button>
                   <Button size="sm" variant="outline" onClick={() => deleteTable(table.id)} className="rounded-lg text-destructive">Delete</Button>
                 </div>
