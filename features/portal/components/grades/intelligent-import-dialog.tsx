@@ -68,7 +68,7 @@ const ROLE_OPTIONS: Array<{ value: ColumnMapping["targetRole"]; label: string }>
 ]
 
 const CATEGORY_OPTIONS = [
-  "Quizzes", "Performance/Recitation", "Assignment", "Exam",
+  "Quizzes", "Performance", "Assignments", "Exam",
   "Exercises", "Work Attitude", "Project", "Attendance", "Custom", "Computed",
 ]
 
@@ -271,9 +271,9 @@ export function IntelligentImportDialog({
       { pattern: /\b(project|proj|pro|mco)\b/i, cat: "Project" },
       { pattern: /\b(quiz|quizzes|q\d)\b/i, cat: "Quizzes" },
       { pattern: /\b(exam|midterm|final|prelim)\b/i, cat: "Exam" },
-      { pattern: /\b(assignment|assign|hw|homework|task)\b/i, cat: "Assignment" },
-      { pattern: /\b(performance|recitation|recit|seatwork|sw)\b/i, cat: "Performance/Recitation" },
-      { pattern: /\b(activity|activities|act)\b/i, cat: "Assignment" },
+      { pattern: /\b(assignment|assign|hw|homework|task)\b/i, cat: "Assignments" },
+      { pattern: /\b(performance|recitation|recit|seatwork|sw)\b/i, cat: "Performance" },
+      { pattern: /\b(activity|activities|act)\b/i, cat: "Assignments" },
       { pattern: /\b(attendance|attend|atten|att|participation)\b/i, cat: "Attendance" },
       { pattern: /\b(lab|laboratory|practical)\b/i, cat: "Exercises" },
       { pattern: /\b(grade|score|total|average|percentage)\b/i, cat: "Computed" },

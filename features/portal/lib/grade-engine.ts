@@ -1,12 +1,15 @@
 export type GradingCategoryDef = {
   name: string
   weight: number
+  isAttendance?: boolean
+  penaltyPerAbsence?: number
 }
 
 export type SchemeComponentDef = {
   name: string
   weight: number
   categories: GradingCategoryDef[]
+  isExam?: boolean
 }
 
 export type GradeInput = {
@@ -34,25 +37,23 @@ export type ComputedGrades = {
   transmutedGrade?: number
 }
 
-const ATTENDANCE_CONSTANT_MAX: Record<string, number> = {
-  lecattendance: 10,
-  labattendance: 15,
-  attendance: 10,
-}
-
 const CATEGORY_ALIASES: Record<string, string[]> = {
   quizzes: ["quiz", "quizzes"],
   quiz: ["quiz", "quizzes"],
   "performance recitation": ["performance", "recitation", "recit", "performance recitation"],
   performance: ["performance", "recitation", "recit", "performance recitation"],
   assignment: ["assignment", "assignments", "homework", "task", "activity", "activities", "seatwork"],
+  assignments: ["assignment", "assignments", "homework", "task", "activity", "activities", "seatwork"],
   activities: ["assignment", "assignments", "activity", "activities", "homework", "task", "seatwork"],
   activity: ["assignment", "assignments", "activity", "activities", "homework", "task", "seatwork"],
   attendance: ["attendance", "attend", "atten", "att", "lec attendance", "lecture attendance", "lab attendance", "laboratory attendance"],
   "lec attendance": ["lec attendance", "lecture attendance", "lec attend", "lecture attend", "attendance", "attend"],
+  "lecture attendance": ["lecture attendance", "lec attendance", "lecture attend", "lec attend", "attendance", "attend"],
   "lab attendance": ["lab attendance", "laboratory attendance", "lab attend", "laboratory attend", "attendance", "attend"],
+  "laboratory attendance": ["laboratory attendance", "lab attendance", "laboratory attend", "lab attend", "attendance", "attend"],
   exam: ["exam", "midterm exam", "final exam", "prelim exam"],
   exercises: ["exercise", "exercises", "lab quiz", "lab quizzes"],
+  exercise: ["exercise", "exercises", "lab quiz", "lab quizzes"],
   "lab quiz": ["exercise", "exercises", "lab quiz", "lab quizzes"],
   "work attitude": ["work attitude", "attitude", "lab activity", "lab activities"],
   "lab activities": ["work attitude", "attitude", "lab activity", "lab activities"],
@@ -97,7 +98,8 @@ function findMatchingCategory(
 export function computeCategoryGrade(
   totalStudentScore: number,
   totalPossibleScore: number,
-  categoryWeight?: number
+  categoryWeight?: number,
+  useSimpleWs?: boolean
 ): { percentageScore: number; weightedScore: number; grade: number } {
   if (totalPossibleScore === 0) {
     const w = categoryWeight ?? 0
@@ -107,7 +109,9 @@ export function computeCategoryGrade(
   const grade = percentageScore * 100
   let weightedScore: number
   if (categoryWeight !== undefined) {
-    weightedScore = (percentageScore * 50 + 50) * categoryWeight
+    weightedScore = useSimpleWs
+      ? percentageScore * 100 * categoryWeight
+      : (percentageScore * 50 + 50) * categoryWeight
   } else {
     weightedScore = grade
   }
@@ -117,12 +121,14 @@ export function computeCategoryGrade(
 export function computeAllCategoryGrades(
   assessmentsByCategory: Record<string, { studentScores: number[]; maxScores: number[] }>,
   categoryWeights?: Record<string, number>,
-  absencesMap?: Record<string, number>
+  absencesMap?: Record<string, number>,
+  categories?: GradingCategoryDef[]
 ): CategoryGradeResult[] {
   if (categoryWeights) {
     for (const catName of Object.keys(categoryWeights)) {
+      const catDef = categories?.find((c) => c.name === catName)
       const catKey = catName.toLowerCase().replace(/[^a-z0-9]/g, "")
-      const isAttendance = catKey.includes("attendance") || catKey.includes("attend")
+      const isAttendance = catDef?.isAttendance ?? (catKey.includes("attendance") || catKey.includes("attend"))
       if (isAttendance && !assessmentsByCategory[catName]) {
         assessmentsByCategory[catName] = { studentScores: [], maxScores: [] }
       }
@@ -131,18 +137,21 @@ export function computeAllCategoryGrades(
   return Object.entries(assessmentsByCategory).map(([category, data]) => {
     const totalPossibleScore = data.maxScores.reduce((sum, s) => sum + s, 0)
     const catKey = category.toLowerCase().replace(/[^a-z0-9]/g, "")
-    const isAttendance = catKey.includes("attendance") || catKey.includes("attend")
+    const catDef = categories?.find((c) => c.name === category)
+    const isAttendance = catDef?.isAttendance ?? (catKey.includes("attendance") || catKey.includes("attend"))
+    const weight = categoryWeights?.[category]
     const constantMax = isAttendance
-      ? (ATTENDANCE_CONSTANT_MAX[catKey] ?? totalPossibleScore)
+      ? (catDef?.weight ?? weight ?? 0)
       : totalPossibleScore
     const absences = absencesMap?.[catKey] ?? 0
+    const penaltyPerAbsence = catDef?.penaltyPerAbsence ?? 0.6
     const totalStudentScore = isAttendance
-      ? Math.max(0, constantMax - absences * 0.6)
+      ? Math.max(0, constantMax - absences * penaltyPerAbsence)
       : data.studentScores.reduce((sum, s) => sum + s, 0)
-    const weight = categoryWeights?.[category]
     const catWeight = weight !== undefined ? weight / 100 : undefined
+    const useSimpleWs = isAttendance
     const { percentageScore, weightedScore, grade } = computeCategoryGrade(
-      totalStudentScore, constantMax, catWeight
+      totalStudentScore, constantMax, catWeight, useSimpleWs
     )
     return { category, totalStudentScore, totalPossibleScore: constantMax, percentageScore, weightedScore, grade }
   })
@@ -166,7 +175,7 @@ export function computeClassStanding(
       rawSum += gradeRecord.weightedScore
     } else {
       const name = normalizeGradeCategoryName(cat.name)
-      if (CATEGORY_ALIASES.attendance.includes(name)) {
+      if (cat.isAttendance ?? CATEGORY_ALIASES.attendance.includes(name)) {
         rawSum += 100 * (cat.weight / 100)
       }
     }
@@ -195,7 +204,7 @@ export function computeLaboratoryGrade(
       rawSum += gradeRecord.weightedScore
     } else {
       const name = normalizeGradeCategoryName(cat.name)
-      if (CATEGORY_ALIASES.attendance.includes(name)) {
+      if (cat.isAttendance ?? CATEGORY_ALIASES.attendance.includes(name)) {
         rawSum += 100 * (cat.weight / 100)
       }
     }
@@ -336,6 +345,7 @@ export function computeLivePreview(params: {
   lectureWeight?: number
   laboratoryWeight?: number
   midtermGrade?: number
+  period?: "midterm" | "final"
 }): {
   categoryGrades: CategoryGradeResult[]
   classStanding: number
@@ -346,19 +356,23 @@ export function computeLivePreview(params: {
   finalGrade?: number
   transmutedGrade?: number
 } {
-  const { scores, columns, assessments, studentId, components, labComponents, subjectType, lectureWeight, laboratoryWeight, midtermGrade } = params
+  const { scores, columns, assessments, studentId, components, labComponents, subjectType, lectureWeight, laboratoryWeight, midtermGrade, period = "midterm" } = params
 
   const absencesMap: Record<string, number> = {}
   for (const [key, val] of Object.entries(scores)) {
-    if (key.startsWith("absences_")) {
-      absencesMap[key.replace("absences_", "")] = Number(val) || 0
+    if (key.startsWith(`${period}_absences_`)) {
+      absencesMap[key.replace(`${period}_absences_`, "")] = Number(val) || 0
     }
   }
 
   const standingComponent = components.find(
+    (c) => c.isExam === false
+  ) || components.find(
     (c) => c.name.toLowerCase().includes("class standing") || c.name.toLowerCase().includes("lecture class standing")
   ) || components[0]
   const examComponent = components.find(
+    (c) => c.isExam === true
+  ) || components.find(
     (c) => c.name.toLowerCase().includes("exam")
   ) || components[1]
 
@@ -391,7 +405,7 @@ export function computeLivePreview(params: {
       scores
     )
     const lectureWeights = buildCategoryWeightMap(standingCategories)
-    const lectureCategoryGrades = computeAllCategoryGrades(lectureAssessments, lectureWeights, absencesMap)
+    const lectureCategoryGrades = computeAllCategoryGrades(lectureAssessments, lectureWeights, absencesMap, standingCategories)
 
     const labAssessments = buildComponentAssessments(
       labCategories,
@@ -401,7 +415,7 @@ export function computeLivePreview(params: {
       scores
     )
     const labWeights = buildCategoryWeightMap(labCategories)
-    const labCategoryGrades = computeAllCategoryGrades(labAssessments, labWeights, absencesMap)
+    const labCategoryGrades = computeAllCategoryGrades(labAssessments, labWeights, absencesMap, labCategories)
 
     const examItems: Array<{ maxScore: number; studentScore: number }> = []
     for (const col of columns.filter((c) => isExamItem(c.category))) {
@@ -433,7 +447,7 @@ export function computeLivePreview(params: {
       scores
     )
     const catWeights = buildCategoryWeightMap(standingCategories)
-    categoryGrades = computeAllCategoryGrades(assessmentsByCategory, catWeights, absencesMap)
+    categoryGrades = computeAllCategoryGrades(assessmentsByCategory, catWeights, absencesMap, standingCategories)
     classStanding = computeClassStanding(categoryGrades, standingCategories)
 
     const examItems: Array<{ maxScore: number; studentScore: number }> = []

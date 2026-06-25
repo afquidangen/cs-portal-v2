@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,6 +17,7 @@ export function RenameColumnDialog({
   onConfirm: (newName: string) => void
 }) {
   const [name, setName] = useState(currentName)
+  useEffect(() => { setName(currentName) }, [currentName])
 
   function handleConfirm() {
     if (!name.trim()) return

@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
-  ChevronDown, Search, Save, Megaphone,
+  AlertTriangle, ChevronDown, Search, Save, Megaphone, X,
 } from "lucide-react"
 import { AgGridReact } from "ag-grid-react"
-import type { ColDef, ColGroupDef, CellValueChangedEvent, ColumnResizedEvent, SelectionChangedEvent, GridReadyEvent, ColumnHeaderClickedEvent } from "ag-grid-community"
+import type { ColDef, ColGroupDef, CellValueChangedEvent, ColumnResizedEvent, GridReadyEvent, ColumnHeaderClickedEvent } from "ag-grid-community"
 import { AllCommunityModule, ModuleRegistry, themeAlpine } from "ag-grid-community"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,10 +25,8 @@ import { UndoRedoManager, buildSnapshot } from "../../lib/undo-redo"
 import { SpreadsheetToolbar, type ToolbarAction } from "./spreadsheet-toolbar"
 import { RenameColumnDialog } from "./rename-column-dialog"
 import { DeleteColumnDialog } from "./delete-column-dialog"
-import { DeleteRowDialog } from "./delete-row-dialog"
 import { AddColumnDialog } from "../modules/add-column-dialog"
 import { IntelligentImportDialog } from "./intelligent-import-dialog"
-import { TemplateSelector } from "./template-selector"
 import { SaveStatusIndicator } from "../modules/save-status-indicator"
 
 ModuleRegistry.registerModules([AllCommunityModule])
@@ -48,6 +46,20 @@ function findGradeColumnBySelection(columns: GradeColumn[], selection: string): 
 
 function gradeColumnLabel(col: GradeColumn | undefined, fallback: string) {
   return col?.displayName || col?.name || fallback
+}
+
+function findCategoryWeight(catName: string, catWeightMap: Map<string, number>): number | undefined {
+  for (const [key, weight] of catWeightMap) {
+    if (gradeCategoryMatches(key, catName)) return weight
+  }
+  return undefined
+}
+
+function catColDefsHas(catColDefs: Map<string, unknown>, catName: string): boolean {
+  for (const key of catColDefs.keys()) {
+    if (gradeCategoryMatches(catName, key)) return true
+  }
+  return false
 }
 
 function ReleaseDialog({
@@ -367,23 +379,22 @@ export function SpreadsheetGrid({
   setComputedOnce: (v: boolean) => void
   darkMode: boolean
   assessments: Assessment[]
-  gradingScheme?: { components: Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number }> }>; labComponents?: Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number }> }>; lectureWeight?: number; laboratoryWeight?: number; subjectType: "Lecture" | "Lecture with Lab" } | null
+  gradingScheme?: { components: Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number; isAttendance?: boolean }>; isExam?: boolean }>; labComponents?: Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number; isAttendance?: boolean }>; isExam?: boolean }>; lectureWeight?: number; laboratoryWeight?: number; subjectType: "Lecture" | "Lecture with Lab" } | null
   activeTab: TabKey
   setActiveTab: (tab: TabKey) => void
 }) {
   const gridRef = useRef<AgGridReact>(null)
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
   const isEditable = model.role === "faculty" || model.role === "admin"
-  const [selectedRows, setSelectedRows] = useState<StudentGradeRow[]>([])
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle")
   const [lastSaved, setLastSaved] = useState<string | null>(null)
   const [addColumnOpen, setAddColumnOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteColOpen, setDeleteColOpen] = useState(false)
-  const [deleteRowOpen, setDeleteRowOpen] = useState(false)
   const [selectedColName, setSelectedColName] = useState("")
-  const [templatesOpen, setTemplatesOpen] = useState(false)
+  const otherColsRef = useRef<Map<string, string[]>>(new Map())
+  const [dismissedOther, setDismissedOther] = useState(false)
   const [maxScoreDialogOpen, setMaxScoreDialogOpen] = useState(false)
   const [maxScoreColName, setMaxScoreColName] = useState("")
   const [maxScoreCurrent, setMaxScoreCurrent] = useState(0)
@@ -524,9 +535,12 @@ export function SpreadsheetGrid({
 
       autoSave.schedule({ grades: [{ ...grade, scores: updatedScores }], cid: classId })
     } else if (colId?.startsWith("absences_")) {
-      const catName = colId.replace("absences_", "")
+      const afterPrefix = colId.replace("absences_", "")
+      const underscoreIdx = afterPrefix.indexOf("_")
+      const period = underscoreIdx >= 0 ? afterPrefix.slice(0, underscoreIdx) : "midterm"
+      const catName = underscoreIdx >= 0 ? afterPrefix.slice(underscoreIdx + 1) : afterPrefix
       const catKey = catName.toLowerCase().replace(/[^a-z0-9]/g, "")
-      const scoresKey = `absences_${catKey}`
+      const scoresKey = `${period}_absences_${catKey}`
       const grade = ensureGradeRecord(row.studentId)
       if (!grade) return
       const absences = Number(newValue) || 0
@@ -565,10 +579,6 @@ export function SpreadsheetGrid({
       )
       autoSave.schedule({ grades: [{ ...grade, ...updates }], cid: classId })
     }
-  }
-
-  function onSelectionChanged(event: SelectionChangedEvent) {
-    setSelectedRows(event.api.getSelectedRows() as StudentGradeRow[])
   }
 
   function onGridReady(event: GridReadyEvent) {
@@ -715,49 +725,55 @@ export function SpreadsheetGrid({
     } catch { toast.error("Failed to rename column.") }
   }
 
+  async function deleteGradeColumnById(colId: string): Promise<boolean> {
+    try {
+      const res = await fetch(`/api/portal/grades/columns/${colId}`, { method: "DELETE" })
+      return res.ok
+    } catch { return false }
+  }
+
   async function handleDeleteColumn() {
     if (!selectedColName) return
     const col = findGradeColumnBySelection(gradeColumns, selectedColName)
     if (!col) return
-    try {
-      const res = await fetch(`/api/portal/grades/columns/${col.id}`, { method: "DELETE" })
-      if (!res.ok) { toast.error("Failed to delete column."); return }
-      setGradeColumns(gradeColumns.filter((c) => c.id !== col.id))
-      const keysToRemove = new Set([col.name, scoreKey(col)])
-      setGrades((prev) => prev.map((grade) => {
-        const scores = { ...(grade.scores ?? {}) }
-        for (const key of keysToRemove) delete scores[key]
-        return { ...grade, scores, updatedAt: new Date().toISOString() }
-      }))
-      toast.success(`Column "${gradeColumnLabel(col, selectedColName)}" deleted.`)
-      setDeleteColOpen(false)
-    } catch { toast.error("Failed to delete column.") }
+    const ok = await deleteGradeColumnById(col.id)
+    if (!ok) { toast.error("Failed to delete column."); return }
+    setGradeColumns(gradeColumns.filter((c) => c.id !== col.id))
+    const keysToRemove = new Set([col.name, scoreKey(col)])
+    setGrades((prev) => prev.map((grade) => {
+      const scores = { ...(grade.scores ?? {}) }
+      for (const key of keysToRemove) delete scores[key]
+      return { ...grade, scores, updatedAt: new Date().toISOString() }
+    }))
+    toast.success(`Column "${gradeColumnLabel(col, selectedColName)}" deleted.`)
+    setDeleteColOpen(false)
   }
 
-  async function handleAddRow() {
-    const studentsWithGrade = new Set(gradeMap.keys())
-    const ungraded = subjectRoster.find((s) => !studentsWithGrade.has(s.id))
-    if (!ungraded) { toast.info("All students already have a grade record."); return }
-    ensureGradeRecord(ungraded.id)
-    toast.success(`Row added for ${ungraded.name}.`)
+  async function handleDeleteOtherCategory(catName: string) {
+    const ids = otherColsRef.current.get(catName)
+    if (!ids?.length) return
+    const colsToDelete = gradeColumns.filter((c) => ids.includes(c.id))
+    let successCount = 0
+    const deletedIds: string[] = []
+    for (const col of colsToDelete) {
+      if (await deleteGradeColumnById(col.id)) {
+        successCount++
+        deletedIds.push(col.id)
+      }
+    }
+    setGradeColumns(gradeColumns.filter((c) => !deletedIds.includes(c.id)))
+    const scoreKeysToRemove = new Set(colsToDelete.flatMap((col) => [col.name, scoreKey(col)]))
+    setGrades((prev) => prev.map((grade) => {
+      const scores = { ...(grade.scores ?? {}) }
+      for (const key of scoreKeysToRemove) delete scores[key]
+      return { ...grade, scores, updatedAt: new Date().toISOString() }
+    }))
+    if (successCount > 0) {
+      toast.success(`${successCount} "${catName}" column(s) deleted.`)
+    } else {
+      toast.error("Failed to delete columns.")
+    }
   }
-
-  async function handleDeleteRow() {
-    if (selectedRows.length === 0) return
-    const studentIds = selectedRows.map((r) => r.studentId)
-    try {
-      const res = await fetch("/api/portal/grades/rows", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ classId, studentIds }),
-      })
-      if (!res.ok) { toast.error("Failed to delete rows."); return }
-      setGrades((prev) => prev.filter((g) => !studentIds.includes(g.studentId)))
-      toast.success(`${studentIds.length} row(s) deleted.`)
-      setDeleteRowOpen(false)
-    } catch { toast.error("Failed to delete rows.") }
-  }
-
   function handleImportComplete() {
     if (!classId) return
     fetch(`/api/portal/grades/class/${classId}`)
@@ -794,15 +810,6 @@ export function SpreadsheetGrid({
         } else { toast.info("Click a grade column first, then delete.") }
         break
       }
-      case "reorderColumns": {
-        const cols = [...gradeColumns]
-        const last = cols.pop()
-        if (last) setGradeColumns([last, ...cols])
-        else toast.info("No columns to reorder.")
-        break
-      }
-      case "addRow": handleAddRow(); break
-      case "deleteRow": setDeleteRowOpen(true); break
       case "undo": {
         undoManager.current.undo()
         toast.info("Undo applied.")
@@ -815,13 +822,14 @@ export function SpreadsheetGrid({
       }
       case "import": setImportOpen(true); break
       case "export": handleExport(); break
-      case "templates": setTemplatesOpen((prev) => !prev); break
       case "refresh": handleRefresh(); break
       case "save": autoSave.saveNow({ grades: Array.from(gradeMap.values()), cid: classId, showToast: true }).then().catch(() => {}); break
     }
   }
 
   const effectiveScheme = gradingScheme
+
+  useEffect(() => { setDismissedOther(false) }, [effectiveScheme])
 
   const catWeightMap = useMemo(() => {
     const map = new Map<string, number>()
@@ -875,32 +883,16 @@ export function SpreadsheetGrid({
 
   const columnCategories = useMemo(() => {
     const cats = new Set<string>()
-    for (const col of gradeColumns) {
-      let cat = col.category
-      if (cat === "Performance") cat = "Performance/Recitation"
-      if (cat === "Attendance") cat = "Lec Attendance"
-      cats.add(cat)
-    }
     if (effectiveScheme) {
       for (const comp of effectiveScheme.components) {
-        for (const cat of comp.categories) {
-          let name = cat.name
-          if (name === "Performance") name = "Performance/Recitation"
-          if (name === "Attendance") name = "Lec Attendance"
-          cats.add(name)
-        }
+        for (const cat of comp.categories) cats.add(cat.name)
       }
       for (const lab of effectiveScheme.labComponents ?? []) {
-        for (const cat of lab.categories) {
-          let name = cat.name
-          if (name === "Performance") name = "Performance/Recitation"
-          if (name === "Attendance") name = "Lec Attendance"
-          cats.add(name)
-        }
+        for (const cat of lab.categories) cats.add(cat.name)
       }
     }
     return Array.from(cats)
-  }, [gradeColumns, effectiveScheme])
+  }, [effectiveScheme])
 
   const livePreviewData = useMemo(() => {
     if (!effectiveScheme || activeTab === "summary") return null
@@ -917,6 +909,7 @@ export function SpreadsheetGrid({
         lectureWeight: effectiveScheme.lectureWeight,
         laboratoryWeight: effectiveScheme.laboratoryWeight,
         midtermGrade: activeTab === "final" ? (grade?.midtermGrade ?? row.midtermGrade) : undefined,
+        period: activeTab === "midterm" ? "midterm" : "final",
       })
       return {
         studentId: row.studentId,
@@ -1026,11 +1019,12 @@ export function SpreadsheetGrid({
     ]
 
     const catColDefs = new Map<string, ColDef[]>()
+    const catToColIds = new Map<string, string[]>()
     for (const col of filteredColumns) {
       const colId = `score_${scoreKey(col)}`
       const colDef: ColDef = {
         headerName: col.displayName || col.name,
-        headerTooltip: `${col.category} (${catWeightMap.get(col.category.toLowerCase()) ?? "?"}%) — max ${col.maxScore}`,
+        headerTooltip: `${col.category} (${findCategoryWeight(col.category, catWeightMap) ?? "?"}%) — max ${col.maxScore}`,
         colId,
         width: saved[colId] ?? col.width ?? 120,
         sortable: true,
@@ -1054,17 +1048,32 @@ export function SpreadsheetGrid({
         cellEditorParams: { min: 0, max: col.maxScore, precision: 2 },
       }
       let catKey = col.category
-      if (catKey === "Performance") catKey = "Performance/Recitation"
-      if (catKey === "Attendance") catKey = "Lec Attendance"
+      if (catKey === "Performance/Recitation") catKey = "Performance"
+      if (catKey === "Lec Attendance" || catKey === "Lecture Attendance") catKey = "Attendance"
+      if (catKey === "Assignment") catKey = "Assignments"
+      if (effectiveScheme) {
+        for (const comp of effectiveScheme.components) {
+          for (const cat of comp.categories) {
+            if (gradeCategoryMatches(cat.name, catKey)) { catKey = cat.name; break }
+          }
+        }
+        for (const lab of effectiveScheme.labComponents ?? []) {
+          for (const cat of lab.categories) {
+            if (gradeCategoryMatches(cat.name, catKey)) { catKey = cat.name; break }
+          }
+        }
+      }
       if (!catColDefs.has(catKey)) catColDefs.set(catKey, [])
       catColDefs.get(catKey)!.push(colDef)
+      if (!catToColIds.has(catKey)) catToColIds.set(catKey, [])
+      catToColIds.get(catKey)!.push(col.id)
     }
 
     // Ensure all scheme categories appear as groups even when no columns exist
     if (effectiveScheme) {
       for (const comp of effectiveScheme.components) {
         for (const cat of comp.categories) {
-          if (!catColDefs.has(cat.name)) {
+          if (!catColDefsHas(catColDefs, cat.name)) {
             catColDefs.set(cat.name, [{
               headerName: "",
               colId: `spacer_${cat.name}`,
@@ -1079,7 +1088,7 @@ export function SpreadsheetGrid({
       }
       for (const lab of effectiveScheme.labComponents ?? []) {
         for (const cat of lab.categories) {
-          if (!catColDefs.has(cat.name)) {
+          if (!catColDefsHas(catColDefs, cat.name)) {
             catColDefs.set(cat.name, [{
               headerName: "",
               colId: `spacer_${cat.name}`,
@@ -1114,16 +1123,22 @@ export function SpreadsheetGrid({
         return "Other"
       })()
       if (!compCatGroups.has(compName)) compCatGroups.set(compName, [])
-      const catWt = catWeightMap.get(catName.toLowerCase())
+      const catWt = findCategoryWeight(catName, catWeightMap)
       const catKey = catName.toLowerCase().replace(/[^a-z0-9]/g, "")
-      const isAttendance = catKey.includes("attendance") || catKey.includes("attend")
+      const comp = effectiveScheme?.components.find(c => c.name === compName)
+        ?? effectiveScheme?.labComponents?.find(c => c.name === compName)
+      const matchedCat = comp?.categories.find(c => gradeCategoryMatches(c.name, catName))
+      const isAttendance = matchedCat?.isAttendance ?? (catKey.includes("attendance") || catKey.includes("attend"))
+      const absenceCatKey = matchedCat
+        ? matchedCat.name.toLowerCase().replace(/[^a-z0-9]/g, "")
+        : catKey
 
       let children: (ColDef | ColGroupDef)[]
       if (isAttendance) {
         const absencesColDef: ColDef = {
-          headerName: "Absences",
-          colId: `absences_${catName}`,
-          width: saved[`absences_${catName}`] ?? 100,
+          headerName: activeTab === "midterm" ? "Mid Absences" : "Fin Absences",
+          colId: `absences_${activeTab}_${matchedCat?.name ?? catName}`,
+          width: saved[`absences_${activeTab}_${matchedCat?.name ?? catName}`] ?? 100,
           sortable: true,
           filter: "agNumberColumnFilter",
           editable: (params) => {
@@ -1132,13 +1147,13 @@ export function SpreadsheetGrid({
           },
           valueGetter: (params) => {
             const row = params.data as StudentGradeRow
-            return row.scores?.[`absences_${catKey}`] ?? ""
+            return row.scores?.[`${activeTab}_absences_${absenceCatKey}`] ?? ""
           },
           valueSetter: (params) => {
             const row = params.data as StudentGradeRow
             const val = params.newValue
             const num = val === "" || val === null || val === undefined ? 0 : Number(val)
-            row.scores = { ...row.scores, [`absences_${catKey}`]: isNaN(num) ? 0 : num }
+            row.scores = { ...row.scores, [`${activeTab}_absences_${absenceCatKey}`]: isNaN(num) ? 0 : num }
             return true
           },
           cellEditor: "agNumberCellEditor",
@@ -1163,7 +1178,7 @@ export function SpreadsheetGrid({
         }
         children = [absencesColDef, scoreColDef]
       } else {
-        const isExam = gradeCategoryMatches("exam", catName)
+        const isExam = comp?.isExam ?? compName.toLowerCase().includes("exam")
         const examContribColDef: ColDef = {
           headerName: "40%",
           colId: `exam_contrib_${catName}`,
@@ -1233,8 +1248,8 @@ export function SpreadsheetGrid({
         catGroups.sort((a, b) => {
           const aName = (a.headerName as string).replace(/\s*\(.*?\)\s*$/, "").trim().toLowerCase()
           const bName = (b.headerName as string).replace(/\s*\(.*?\)\s*$/, "").trim().toLowerCase()
-          const aIdx = order.get(aName)
-          const bIdx = order.get(bName)
+          const aIdx = Array.from(order.entries()).find(([k]) => gradeCategoryMatches(k, aName))?.[1]
+          const bIdx = Array.from(order.entries()).find(([k]) => gradeCategoryMatches(k, bName))?.[1]
           if (aIdx === undefined && bIdx === undefined) return 0
           if (aIdx === undefined) return 1
           if (bIdx === undefined) return -1
@@ -1242,6 +1257,17 @@ export function SpreadsheetGrid({
         })
       }
     }
+
+    const otherCols = new Map<string, string[]>()
+    const otherGroups = compCatGroups.get("Other")
+    if (otherGroups) {
+      for (const group of otherGroups) {
+        const rawName = (group.headerName as string).replace(/\s*\(.*?\)\s*$/, "").trim()
+        const ids = catToColIds.get(rawName) ?? []
+        if (ids.length > 0) otherCols.set(rawName, ids)
+      }
+    }
+    otherColsRef.current = otherCols
 
       const lectureColDef: ColDef = {
         headerName: "Lecture Grade", width: saved["lectureGrade"] ?? 130, sortable: true, filter: "agNumberColumnFilter",
@@ -1504,11 +1530,33 @@ export function SpreadsheetGrid({
 
       <SchemeInfoBanner />
 
+      {otherColsRef.current.size > 0 && !dismissedOther && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="size-4 shrink-0 text-destructive" />
+            <span className="text-sm font-medium text-destructive">
+              Unrecognized categories — not in current scheme:
+            </span>
+            <Button size="sm" variant="ghost" className="ms-auto h-6 w-6 shrink-0 p-0" onClick={() => setDismissedOther(true)}>
+              <X className="size-3" />
+            </Button>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {Array.from(otherColsRef.current.entries()).map(([catName, colIds]) => (
+              <Button key={catName} size="sm" variant="outline"
+                className="h-7 border-destructive/50 text-xs text-destructive"
+                onClick={() => handleDeleteOtherCategory(catName)}>
+                × {catName} ({colIds.length})
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <SpreadsheetToolbar
         onAction={handleToolbarAction}
         canUndo={undoManager.current.canUndo}
         canRedo={undoManager.current.canRedo}
-        selectedRowCount={selectedRows.length}
         columnCount={filteredColumns.length}
         saveStatus={saveStatus}
       />
@@ -1528,9 +1576,15 @@ export function SpreadsheetGrid({
           }}
           theme={theme}
           getRowId={(params) => params.data.studentId}
+          getRowStyle={(params) => {
+            const q = studentQuery?.toLowerCase().trim()
+            if (!q) return undefined
+            const name = params.data.studentName?.toLowerCase() ?? ""
+            return name.includes(q)
+              ? { backgroundColor: "rgba(251, 191, 36, 0.12)" }
+              : undefined
+          }}
           animateRows
-          rowSelection="multiple"
-          onSelectionChanged={onSelectionChanged}
           onCellValueChanged={onCellValueChanged}
           onGridReady={onGridReady}
           onColumnResized={onColumnResized}
@@ -1560,6 +1614,7 @@ export function SpreadsheetGrid({
                 lectureWeight: effectiveScheme?.lectureWeight,
                 laboratoryWeight: effectiveScheme?.laboratoryWeight,
                 midtermGrade: period === "final" ? (g.midtermGrade ?? undefined) : undefined,
+                period,
               })
               const updated = { ...g, categoryGrades: result.categoryGrades, updatedAt: new Date().toISOString() } as GradeRecord & Record<string, unknown>
               if (period === "midterm") {
@@ -1614,8 +1669,6 @@ export function SpreadsheetGrid({
         currentName={selectedColumnLabel} onConfirm={handleRenameColumn} />
       <DeleteColumnDialog open={deleteColOpen} onOpenChange={setDeleteColOpen}
         columnName={selectedColumnLabel} onConfirm={handleDeleteColumn} />
-      <DeleteRowDialog open={deleteRowOpen} onOpenChange={setDeleteRowOpen}
-        rowCount={selectedRows.length} onConfirm={handleDeleteRow} />
 
       {studentReleaseTarget && (
         <UndoReleaseDialog
@@ -1629,13 +1682,6 @@ export function SpreadsheetGrid({
         />
       )}
 
-      {templatesOpen && (
-        <TemplateSelector classId={classId} open={templatesOpen} onClose={() => setTemplatesOpen(false)}
-          onApplied={() => {
-            setTemplatesOpen(false)
-            handleImportComplete()
-          }} />
-      )}
     </div>
   )
 }

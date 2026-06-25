@@ -52,6 +52,7 @@ export function SchemeEditor({ scheme, onSave, onCancel }: { scheme: GradingSche
     components: scheme.components.map(c => ({ ...c, categories: c.categories.map(cat => ({ ...cat })) })),
     labComponents: scheme.labComponents?.map(c => ({ ...c, categories: c.categories.map(cat => ({ ...cat })) })),
   })
+  console.log("[EDITOR] init cats:", JSON.stringify(draft.components[0]?.categories))
   const errors = useMemo(() => validateSchemeWeights(draft), [draft])
 
   function updateField<K extends keyof GradingScheme>(key: K, value: GradingScheme[K]) {
@@ -62,7 +63,7 @@ export function SchemeEditor({ scheme, onSave, onCancel }: { scheme: GradingSche
     setDraft((prev) => ({ ...prev, components: [...prev.components, emptyComponent("")] }))
   }
 
-  function updateComponent(index: number, field: keyof SchemeComponent, value: string | number) {
+  function updateComponent(index: number, field: keyof SchemeComponent, value: string | number | boolean) {
     setDraft((prev) => {
       const comps = [...prev.components]
       comps[index] = { ...comps[index], [field]: value }
@@ -82,7 +83,7 @@ export function SchemeEditor({ scheme, onSave, onCancel }: { scheme: GradingSche
     })
   }
 
-  function updateCategory(compIndex: number, catIndex: number, field: keyof Category, value: string | number) {
+  function updateCategory(compIndex: number, catIndex: number, field: keyof Category, value: string | number | boolean) {
     setDraft((prev) => {
       const comps = [...prev.components]
       const cats = [...comps[compIndex].categories]
@@ -104,7 +105,7 @@ export function SchemeEditor({ scheme, onSave, onCancel }: { scheme: GradingSche
     setDraft((prev) => ({ ...prev, labComponents: [...(prev.labComponents ?? []), emptyComponent("")] }))
   }
 
-  function updateLabComponent(index: number, field: keyof SchemeComponent, value: string | number) {
+  function updateLabComponent(index: number, field: keyof SchemeComponent, value: string | number | boolean) {
     setDraft((prev) => {
       const comps = [...(prev.labComponents ?? [])]
       comps[index] = { ...comps[index], [field]: value }
@@ -124,7 +125,7 @@ export function SchemeEditor({ scheme, onSave, onCancel }: { scheme: GradingSche
     })
   }
 
-  function updateLabCategory(compIndex: number, catIndex: number, field: keyof Category, value: string | number) {
+  function updateLabCategory(compIndex: number, catIndex: number, field: keyof Category, value: string | number | boolean) {
     setDraft((prev) => {
       const comps = [...(prev.labComponents ?? [])]
       const cats = [...comps[compIndex].categories]
@@ -215,6 +216,11 @@ export function SchemeEditor({ scheme, onSave, onCancel }: { scheme: GradingSche
                 <div className="flex items-center gap-1 text-sm">
                   <Input type="number" value={comp.weight} onChange={(e) => { const r = e.target.value; if (r === "") return; updateComponent(ci, "weight", Number(r)) }} className="w-20 rounded-lg text-center" />%
                 </div>
+                <select value={comp.isExam ? "exam" : "component"} onChange={(e) => updateComponent(ci, "isExam", e.target.value === "exam")}
+                  className="h-10 rounded-lg border border-input bg-background px-2 text-xs">
+                  <option value="component">Component</option>
+                  <option value="exam">Exam</option>
+                </select>
                 <Button size="sm" variant="ghost" onClick={() => removeComponent(ci)}><Trash2 className="size-4 text-destructive" /></Button>
               </div>
               <div className="ml-4 space-y-2">
@@ -222,6 +228,14 @@ export function SchemeEditor({ scheme, onSave, onCancel }: { scheme: GradingSche
                   <div key={cati} className="flex items-center gap-2">
                     <Input placeholder="Category name" value={cat.name} onChange={(e) => updateCategory(ci, cati, "name", e.target.value)} className="flex-1 rounded-lg" />
                     <Input type="number" value={cat.weight} onChange={(e) => { const r = e.target.value; if (r === "") return; updateCategory(ci, cati, "weight", Number(r)) }} className="w-20 rounded-lg text-center" />%
+                    <select value={cat.isAttendance ? "attendance" : "regular"} onChange={(e) => updateCategory(ci, cati, "isAttendance", e.target.value === "attendance")}
+                      className="h-10 rounded-lg border border-input bg-background px-2 text-xs">
+                      <option value="regular">Regular</option>
+                      <option value="attendance">Attendance</option>
+                    </select>
+                    {cat.isAttendance && (
+                      <Input type="number" step="0.1" min="0" value={cat.penaltyPerAbsence ?? 0.6} onChange={(e) => { const r = e.target.value; if (r === "") return; updateCategory(ci, cati, "penaltyPerAbsence", Number(r)) }} className="w-16 rounded-lg text-center" title="Penalty per absence" />
+                    )}
                     <Button size="sm" variant="ghost" onClick={() => removeCategory(ci, cati)}><Trash2 className="size-3.5 text-destructive" /></Button>
                   </div>
                 ))}
@@ -255,6 +269,11 @@ export function SchemeEditor({ scheme, onSave, onCancel }: { scheme: GradingSche
                   <div className="flex items-center gap-1 text-sm">
                     <Input type="number" value={comp.weight} onChange={(e) => { const r = e.target.value; if (r === "") return; updateLabComponent(ci, "weight", Number(r)) }} className="w-20 rounded-lg text-center" />%
                   </div>
+                  <select value={comp.isExam ? "exam" : "component"} onChange={(e) => updateLabComponent(ci, "isExam", e.target.value === "exam")}
+                    className="h-10 rounded-lg border border-input bg-background px-2 text-xs">
+                    <option value="component">Component</option>
+                    <option value="exam">Exam</option>
+                  </select>
                   <Button size="sm" variant="ghost" onClick={() => removeLabComponent(ci)}><Trash2 className="size-4 text-destructive" /></Button>
                 </div>
                 <div className="ml-4 space-y-2">
@@ -262,6 +281,14 @@ export function SchemeEditor({ scheme, onSave, onCancel }: { scheme: GradingSche
                     <div key={cati} className="flex items-center gap-2">
                       <Input placeholder="Category name" value={cat.name} onChange={(e) => updateLabCategory(ci, cati, "name", e.target.value)} className="flex-1 rounded-lg" />
                       <Input type="number" value={cat.weight} onChange={(e) => { const r = e.target.value; if (r === "") return; updateLabCategory(ci, cati, "weight", Number(r)) }} className="w-20 rounded-lg text-center" />%
+                        <select value={cat.isAttendance ? "attendance" : "regular"} onChange={(e) => updateLabCategory(ci, cati, "isAttendance", e.target.value === "attendance")}
+                          className="h-10 rounded-lg border border-input bg-background px-2 text-xs">
+                          <option value="regular">Regular</option>
+                          <option value="attendance">Attendance</option>
+                        </select>
+                      {cat.isAttendance && (
+                        <Input type="number" step="0.1" min="0" value={cat.penaltyPerAbsence ?? 0.6} onChange={(e) => { const r = e.target.value; if (r === "") return; updateLabCategory(ci, cati, "penaltyPerAbsence", Number(r)) }} className="w-16 rounded-lg text-center" title="Penalty per absence" />
+                      )}
                       <Button size="sm" variant="ghost" onClick={() => removeLabCategory(ci, cati)}><Trash2 className="size-3.5 text-destructive" /></Button>
                     </div>
                   ))}

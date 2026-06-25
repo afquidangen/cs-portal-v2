@@ -16,6 +16,7 @@ import type { PortalModuleProps } from "./types"
 import type { CurriculumRecord, GradeRecord } from "../../data/portal-data"
 import type { GradeColumn, Assessment } from "@/lib/types"
 import { SpreadsheetGrid } from "../grades/spreadsheet-grid"
+import { GradingWorkbookTab } from "../grades/grading-workbook-tab"
 
 export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { darkMode: boolean }) {
   const { grades, setGrades, roster, users, visibleSchedules, semesters, curricula } = model
@@ -36,6 +37,7 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
   const [classId, setClassId] = useState("")
   const [computedOnce, setComputedOnce] = useState(false)
   const [activeTab, setActiveTab] = useState<"midterm" | "final" | "summary">("midterm")
+  const [egradesTab, setEgradesTab] = useState<"gradesheet" | "workbook">("gradesheet")
   const prevSchemeIdRef = useRef<string | null>(null)
 
   const semesterSubjects = useMemo(() => {
@@ -112,58 +114,72 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
       .catch(() => {})
   }, [classId, selectedSubject, curricula, setGrades])
 
-  useEffect(() => {
+  const prevActiveModuleRef = useRef(model.activeModule)
+
+  const refreshOnSchemeChange = useCallback(async () => {
     if (!classId) return
-    async function checkAndRecompute() {
-      try {
-        const res = await fetch("/api/portal/grading-schemes")
-        const json = await res.json()
-        const schemes: Array<Record<string, unknown>> = json.data ?? []
-        const code = selectedSubject.split(" - ")[0]?.trim() ?? selectedSubject
-        let st: string
-        if (curricula && curricula.length > 0) {
-          const foundLab = curricula.some((c) =>
-            c.terms.some((t) =>
-              t.subjects.some((s) =>
-                s.lab > 0 && ((s.code && code.includes(s.code)) || (s.name && code.includes(s.name)))
-              )
+    try {
+      const res = await fetch("/api/portal/grading-schemes")
+      const json = await res.json()
+      const schemes: Array<Record<string, unknown>> = json.data ?? []
+      const code = selectedSubject.split(" - ")[0]?.trim() ?? selectedSubject
+      let st: string
+      if (curricula && curricula.length > 0) {
+        const foundLab = curricula.some((c) =>
+          c.terms.some((t) =>
+            t.subjects.some((s) =>
+              s.lab > 0 && ((s.code && code.includes(s.code)) || (s.name && code.includes(s.name)))
             )
           )
-          st = foundLab ? "Lecture with Lab" : "Lecture"
-        } else {
-          st = "Lecture"
-        }
-        const active = schemes.find((s) => s.isActive && (s as Record<string, string>).subjectType === st)
-          ?? schemes.find((s) => s.isActive)
-        if (!active) return
-        const newId = (active as Record<string, string>).id
-        if (prevSchemeIdRef.current && prevSchemeIdRef.current !== newId) {
-          setGradingScheme(active as typeof gradingScheme)
-          await fetch("/api/portal/grades/compute", {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ classId, gradingPeriod: "midterm" }),
+        )
+        st = foundLab ? "Lecture with Lab" : "Lecture"
+      } else {
+        st = "Lecture"
+      }
+      const active = schemes.find((s) => s.isActive && (s as Record<string, string>).subjectType === st)
+        ?? schemes.find((s) => s.isActive)
+      if (!active) return
+      const newId = (active as Record<string, string>).id
+      if (prevSchemeIdRef.current && prevSchemeIdRef.current !== newId) {
+        setGradingScheme(active as typeof gradingScheme)
+        await fetch("/api/portal/grades/compute", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ classId, gradingPeriod: "midterm" }),
+        })
+        await fetch("/api/portal/grades/compute", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ classId, gradingPeriod: "final" }),
+        })
+        const gRes = await fetch(`/api/portal/grades/class/${classId}`)
+        const gJson = await gRes.json()
+        if (gJson.data?.columns) setGradeColumns(gJson.data.columns)
+        if (gJson.data?.grades) {
+          setGrades((prev) => {
+            const filtered = prev.filter((g) => g.classId !== classId)
+            return [...filtered, ...gJson.data.grades]
           })
-          await fetch("/api/portal/grades/compute", {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ classId, gradingPeriod: "final" }),
-          })
-          const gRes = await fetch(`/api/portal/grades/class/${classId}`)
-          const gJson = await gRes.json()
-          if (gJson.data?.grades) {
-            setGrades((prev) => {
-              const filtered = prev.filter((g) => g.classId !== classId)
-              return [...filtered, ...gJson.data.grades]
-            })
-          }
         }
-        prevSchemeIdRef.current = newId
-      } catch { /* poll silently */ }
-    }
-    const onVisibility = () => { if (document.visibilityState === "visible") checkAndRecompute() }
+      }
+      prevSchemeIdRef.current = newId
+    } catch { /* poll silently */ }
+  }, [classId, selectedSubject, curricula, setGradeColumns, setGrades, setGradingScheme])
+
+  useEffect(() => {
+    if (!classId) return
+    const onFocus = () => refreshOnSchemeChange()
+    const onVisibility = () => { if (document.visibilityState === "visible") refreshOnSchemeChange() }
     document.addEventListener("visibilitychange", onVisibility)
-    const interval = setInterval(checkAndRecompute, 60000)
-    return () => { document.removeEventListener("visibilitychange", onVisibility); clearInterval(interval) }
-  }, [classId, selectedSubject, curricula, setGrades])
+    window.addEventListener("focus", onFocus)
+    const interval = setInterval(refreshOnSchemeChange, 60000)
+    return () => { document.removeEventListener("visibilitychange", onVisibility); window.removeEventListener("focus", onFocus); clearInterval(interval) }
+  }, [classId, refreshOnSchemeChange])
+
+  useEffect(() => {
+    if (prevActiveModuleRef.current !== "manage-grades" && model.activeModule === "manage-grades") {
+      refreshOnSchemeChange()
+    }
+    prevActiveModuleRef.current = model.activeModule
+  }, [model.activeModule, refreshOnSchemeChange])
 
   const subjectRoster = useMemo(() => {
     if (subjectSections.length === 0) return []
@@ -359,27 +375,58 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
           </p>
         </div>
       ) : selectedSubject && classId ? (
-          <SpreadsheetGrid
-            model={model}
-            selectedSubject={selectedSubject}
-            classId={classId}
-            gradeColumns={gradeColumns}
-            setGradeColumns={setGradeColumns}
-            gridData={gridData}
-            gradeMap={gradeMap}
-            setGrades={setGrades}
-            roster={roster}
-            subjectRoster={subjectRoster}
-            studentQuery={studentQuery}
-            setStudentQuery={setStudentQuery}
-            computedOnce={computedOnce}
-            setComputedOnce={setComputedOnce}
-            darkMode={darkMode}
-            assessments={assessments}
-            gradingScheme={gradingScheme}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-          />
+        <div className="space-y-4">
+          <div className="flex gap-1 rounded-xl border border-border bg-muted/30 p-1">
+            <button type="button"
+              onClick={() => setEgradesTab("gradesheet")}
+              className={`flex-1 rounded-lg px-4 py-2 text-xs font-semibold transition-all ${
+                egradesTab === "gradesheet"
+                  ? "bg-card text-foreground shadow-sm ring-1 ring-primary/50"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Gradesheet
+            </button>
+            <button type="button"
+              onClick={() => setEgradesTab("workbook")}
+              className={`flex-1 rounded-lg px-4 py-2 text-xs font-semibold transition-all ${
+                egradesTab === "workbook"
+                  ? "bg-card text-foreground shadow-sm ring-1 ring-primary/50"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Grading Workbook
+            </button>
+          </div>
+          {egradesTab === "gradesheet" ? (
+            <SpreadsheetGrid
+              model={model}
+              selectedSubject={selectedSubject}
+              classId={classId}
+              gradeColumns={gradeColumns}
+              setGradeColumns={setGradeColumns}
+              gridData={gridData}
+              gradeMap={gradeMap}
+              setGrades={setGrades}
+              roster={roster}
+              subjectRoster={subjectRoster}
+              studentQuery={studentQuery}
+              setStudentQuery={setStudentQuery}
+              computedOnce={computedOnce}
+              setComputedOnce={setComputedOnce}
+              darkMode={darkMode}
+              assessments={assessments}
+              gradingScheme={gradingScheme}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+            />
+          ) : (
+            <GradingWorkbookTab
+              classId={classId}
+              gradingScheme={gradingScheme}
+            />
+          )}
+        </div>
       ) : selectedSubject ? (
         <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
           Loading class data...

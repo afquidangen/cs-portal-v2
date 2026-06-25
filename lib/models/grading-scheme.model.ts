@@ -3,12 +3,15 @@ import mongoose, { Schema, type Document, type Model } from "mongoose"
 export interface IGradingCategory {
   name: string
   weight: number
+  isAttendance?: boolean
+  penaltyPerAbsence?: number
 }
 
 export interface ISchemeComponent {
   name: string
   weight: number
   categories: IGradingCategory[]
+  isExam?: boolean
 }
 
 export interface IGradingScheme extends Document {
@@ -29,6 +32,8 @@ const GradingCategorySchema = new Schema<IGradingCategory>(
   {
     name: { type: String, required: true },
     weight: { type: Number, required: true },
+    isAttendance: { type: Boolean },
+    penaltyPerAbsence: { type: Number },
   },
   { _id: false }
 )
@@ -38,6 +43,7 @@ const SchemeComponentSchema = new Schema<ISchemeComponent>(
     name: { type: String, required: true },
     weight: { type: Number, required: true },
     categories: { type: [GradingCategorySchema], default: [] },
+    isExam: { type: Boolean },
   },
   { _id: false }
 )

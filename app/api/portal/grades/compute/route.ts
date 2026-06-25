@@ -126,18 +126,22 @@ export async function POST(request: Request) {
       const scores = (g.scores as Record<string, number>) || {}
       const absencesMap: Record<string, number> = {}
       for (const [key, val] of Object.entries(scores)) {
-        if (key.startsWith("absences_")) {
-          absencesMap[key.replace("absences_", "")] = Number(val) || 0
+        if (key.startsWith(`${period}_absences_`)) {
+          absencesMap[key.replace(`${period}_absences_`, "")] = Number(val) || 0
         }
       }
 
-      const componentsTyped = components as Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number }> }>
-      const labComponentsTyped = labComponents as Array<{ name: string; categories: Array<{ name: string; weight: number }> }>
+      const componentsTyped = components as Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number; isAttendance?: boolean }>; isExam?: boolean }>
+      const labComponentsTyped = labComponents as Array<{ name: string; categories: Array<{ name: string; weight: number; isAttendance?: boolean }>; isExam?: boolean }>
 
       const standingComponent = componentsTyped.find(
+        (c) => c.isExam === false
+      ) || componentsTyped.find(
         (c) => c.name.toLowerCase().includes("class standing") || c.name.toLowerCase().includes("lecture class standing")
       ) || componentsTyped[0]
       const examComponent = componentsTyped.find(
+        (c) => c.isExam === true
+      ) || componentsTyped.find(
         (c) => c.name.toLowerCase().includes("exam")
       ) || componentsTyped[1]
 
@@ -228,8 +232,8 @@ export async function POST(request: Request) {
         const labWeights: Record<string, number> = {}
         for (const cat of labCategories) labWeights[cat.name] = cat.weight
 
-        const lectureCategoryGrades = computeAllCategoryGrades(lectureAssessmentsByCategory, lectureWeights, absencesMap)
-        const labCategoryGrades = computeAllCategoryGrades(labAssessmentsByCategory, labWeights, absencesMap)
+        const lectureCategoryGrades = computeAllCategoryGrades(lectureAssessmentsByCategory, lectureWeights, absencesMap, standingCategories)
+        const labCategoryGrades = computeAllCategoryGrades(labAssessmentsByCategory, labWeights, absencesMap, labCategories)
 
         categoryGrades = [...lectureCategoryGrades, ...labCategoryGrades]
         classStanding = computeClassStanding(lectureCategoryGrades, standingCategories)
@@ -277,7 +281,7 @@ export async function POST(request: Request) {
         const standingWeights: Record<string, number> = {}
         for (const cat of standingCategories) standingWeights[cat.name] = cat.weight
 
-        categoryGrades = computeAllCategoryGrades(assessmentsByCategory, standingWeights, absencesMap)
+        categoryGrades = computeAllCategoryGrades(assessmentsByCategory, standingWeights, absencesMap, standingCategories)
         classStanding = computeClassStanding(categoryGrades, standingCategories)
         examGrade = computeExamGrade(examItems)
       }

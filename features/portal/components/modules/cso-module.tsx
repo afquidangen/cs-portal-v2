@@ -409,7 +409,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
         )}
       </div>
 
-      <Panel title="CSSO Organizational Chart" eyebrow="Officers and adviser">
+      <Panel title="CSSO Organizational Chart">
         {orgChartUrl ? (
           <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
             <div className="relative overflow-hidden rounded-lg">

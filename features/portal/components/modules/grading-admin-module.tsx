@@ -26,7 +26,10 @@ export function GradingAdminModule() {
       ])
       const sData = await sRes.json()
       const tData = await tRes.json()
-      if (sRes.ok) setSchemes(sData.data ?? [])
+      if (sRes.ok) {
+        console.log("[LOAD] data comp0 cats:", JSON.stringify(sData.data?.[0]?.components?.[0]?.categories))
+        setSchemes(sData.data ?? [])
+      }
       if (tRes.ok) setTables(tData.data ?? [])
     } catch {
       toast.error("Failed to load data.")
@@ -36,6 +39,7 @@ export function GradingAdminModule() {
   useEffect(() => { load() }, [load])
 
   async function saveScheme(scheme: GradingScheme) {
+    console.log("[SAVE] comp0 cats:", JSON.stringify(scheme.components[0]?.categories))
     const isNew = !schemes.find((s) => s.id === scheme.id)
     const res = await fetch(`/api/portal/grading-schemes${isNew ? "" : `/${scheme.id}`}`, {
       method: isNew ? "POST" : "PUT",
@@ -45,7 +49,7 @@ export function GradingAdminModule() {
     if (!res.ok) { const j = await res.json(); toast.error(j.error || "Failed to save."); return }
     toast.success(`Scheme "${scheme.name}" saved.`)
     setEditingScheme(null)
-    load()
+    await load()
   }
 
   async function deleteScheme(id: string) {
@@ -116,7 +120,7 @@ export function GradingAdminModule() {
           )}
 
           {editingScheme && (
-            <SchemeEditor scheme={editingScheme} onSave={saveScheme} onCancel={() => setEditingScheme(null)} />
+            <SchemeEditor key={editingScheme.id} scheme={editingScheme} onSave={saveScheme} onCancel={() => setEditingScheme(null)} />
           )}
 
           <div className="space-y-3">

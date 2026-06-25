@@ -1,8 +1,8 @@
 "use client"
 
 import {
-  Columns, Columns3, Download, FileSpreadsheet, Plus, Redo2, RotateCcw, Save,
-  Table2, Trash2, Undo2, Upload, UserPlus, UserX, Bookmark,
+  Columns, Columns3, Download, Redo2, RotateCcw, Save,
+  Trash2, Undo2, Upload,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -10,29 +10,23 @@ export type ToolbarAction =
   | "addColumn"
   | "deleteColumn"
   | "renameColumn"
-  | "addRow"
-  | "deleteRow"
   | "undo"
   | "redo"
   | "import"
   | "export"
   | "save"
   | "refresh"
-  | "reorderColumns"
-  | "templates"
 
 export function SpreadsheetToolbar({
   onAction,
   canUndo,
   canRedo,
-  selectedRowCount,
   columnCount,
   saveStatus,
 }: {
   onAction: (action: ToolbarAction) => void
   canUndo: boolean
   canRedo: boolean
-  selectedRowCount: number
   columnCount: number
   saveStatus: string
 }) {
@@ -73,27 +67,6 @@ export function SpreadsheetToolbar({
           <Trash2 className="size-4" />
           <span className="ms-1.5 text-xs hidden md:inline">Delete Col</span>
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => onAction("reorderColumns")}
-          className="h-8 px-2" title="Reorder Columns">
-          <Table2 className="size-4" />
-          <span className="ms-1.5 text-xs hidden md:inline">Reorder</span>
-        </Button>
-      </div>
-
-      <div className="flex items-center gap-1 pe-2 border-e border-border">
-        <Button size="sm" variant="ghost" onClick={() => onAction("addRow")}
-          className="h-8 px-2" title="Add Row">
-          <UserPlus className="size-4" />
-          <span className="ms-1.5 text-xs hidden md:inline">Add Row</span>
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => onAction("deleteRow")}
-          disabled={selectedRowCount === 0}
-          className="h-8 px-2" title="Delete Selected Row(s)">
-          <UserX className="size-4" />
-          <span className="ms-1.5 text-xs hidden md:inline">
-            Delete{selectedRowCount > 0 ? ` (${selectedRowCount})` : ""}
-          </span>
-        </Button>
       </div>
 
       <div className="flex items-center gap-1 pe-2 border-e border-border">
@@ -109,17 +82,8 @@ export function SpreadsheetToolbar({
         </Button>
       </div>
 
-      <div className="flex items-center gap-1">
-        <Button size="sm" variant="ghost" onClick={() => onAction("templates")}
-          className="h-8 px-2" title="Saved Templates">
-          <Bookmark className="size-4" />
-          <span className="ms-1.5 text-xs hidden md:inline">Templates</span>
-        </Button>
-      </div>
-
       <div className="ms-auto flex items-center gap-2 text-xs text-muted-foreground">
         <span>{columnCount} cols</span>
-        {selectedRowCount > 0 && <span>&middot; {selectedRowCount} selected</span>}
       </div>
     </div>
   )

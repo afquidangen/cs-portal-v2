@@ -59,6 +59,29 @@ export class BaseRepository {
     return this.model.findOneAndUpdate(filter, { $set: update }, { returnDocument: "after" }).lean()
   }
 
+  async replace(
+    filter: Record<string, unknown>,
+    data: Record<string, unknown>
+  ): Promise<unknown | null> {
+    await connectToDatabase()
+    const { default: mongoose } = await import("mongoose")
+    const db = mongoose.connection.db
+    if (!db) throw new Error("Database not connected")
+    const collectionName = this.model.collection.collectionName
+    const coll = db.collection(collectionName)
+    const existing = await coll.findOne(filter as Record<string, unknown>)
+    if (!existing) return null
+    const replaceData = { ...data, _id: existing._id }
+    const result = await coll.findOneAndReplace(
+      filter as Record<string, unknown>,
+      replaceData as Record<string, unknown>,
+      { returnDocument: "after" }
+    )
+    if (!result) return null
+    if (typeof result === "object" && "value" in result) return (result as { value: unknown }).value
+    return result
+  }
+
   async delete(filter: Record<string, unknown>): Promise<boolean> {
     await connectToDatabase()
     const result = await this.model.deleteOne(filter)

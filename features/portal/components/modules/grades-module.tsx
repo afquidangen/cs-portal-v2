@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Award, BarChart3, BookMarked, ClipboardList, Download, FileSpreadsheet, GraduationCap, ListChecks, Search, Send, Upload, UsersRound } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -37,10 +37,10 @@ const DEFAULT_LECTURE_SCHEME: GradingScheme = {
       name: "Class Standing",
       weight: 60,
       categories: [
-        { name: "Quizzes", weight: 30 },
-        { name: "Performance/Recitation", weight: 30 },
-        { name: "Assignment", weight: 30 },
-        { name: "Attendance", weight: 10 },
+        { name: "Quizzes", weight: 10 },
+        { name: "Performance", weight: 30 },
+        { name: "Assignments", weight: 30 },
+        { name: "Attendance", weight: 30 },
       ],
     },
     { name: "Exam", weight: 40, categories: [{ name: "Exam", weight: 100 }] },
@@ -62,10 +62,10 @@ const DEFAULT_LAB_SCHEME: GradingScheme = {
       name: "Lecture Class Standing",
       weight: 60,
       categories: [
-        { name: "Quizzes", weight: 30 },
-        { name: "Performance/Recitation", weight: 30 },
-        { name: "Assignment", weight: 30 },
-        { name: "Attendance", weight: 10 },
+        { name: "Quizzes", weight: 10 },
+        { name: "Performance", weight: 30 },
+        { name: "Assignments", weight: 30 },
+        { name: "Attendance", weight: 30 },
       ],
     },
     { name: "Lecture Exam", weight: 40, categories: [{ name: "Exam", weight: 100 }] },
@@ -213,11 +213,13 @@ function computePeriodGrade(
     return wsValues.reduce((s, v) => s + v, 0)
   }
 
-  const standingComponents = scheme.components.filter(
-    (c) => !c.name.toLowerCase().includes("exam")
-  )
   const examComponent = scheme.components.find(
+    (c) => c.isExam === true
+  ) || scheme.components.find(
     (c) => c.name.toLowerCase().includes("exam")
+  )
+  const standingComponents = scheme.components.filter(
+    (c) => c !== examComponent
   )
 
   const standingGrades = standingComponents.map((component) => ({
@@ -769,30 +771,48 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
     }
   }, [])
 
-  const prevSchemeIdsRef = useRef<Set<string>>(new Set())
+  const prevActiveSchemeIdRef = useRef<string | null>(null)
 
   useEffect(() => {
-    prevSchemeIdsRef.current = new Set(gradingSchemes.map((s) => s.id))
-  }, [gradingSchemes])
+    prevActiveSchemeIdRef.current = gradingSchemes.find(
+      (s) => s.isActive && s.subjectType === selectedSubjectType
+    )?.id ?? gradingSchemes.find((s) => s.isActive)?.id ?? null
+  }, [gradingSchemes, selectedSubjectType])
+
+  const refetchAndDetect = useCallback(async () => {
+    try {
+      const res = await fetch("/api/portal/grading-schemes")
+      const json = await res.json()
+      if (!json.data) return
+      const newSchemes = json.data as GradingScheme[]
+      const active = newSchemes.find(
+        (s) => s.isActive && s.subjectType === selectedSubjectType
+      ) ?? newSchemes.find((s) => s.isActive)
+      if (!active) return
+      const newId = active.id
+      if (prevActiveSchemeIdRef.current && prevActiveSchemeIdRef.current !== newId) {
+        setGradingSchemes(newSchemes)
+      }
+      prevActiveSchemeIdRef.current = newId
+    } catch { /* poll silently */ }
+  }, [selectedSubjectType, setGradingSchemes])
 
   useEffect(() => {
-    async function refetchSchemes() {
-      try {
-        const res = await fetch("/api/portal/grading-schemes")
-        const json = await res.json()
-        if (!json.data) return
-        const newSchemes = json.data as GradingScheme[]
-        const newIds = new Set(newSchemes.map((s) => s.id))
-        const oldIds = prevSchemeIdsRef.current
-        const changed = newIds.size !== oldIds.size || [...newIds].some((id) => !oldIds.has(id))
-        if (changed) setGradingSchemes(newSchemes)
-      } catch { /* poll silently */ }
-    }
-    const onVisibility = () => { if (document.visibilityState === "visible") refetchSchemes() }
+    const onFocus = () => refetchAndDetect()
+    const onVisibility = () => { if (document.visibilityState === "visible") refetchAndDetect() }
     document.addEventListener("visibilitychange", onVisibility)
-    const interval = setInterval(refetchSchemes, 60000)
-    return () => { document.removeEventListener("visibilitychange", onVisibility); clearInterval(interval) }
-  }, [])
+    window.addEventListener("focus", onFocus)
+    const interval = setInterval(refetchAndDetect, 60000)
+    return () => { document.removeEventListener("visibilitychange", onVisibility); window.removeEventListener("focus", onFocus); clearInterval(interval) }
+  }, [refetchAndDetect])
+
+  const prevFacultyModuleRef = useRef(model.activeModule)
+  useEffect(() => {
+    if (prevFacultyModuleRef.current !== "grades" && model.activeModule === "grades") {
+      refetchAndDetect()
+    }
+    prevFacultyModuleRef.current = model.activeModule
+  }, [model.activeModule, refetchAndDetect])
 
   const scheduleSemesters = useMemo(() => {
     const semesterIds = new Set(visibleSchedules.map((s) => s.semesterId))

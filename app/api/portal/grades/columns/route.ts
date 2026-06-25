@@ -20,11 +20,17 @@ export async function POST(request: Request) {
     const existing = await gradeColumnRepository.findAll({ classId: body.classId }) as Array<{ order: number }>
     const maxOrder = existing.reduce((max: number, col: { order: number }) => Math.max(max, col.order ?? 0), 0)
 
-    const column = await gradeColumnRepository.create({
-      id: `COL-${Date.now()}`,
-      classId: body.classId,
-      name: body.name,
-      category: body.category === "Performance" ? "Performance/Recitation" : body.category,
+      const normalizedCategory =
+        body.category === "Performance/Recitation" ? "Performance" :
+        body.category === "Lec Attendance" || body.category === "Lecture Attendance" ? "Attendance" :
+        body.category === "Assignment" ? "Assignments" :
+        body.category
+
+      const column = await gradeColumnRepository.create({
+        id: `COL-${Date.now()}`,
+        classId: body.classId,
+        name: body.name,
+        category: normalizedCategory,
       gradingPeriod: body.gradingPeriod,
       maxScore: body.maxScore ?? 100,
       order: maxOrder + 1,

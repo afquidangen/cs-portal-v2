@@ -1,12 +1,15 @@
 export type GradingCategory = {
   name: string
   weight: number
+  isAttendance?: boolean
+  penaltyPerAbsence?: number
 }
 
 export type SchemeComponent = {
   name: string
   weight: number
   categories: GradingCategory[]
+  isExam?: boolean
 }
 
 export type GradingScheme = {
