@@ -68,20 +68,14 @@ export async function PUT(
         upsertData.remarks = midtermRemarks
       }
 
-      const existing = await gradesRepository.findOne({ classId, studentId: grade.studentId })
-      let updated: unknown
-      if (existing) {
-        updated = await gradesRepository.update(
-          { classId, studentId: grade.studentId },
-          { ...upsertData, classId }
-        )
-      } else {
-        updated = await gradesRepository.create({
-          ...upsertData,
-          classId,
-          id: `GRD-${Date.now()}-${grade.studentId}-${Math.random().toString(36).slice(2, 10)}`,
-        })
-      }
+      const updated = await gradesRepository.upsert(
+        {
+          studentId: grade.studentId,
+          code: grade.code,
+          semesterId: grade.semesterId || null,
+        },
+        { ...upsertData, classId }
+      )
       results.push(updated)
     }
     return success({ grades: results })

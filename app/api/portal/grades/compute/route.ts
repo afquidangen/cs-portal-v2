@@ -351,20 +351,14 @@ export async function POST(request: Request) {
         }
       }
 
-      const existingGrade = await gradesRepository.findOne({ classId, studentId: g.studentId as string })
-      let updated: unknown
-      if (existingGrade) {
-        updated = await gradesRepository.update(
-          { classId, studentId: g.studentId as string },
-          updates
-        )
-      } else {
-        updated = await gradesRepository.create({
-          ...g,
-          ...updates,
-          id: `GRD-${Date.now()}-${g.studentId as string}-${Math.random().toString(36).slice(2, 10)}`,
-        })
-      }
+      const updated = await gradesRepository.upsert(
+        {
+          studentId: g.studentId as string,
+          code: g.code as string,
+          semesterId: (g.semesterId as string) || null,
+        },
+        { ...g, ...updates }
+      )
       updatedGrades.push(updated)
     }
 

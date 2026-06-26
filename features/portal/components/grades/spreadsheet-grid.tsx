@@ -367,7 +367,7 @@ export function SpreadsheetGrid({
   selectedSubject: string
   classId: string
   gradeColumns: GradeColumn[]
-  setGradeColumns: (cols: GradeColumn[]) => void
+  setGradeColumns: React.Dispatch<React.SetStateAction<GradeColumn[]>>
   gridData: StudentGradeRow[]
   gradeMap: Map<string, GradeRecord>
   setGrades: React.Dispatch<React.SetStateAction<GradeRecord[]>>
@@ -702,7 +702,7 @@ export function SpreadsheetGrid({
       })
       const json = await res.json()
       if (!res.ok) { toast.error(json.error || "Failed to add column."); return }
-      setGradeColumns([...gradeColumns, json.data as GradeColumn])
+      setGradeColumns((prev) => [...prev, json.data as GradeColumn])
       toast.success(`Column "${name}" added.`)
     } catch { toast.error("Failed to add column.") }
   }
@@ -718,7 +718,7 @@ export function SpreadsheetGrid({
         body: JSON.stringify({ name: newName }),
       })
       if (!res.ok) { toast.error("Failed to rename column."); return }
-      setGradeColumns(gradeColumns.map((c) =>
+      setGradeColumns((prev) => prev.map((c) =>
         c.id === col.id ? { ...c, name: newName, displayName: newName } : c
       ))
       toast.success(`Column renamed to "${newName}".`)
@@ -738,7 +738,7 @@ export function SpreadsheetGrid({
     if (!col) return
     const ok = await deleteGradeColumnById(col.id)
     if (!ok) { toast.error("Failed to delete column."); return }
-    setGradeColumns(gradeColumns.filter((c) => c.id !== col.id))
+    setGradeColumns((prev) => prev.filter((c) => c.id !== col.id))
     const keysToRemove = new Set([col.name, scoreKey(col)])
     setGrades((prev) => prev.map((grade) => {
       const scores = { ...(grade.scores ?? {}) }
@@ -761,7 +761,7 @@ export function SpreadsheetGrid({
         deletedIds.push(col.id)
       }
     }
-    setGradeColumns(gradeColumns.filter((c) => !deletedIds.includes(c.id)))
+    setGradeColumns((prev) => prev.filter((c) => !deletedIds.includes(c.id)))
     const scoreKeysToRemove = new Set(colsToDelete.flatMap((col) => [col.name, scoreKey(col)]))
     setGrades((prev) => prev.map((grade) => {
       const scores = { ...(grade.scores ?? {}) }
@@ -861,7 +861,7 @@ export function SpreadsheetGrid({
         body: JSON.stringify({ maxScore: newMaxScore }),
       })
       if (!res.ok) { toast.error("Failed to update max score."); return }
-      setGradeColumns(gradeColumns.map((c) =>
+      setGradeColumns((prev) => prev.map((c) =>
         c.id === col.id ? { ...c, maxScore: newMaxScore } : c
       ))
       toast.success(`Max score for "${col.displayName || col.name}" updated to ${newMaxScore}.`)
@@ -1561,13 +1561,14 @@ export function SpreadsheetGrid({
         saveStatus={saveStatus}
       />
 
-      <div className="overflow-hidden rounded-xl border border-border shadow-sm" style={{ width: "100%" }}>
+      <div className="overflow-x-auto rounded-xl border border-border shadow-sm">
           <AgGridReact
+            key={`grid-${filteredColumns.length}-${activeTab}`}
             ref={gridRef}
             rowData={gridData}
             columnDefs={colDefs}
             domLayout="autoHeight"
-            suppressHorizontalScroll={true}
+            alwaysShowHorizontalScroll={true}
           defaultColDef={{
             resizable: true,
             sortable: true,
