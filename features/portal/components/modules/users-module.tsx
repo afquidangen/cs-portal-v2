@@ -337,31 +337,31 @@ export function UsersModule({ model }: PortalModuleProps) {
         ].map((stat) => (
           <Card
             key={stat.label}
-            className="rounded-lg border-slate-200 bg-white shadow-sm"
+            className="rounded-lg border-border bg-card shadow-sm"
           >
             <CardContent className="flex items-center gap-3 p-4">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
                 <stat.icon className="size-4" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-600">{stat.label}</p>
-                <p className="text-xl font-semibold tracking-tight text-slate-950">{stat.value}</p>
+                <p className="text-sm font-semibold text-muted-foreground">{stat.label}</p>
+                <p className="text-xl font-semibold tracking-tight text-foreground">{stat.value}</p>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+      <Card className="rounded-lg border-border bg-card shadow-sm">
         <CardHeader className="px-6 pb-0 pt-6">
-          <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
+          <CardTitle className="flex items-center gap-3 text-base font-semibold text-foreground">
             <Users className="size-5 text-blue-600" />
             {trashView ? `Recycle Bin (${deletedUsers.length})` : `Active Users (${visibleUsers.length})`}
           </CardTitle>
-          <p className="pt-1 text-sm text-slate-500">{trashView ? "Deleted accounts" : "Search and filter accounts."}</p>
+          <p className="pt-1 text-sm text-muted-foreground">{trashView ? "Deleted accounts" : "Search and filter accounts."}</p>
         </CardHeader>
         <CardContent className="px-6 pb-6 pt-6">
-          <div className="mb-5 grid w-full max-w-full min-w-0 grid-cols-1 gap-2 rounded-lg border border-slate-200 bg-slate-50/60 p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(240px,1.45fr)_repeat(5,minmax(125px,1fr))_repeat(3,minmax(112px,auto))]">
+          <div className="mb-5 grid w-full max-w-full min-w-0 grid-cols-1 gap-2 rounded-lg border border-border bg-muted/20 p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(240px,1.45fr)_repeat(5,minmax(125px,1fr))_repeat(3,minmax(112px,auto))]">
             <div className="min-w-0 sm:col-span-2 lg:col-span-3 xl:col-span-1 [&>div]:max-w-none">
               <SearchBox
                 value={query}

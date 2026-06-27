@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/card"
 import { formatScheduleTime } from "@/components/ui/time-picker"
 import { cn } from "@/lib/utils"
+import { abbreviateCourse } from "@/lib/constants/courses"
 
 import { availabilityOptions } from "../../data/portal-data"
 import type { AvailabilityStatus } from "../../data/portal-data"
@@ -201,7 +202,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
     )
     const facultyStatus = (facultyMember?.status ?? "Available") as AvailabilityStatus
     const activeStudents = model.facultyClassStudents.filter((student) => student.enrolled).length
-    const advisoryClass = facultyUser?.advisoryClass || "No advisory assigned"
+    const advisoryClass = facultyUser?.advisoryClass || "N/A"
     const handledSubjects = new Set(model.visibleSchedules.map((item) => item.subject)).size || model.facultySubjects.length
     const scheduleBlocks = model.visibleSchedules.length
 
@@ -246,7 +247,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
       { label: "Classes Today", value: String(todaySchedules.length), icon: BookOpen },
       { label: "Handled Subjects", value: String(handledSubjects), icon: BookOpen },
       { label: "Advisory Class", value: advisoryClass, icon: Users },
-      { label: "Department", value: facultyUser?.course || "BSCS", icon: GraduationCap },
+      { label: "Department", value: facultyUser?.course ? abbreviateCourse(facultyUser.course) : "N/A", icon: GraduationCap },
     ]
     const facultyStats = [
       {
@@ -293,30 +294,30 @@ export function OverviewModule({ model }: PortalModuleProps) {
     return (
       <div className="space-y-4 pb-4 pt-4">
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.95fr)]">
-          <Card className="overflow-hidden rounded-lg border-slate-200 bg-white shadow-sm">
+          <Card className="overflow-hidden rounded-lg border-border bg-card shadow-sm">
             <CardContent className="grid min-h-[252px] gap-5 p-5 sm:gap-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_370px] lg:items-center">
               <div className="min-w-0">
-                <span className="inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-xs font-semibold text-blue-600 shadow-sm">
+                <span className="inline-flex min-h-11 items-center gap-2 rounded-md border border-border bg-background px-4 text-xs font-semibold text-blue-600 shadow-sm">
                   <CalendarDays className="size-4" />
                   {formatDate()}
                 </span>
-                <h1 className="mt-7 text-2xl font-semibold leading-tight tracking-tight text-slate-950 sm:text-3xl">
+                <h1 className="mt-7 text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl">
                   {greeting()}, {firstName(model.profile.name) || "Faculty"}!
                 </h1>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
                   Here&apos;s what&apos;s happening with your classes today.
                 </p>
                 <div className="mt-6 grid gap-3 sm:grid-cols-2">
                   {facultyFacts.map((fact) => {
                     const Icon = fact.icon
                     return (
-                      <div key={fact.label} className="flex min-h-16 items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 shadow-sm">
+                      <div key={fact.label} className="flex min-h-16 items-center gap-3 rounded-lg border border-border bg-card px-4 shadow-sm">
                         <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
                           <Icon className="size-5" />
                         </span>
                         <span className="min-w-0">
-                          <p className="truncate text-xs font-semibold text-slate-600">{fact.label}</p>
-                          <p className="mt-1 truncate text-base font-semibold text-slate-950">{fact.value}</p>
+                          <p className="truncate text-xs font-semibold text-muted-foreground">{fact.label}</p>
+                          <p className="mt-1 truncate text-base font-semibold text-foreground">{fact.value}</p>
                         </span>
                       </div>
                     )
@@ -327,9 +328,9 @@ export function OverviewModule({ model }: PortalModuleProps) {
             </CardContent>
           </Card>
 
-          <Card className="overflow-hidden rounded-lg border-slate-200 bg-white shadow-sm">
+          <Card className="overflow-hidden rounded-lg border-border bg-card shadow-sm">
             <CardHeader className="flex-row items-center justify-between gap-3 px-5 pb-2 pt-5 sm:px-6 sm:pt-6">
-              <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
+              <CardTitle className="flex items-center gap-3 text-base font-semibold text-foreground">
                 <Megaphone className="size-5 text-blue-600" />
                 Live Announcements
               </CardTitle>
@@ -344,13 +345,13 @@ export function OverviewModule({ model }: PortalModuleProps) {
                     <Badge className={audienceBadgeClass}>
                       {latestAnnouncement.audience}
                     </Badge>
-                    <h2 className="mt-5 line-clamp-2 text-base font-bold uppercase tracking-tight text-slate-950">
+                    <h2 className="mt-5 line-clamp-2 text-base font-bold uppercase tracking-tight text-foreground">
                       {latestAnnouncement.title}
                     </h2>
-                    <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">
-                      {latestAnnouncement.content}
-                    </p>
-                    <div className="mt-5 flex items-center gap-2 text-xs font-medium text-slate-500">
+                <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">
+                  {latestAnnouncement.content}
+                </p>
+                <div className="mt-5 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                       <CalendarDays className="size-4" />
                       {latestAnnouncement.date}
                     </div>
@@ -372,7 +373,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
                   ) : null}
                 </div>
               ) : (
-                <div className="flex min-h-[140px] items-center text-sm text-slate-500">
+                <div className="flex min-h-[140px] items-center text-sm text-muted-foreground">
                   No announcements yet.
                 </div>
               )}
@@ -385,7 +386,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
           {facultyStats.map((item) => {
             const Icon = item.icon
             return (
-              <Card key={item.label} className="overflow-hidden rounded-lg border-slate-200 bg-white shadow-sm">
+              <Card key={item.label} className="overflow-hidden rounded-lg border-border bg-card shadow-sm">
                 <CardContent className="min-h-[178px] p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className={cn("flex size-11 items-center justify-center rounded-lg", item.iconClass)}>
@@ -393,11 +394,11 @@ export function OverviewModule({ model }: PortalModuleProps) {
                     </div>
                     {!item.availability ? <MiniSparkline tone={item.tone} /> : null}
                   </div>
-                  <p className="mt-5 text-sm font-semibold text-slate-600">{item.label}</p>
-                  <p className={cn("mt-5 font-semibold tracking-tight text-slate-950", item.availability ? "text-2xl" : "text-3xl")}>
+                  <p className="mt-5 text-sm font-semibold text-muted-foreground">{item.label}</p>
+                  <p className={cn("mt-5 font-semibold tracking-tight text-foreground", item.availability ? "text-2xl" : "text-3xl")}>
                     {item.value}
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.helper}</p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.helper}</p>
                   {item.availability ? (
                     <div className="mt-4 grid grid-cols-2 gap-2">
                       {availabilityOptions.map((status) => (
@@ -429,36 +430,36 @@ export function OverviewModule({ model }: PortalModuleProps) {
         />
 
         <div className="grid gap-4 xl:grid-cols-[minmax(320px,1fr)_minmax(320px,0.95fr)_minmax(320px,1.08fr)]">
-          <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+          <Card className="rounded-lg border-border bg-card shadow-sm">
             <CardHeader className="px-6 pb-0 pt-6">
-              <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
-                <CalendarDays className="size-5 text-blue-600" />
+              <CardTitle className="flex items-center gap-3 text-base font-semibold text-foreground">
+                <CalendarDays className="size-5 text-primary" />
                 Today&apos;s Schedule
               </CardTitle>
-              <p className="pt-1 text-sm text-slate-500">Classes pulled from your assigned schedules.</p>
+              <p className="pt-1 text-sm text-muted-foreground">Classes pulled from your assigned schedules.</p>
             </CardHeader>
             <CardContent className="px-6 pb-6 pt-6">
               {todaySchedules.length ? (
                 <div className="space-y-3">
                   {todaySchedules.slice(0, 3).map((item) => (
-                    <div key={item.id} className="rounded-lg border border-slate-200 p-4">
-                      <p className="text-sm font-semibold text-slate-950">{formatScheduleTime(item.time)}</p>
-                      <p className="mt-1 text-sm text-slate-600">{item.subject}</p>
-                      <p className="mt-1 text-xs text-slate-500">{item.section} - {item.room}</p>
+                    <div key={item.id} className="rounded-lg border border-border p-4">
+                      <p className="text-sm font-semibold text-foreground">{formatScheduleTime(item.time)}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{item.subject}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{item.section} - {item.room}</p>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="flex min-h-[250px] flex-col items-center justify-center text-center">
-                  <div className="relative mb-6 flex size-28 items-center justify-center rounded-full bg-violet-50">
-                    <CalendarDays className="size-12 text-violet-200" />
-                    <span className="absolute bottom-4 right-3 flex size-12 items-center justify-center rounded-full border-4 border-white bg-blue-50 text-blue-400">
+                  <div className="relative mb-6 flex size-28 items-center justify-center rounded-full bg-violet-50 dark:bg-violet-950/40">
+                    <CalendarDays className="size-12 text-violet-200 dark:text-violet-400/60" />
+                    <span className="absolute bottom-4 right-3 flex size-12 items-center justify-center rounded-full border-4 border-white bg-blue-50 text-blue-400 dark:border-border dark:bg-blue-950/40 dark:text-blue-300">
                       <Clock className="size-5" />
                     </span>
                   </div>
-                  <p className="text-sm font-semibold text-slate-700">No classes scheduled for today.</p>
-                  <p className="mt-2 text-sm text-slate-500">Enjoy your free time or review your materials!</p>
-                  <Button type="button" variant="outline" className="mt-6 h-10 rounded-md border-slate-200 text-blue-600" onClick={() => model.selectModule("schedule")}>
+                  <p className="text-sm font-semibold text-foreground/80">No classes scheduled for today.</p>
+                  <p className="mt-2 text-sm text-muted-foreground">Enjoy your free time or review your materials!</p>
+                  <Button type="button" variant="outline" className="mt-6 h-10 rounded-md border-border text-primary" onClick={() => model.selectModule("schedule")}>
                     View My Schedule
                     <ChevronRight className="size-4" />
                   </Button>
@@ -467,11 +468,11 @@ export function OverviewModule({ model }: PortalModuleProps) {
             </CardContent>
           </Card>
 
-          <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+          <Card className="rounded-lg border-border bg-card shadow-sm">
             <CardHeader className="px-6 pb-0 pt-6">
-              <CardTitle className="text-base font-semibold text-slate-950">Quick Actions</CardTitle>
+              <CardTitle className="text-base font-semibold text-foreground">Quick Actions</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-3 px-6 pb-6 pt-8">
+            <CardContent className="flex min-h-[250px] flex-wrap items-start gap-7 px-6 pb-6 pt-10">
               {quickActions.map((action) => {
                 const Icon = action.icon
                 return (
@@ -479,23 +480,23 @@ export function OverviewModule({ model }: PortalModuleProps) {
                     key={action.module}
                     type="button"
                     onClick={() => model.selectModule(action.module)}
-                    className="group flex min-h-24 flex-col items-center justify-center gap-3 rounded-lg border border-slate-200 bg-white text-center transition hover:-translate-y-0.5 hover:shadow-sm"
+                    className="group flex w-20 flex-col items-center gap-3 text-center"
                   >
-                    <span className={cn("flex size-11 items-center justify-center rounded-lg ring-1 ring-slate-200", action.className)}>
+                    <span className={cn("flex size-11 items-center justify-center rounded-lg transition-transform group-hover:-translate-y-0.5", action.className)}>
                       <Icon className="size-5" />
                     </span>
-                    <span className="text-xs font-semibold text-slate-700">{action.label}</span>
+                    <span className="text-xs font-semibold leading-5 text-muted-foreground">{action.label}</span>
                   </button>
                 )
               })}
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden rounded-lg border-slate-200 bg-white shadow-sm">
+          <Card className="relative overflow-hidden rounded-lg border-border bg-card shadow-sm">
             <div className="absolute -right-16 top-8 size-48 rounded-[38%_62%_49%_51%] bg-violet-200/70" />
             <div className="absolute -right-9 top-14 size-40 rounded-[64%_36%_40%_60%] bg-purple-400/55" />
             <CardHeader className="relative px-6 pb-0 pt-6">
-              <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950 dark:text-foreground">
+              <CardTitle className="flex items-center gap-3 text-base font-semibold text-foreground">
                 <Quote className={motivationQuoteIconClass} />
                 Motivation Corner
               </CardTitle>
@@ -611,7 +612,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
 
           <Card className="overflow-hidden rounded-lg border-slate-200 bg-white shadow-sm">
             <CardHeader className="flex-row items-center justify-between gap-3 px-5 pb-2 pt-5 sm:px-6 sm:pt-6">
-              <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
+              <CardTitle className="flex items-center gap-3 text-base font-semibold text-foreground">
                 <Megaphone className="size-5 text-blue-600" />
                 Live Announcements
               </CardTitle>
@@ -701,7 +702,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.9fr)_minmax(280px,0.8fr)]">
           <Card className="overflow-hidden rounded-lg border-slate-200 bg-white shadow-sm">
             <CardHeader className="border-b border-slate-100 px-5 pb-4 pt-5 sm:px-6 sm:pt-6">
-              <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
+              <CardTitle className="flex items-center gap-3 text-base font-semibold text-foreground">
                 <span className="flex size-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
                   <Users className="size-4" />
                 </span>
@@ -806,7 +807,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
             <div className="absolute -right-16 top-8 size-48 rounded-[38%_62%_49%_51%] bg-violet-200/70" />
             <div className="absolute -right-9 top-14 size-40 rounded-[64%_36%_40%_60%] bg-purple-400/55" />
             <CardHeader className="relative px-6 pb-0 pt-6">
-              <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950 dark:text-foreground">
+              <CardTitle className="flex items-center gap-3 text-base font-semibold text-foreground">
                 <Quote className="size-4 fill-violet-600 text-violet-600 dark:fill-violet-300 dark:text-violet-300" />
                 Motivation Corner
               </CardTitle>
@@ -894,18 +895,18 @@ export function OverviewModule({ model }: PortalModuleProps) {
   return (
     <div className="space-y-4 pb-4 pt-4">
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.95fr)]">
-        <Card className="overflow-hidden rounded-lg border-slate-200 bg-white shadow-sm">
+        <Card className="overflow-hidden rounded-lg border-border bg-card shadow-sm">
           <CardContent className="grid min-h-[252px] gap-5 p-5 sm:gap-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
             <div className="flex min-w-0 flex-col justify-center">
-              <span className="inline-flex min-h-11 w-fit items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-xs font-semibold text-blue-600 shadow-sm">
+              <span className="inline-flex min-h-11 w-fit items-center gap-2 rounded-md border border-border bg-background px-4 text-xs font-semibold text-blue-600 shadow-sm">
                 <CalendarDays className="size-4" />
                 {formatDate()}
               </span>
-              <h1 className="mt-7 text-2xl font-semibold leading-tight tracking-tight text-slate-950 sm:text-3xl">
+              <h1 className="mt-7 text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl">
                 {greeting()}, {firstName(model.profile.name)}!
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                Stay on top of your classes, deadlines, and campus updates.
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Welcome to ComScite. Stay on top of your classes, deadlines, and campus updates.
               </p>
               <div className="mt-6 flex flex-wrap gap-3 sm:mt-9">
                 {facts.map((fact) => {
@@ -913,9 +914,9 @@ export function OverviewModule({ model }: PortalModuleProps) {
                   return (
                     <span
                       key={fact.label}
-                      className="inline-flex min-h-11 max-w-full items-center gap-3 rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm sm:px-4"
+                      className="inline-flex min-h-11 max-w-full items-center gap-3 rounded-md border border-border bg-card px-3 text-xs font-semibold text-muted-foreground shadow-sm sm:px-4"
                     >
-                      <Icon className="size-4 text-slate-500" />
+                      <Icon className="size-4 text-muted-foreground" />
                       <span className="truncate">{fact.label}</span>
                     </span>
                   )
@@ -926,9 +927,9 @@ export function OverviewModule({ model }: PortalModuleProps) {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden rounded-lg border-slate-200 bg-white shadow-sm">
+        <Card className="overflow-hidden rounded-lg border-border bg-card shadow-sm">
           <CardHeader className="flex-row items-center justify-between gap-3 px-5 pb-2 pt-5 sm:px-6 sm:pt-6">
-            <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
+            <CardTitle className="flex items-center gap-3 text-base font-semibold text-foreground">
               <Megaphone className="size-5 text-blue-600" />
                Live Announcements
             </CardTitle>
@@ -947,13 +948,13 @@ export function OverviewModule({ model }: PortalModuleProps) {
                   <Badge className={audienceBadgeClass}>
                     {latestAnnouncement.audience}
                   </Badge>
-                  <h2 className="mt-5 line-clamp-2 text-base font-bold uppercase tracking-tight text-slate-950">
+                  <h2 className="mt-5 line-clamp-2 text-base font-bold uppercase tracking-tight text-foreground">
                     {latestAnnouncement.title}
                   </h2>
-                  <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">
+                  <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">
                     {latestAnnouncement.content}
                   </p>
-                  <div className="mt-5 flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500">
+                  <div className="mt-5 flex flex-wrap items-center gap-4 text-xs font-medium text-muted-foreground">
                     <span className="inline-flex items-center gap-2">
                       <CalendarDays className="size-4" />
                       {latestAnnouncement.date}
@@ -982,12 +983,12 @@ export function OverviewModule({ model }: PortalModuleProps) {
                   </div>
                 ) : null}
               </div>
-            ) : (
-              <div className="flex min-h-[140px] items-center text-sm text-slate-500">
-                No announcements yet.
-              </div>
-            )}
-            <AnnouncementArt />
+              ) : (
+                <div className="flex min-h-[140px] items-center text-sm text-muted-foreground">
+                  No announcements yet.
+                </div>
+              )}
+              <AnnouncementArt />
           </CardContent>
         </Card>
       </div>
@@ -996,15 +997,15 @@ export function OverviewModule({ model }: PortalModuleProps) {
         {stats.map((item) => {
           const Icon = item.icon
           return (
-            <Card key={item.label} className="overflow-hidden rounded-lg border-slate-200 bg-white shadow-sm">
+            <Card key={item.label} className="overflow-hidden rounded-lg border-border bg-card shadow-sm">
               <CardContent className="grid min-h-[156px] grid-cols-[minmax(0,1fr)_auto] gap-4 p-5">
                 <div className="min-w-0">
                   <div className={cn("mb-5 flex size-10 items-center justify-center rounded-lg", item.iconClass)}>
                     <Icon className="size-5" />
                   </div>
-                  <p className="text-sm font-semibold text-slate-600">{item.label}</p>
-                  <p className="mt-8 text-3xl font-semibold tracking-tight text-slate-950">{item.value}</p>
-                  <p className="mt-1 text-sm text-slate-600">{item.helper}</p>
+                  <p className="text-sm font-semibold text-muted-foreground">{item.label}</p>
+                  <p className="mt-8 text-3xl font-semibold tracking-tight text-foreground">{item.value}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{item.helper}</p>
                 </div>
                 <div className="flex items-end">
                   <MiniSparkline tone={item.tone} />
@@ -1020,39 +1021,39 @@ export function OverviewModule({ model }: PortalModuleProps) {
       />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(300px,0.95fr)_minmax(360px,1.1fr)_minmax(320px,1.15fr)]">
-        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <Card className="rounded-lg border-border bg-card shadow-sm">
           <CardHeader className="px-6 pb-0 pt-6">
-            <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
-              <CalendarDays className="size-5 text-blue-600" />
+            <CardTitle className="flex items-center gap-3 text-base font-semibold text-foreground">
+              <CalendarDays className="size-5 text-primary" />
               Today&apos;s Schedule
             </CardTitle>
-            <p className="pt-1 text-sm text-slate-500">{formatDate()}</p>
+            <p className="pt-1 text-sm text-muted-foreground">{formatDate()}</p>
           </CardHeader>
           <CardContent className="px-6 pb-6 pt-6">
             {todaySchedules.length ? (
               <div className="space-y-3">
                 {todaySchedules.slice(0, 3).map((item) => (
-                  <div key={item.id} className="rounded-lg border border-slate-200 p-4">
-                    <p className="text-sm font-semibold text-slate-950">{formatScheduleTime(item.time)}</p>
-                    <p className="mt-1 text-sm text-slate-600">{item.subject}</p>
-                    <p className="mt-1 text-xs text-slate-500">{item.room} - {item.instructor}</p>
+                  <div key={item.id} className="rounded-lg border border-border p-4">
+                    <p className="text-sm font-semibold text-foreground">{formatScheduleTime(item.time)}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{item.subject}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{item.room} - {item.instructor}</p>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="flex min-h-[250px] flex-col items-center justify-center text-center">
-                <div className="relative mb-6 flex size-28 items-center justify-center rounded-full bg-blue-50">
-                  <CalendarDays className="size-12 text-blue-300" />
-                  <span className="absolute bottom-4 right-3 flex size-12 items-center justify-center rounded-full border-4 border-white bg-violet-100 text-violet-500">
+                <div className="relative mb-6 flex size-28 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-950/40">
+                  <CalendarDays className="size-12 text-blue-300 dark:text-blue-400/60" />
+                  <span className="absolute bottom-4 right-3 flex size-12 items-center justify-center rounded-full border-4 border-white bg-violet-100 text-violet-500 dark:border-border dark:bg-violet-950/40 dark:text-violet-300">
                     <CalendarDays className="size-5" />
                   </span>
                 </div>
-                <p className="text-sm font-semibold text-slate-700">No classes scheduled for today.</p>
-                <p className="mt-2 text-sm text-slate-500">Enjoy your free time or review your lessons!</p>
+                <p className="text-sm font-semibold text-foreground/80">No classes scheduled for today.</p>
+                <p className="mt-2 text-sm text-muted-foreground">Enjoy your free time or review your lessons!</p>
                 <Button
                   type="button"
                   variant="outline"
-                  className="mt-6 h-10 rounded-md border-slate-200 text-blue-600"
+                  className="mt-6 h-10 rounded-md border-border text-primary"
                   onClick={() => model.selectModule("my-classes")}
                 >
                   View My Class Schedule
@@ -1063,9 +1064,9 @@ export function OverviewModule({ model }: PortalModuleProps) {
           </CardContent>
         </Card>
 
-        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <Card className="rounded-lg border-border bg-card shadow-sm">
           <CardHeader className="px-6 pb-0 pt-6">
-            <CardTitle className="text-base font-semibold text-slate-950">Quick Access</CardTitle>
+            <CardTitle className="text-base font-semibold text-foreground">Quick Access</CardTitle>
           </CardHeader>
           <CardContent className="flex min-h-[250px] flex-wrap items-start gap-7 px-6 pb-6 pt-10">
             {quickActions.map((action) => {
@@ -1080,18 +1081,18 @@ export function OverviewModule({ model }: PortalModuleProps) {
                   <span className={cn("flex size-11 items-center justify-center rounded-lg transition-transform group-hover:-translate-y-0.5", action.className)}>
                     <Icon className="size-5" />
                   </span>
-                  <span className="text-xs font-semibold leading-5 text-slate-700">{action.label}</span>
+                  <span className="text-xs font-semibold leading-5 text-muted-foreground">{action.label}</span>
                 </button>
               )
             })}
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden rounded-lg border-slate-200 bg-white shadow-sm">
+        <Card className="relative overflow-hidden rounded-lg border-border bg-card shadow-sm">
           <div className="absolute -right-16 top-8 size-48 rounded-[38%_62%_49%_51%] bg-violet-200/70" />
           <div className="absolute -right-9 top-14 size-40 rounded-[64%_36%_40%_60%] bg-purple-400/55" />
           <CardHeader className="relative px-6 pb-0 pt-6">
-            <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950 dark:text-foreground">
+            <CardTitle className="flex items-center gap-3 text-base font-semibold text-foreground">
               <Quote className={motivationQuoteIconClass} />
               Motivation Corner
             </CardTitle>

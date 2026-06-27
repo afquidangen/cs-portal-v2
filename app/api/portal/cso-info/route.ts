@@ -53,6 +53,19 @@ export async function PUT(request: Request) {
       }
     }
 
+    async function destroyExistingCoverImage() {
+      if (!existingRecord) return
+      const pid = existingRecord?.coverImagePublicId as string | undefined
+      if (pid) {
+        await destroyFile(pid, "image").catch(() => {})
+        return
+      }
+      const url = existingRecord?.coverImageUrl as string | undefined
+      if (url && !url.startsWith("/")) {
+        await deleteFile(url).catch(() => {})
+      }
+    }
+
     let logoUrl = body.logoUrl
     let logoPublicId: string | undefined
 
@@ -83,12 +96,29 @@ export async function PUT(request: Request) {
       portalLogoPublicId = body.portalLogoPublicId ?? (existingRecord?.portalLogoPublicId as string) ?? undefined
     }
 
+    let coverImageUrl = body.coverImageUrl
+    let coverImagePublicId: string | undefined
+
+    if (coverImageUrl === "" || coverImageUrl === undefined) {
+      await destroyExistingCoverImage()
+      coverImagePublicId = ""
+    } else if (typeof coverImageUrl === "string" && coverImageUrl.startsWith("data:")) {
+      const result = await uploadFile(coverImageUrl, `cso-cover-${Date.now()}`, "cso-info", "image")
+      coverImageUrl = result.secureUrl
+      coverImagePublicId = result.publicId
+      await destroyExistingCoverImage()
+    } else {
+      coverImagePublicId = body.coverImagePublicId ?? (existingRecord?.coverImagePublicId as string) ?? undefined
+    }
+
     const updateData: Record<string, unknown> = {
       orgName: body.orgName,
       description: body.description ?? "",
       facebookLink: body.facebookLink ?? "https://www.facebook.com/profile.php?id=61587590024541",
       logoUrl,
       logoPublicId,
+      coverImageUrl,
+      coverImagePublicId,
       portalLogoUrl,
       portalLogoPublicId,
     }
@@ -114,12 +144,16 @@ export async function DELETE(request: Request) {
     const record = records[0] as Record<string, unknown>
     const logoPublicId = record?.logoPublicId as string | undefined
     const portalLogoPublicId = record?.portalLogoPublicId as string | undefined
+    const coverImagePublicId = record?.coverImagePublicId as string | undefined
 
     if (logoPublicId) {
       await destroyFile(logoPublicId, "image")
     }
     if (portalLogoPublicId) {
       await destroyFile(portalLogoPublicId, "image")
+    }
+    if (coverImagePublicId) {
+      await destroyFile(coverImagePublicId, "image")
     }
 
     await csoInfoRepository.deleteMany()

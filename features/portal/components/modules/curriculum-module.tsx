@@ -6,6 +6,7 @@ import {
   ChevronRight,
   ClipboardList,
   Edit,
+  FileText,
   GraduationCap,
   Layers3,
   ListChecks,
@@ -230,6 +231,10 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
         eyebrow={`${enrolledCurriculum.major} · ${totalSubjects} subjects`}
         actions={
           <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="rounded-xl" onClick={() => model.downloadAppraisalSheetPdf?.()}>
+              <FileText className="size-4" />
+              Appraisal Sheet
+            </Button>
             <Button size="sm" variant="outline" className="rounded-xl" onClick={() => model.refreshDashboardData()}>
               <RefreshCw className="size-4" />
               Refresh

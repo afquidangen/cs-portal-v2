@@ -210,16 +210,33 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-lg border border-slate-200 bg-white px-4 py-6 text-center shadow-sm sm:px-8 sm:py-8">
-        <div className="mx-auto max-w-3xl">
-          {canManage ? (
-            <div className="flex justify-end mb-4">
-              <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setShowCsoInfoForm(true)}>
-                <Pencil className="size-3.5" />
-                Edit Info
-              </Button>
-            </div>
-          ) : null}
+      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        {model.csoInfo?.coverImageUrl ? (
+          <div className="relative aspect-[21/9] w-full overflow-hidden bg-slate-100">
+            <img
+              src={model.csoInfo.coverImageUrl}
+              alt="CSSO cover"
+              className="size-full object-cover"
+            />
+            {canManage ? (
+              <div className="absolute right-3 top-3">
+                <Button size="sm" variant="outline" className="rounded-lg bg-white/90 backdrop-blur-sm" onClick={() => setShowCsoInfoForm(true)}>
+                  <Pencil className="size-3.5" />
+                  Edit Info
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        ) : canManage ? (
+          <div className="flex justify-end px-4 pt-6 sm:px-8">
+            <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setShowCsoInfoForm(true)}>
+              <Pencil className="size-3.5" />
+              Edit Info
+            </Button>
+          </div>
+        ) : null}
+        <div className="px-4 py-6 text-center sm:px-8 sm:py-8">
+          <div className="mx-auto max-w-3xl">
           <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm sm:mb-6 sm:size-32">
             {model.csoInfo?.logoUrl ? (
               <Image
@@ -264,6 +281,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
               Events and reports
             </span>
 
+          </div>
           </div>
         </div>
       </section>
@@ -1101,6 +1119,8 @@ function CsoInfoFormDialog({
   const [logoPublicId, setLogoPublicId] = useState(data?.logoPublicId ?? "")
   const [portalLogoUrl, setPortalLogoUrl] = useState(data?.portalLogoUrl ?? "")
   const [portalLogoPublicId, setPortalLogoPublicId] = useState(data?.portalLogoPublicId ?? "")
+  const [coverImageUrl, setCoverImageUrl] = useState(data?.coverImageUrl ?? "")
+  const [coverImagePublicId, setCoverImagePublicId] = useState(data?.coverImagePublicId ?? "")
   const [uploading, setUploading] = useState(false)
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1145,6 +1165,27 @@ function CsoInfoFormDialog({
     setUploading(false)
   }
 
+  async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setUploading(true)
+    const formData = new FormData()
+    formData.append("file", f)
+    try {
+      const res = await fetch("/api/portal/upload", {
+        method: "POST",
+        body: formData,
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? "Upload failed.")
+      setCoverImageUrl(json.data.secureUrl)
+      setCoverImagePublicId(json.data.publicId ?? "")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to upload cover photo.")
+    }
+    setUploading(false)
+  }
+
   function handleSubmit() {
     onSave({
       ...data,
@@ -1155,6 +1196,8 @@ function CsoInfoFormDialog({
       logoPublicId: logoUrl ? logoPublicId : "",
       portalLogoUrl: portalLogoUrl || "",
       portalLogoPublicId: portalLogoUrl ? portalLogoPublicId : "",
+      coverImageUrl: coverImageUrl || "",
+      coverImagePublicId: coverImageUrl ? coverImagePublicId : "",
     })
   }
 
@@ -1249,6 +1292,36 @@ function CsoInfoFormDialog({
                 <button
                   type="button"
                   onClick={() => setPortalLogoUrl("")}
+                  className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-red-500/80 text-white transition hover:bg-red-500"
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="grid gap-1.5">
+            <label className="text-sm font-medium text-foreground">Cover Photo</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleCoverUpload}
+              disabled={uploading}
+              className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 disabled:pointer-events-none disabled:opacity-50"
+            />
+            {coverImageUrl ? (
+              <div className="relative mt-2 flex items-center justify-center overflow-hidden border border-border bg-muted/50">
+                <Image
+                  src={coverImageUrl}
+                  alt="Cover preview"
+                  width={400}
+                  height={160}
+                  className="max-h-40 w-full object-cover"
+                  unoptimized
+                />
+                <button
+                  type="button"
+                  onClick={() => setCoverImageUrl("")}
                   className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-red-500/80 text-white transition hover:bg-red-500"
                 >
                   <X className="size-3" />

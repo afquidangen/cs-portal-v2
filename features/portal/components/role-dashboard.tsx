@@ -92,6 +92,8 @@ function getPastelLineColor(accent: string) {
   return pastelLineColors[accent as PastelAccent] ?? pastelLineColors.blue
 }
 import { cn } from "@/lib/utils"
+import { abbreviateCourse } from "@/lib/constants/courses"
+
 import { formatScheduleTime } from "@/components/ui/time-picker"
 
 import type { Announcement, AvailabilityStatus, Role } from "../data/portal-data"
@@ -683,8 +685,8 @@ export function RoleDashboard({ role }: { role: Role }) {
     day: "numeric",
   })
   const facultyStatus = facultyMember?.status ?? "Available"
-  const facultyAdvisoryClass = facultyUser?.advisoryClass || "No advisory class"
-  const facultyDepartment = "BSCS"
+  const facultyAdvisoryClass = facultyUser?.advisoryClass || "N/A"
+  const facultyDepartment = facultyUser?.course ? abbreviateCourse(facultyUser.course) : "N/A"
   const availabilityStatusUi: Record<
     AvailabilityStatus,
     {

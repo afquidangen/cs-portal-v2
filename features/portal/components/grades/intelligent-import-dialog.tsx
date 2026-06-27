@@ -326,7 +326,7 @@ export function IntelligentImportDialog({
           )}
 
           {error && (
-            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800/40 dark:bg-red-950/30 dark:text-red-300">
               <AlertCircle className="size-4 mt-0.5 shrink-0" />
               <div>
                 <p className="font-medium">Error</p>
@@ -338,10 +338,10 @@ export function IntelligentImportDialog({
           {sheetAnalysis && !importDone && !loading && !importing && (
             <>
               {sheetAnalysis.confidence >= 80 ? (
-                <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800/40 dark:bg-emerald-950/30">
                   <WandSparkles className="size-6 text-emerald-500 shrink-0" />
                   <div>
-                    <p className="font-semibold text-emerald-800">
+                    <p className="font-semibold text-emerald-800 dark:text-emerald-300">
                       Auto-detected &mdash; ready to import
                     </p>
                     <p className="text-sm text-emerald-600">
@@ -405,9 +405,9 @@ export function IntelligentImportDialog({
                               </td>
                               <td className="px-3 py-2">
                                 <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium
-                                  ${col.type === "number" ? "bg-blue-100 text-blue-700" :
-                                    col.type === "string" ? "bg-amber-100 text-amber-700" :
-                                    "bg-gray-100 text-gray-700"}`}>
+                                  ${col.type === "number" ? "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300" :
+                                    col.type === "string" ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" :
+                                    "bg-gray-100 text-gray-700 dark:bg-muted dark:text-muted-foreground"}`}>
                                   {col.type}
                                 </span>
                               </td>
@@ -474,11 +474,11 @@ export function IntelligentImportDialog({
 
           {importDone && result && (
             <div className="space-y-4">
-              <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+              <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800/40 dark:bg-emerald-950/30">
                 <CheckCircle2 className="size-8 text-emerald-500 shrink-0" />
                 <div>
-                  <p className="font-semibold text-emerald-800">Import Complete</p>
-                  <p className="text-sm text-emerald-600">
+                  <p className="font-semibold text-emerald-800 dark:text-emerald-300">Import Complete</p>
+                  <p className="text-sm text-emerald-600 dark:text-emerald-400">
                     {result.gradesUpdated} grade records imported &middot; {result.columnsCreated} new columns created
                     {result.errors.length > 0 && ` &middot; ${result.errors.length} warning(s)`}
                   </p>

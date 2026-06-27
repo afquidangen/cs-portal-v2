@@ -162,18 +162,18 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
   return (
     <div className="space-y-5">
         <div className="pt-4">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Semester Management</h1>
-          <p className="mt-2 text-sm text-slate-600">Manage active, ended, and archived academic terms.</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Semester Management</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Manage active, ended, and archived academic terms.</p>
         </div>
 
         {/* Active Semester Card */}
         {activeSemester ? (
-          <Card className="rounded-lg border-blue-100 bg-white shadow-sm">
+          <Card className="rounded-lg border-blue-100 bg-card shadow-sm">
             <CardContent className="p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-blue-600">Active Semester</p>
-                <h4 className="mt-1 text-lg font-semibold text-slate-950">
+                <h4 className="mt-1 text-lg font-semibold text-foreground">
                   {activeSemester.semester}, A.Y. {activeSemester.schoolYearStart}-{activeSemester.schoolYearEnd}
                 </h4>
               </div>
@@ -181,7 +181,7 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
                 <Timer className="size-5 text-muted-foreground" />
                 <span className={cn(
                   "text-lg font-semibold tabular-nums",
-                  daysRemaining !== null && daysRemaining <= 30 ? "text-destructive" : "text-slate-950"
+                  daysRemaining !== null && daysRemaining <= 30 ? "text-destructive" : "text-foreground"
                 )}>
                   {daysRemaining !== null ? `${daysRemaining}d` : "--"}
                 </span>
@@ -191,8 +191,8 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
 
             <div className="mt-5 grid gap-4 sm:grid-cols-3">
               {/* Grading Period Toggle */}
-              <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-                <p className="mb-2 text-xs font-semibold text-slate-500">Grading Period</p>
+              <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
+                <p className="mb-2 text-xs font-semibold text-muted-foreground">Grading Period</p>
                 <div className="flex gap-1.5">
                   {(["Midterm", "Final"] as const).map((period) => (
                     <button
@@ -202,7 +202,7 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
                         "rounded-lg px-3 py-1.5 text-xs font-bold transition-colors",
                         activeSemester.gradingPeriod === period
                             ? "bg-blue-600 text-white shadow-sm"
-                          : "border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-950"
+                          : "border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
                       )}
                     >
                       {period}
@@ -212,14 +212,14 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
               </div>
 
               {/* End Date */}
-              <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-                <p className="mb-2 text-xs font-semibold text-slate-500">End Date</p>
+              <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
+                <p className="mb-2 text-xs font-semibold text-muted-foreground">End Date</p>
                 <div className="flex gap-2">
                   <input
                     type="date"
                     value={endDateValue}
                     onChange={(e) => setEndDateValue(e.target.value)}
-                    className="min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium outline-none focus:border-blue-500"
+                    className="min-w-0 flex-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium outline-none focus:border-blue-500"
                   />
                   <Button size="sm" variant="outline" onClick={handleEndDateSave} className="shrink-0">
                     Save
@@ -228,7 +228,7 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
               </div>
 
               {/* Status Toggle */}
-              <div className="flex items-end rounded-lg border border-red-100 bg-red-50 p-3">
+              <div className="flex items-end rounded-lg border border-destructive/20 bg-destructive/10 p-3">
                 <Button
                   size="sm"
                   variant="destructive"
@@ -261,7 +261,7 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
             </CardContent>
           </Card>
         ) : (
-          <Card className="rounded-lg border-dashed border-slate-200 bg-white shadow-sm">
+          <Card className="rounded-lg border-dashed border-border bg-card shadow-sm">
             <CardContent className="p-8 text-center">
             <CalendarDays className="mx-auto size-8 text-muted-foreground" />
             <p className="mt-3 text-sm font-medium text-foreground">No active semester</p>
@@ -272,9 +272,9 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
 
         {/* Inactive Semesters */}
         {inactiveSemesters.length > 0 && (
-          <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+          <Card className="rounded-lg border-border bg-card shadow-sm">
             <CardHeader className="px-5 pb-0 pt-5">
-              <CardTitle className="text-base font-semibold text-slate-950">
+              <CardTitle className="text-base font-semibold text-foreground">
                 Ended Semesters ({inactiveSemesters.length})
               </CardTitle>
             </CardHeader>
@@ -282,7 +282,7 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
               {inactiveSemesters.map((sem) => (
                 <div
                   key={sem.id}
-                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-3"
+                  className="flex items-center justify-between rounded-lg border border-border bg-card p-3"
                 >
                   <div>
                     <p className="text-sm font-semibold text-foreground">
@@ -311,15 +311,15 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
         )}
 
         {/* Archived Semesters */}
-        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <Card className="rounded-lg border-border bg-card shadow-sm">
           <CardHeader className="px-5 pb-0 pt-5">
-            <CardTitle className="text-base font-semibold text-slate-950">
+            <CardTitle className="text-base font-semibold text-foreground">
               Archived Semesters ({archivedSemesters.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="p-5">
           {archivedSemesters.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/60 py-6 text-center">
+            <div className="rounded-lg border border-dashed border-border bg-muted/20 py-6 text-center">
               <Archive className="mx-auto size-6 text-muted-foreground" />
               <p className="mt-2 text-xs text-muted-foreground">No archived semesters yet.</p>
             </div>
@@ -328,7 +328,7 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
               {archivedSemesters.map((sem) => (
                 <div
                   key={sem.id}
-                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-3"
+                  className="flex items-center justify-between rounded-lg border border-border bg-card p-3"
                 >
                   <div>
                     <p className="text-sm font-semibold text-foreground">
@@ -364,7 +364,7 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
         </Card>
 
         {/* Create New Semester */}
-        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <Card className="rounded-lg border-border bg-card shadow-sm">
           <CardContent className="p-5">
           <Button variant="outline" onClick={() => setShowCreateForm(!showCreateForm)} className="gap-2">
             <Plus className="size-4" />
@@ -374,7 +374,7 @@ export function SemesterManagementModule({ model }: PortalModuleProps) {
           {showCreateForm && (
             <form
               onSubmit={handleAddSemester}
-              className="mt-3 space-y-3 rounded-lg border border-slate-200 bg-white p-4"
+              className="mt-3 space-y-3 rounded-lg border border-border bg-card p-4"
             >
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>

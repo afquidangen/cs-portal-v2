@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Award, BookMarked, ClipboardList, Download, FileSpreadsheet, GraduationCap, ListChecks, Search, Send, Upload, UsersRound } from "lucide-react"
+import { Award, BookMarked, ClipboardList, FileSpreadsheet, FileText, GraduationCap, ListChecks, Search, Send, Upload, UsersRound } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -320,7 +320,7 @@ function computeGradeRecord(record: GradeRecord, scheme: GradingScheme, entries:
 }
 
 export function GradesModule({ model }: PortalModuleProps) {
-  const { downloadGradeReport, downloadGradeReportDocument } = model
+  const { downloadGradeReportPdf } = model
 
   const profileUser = (model.users as UserRecord[] | undefined)?.find(
     (u) => u.id === model.profile.id
@@ -548,13 +548,9 @@ export function GradesModule({ model }: PortalModuleProps) {
           <p className="mt-2 text-sm text-slate-600">Track released grades, GWA, and downloadable grade reports.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-            <Button size="sm" onClick={downloadGradeReport} className="h-10 rounded-md bg-blue-600 px-4 text-white hover:bg-blue-700">
-              <Download className="size-4" />
-              Download CSV
-            </Button>
-            <Button size="sm" onClick={downloadGradeReportDocument} variant="outline" className="h-10 rounded-md border-slate-200 px-4">
-              <FileSpreadsheet className="size-4" />
-              Download Document
+            <Button size="sm" onClick={downloadGradeReportPdf} className="h-10 rounded-md bg-blue-600 px-4 text-white hover:bg-blue-700">
+              <FileText className="size-4" />
+              Download PDF
             </Button>
         </div>
       </div>

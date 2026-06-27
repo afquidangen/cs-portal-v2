@@ -213,7 +213,7 @@ function ReleaseCellRenderer(params: { value: string; data: { studentName: strin
 
   if (!released) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-500">
+      <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-muted text-muted-foreground">
         Unreleased
       </span>
     )
@@ -222,7 +222,7 @@ function ReleaseCellRenderer(params: { value: string; data: { studentName: strin
   const isReReleased = val === "Re-released"
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer ${
-      isReReleased ? "bg-orange-100 text-orange-700" : "bg-emerald-100 text-emerald-700"
+      isReReleased ? "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
     }`}>
       {val}
     </span>
@@ -1476,18 +1476,18 @@ export function SpreadsheetGrid({
 
   return (
     <div className="space-y-3">
-      <div className="rounded-lg border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
+      <div className="rounded-lg border border-border bg-card px-4 py-4 shadow-sm sm:px-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <h2 className="truncate text-lg font-semibold tracking-tight text-slate-950 sm:text-xl">
+            <h2 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
               {selectedSubject.split(" - ")[0]?.trim()}{selectedSubject.includes(" - ") ? ": " : ""}{selectedSubject.split(" - ")[1]?.trim() ?? selectedSubject}
             </h2>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               {scheduleInfo.section ? (
-                <span className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 font-medium text-slate-700">{scheduleInfo.section}</span>
+                <span className="rounded-md border border-border bg-muted px-2.5 py-1 font-medium text-muted-foreground">{scheduleInfo.section}</span>
               ) : null}
               {scheduleInfo.instructor ? (
-                <span><span className="font-medium text-slate-700">Faculty:</span> {scheduleInfo.instructor}</span>
+                <span><span className="font-medium text-foreground/80">Faculty:</span> {scheduleInfo.instructor}</span>
               ) : null}
             </div>
           </div>
@@ -1509,21 +1509,21 @@ export function SpreadsheetGrid({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div className="relative w-full lg:max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={studentQuery} onChange={(e) => setStudentQuery(e.target.value)}
-            placeholder="Search students..." className="h-10 rounded-md border-slate-200 pl-9 text-sm" />
+            placeholder="Search students..." className="h-10 rounded-md border-border pl-9 text-sm" />
         </div>
 
-        <div className="grid w-full grid-cols-3 gap-1 rounded-md bg-slate-100 p-1 lg:max-w-xs">
+        <div className="grid w-full grid-cols-3 gap-1 rounded-md bg-muted p-1 lg:max-w-xs">
           {tabLabels.map(({ key, label }) => (
             <Button
               key={key}
               size="sm"
               variant="ghost"
               onClick={() => setActiveTab(key)}
-              className={`h-8 rounded-md text-xs ${activeTab === key ? "bg-white font-semibold text-blue-600 shadow-sm ring-1 ring-slate-200 hover:bg-white" : "text-slate-600 hover:bg-white/70 hover:text-slate-950"}`}
+              className={`h-8 rounded-md text-xs ${activeTab === key ? "bg-card font-semibold text-primary shadow-sm ring-1 ring-border hover:bg-card" : "text-muted-foreground hover:bg-card/70 hover:text-foreground"}`}
             >
               {label}
             </Button>
@@ -1564,7 +1564,7 @@ export function SpreadsheetGrid({
         saveStatus={saveStatus}
       />
 
-      <div className="egrades-grid-shell overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="egrades-grid-shell overflow-hidden rounded-lg border border-border bg-card shadow-sm">
         <div className="overflow-auto">
           <AgGridReact
             key={`grid-${filteredColumns.length}-${activeTab}`}
@@ -1606,7 +1606,7 @@ export function SpreadsheetGrid({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-3 shadow-sm">
         <Button size="default" variant="default" onClick={async () => {
           let gradesToSave: GradeRecord[] = Array.from(gradeMap.values())
           if (activeTab !== "summary") {
@@ -1651,7 +1651,7 @@ export function SpreadsheetGrid({
         </Button>
         <SaveStatusIndicator status={saveStatus} lastSaved={lastSaved} />
 
-        <Button size="default" variant="outline" onClick={() => setReleaseOpen(true)} className="h-9 rounded-md border-slate-200">
+        <Button size="default" variant="outline" onClick={() => setReleaseOpen(true)} className="h-9 rounded-md border-border">
           <Megaphone className="size-4" /> Release
         </Button>
       </div>

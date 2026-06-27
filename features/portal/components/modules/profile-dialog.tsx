@@ -151,7 +151,7 @@ export function ProfileDialog({
                   {profile.title}
                 </p>
 
-                <div className="mt-3">
+                <div className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-semibold text-foreground shadow-sm">
                   <StatusBadge value={role === "faculty" ? "Faculty" : role === "csso_officer" ? "CSSO Officer" : role} />
                 </div>
               </div>

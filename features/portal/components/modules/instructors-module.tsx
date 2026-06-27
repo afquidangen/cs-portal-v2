@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { BookOpen, CheckCircle2, Clock, DoorOpen, Mail, RefreshCw, ShieldCheck, Trash2, UserRoundCheck, Users } from "lucide-react"
+import { CheckCircle2, Clock, DoorOpen, Mail, RefreshCw, ShieldCheck, Trash2, UserRoundCheck, Users } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -244,10 +244,6 @@ export function InstructorsModule({ model }: PortalModuleProps) {
                   </div>
 
                   <div className="space-y-1.5 text-sm text-foreground/80">
-                    <p className="flex items-start gap-2">
-                      <BookOpen className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                      <span className="min-w-0">{member.education}</span>
-                    </p>
                     <p className="flex items-center gap-2">
                       <Mail className="size-4 shrink-0 text-muted-foreground" />
                       <span className="min-w-0 truncate">{member.email}</span>

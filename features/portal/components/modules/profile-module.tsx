@@ -161,8 +161,7 @@ export function ProfileModule({ model }: PortalModuleProps) {
                   )}
                 </div>
                 <h2 className="mt-6 text-lg font-semibold text-slate-950">{profile.name || roleLabel}</h2>
-                <span className="mt-3 rounded-md bg-violet-100 px-3 py-1 text-xs font-semibold text-blue-600">{roleLabel}</span>
-                <p className="mt-3 text-sm text-slate-600">{roleTitle}</p>
+                <span className="mt-3 inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-semibold text-foreground shadow-sm">{roleLabel}</span>
 
                 <label className="mt-7 inline-flex h-11 cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
                   <Upload className="size-4 text-blue-600" />
@@ -174,9 +173,9 @@ export function ProfileModule({ model }: PortalModuleProps) {
                   <button
                     type="button"
                     onClick={() => setDraft((prev: typeof profileDetails) => ({ ...prev, photoUrl: "" }))}
-                    className="mt-3 inline-flex h-10 items-center gap-2 rounded-md border border-red-100 bg-red-50 px-4 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+                    className="mt-3 inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                   >
-                    <Trash2 className="size-4" />
+                    <Trash2 className="size-4 text-red-500" />
                     Remove Photo
                   </button>
                 ) : null}
