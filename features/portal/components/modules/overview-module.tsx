@@ -57,6 +57,26 @@ function formatDate(date = new Date()) {
   })
 }
 
+type PastelTone = "blue" | "sky" | "violet" | "purple" | "orange" | "amber" | "emerald" | "green"
+
+const pastelIconClasses: Record<PastelTone, string> = {
+  blue: "border border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-400/25 dark:bg-blue-400/15 dark:text-blue-200",
+  sky: "border border-sky-200 bg-sky-50 text-sky-600 dark:border-sky-400/25 dark:bg-sky-400/15 dark:text-sky-200",
+  violet: "border border-violet-200 bg-violet-50 text-violet-600 dark:border-violet-400/25 dark:bg-violet-400/15 dark:text-violet-200",
+  purple: "border border-purple-200 bg-purple-50 text-purple-600 dark:border-purple-400/25 dark:bg-purple-400/15 dark:text-purple-200",
+  orange: "border border-orange-200 bg-orange-50 text-orange-600 dark:border-orange-400/25 dark:bg-orange-400/15 dark:text-orange-200",
+  amber: "border border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-300/30 dark:bg-amber-300/15 dark:text-amber-100",
+  emerald: "border border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-400/25 dark:bg-emerald-400/15 dark:text-emerald-200",
+  green: "border border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-400/25 dark:bg-emerald-400/15 dark:text-emerald-200",
+}
+
+const audienceBadgeClass = "rounded-md border border-violet-200 bg-violet-50 px-2.5 py-1 text-[11px] font-bold uppercase text-violet-700 hover:bg-violet-50 dark:border-violet-400/25 dark:bg-violet-400/15 dark:text-violet-200 dark:hover:bg-violet-400/20"
+const motivationQuoteIconClass = "size-5 fill-violet-600 text-violet-600 dark:fill-violet-300 dark:text-violet-300"
+
+function pastelIconClass(tone: PastelTone) {
+  return pastelIconClasses[tone]
+}
+
 function MiniSparkline({ tone = "blue" }: { tone?: "blue" | "purple" | "orange" | "green" }) {
   const colors = {
     blue: "#2563eb",
@@ -195,30 +215,30 @@ export function OverviewModule({ model }: PortalModuleProps) {
       Available: {
         helper: "Open for student questions, walk-ins, and quick coordination.",
         icon: CheckCircle2,
-        iconClass: "bg-emerald-100 text-emerald-700",
-        activeClass: "border-emerald-200 bg-emerald-100 text-emerald-700",
-        inactiveClass: "border-emerald-100 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+        iconClass: pastelIconClass("emerald"),
+        activeClass: "border-emerald-500 bg-emerald-600 text-white shadow-sm dark:border-emerald-400 dark:bg-emerald-400 dark:text-emerald-950",
+        inactiveClass: "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 dark:border-emerald-800/60 dark:bg-emerald-950/35 dark:text-emerald-300 dark:hover:bg-emerald-900/50",
       },
       "Consultation Only": {
         helper: "Available for scheduled consultations and focused advising.",
         icon: Users,
-        iconClass: "bg-violet-100 text-violet-700",
-        activeClass: "border-violet-200 bg-violet-100 text-violet-700",
-        inactiveClass: "border-violet-100 bg-violet-50 text-violet-700 hover:bg-violet-100",
+        iconClass: pastelIconClass("violet"),
+        activeClass: "border-violet-500 bg-violet-600 text-white shadow-sm dark:border-violet-400 dark:bg-violet-400 dark:text-violet-950",
+        inactiveClass: "border-violet-200 bg-violet-50 text-violet-700 hover:border-violet-300 hover:bg-violet-100 dark:border-violet-800/60 dark:bg-violet-950/35 dark:text-violet-300 dark:hover:bg-violet-900/50",
       },
       "In Class": {
         helper: "Teaching in class right now; availability resumes after the session.",
         icon: BookOpen,
-        iconClass: "bg-blue-100 text-blue-700",
-        activeClass: "border-blue-200 bg-blue-100 text-blue-700",
-        inactiveClass: "border-blue-100 bg-blue-50 text-blue-700 hover:bg-blue-100",
+        iconClass: pastelIconClass("sky"),
+        activeClass: "border-sky-500 bg-sky-600 text-white shadow-sm dark:border-sky-400 dark:bg-sky-400 dark:text-sky-950",
+        inactiveClass: "border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-300 hover:bg-sky-100 dark:border-sky-800/60 dark:bg-sky-950/35 dark:text-sky-300 dark:hover:bg-sky-900/50",
       },
       "Out of Office": {
         helper: "Away from the office; check back later for updated availability.",
         icon: DoorOpen,
-        iconClass: "bg-orange-100 text-orange-700",
-        activeClass: "border-orange-200 bg-orange-100 text-orange-700",
-        inactiveClass: "border-orange-100 bg-orange-50 text-orange-700 hover:bg-orange-100",
+        iconClass: pastelIconClass("amber"),
+        activeClass: "border-amber-500 bg-amber-500 text-amber-950 shadow-sm dark:border-amber-300 dark:bg-amber-300 dark:text-amber-950",
+        inactiveClass: "border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100 dark:border-amber-800/60 dark:bg-amber-950/35 dark:text-amber-300 dark:hover:bg-amber-900/50",
       },
     }
     const currentStatusUi = statusUi[facultyStatus]
@@ -244,7 +264,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
         helper: `${handledSubjects} subject${handledSubjects === 1 ? "" : "s"}`,
         icon: CalendarDays,
         tone: "blue" as const,
-        iconClass: "bg-blue-100 text-blue-700",
+        iconClass: pastelIconClass("blue"),
       },
       {
         label: "Roster Students",
@@ -252,7 +272,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
         helper: "Student roster",
         icon: Users,
         tone: "blue" as const,
-        iconClass: "bg-sky-100 text-sky-700",
+        iconClass: pastelIconClass("sky"),
       },
       {
         label: "Grading Sections",
@@ -260,14 +280,14 @@ export function OverviewModule({ model }: PortalModuleProps) {
         helper: "Active sections",
         icon: BarChart3,
         tone: "purple" as const,
-        iconClass: "bg-violet-100 text-violet-700",
+        iconClass: pastelIconClass("violet"),
       },
     ]
     const quickActions = [
-      { label: "Schedule", module: "schedule" as ModuleId, icon: CalendarDays, className: "bg-blue-50 text-blue-600" },
-      { label: "Roster", module: "student-roster" as ModuleId, icon: Users, className: "bg-violet-50 text-violet-600" },
-      { label: "Grades", module: "manage-grades" as ModuleId, icon: BarChart3, className: "bg-emerald-50 text-emerald-600" },
-      { label: "Availability", module: "availability" as ModuleId, icon: Clock, className: "bg-orange-50 text-orange-600" },
+      { label: "Schedule", module: "schedule" as ModuleId, icon: CalendarDays, className: pastelIconClass("blue") },
+      { label: "Roster", module: "student-roster" as ModuleId, icon: Users, className: pastelIconClass("violet") },
+      { label: "Grades", module: "manage-grades" as ModuleId, icon: BarChart3, className: pastelIconClass("emerald") },
+      { label: "Availability", module: "availability" as ModuleId, icon: Clock, className: pastelIconClass("orange") },
     ]
 
     return (
@@ -321,7 +341,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
               {latestAnnouncement ? (
                 <div className="flex min-w-0 flex-col justify-between">
                   <div key={announcementIdx} className="animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
-                    <Badge className="rounded-md bg-violet-100 px-2.5 py-1 text-[11px] font-bold uppercase text-violet-700 hover:bg-violet-100">
+                    <Badge className={audienceBadgeClass}>
                       {latestAnnouncement.audience}
                     </Badge>
                     <h2 className="mt-5 line-clamp-2 text-base font-bold uppercase tracking-tight text-slate-950">
@@ -475,16 +495,16 @@ export function OverviewModule({ model }: PortalModuleProps) {
             <div className="absolute -right-16 top-8 size-48 rounded-[38%_62%_49%_51%] bg-violet-200/70" />
             <div className="absolute -right-9 top-14 size-40 rounded-[64%_36%_40%_60%] bg-purple-400/55" />
             <CardHeader className="relative px-6 pb-0 pt-6">
-              <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
-                <Quote className="size-5 fill-violet-600 text-violet-600" />
+              <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950 dark:text-foreground">
+                <Quote className={motivationQuoteIconClass} />
                 Motivation Corner
               </CardTitle>
             </CardHeader>
             <CardContent className="relative px-6 pb-6 pt-10">
-              <blockquote className="max-w-sm text-sm font-medium leading-7 text-slate-800">
+              <blockquote className="max-w-sm text-sm font-medium leading-7 text-slate-800 dark:text-foreground/85">
                 &quot;The beautiful thing about learning is nobody can take it away from you.&quot;
               </blockquote>
-              <p className="mt-5 text-sm font-semibold text-slate-700">- B.B. King</p>
+              <p className="mt-5 text-sm font-semibold text-slate-700 dark:text-muted-foreground">- B.B. King</p>
             </CardContent>
           </Card>
         </div>
@@ -496,12 +516,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
     const latestAnnouncement = model.announcements[announcementIdx % Math.max(1, model.announcements.length)]
     const openTickets = model.tickets.filter((ticket) => ticket.status !== "Resolved").length
     const activeUsers = model.users.filter((user) => user.status !== "Inactive" && !user.deletedAt).length
-    const activeSemester = model.activeSemester
-    const activeSection = model.yearSections.flatMap((item) => item.sections)[0] ?? "BSCS 2A"
     const adminFacts = [
-      { label: formatDate(), icon: CalendarDays },
-      { label: activeSemester?.semester ?? "Second Year", icon: GraduationCap },
-      { label: activeSection, icon: Users },
       { label: `ID: ${model.profile.id || "SA-00-0000"}`, icon: ClipboardList },
     ]
     const adminStats = [
@@ -511,7 +526,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
         helper: "Registered accounts",
         icon: GraduationCap,
         tone: "blue" as const,
-        iconClass: "bg-blue-100 text-blue-700",
+        iconClass: pastelIconClass("blue"),
       },
       {
         label: "Faculty",
@@ -519,7 +534,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
         helper: "Teaching personnel",
         icon: Users,
         tone: "purple" as const,
-        iconClass: "bg-violet-100 text-violet-700",
+        iconClass: pastelIconClass("violet"),
       },
       {
         label: "Thesis Records",
@@ -527,7 +542,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
         helper: "Library records",
         icon: BookOpen,
         tone: "green" as const,
-        iconClass: "bg-emerald-100 text-emerald-700",
+        iconClass: pastelIconClass("emerald"),
       },
       {
         label: "Open Tickets",
@@ -535,7 +550,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
         helper: "Needs attention",
         icon: MessageSquare,
         tone: "orange" as const,
-        iconClass: "bg-orange-100 text-orange-700",
+        iconClass: pastelIconClass("orange"),
       },
     ]
     const analyticsData = [
@@ -565,7 +580,11 @@ export function OverviewModule({ model }: PortalModuleProps) {
           <Card className="overflow-hidden rounded-lg border-slate-200 bg-white shadow-sm">
             <CardContent className="grid min-h-[252px] gap-5 p-5 sm:gap-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_370px] lg:items-center">
               <div className="flex min-w-0 flex-col justify-center">
-                <h1 className="text-2xl font-semibold leading-tight tracking-tight text-slate-950 sm:text-3xl">
+                <span className="inline-flex min-h-11 w-fit items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-xs font-semibold text-blue-600 shadow-sm dark:border-blue-400/25 dark:bg-blue-400/15 dark:text-blue-200">
+                  <CalendarDays className="size-4" />
+                  {formatDate()}
+                </span>
+                <h1 className="mt-7 text-2xl font-semibold leading-tight tracking-tight text-slate-950 sm:text-3xl">
                   {greeting()}, {firstName(model.profile.name)}!
                 </h1>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
@@ -608,7 +627,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
               {latestAnnouncement ? (
                 <div className="flex min-w-0 flex-col justify-between">
                   <div key={announcementIdx} className="animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
-                    <Badge className="rounded-md bg-violet-100 px-2.5 py-1 text-[11px] font-bold uppercase text-violet-700 hover:bg-violet-100">
+                    <Badge className={audienceBadgeClass}>
                       {latestAnnouncement.audience}
                     </Badge>
                     <h2 className="mt-5 line-clamp-2 text-base font-bold uppercase tracking-tight text-slate-950">
@@ -787,16 +806,16 @@ export function OverviewModule({ model }: PortalModuleProps) {
             <div className="absolute -right-16 top-8 size-48 rounded-[38%_62%_49%_51%] bg-violet-200/70" />
             <div className="absolute -right-9 top-14 size-40 rounded-[64%_36%_40%_60%] bg-purple-400/55" />
             <CardHeader className="relative px-6 pb-0 pt-6">
-              <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
-                <Quote className="size-4 fill-violet-600 text-violet-600" />
+              <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950 dark:text-foreground">
+                <Quote className="size-4 fill-violet-600 text-violet-600 dark:fill-violet-300 dark:text-violet-300" />
                 Motivation Corner
               </CardTitle>
             </CardHeader>
             <CardContent className="relative px-6 pb-6 pt-10">
-              <blockquote className="max-w-sm text-sm font-medium leading-7 text-slate-800">
+              <blockquote className="max-w-sm text-sm font-medium leading-7 text-slate-800 dark:text-foreground/85">
                 &quot;The beautiful thing about learning is nobody can take it away from you.&quot;
               </blockquote>
-              <p className="mt-5 text-sm font-semibold text-slate-700">- B.B. King</p>
+              <p className="mt-5 text-sm font-semibold text-slate-700 dark:text-muted-foreground">- B.B. King</p>
             </CardContent>
           </Card>
         </div>
@@ -824,7 +843,6 @@ export function OverviewModule({ model }: PortalModuleProps) {
   const latestAnnouncement = studentAnnouncements[announcementIdx % Math.max(1, studentAnnouncements.length)]
 
   const facts = [
-    { label: formatDate(), icon: CalendarDays },
     { label: user?.currentYearLevel ?? model.profileCurrentYearLevel ?? "Year Level", icon: GraduationCap },
     { label: model.profileSection || user?.section || "Section", icon: Users },
     { label: `ID: ${model.profile.id || "N/A"}`, icon: ClipboardList },
@@ -837,7 +855,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
       helper: "General weighted average",
       icon: BarChart3,
       tone: "purple" as const,
-      iconClass: "bg-violet-100 text-violet-700",
+      iconClass: pastelIconClass("violet"),
     },
     {
       label: "Enrolled Subjects",
@@ -845,7 +863,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
       helper: "This semester",
       icon: BookOpen,
       tone: "blue" as const,
-      iconClass: "bg-blue-100 text-blue-700",
+      iconClass: pastelIconClass("blue"),
     },
     {
       label: "Units Taken",
@@ -853,7 +871,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
       helper: "This semester",
       icon: MessageSquare,
       tone: "orange" as const,
-      iconClass: "bg-orange-100 text-orange-700",
+      iconClass: pastelIconClass("orange"),
     },
     {
       label: "Academic Progress",
@@ -861,16 +879,16 @@ export function OverviewModule({ model }: PortalModuleProps) {
       helper: "Curriculum completed",
       icon: Target,
       tone: "green" as const,
-      iconClass: "bg-emerald-100 text-emerald-700",
+      iconClass: pastelIconClass("emerald"),
     },
   ]
 
   const quickActions = [
-    { label: "Grades Registry", module: "grade-history" as ModuleId, icon: BarChart3, className: "bg-violet-100 text-violet-700" },
-    { label: "Thesis Library", module: "thesis" as ModuleId, icon: BookOpen, className: "bg-emerald-100 text-emerald-700" },
-    { label: "Curriculum", module: "curriculum" as ModuleId, icon: GraduationCap, className: "bg-orange-100 text-orange-700" },
-    { label: "Instructor Info", module: "instructors" as ModuleId, icon: Users, className: "bg-blue-100 text-blue-700" },
-    { label: "Quick Links", module: "quick-links" as ModuleId, icon: LinkIcon, className: "bg-purple-100 text-purple-700" },
+    { label: "Grades Registry", module: "grade-history" as ModuleId, icon: BarChart3, className: pastelIconClass("violet") },
+    { label: "Thesis Library", module: "thesis" as ModuleId, icon: BookOpen, className: pastelIconClass("emerald") },
+    { label: "Curriculum", module: "curriculum" as ModuleId, icon: GraduationCap, className: pastelIconClass("orange") },
+    { label: "Instructor Info", module: "instructors" as ModuleId, icon: Users, className: pastelIconClass("blue") },
+    { label: "Quick Links", module: "quick-links" as ModuleId, icon: LinkIcon, className: pastelIconClass("purple") },
   ]
 
   return (
@@ -879,7 +897,11 @@ export function OverviewModule({ model }: PortalModuleProps) {
         <Card className="overflow-hidden rounded-lg border-slate-200 bg-white shadow-sm">
           <CardContent className="grid min-h-[252px] gap-5 p-5 sm:gap-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
             <div className="flex min-w-0 flex-col justify-center">
-              <h1 className="text-2xl font-semibold leading-tight tracking-tight text-slate-950 sm:text-3xl">
+              <span className="inline-flex min-h-11 w-fit items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-xs font-semibold text-blue-600 shadow-sm">
+                <CalendarDays className="size-4" />
+                {formatDate()}
+              </span>
+              <h1 className="mt-7 text-2xl font-semibold leading-tight tracking-tight text-slate-950 sm:text-3xl">
                 {greeting()}, {firstName(model.profile.name)}!
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
@@ -922,7 +944,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
             {latestAnnouncement ? (
               <div className="flex min-w-0 flex-col justify-between">
                 <div key={announcementIdx} className="animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
-                  <Badge className="rounded-md bg-violet-100 px-2.5 py-1 text-[11px] font-bold uppercase text-violet-700 hover:bg-violet-100">
+                  <Badge className={audienceBadgeClass}>
                     {latestAnnouncement.audience}
                   </Badge>
                   <h2 className="mt-5 line-clamp-2 text-base font-bold uppercase tracking-tight text-slate-950">
@@ -1069,16 +1091,16 @@ export function OverviewModule({ model }: PortalModuleProps) {
           <div className="absolute -right-16 top-8 size-48 rounded-[38%_62%_49%_51%] bg-violet-200/70" />
           <div className="absolute -right-9 top-14 size-40 rounded-[64%_36%_40%_60%] bg-purple-400/55" />
           <CardHeader className="relative px-6 pb-0 pt-6">
-            <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
-              <Quote className="size-5 fill-violet-600 text-violet-600" />
+            <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950 dark:text-foreground">
+              <Quote className={motivationQuoteIconClass} />
               Motivation Corner
             </CardTitle>
           </CardHeader>
           <CardContent className="relative px-6 pb-6 pt-10">
-            <blockquote className="max-w-sm text-sm font-medium leading-7 text-slate-800">
+            <blockquote className="max-w-sm text-sm font-medium leading-7 text-slate-800 dark:text-foreground/85">
               &quot;The beautiful thing about learning is nobody can take it away from you.&quot;
             </blockquote>
-            <p className="mt-5 text-sm font-semibold text-slate-700">- B.B. King</p>
+            <p className="mt-5 text-sm font-semibold text-slate-700 dark:text-muted-foreground">- B.B. King</p>
           </CardContent>
         </Card>
       </div>

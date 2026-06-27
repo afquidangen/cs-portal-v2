@@ -1,8 +1,7 @@
 "use client"
 
-import { CalendarCheck, CheckCircle2, Clock, DoorOpen, Mail, MessageSquareText, Save, SearchX, UserRoundCheck, Users } from "lucide-react"
+import { CalendarCheck, CheckCircle2, Clock, DoorOpen, Mail, MessageSquareText, Save, SearchX, Users } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-import { toast } from "sonner"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
@@ -33,22 +32,22 @@ const STATUS_CONTROL_UI: Record<AvailabilityStatus, { icon: typeof CheckCircle2;
   Available: {
     icon: CheckCircle2,
     helper: "Ready for walk-ins and student concerns.",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-200",
+    className: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/25 dark:bg-emerald-400/15 dark:text-emerald-200",
   },
   "In Class": {
     icon: Clock,
     helper: "Currently teaching or handling a class.",
-    className: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/25 dark:bg-sky-500/10 dark:text-sky-200",
+    className: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-400/25 dark:bg-sky-400/15 dark:text-sky-200",
   },
   "Consultation Only": {
     icon: Users,
     helper: "Available for scheduled consultation.",
-    className: "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/25 dark:bg-violet-500/10 dark:text-violet-200",
+    className: "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-400/25 dark:bg-violet-400/15 dark:text-violet-200",
   },
   "Out of Office": {
     icon: DoorOpen,
     helper: "Away from office or unavailable.",
-    className: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-100",
+    className: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-300/30 dark:bg-amber-300/15 dark:text-amber-100",
   },
 }
 
@@ -61,20 +60,21 @@ function StatusSummary({ faculty }: { faculty: PortalModuleProps["model"]["facul
   }
 
   const stats = [
-    { label: "Available", value: counts.Available, icon: CheckCircle2 },
-    { label: "In Class", value: counts["In Class"], icon: Clock },
-    { label: "Consultation", value: counts["Consultation Only"], icon: Users },
-    { label: "Out of Office", value: counts["Out of Office"], icon: DoorOpen },
+    { label: "Available", value: counts.Available, status: "Available" as AvailabilityStatus },
+    { label: "In Class", value: counts["In Class"], status: "In Class" as AvailabilityStatus },
+    { label: "Consultation", value: counts["Consultation Only"], status: "Consultation Only" as AvailabilityStatus },
+    { label: "Out of Office", value: counts["Out of Office"], status: "Out of Office" as AvailabilityStatus },
   ]
 
   return (
     <div className="grid gap-3 min-[420px]:grid-cols-2 sm:grid-cols-4">
       {stats.map((stat) => {
-        const Icon = stat.icon
+        const statusUi = STATUS_CONTROL_UI[stat.status]
+        const Icon = statusUi.icon
         return (
           <Card key={stat.label} className="rounded-lg border-slate-200 bg-white shadow-sm">
             <CardContent className="flex items-center gap-3 p-4">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+              <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-lg border shadow-sm", statusUi.className)}>
                 <Icon className="size-5" />
               </span>
               <div className="min-w-0">
@@ -137,14 +137,15 @@ function FacultyCard({
               </p>
             </div>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-0.5">
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
             <span className={cn("rounded-lg px-2.5 py-1.5 text-xs font-bold", statusUi.className)}>
               <StatusIcon className="mr-1 inline-block size-3.5" />
               {member.status}
             </span>
             {member.statusUpdatedAt ? (
-              <span className="text-[10px] text-muted-foreground/50 whitespace-nowrap">
-                Updated {timeAgo(member.statusUpdatedAt)}
+              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-400 whitespace-nowrap">
+                <Clock className="size-3" />
+                {timeAgo(member.statusUpdatedAt)}
               </span>
             ) : null}
           </div>

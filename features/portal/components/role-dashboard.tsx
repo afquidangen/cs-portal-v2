@@ -63,6 +63,34 @@ type NewsItem = {
   content: string
   accent: string
 }
+
+type PastelAccent = "blue" | "sky" | "violet" | "amber" | "emerald" | "green"
+
+const pastelIconClasses: Record<PastelAccent, string> = {
+  blue: "border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-400/25 dark:bg-blue-400/15 dark:text-blue-200",
+  sky: "border-sky-200 bg-sky-50 text-sky-600 dark:border-sky-400/25 dark:bg-sky-400/15 dark:text-sky-200",
+  violet: "border-violet-200 bg-violet-50 text-violet-600 dark:border-violet-400/25 dark:bg-violet-400/15 dark:text-violet-200",
+  amber: "border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-300/30 dark:bg-amber-300/15 dark:text-amber-100",
+  emerald: "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-400/25 dark:bg-emerald-400/15 dark:text-emerald-200",
+  green: "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-400/25 dark:bg-emerald-400/15 dark:text-emerald-200",
+}
+
+const pastelLineColors: Record<PastelAccent, string> = {
+  blue: "#2478ff",
+  sky: "#38bdf8",
+  violet: "#8b5cf6",
+  amber: "#d7a11f",
+  emerald: "#10b981",
+  green: "#25a66a",
+}
+
+function getPastelIconClass(accent: string) {
+  return pastelIconClasses[accent as PastelAccent] ?? pastelIconClasses.blue
+}
+
+function getPastelLineColor(accent: string) {
+  return pastelLineColors[accent as PastelAccent] ?? pastelLineColors.blue
+}
 import { cn } from "@/lib/utils"
 import { formatScheduleTime } from "@/components/ui/time-picker"
 
@@ -584,7 +612,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       label: "Faculty",
       value: String(model.userStats.faculty),
       icon: Layers3,
-      accent: "blue",
+      accent: "violet",
       sparkline: adminSparklineData,
     },
     {
@@ -1513,26 +1541,8 @@ export function RoleDashboard({ role }: { role: Role }) {
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                       {studentOverviewCards.map((item) => {
                         const Icon = item.icon
-                        const accentClass =
-                          item.accent === "sky"
-                            ? "border-sky-500/20 bg-sky-500/10 text-sky-600 dark:text-sky-300"
-                            : item.accent === "violet"
-                              ? "border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-300"
-                              : item.accent === "amber"
-                                ? "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300"
-                                : item.accent === "emerald"
-                                  ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
-                                  : "border-primary/20 bg-primary/10 text-primary"
-                        const stroke =
-                          item.accent === "sky"
-                            ? "#38bdf8"
-                            : item.accent === "violet"
-                              ? "#8b5cf6"
-                              : item.accent === "amber"
-                                ? "#d7a11f"
-                                : item.accent === "emerald"
-                                  ? "#10b981"
-                                  : "#2478ff"
+                        const accentClass = getPastelIconClass(item.accent)
+                        const stroke = getPastelLineColor(item.accent)
 
                         return (
                           <Card
@@ -1622,12 +1632,6 @@ export function RoleDashboard({ role }: { role: Role }) {
                         <CardContent className="grid grid-cols-2 gap-3 p-4 sm:p-5">
                           {studentQuickActions.map((action) => {
                             const Icon = action.icon
-                            const colorMap: Record<string, string> = {
-                              sky: "border-sky-200 bg-sky-50 text-sky-600 dark:border-sky-800/50 dark:bg-sky-950/40 dark:text-sky-300",
-                              violet: "border-violet-200 bg-violet-50 text-violet-600 dark:border-violet-800/50 dark:bg-violet-950/40 dark:text-violet-300",
-                              emerald: "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-300",
-                              amber: "border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-300",
-                            }
                             return (
                               <button
                                 key={action.module}
@@ -1635,7 +1639,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                                 onClick={() => model.selectModule(action.module)}
                                 className="group flex flex-col items-center gap-3 rounded-xl border border-border bg-background p-4 text-center transition-all hover:-translate-y-0.5 hover:border-transparent hover:shadow-md"
                               >
-                                <span className={cn("flex size-10 items-center justify-center rounded-xl border shadow-sm transition-transform group-hover:scale-105", colorMap[action.color])}>
+                                <span className={cn("flex size-10 items-center justify-center rounded-xl border shadow-sm transition-transform group-hover:scale-105", getPastelIconClass(action.color))}>
                                   <Icon className="size-5" />
                                 </span>
                                 <span className="text-xs font-semibold text-foreground">{action.label}</span>
@@ -1653,22 +1657,8 @@ export function RoleDashboard({ role }: { role: Role }) {
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                       {facultyOverviewCards.map((item) => {
                         const Icon = item.icon
-                        const accentClass =
-                          item.accent === "sky"
-                            ? "border-sky-500/20 bg-sky-500/10 text-sky-600 dark:text-sky-300"
-                            : item.accent === "violet"
-                              ? "border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-300"
-                              : item.accent === "amber"
-                                ? "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300"
-                                : "border-primary/20 bg-primary/10 text-primary"
-                        const stroke =
-                          item.accent === "sky"
-                            ? "#38bdf8"
-                            : item.accent === "violet"
-                              ? "#8b5cf6"
-                              : item.accent === "amber"
-                                ? "#d7a11f"
-                                : "#2478ff"
+                        const accentClass = getPastelIconClass(item.accent)
+                        const stroke = getPastelLineColor(item.accent)
 
                         return (
                           <Card
@@ -1805,12 +1795,6 @@ export function RoleDashboard({ role }: { role: Role }) {
                               { label: "Availability", module: "availability", icon: Clock, color: "amber" },
                             ].map((action) => {
                               const Icon = action.icon
-                              const colorMap: Record<string, string> = {
-                                sky: "border-sky-200 bg-sky-50 text-sky-600 dark:border-sky-800/50 dark:bg-sky-950/40 dark:text-sky-300",
-                                violet: "border-violet-200 bg-violet-50 text-violet-600 dark:border-violet-800/50 dark:bg-violet-950/40 dark:text-violet-300",
-                                emerald: "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-300",
-                                amber: "border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-300",
-                              }
                               return (
                                 <button
                                   key={action.module}
@@ -1818,7 +1802,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                                   onClick={() => model.selectModule(action.module as ModuleId)}
                                   className="group flex flex-col items-center gap-3 rounded-xl border border-border bg-background p-4 text-center transition-all hover:-translate-y-0.5 hover:border-transparent hover:shadow-md"
                                 >
-                                  <span className={cn("flex size-10 items-center justify-center rounded-xl border shadow-sm transition-transform group-hover:scale-105", colorMap[action.color])}>
+                                  <span className={cn("flex size-10 items-center justify-center rounded-xl border shadow-sm transition-transform group-hover:scale-105", getPastelIconClass(action.color))}>
                                     <Icon className="size-5" />
                                   </span>
                                   <span className="text-xs font-semibold text-foreground">{action.label}</span>
@@ -1837,18 +1821,8 @@ export function RoleDashboard({ role }: { role: Role }) {
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                       {adminStatusCards.map((item) => {
                         const Icon = item.icon
-                        const lineColor =
-                          item.accent === "green"
-                            ? "#25a66a"
-                            : item.accent === "amber"
-                              ? "#d7a11f"
-                              : "#225688"
-                        const iconClass =
-                          item.accent === "green"
-                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
-                            : item.accent === "amber"
-                              ? "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300"
-                              : "edu-bg-soft-lapis edu-ring-lapis text-primary"
+                        const lineColor = getPastelLineColor(item.accent)
+                        const iconClass = getPastelIconClass(item.accent)
 
                         return (
                           <Card key={item.label} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
@@ -2037,7 +2011,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                               const Icon = item.icon
                               return (
                                 <div key={item.id} className="flex gap-3">
-                                  <span className="edu-bg-soft-lapis edu-ring-lapis flex size-9 items-center justify-center rounded-lg border text-primary">
+                                  <span className={cn("flex size-9 items-center justify-center rounded-lg border shadow-sm", getPastelIconClass("blue"))}>
                                     <Icon className="size-4" />
                                   </span>
                                   <div className="min-w-0">

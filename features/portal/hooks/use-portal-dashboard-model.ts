@@ -3222,9 +3222,9 @@ export function usePortalDashboardModel(role: Role) {
   function handleCreateCsoReport(report: CsoReport) {
     setCsoReports((current) => [report, ...current])
     syncApi("POST", "/api/portal/cso-reports", report).then(() =>
-      toast.success("CSO report created.")
+      toast.success("CSSO report created.")
     ).catch((e) => {
-      toast.error("Failed to create CSO report.")
+      toast.error("Failed to create CSSO report.")
       console.error(e)
     })
     addAuditLog(`Created CSO report "${report.title}"`)
@@ -3235,7 +3235,7 @@ export function usePortalDashboardModel(role: Role) {
       current.map((r) => (r.id === report.id ? report : r))
     )
     syncApi("PUT", `/api/portal/cso-reports/${report.id}`, report).then(() =>
-      toast.success("CSO report updated.")
+      toast.success("CSSO report updated.")
     ).catch((e) => {
       toast.error("Failed to update CSO report.")
       console.error(e)
@@ -3272,7 +3272,7 @@ export function usePortalDashboardModel(role: Role) {
       if (existing) setCsoInfo(existing)
       console.error(e)
     }
-    addAuditLog("Updated CSO info")
+    addAuditLog("Updated CSSO info")
   }
 
   function handleCreateGalleryItem(item: GalleryItem) {

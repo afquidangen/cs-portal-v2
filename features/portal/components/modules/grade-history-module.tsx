@@ -139,7 +139,7 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
         <p className="mt-2 text-sm text-slate-600">Review your historical grades by year level and semester.</p>
       </div>
       {grouped.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
+        <div className="rounded-lg border border-dashed border-slate-400 bg-white px-6 py-14 text-center shadow-sm">
           <BookOpen className="mx-auto mb-3 size-10 text-muted-foreground/40" />
           <p className="text-sm leading-7 text-muted-foreground">
             No grade history records yet.
@@ -158,10 +158,10 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
                   {group.entries.length} {group.entries.length === 1 ? "subject" : "subjects"}
                 </span>
               </div>
-              <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+              <div className="overflow-x-auto rounded-lg border border-slate-400 shadow-sm">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-slate-700">
-                    <tr className="border-b border-slate-200">
+                    <tr className="border-b border-slate-400">
                       <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
                         Subject Code
                       </th>
@@ -179,7 +179,7 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 bg-white">
+                  <tbody className="divide-y divide-slate-400 bg-white">
                     {group.entries.map((entry, idx) => (
                       <tr key={idx} className="transition-colors hover:bg-slate-50">
                         <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-950">

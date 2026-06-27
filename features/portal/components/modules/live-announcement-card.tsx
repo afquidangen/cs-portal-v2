@@ -53,7 +53,7 @@ export function LiveAnnouncementCard({
           className="px-4 pb-8 pt-2.5 animate-in fade-in-0 slide-in-from-bottom-2 duration-500 sm:px-5"
         >
           <div className="min-w-0">
-              <Badge variant="outline" className="mx-auto mb-2 flex w-fit justify-center rounded-lg border-primary/25 bg-primary/10 px-3 py-1 text-center text-[11px] font-extrabold uppercase tracking-[0.12em] text-primary shadow-sm">
+              <Badge variant="outline" className="mx-auto mb-2 flex w-fit justify-center rounded-lg border-violet-200 bg-violet-50 px-3 py-1 text-center text-[11px] font-extrabold uppercase tracking-[0.12em] text-violet-700 shadow-sm dark:border-violet-400/25 dark:bg-violet-400/15 dark:text-violet-200">
                 {announcement.audience}
               </Badge>
               <h3 className="text-lg font-extrabold leading-snug tracking-tight text-foreground sm:text-xl">

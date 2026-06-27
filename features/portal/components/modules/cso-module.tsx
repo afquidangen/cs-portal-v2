@@ -1162,7 +1162,7 @@ function CsoInfoFormDialog({
     <Dialog open onOpenChange={() => onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-xl text-foreground">Edit CSO Info</DialogTitle>
+          <DialogTitle className="text-xl text-foreground">Edit CSSO Info</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
