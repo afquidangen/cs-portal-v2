@@ -2,18 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
-  BookMarked, ClipboardList, FileSpreadsheet, GraduationCap,
+  BookMarked, FileSpreadsheet, GraduationCap,
   UsersRound,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
-import { toast } from "sonner"
 
 import { Panel } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
-import type { CurriculumRecord, GradeRecord } from "../../data/portal-data"
+import type { GradeRecord } from "../../data/portal-data"
 import type { GradeColumn, Assessment } from "@/lib/types"
 import { SpreadsheetGrid } from "../grades/spreadsheet-grid"
 import { GradingWorkbookTab } from "../grades/grading-workbook-tab"
@@ -28,6 +27,7 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
   const [gradeColumns, setGradeColumns] = useState<GradeColumn[]>([])
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [gradingScheme, setGradingScheme] = useState<{
+    name: string
     components: Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number }> }>
     labComponents?: Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number }> }>
     lectureWeight?: number
@@ -296,22 +296,14 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
 
   return (
     <Panel title="Manage Grades" className="[&>div:first-child]:hidden">
-      <div className="mb-5 flex flex-col items-start gap-4 rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left shadow-sm sm:flex-row sm:items-center sm:px-6">
-        <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
-          <ClipboardList className="size-8" />
-        </div>
+      <div className="mb-5 flex flex-col gap-3 pt-1 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="inline-flex items-center justify-start gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-            <GraduationCap className="size-4" />
-            Spreadsheet Grade Entry
-          </p>
-          <h3 className="mt-2 text-2xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-            E-Grades
-          </h3>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-950">E-Grades</h1>
+          <p className="mt-2 text-sm text-slate-600">Select a term, subject, and section to manage grades in the spreadsheet.</p>
         </div>
       </div>
 
-      <div className="mb-5 grid gap-3 md:grid-cols-3">
+      <div className="mb-4 grid gap-3 md:grid-cols-3">
         {[
           { label: "Assigned Subjects", value: String(semesterSubjects.length), icon: BookMarked },
           { label: "Active Sections", value: String(subjectSections.length), icon: UsersRound },
@@ -319,13 +311,13 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
         ].map((item) => {
           const Icon = item.icon
           return (
-            <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+            <div key={item.label} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
-                  <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">{item.label}</p>
+                  <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{item.value}</p>
                 </div>
-                <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
                   <Icon className="size-5" />
                 </span>
               </div>
@@ -335,8 +327,8 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
       </div>
 
       {filterSchedules.length > 0 && (
-        <div className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <div className="mb-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
             <BookMarked className="size-4" /> Semester
           </p>
           <div className="flex flex-wrap gap-2">
@@ -344,7 +336,7 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
               <Button key={sem.id} type="button"
                 variant={selectedSemesterId === sem.id ? "default" : "outline"}
                 onClick={() => { setSelectedSemesterId(sem.id); setSelectedSubject(""); setSelectedSection(null) }}
-                className="rounded-xl">
+                className="h-9 rounded-md border-slate-200 text-xs">
                 S.Y. {sem.schoolYearStart}-{sem.schoolYearEnd} &middot; {sem.semester}
               </Button>
             ))}
@@ -353,18 +345,18 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
       )}
 
       {(selectedSemesterId || selectedSubject) && (
-        <div className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <div className="mb-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <div className="grid gap-4 md:grid-cols-2">
             {selectedSemesterId && (
               <div>
-                <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
                   <BookMarked className="size-4" /> Subject
                 </p>
                 <Select
                   value={selectedSubject}
                   onValueChange={(v) => { setSelectedSubject(v); setSelectedSection(null) }}
                 >
-                  <SelectTrigger className="w-full rounded-xl">
+                  <SelectTrigger className="h-10 w-full rounded-md border-slate-200 bg-white">
                     <SelectValue placeholder={semesterSubjects.length === 0 ? "No subjects assigned" : "Select a subject..."} />
                   </SelectTrigger>
                   <SelectContent>
@@ -377,14 +369,14 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
             )}
             {selectedSubject && (
               <div>
-                <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
                   <UsersRound className="size-4" /> Section
                 </p>
                 <Select
                   value={selectedSection ?? "all"}
                   onValueChange={(v) => setSelectedSection(v === "all" ? null : v)}
                 >
-                  <SelectTrigger className="w-full rounded-xl">
+                  <SelectTrigger className="h-10 w-full rounded-md border-slate-200 bg-white">
                     <SelectValue placeholder="Select section..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -401,7 +393,7 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
       )}
 
       {selectedSubject && subjectRoster.length === 0 ? (
-        <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] px-4 py-8 text-center text-sm text-muted-foreground">
+        <div className="rounded-lg border border-dashed border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500 shadow-sm">
           <GraduationCap className="mx-auto mb-2 size-8 text-muted-foreground/50" />
           <p className="font-medium">No students found</p>
           <p className="mt-1">
@@ -412,13 +404,13 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
         </div>
       ) : selectedSubject && classId ? (
         <div className="space-y-4">
-          <div className="flex gap-1 rounded-xl border border-border bg-muted/30 p-1">
+          <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
             <button type="button"
               onClick={() => setEgradesTab("gradesheet")}
               className={`flex-1 rounded-lg px-4 py-2 text-xs font-semibold transition-all ${
                 egradesTab === "gradesheet"
-                  ? "bg-card text-foreground shadow-sm ring-1 ring-primary/50"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200"
+                  : "text-slate-600 hover:bg-white/70 hover:text-slate-950"
               }`}
             >
               Gradesheet
@@ -427,8 +419,8 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
               onClick={() => setEgradesTab("workbook")}
               className={`flex-1 rounded-lg px-4 py-2 text-xs font-semibold transition-all ${
                 egradesTab === "workbook"
-                  ? "bg-card text-foreground shadow-sm ring-1 ring-primary/50"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200"
+                  : "text-slate-600 hover:bg-white/70 hover:text-slate-950"
               }`}
             >
               Grading Workbook

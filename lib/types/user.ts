@@ -53,6 +53,7 @@ export type UserRecord = {
   year?: number
   section?: string
   position?: string
+  deansListVisibility?: "public" | "private"
   status: "Active" | "Inactive"
   createdAt?: string
   updatedAt?: string

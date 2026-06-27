@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react"
 import {
-  BookOpen,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
@@ -167,27 +166,13 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
   }
 
   return (
-    <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left shadow-sm sm:px-6">
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
-        <div className="relative flex max-w-4xl flex-col items-start gap-4 sm:flex-row sm:items-center">
-          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
-            <GraduationCap className="size-8" />
-          </div>
-          <div>
-            <p className="inline-flex items-center justify-start gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-              <BookOpen className="size-4" />
-              Academic Roadmap
-            </p>
-            <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-              My Curriculum
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Follow your program structure by year level and semester, with subject units and progress status.
-            </p>
-          </div>
-        </div>
-      </section>
+    <div className="space-y-4 pb-6 pt-4">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">My Curriculum</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+          Follow your program structure by year level and semester, with subject units and progress status.
+        </p>
+      </div>
 
       {/* Summary */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -200,13 +185,13 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
           const Icon = item.icon
 
           return (
-            <article key={item.label} className="edu-bg-soft-glacier rounded-2xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+            <article key={item.label} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
-                  <p className="mt-2 truncate text-lg font-semibold text-foreground">{item.value}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">{item.label}</p>
+                  <p className="mt-2 truncate text-lg font-semibold text-slate-950">{item.value}</p>
                 </div>
-                <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
                   <Icon className="size-5" />
                 </span>
               </div>
@@ -216,20 +201,20 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
       </div>
 
       {/* Progress */}
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Completion Progress</p>
-            <p className="mt-0.5 text-sm text-muted-foreground">{progress.completedSubjects} of {totalSubjects} subjects completed ({progress.completionPct}%)</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Completion Progress</p>
+            <p className="mt-0.5 text-sm text-slate-500">{progress.completedSubjects} of {totalSubjects} subjects completed ({progress.completionPct}%)</p>
           </div>
           <div className="text-right">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Remaining</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Remaining</p>
             <p className="text-sm font-semibold text-foreground">{progress.remainingSubjects} subjects · {progress.remainingUnits} units</p>
           </div>
         </div>
-        <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all duration-500"
+            className="h-full rounded-full bg-emerald-500 transition-all duration-500"
             style={{ width: `${Math.min(progress.completionPct, 100)}%` }}
           />
         </div>
@@ -256,7 +241,7 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
           <EmptyState text="No terms available for this curriculum." />
         ) : (
           <div className="space-y-4">
-            <div className="edu-bg-soft-glacier grid gap-3 rounded-xl border border-[var(--edu-border-glacier)] p-4 sm:grid-cols-2">
+            <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 shadow-sm">
               <Select
                 label="Year Level"
                 value={selectedYear}
@@ -473,13 +458,13 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
           const Icon = item.icon
 
           return (
-            <article key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+            <article key={item.label} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
-                  <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-600">{item.label}</p>
+                  <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{item.value}</p>
                 </div>
-                <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
                   <Icon className="size-5" />
                 </span>
               </div>

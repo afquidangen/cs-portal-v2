@@ -59,6 +59,7 @@ export type UserRecord = {
   year?: number
   section?: string
   position?: string
+  deansListVisibility?: "public" | "private"
   status: "Active" | "Inactive"
   createdAt?: string
   lastLogin?: string
@@ -148,6 +149,7 @@ export type ProfileDetails = {
   sex: string
   birthday: string
   address: string
+  deansListVisibility: "public" | "private"
 }
 
 export type SeminarRecord = {

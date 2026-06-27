@@ -1,10 +1,17 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Award, BookMarked, BookOpen, CalendarDays, ClipboardList, GraduationCap, Layers3, Library, Pencil, Plus, School, Trash2, Users, X } from "lucide-react"
+import { Award, BookMarked, BookOpen, CalendarDays, ClipboardList, GraduationCap, Layers3, Library, Pencil, Plus, Trash2, Users, X } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { TimePicker, formatScheduleTime } from "@/components/ui/time-picker"
 import {
@@ -18,6 +25,7 @@ import {
 } from "@/components/ui/dialog"
 
 import type { ScheduleItem } from "../../data/portal-data"
+import { cn } from "@/lib/utils"
 import { Panel, Select } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
@@ -177,10 +185,9 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
 function AdminView({ model }: { model: PortalModuleProps["model"] }) {
   const {
     classSchedules, handleAddClassSection, handleCreateSchedule,
-    handleUpdateSchedule, handleDeleteSchedule, handleDeleteRosterStudent,
-    handleToggleEnrolled,
+    handleUpdateSchedule, handleDeleteSchedule,
     newSectionName, scheduleDraft, selectedClassYear, setNewSectionName,
-    setScheduleDraft, setSelectedClassYear, setRoster, setUsers, users, yearSections, roster,
+    setScheduleDraft, setSelectedClassYear, users, yearSections, roster,
     semesters, curricula,
   } = model
 
@@ -324,26 +331,12 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
 
   return (
     <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left shadow-sm sm:px-6">
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
-        <div className="relative flex max-w-4xl flex-col items-start gap-4 sm:flex-row sm:items-center">
-          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
-            <School className="size-8" />
-          </div>
-          <div>
-            <p className="inline-flex items-center justify-start gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-              <CalendarDays className="size-4" />
-              Classes and Enrollment
-            </p>
-            <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-              Classes
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Manage year sections, student rosters, class schedules, instructors, rooms, and semester class blocks.
-            </p>
-          </div>
-        </div>
-      </section>
+      <div className="pt-4">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Classes</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Manage year sections, student rosters, schedules, instructors, rooms, and semester class blocks.
+        </p>
+      </div>
 
       <div className="grid gap-3 md:grid-cols-4">
         {[
@@ -355,23 +348,26 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
           const Icon = item.icon
 
           return (
-          <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+          <Card key={item.label} className="rounded-lg border-slate-200 bg-white shadow-sm">
+            <CardContent className="p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
-                <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{item.note}</p>
+                <p className="text-sm font-semibold text-slate-600">{item.label}</p>
+                <p className="mt-4 truncate text-3xl font-semibold tracking-tight text-slate-950">{item.value}</p>
+                <p className="mt-1 text-sm text-slate-500">{item.note}</p>
               </div>
-              <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
                 <Icon className="size-5" />
               </span>
             </div>
-          </div>
+            </CardContent>
+          </Card>
           )
         })}
       </div>
 
-      <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-1.5 shadow-sm">
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardContent className="flex flex-wrap gap-2 p-2">
         {[
           { key: "Sections", label: "Year Sections", icon: Users },
           { key: "Roster", label: "Student Roster", icon: BookMarked },
@@ -383,22 +379,32 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
               key={tab.key}
               type="button"
               onClick={() => setAdminTab(tab.key)}
-              className={
+              className={cn(
+                "inline-flex h-10 items-center gap-2 rounded-md px-4 text-sm font-semibold transition",
                 adminTab === tab.key
-                  ? "inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm"
-                  : "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
-              }
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+              )}
             >
               <Icon className="size-4" />
               {tab.label}
             </button>
           )
         })}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* ── Year Sections ── */}
       {adminTab === "Sections" ? (
-        <Panel title="Year Sections" eyebrow="Manage year levels and sections">
+        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+          <CardHeader className="px-6 pb-0 pt-6">
+            <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
+              <Users className="size-5 text-blue-600" />
+              Year Sections
+            </CardTitle>
+            <p className="pt-1 text-sm text-slate-500">Manage year levels and section labels.</p>
+          </CardHeader>
+          <CardContent className="px-6 pb-6 pt-6">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { label: "First Year", icon: GraduationCap },
@@ -414,20 +420,20 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                   key={label}
                   type="button"
                   onClick={() => setSelectedClassYear(label)}
-                  className={`edu-bg-soft-glacier rounded-xl border bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                  className={`rounded-lg border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
                     active
-                      ? "border-primary ring-2 ring-primary/30"
-                      : "border-[var(--edu-border-glacier)]"
+                      ? "border-blue-500 ring-2 ring-blue-100"
+                      : "border-slate-200"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{label}</p>
-                      <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">{count}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">{count === 1 ? "section" : "sections"}</p>
+                      <p className="text-sm font-semibold text-slate-600">{label}</p>
+                      <p className="mt-3 truncate text-2xl font-semibold tracking-tight text-slate-950">{count}</p>
+                      <p className="mt-1 text-sm text-slate-500">{count === 1 ? "section" : "sections"}</p>
                     </div>
                     <span className={`flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm ${
-                      active ? "bg-primary text-primary-foreground" : "edu-lapis"
+                      active ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-600 ring-1 ring-blue-100"
                     }`}>
                       <Icon className="size-5" />
                     </span>
@@ -457,7 +463,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                   setNewSectionName("")
                   setAddSectionDialogOpen(true)
                 }}
-                className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-card px-4 py-2.5 text-sm font-medium text-muted-foreground transition hover:border-primary hover:text-primary hover:shadow-sm"
+                className="flex items-center gap-2 rounded-md border border-dashed border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-500 transition hover:border-blue-300 hover:text-blue-600 hover:shadow-sm"
               >
                 <Plus className="size-4" />
                 Add Section
@@ -495,15 +501,21 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
               </form>
             </DialogContent>
           </Dialog>
-        </Panel>
+          </CardContent>
+        </Card>
       ) : null}
 
         {/* ── Student Roster ── */}
       {adminTab === "Roster" ? (
-        <Panel
-          title="Student Roster"
-          eyebrow={`${selectedClassYear} · ${sectionRoster.length} students`}
-        >
+        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+          <CardHeader className="px-6 pb-0 pt-6">
+            <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
+              <BookMarked className="size-5 text-blue-600" />
+              Student Roster
+            </CardTitle>
+            <p className="pt-1 text-sm text-slate-500">{selectedClassYear} · {sectionRoster.length} students</p>
+          </CardHeader>
+          <CardContent className="px-6 pb-6 pt-6">
           <div className="mb-5 grid gap-3 md:grid-cols-4">
             {[
               { label: "First Year", count: studentsByYearLevel["First Year"], icon: GraduationCap },
@@ -526,22 +538,22 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                       setSelectedRosterSection("All Sections")
                     }
                   }}
-                  className={`edu-bg-soft-glacier rounded-xl border bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                  className={`rounded-lg border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
                     active
-                      ? "border-primary ring-2 ring-primary/30"
-                      : "border-[var(--edu-border-glacier)]"
+                      ? "border-blue-500 ring-2 ring-blue-100"
+                      : "border-slate-200"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
-                      <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">{item.count}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
+                      <p className="text-sm font-semibold text-slate-600">{item.label}</p>
+                      <p className="mt-3 truncate text-2xl font-semibold tracking-tight text-slate-950">{item.count}</p>
+                      <p className="mt-1 text-sm text-slate-500">
                         {active ? "Click to hide sections" : "Click to show sections"}
                       </p>
                     </div>
                     <span className={`flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm ${
-                      active ? "bg-primary text-primary-foreground" : "edu-lapis"
+                      active ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-600 ring-1 ring-blue-100"
                     }`}>
                       <Icon className="size-5" />
                     </span>
@@ -575,19 +587,19 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                         setSelectedClassYear(expandedYearForSections)
                         setSelectedRosterSection(section)
                       }}
-                      className={`edu-bg-soft-glacier rounded-xl border bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                      className={`rounded-lg border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
                         active
-                          ? "border-primary ring-2 ring-primary/30"
-                          : "border-[var(--edu-border-glacier)]"
+                          ? "border-blue-500 ring-2 ring-blue-100"
+                          : "border-slate-200"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Section</p>
-                          <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">{count}</p>
-                          <p className="mt-1 truncate text-sm text-muted-foreground">{section}</p>
+                          <p className="text-sm font-semibold text-slate-600">Section</p>
+                          <p className="mt-3 truncate text-2xl font-semibold tracking-tight text-slate-950">{count}</p>
+                          <p className="mt-1 truncate text-sm text-slate-500">{section}</p>
                         </div>
-                        <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
                           <Users className="size-5" />
                         </span>
                       </div>
@@ -640,21 +652,21 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
               </table>
             </div>
           )}
-
-
-        </Panel>
+          </CardContent>
+        </Card>
       ) : null}
 
       {/* ── Schedules ── */}
       {adminTab === "Schedules" ? (
         <>
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+            <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
             <div>
-              <h3 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground">
-                <CalendarDays className="size-5 text-primary" />
+              <h3 className="flex items-center gap-2 text-base font-semibold tracking-tight text-slate-950">
+                <CalendarDays className="size-5 text-blue-600" />
                 Manage Classes
               </h3>
-              <p className="text-sm text-muted-foreground">Select a semester then add classes</p>
+              <p className="text-sm text-slate-500">Select a semester, year, and section before adding classes.</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Select
@@ -689,36 +701,47 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
               <Button onClick={() => {
                 setScheduleDraft((c) => ({ ...c, semesterId: selectedSemesterId }))
                 setAddScheduleOpen(true)
-              }} className="rounded-2xl">
+              }} className="h-10 rounded-md bg-blue-600 text-white hover:bg-blue-700">
                 <Plus className="size-4" /> Add Class
               </Button>
             </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <Panel
-            title={`Classes (${filteredSchedules.length})`}
-            eyebrow={activeSemester ? `${activeSemester.semester} - ${activeSemester.schoolYearStart}/${activeSemester.schoolYearEnd}` : "No semester selected"}
-          >
+          <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+            <CardHeader className="px-6 pb-0 pt-6">
+              <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
+                <CalendarDays className="size-5 text-blue-600" />
+                Classes
+                <Badge variant="outline" className="rounded-md border-slate-200 bg-slate-50 text-slate-600">
+                  {filteredSchedules.length}
+                </Badge>
+              </CardTitle>
+              <p className="pt-1 text-sm text-slate-500">
+                {activeSemester ? `${activeSemester.semester} - ${activeSemester.schoolYearStart}/${activeSemester.schoolYearEnd}` : "No semester selected"}
+              </p>
+            </CardHeader>
+            <CardContent className="px-6 pb-6 pt-6">
             {filteredSchedules.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Trash2 className="mb-3 size-10 text-muted-foreground/50" />
                 <p className="text-sm text-muted-foreground">No classes added for this semester yet.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-2xl border border-border">
+              <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
                 <table className="w-full text-left text-sm">
-                  <thead className="sticky top-0 z-10 bg-muted text-foreground">
-                    <tr className="border-b border-border">
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Section</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Subject</th>
-                      <th className="hidden lg:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Instructor</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Days</th>
-                      <th className="hidden sm:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Time</th>
-                      <th className="hidden sm:table-cell px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Room</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Actions</th>
+                  <thead className="sticky top-0 z-10 bg-slate-50 text-slate-700">
+                    <tr className="border-b border-slate-200">
+                      <th className="px-4 py-3 text-xs font-semibold">Section</th>
+                      <th className="px-4 py-3 text-xs font-semibold">Subject</th>
+                      <th className="hidden px-4 py-3 text-xs font-semibold lg:table-cell">Instructor</th>
+                      <th className="px-4 py-3 text-xs font-semibold">Days</th>
+                      <th className="hidden px-4 py-3 text-xs font-semibold sm:table-cell">Time</th>
+                      <th className="hidden px-4 py-3 text-xs font-semibold sm:table-cell">Room</th>
+                      <th className="px-4 py-3 text-xs font-semibold">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border bg-card">
+                  <tbody className="divide-y divide-slate-100 bg-white">
                     {filteredSchedules.map((item) => (
                       <tr key={item.id} className="transition-colors hover:bg-muted/50">
                         <td className="max-w-[120px] truncate px-4 py-3 font-medium text-foreground">{item.section}</td>
@@ -743,7 +766,8 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                 </table>
               </div>
             )}
-          </Panel>
+            </CardContent>
+          </Card>
 
           {/* ── Add New Class Dialog ── */}
           <Dialog open={addScheduleOpen} onOpenChange={(o) => {

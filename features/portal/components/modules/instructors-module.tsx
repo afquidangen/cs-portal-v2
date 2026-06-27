@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { BookOpen, CheckCircle2, Clock, DoorOpen, GraduationCap, Mail, RefreshCw, ShieldCheck, Trash2, UserRoundCheck, Users } from "lucide-react"
+import { BookOpen, CheckCircle2, Clock, DoorOpen, Mail, RefreshCw, ShieldCheck, Trash2, UserRoundCheck, Users } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -137,29 +137,18 @@ export function InstructorsModule({ model }: PortalModuleProps) {
       title="Instructor Information"
       className="[&>div:first-child]:hidden"
     >
-      <div className="space-y-5">
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left sm:px-6">
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
-          <div className="relative flex max-w-4xl flex-col items-start gap-4 sm:flex-row sm:items-center">
-            <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
-              <GraduationCap className="size-8" />
-            </div>
-            <div>
-              <p className="inline-flex items-center justify-start gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                <Users className="size-4" />
-                Faculty Profiles
-              </p>
-              <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-                Instructor Information
-              </h3>
-            </div>
+      <div className="space-y-4 pb-6 pt-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Instructor Information</h1>
+            <p className="mt-2 text-sm text-slate-600">Find faculty profiles, contact details, and current availability.</p>
           </div>
           {role === "admin" ? (
             <Button
               size="sm"
               variant="outline"
               onClick={syncFacultyFromUsers}
-              className="relative mt-4 rounded-lg bg-card/80 sm:absolute sm:right-4 sm:top-4 sm:mt-0"
+              className="h-10 rounded-md border-slate-200"
             >
               <RefreshCw className="size-4" />
               Sync from Users
@@ -176,8 +165,8 @@ export function InstructorsModule({ model }: PortalModuleProps) {
                   onClick={() => setEnrollmentFilter(opt)}
                   className={
                     opt === enrollmentFilter
-                      ? "rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm"
-                      : "rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                      ? "rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm"
+                      : "rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-950"
                   }
                 >
                   {opt === "All" ? "All Instructors" : "My Instructors"}
@@ -191,10 +180,10 @@ export function InstructorsModule({ model }: PortalModuleProps) {
                 key={tab.value}
                 onClick={() => setStatusFilter(tab.value)}
                 className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                  "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                   statusFilter === tab.value
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-950"
                 )}
               >
                 {tab.label}
@@ -205,7 +194,7 @@ export function InstructorsModule({ model }: PortalModuleProps) {
 
       <div className="grid gap-4 lg:grid-cols-2">
         {visibleFaculty.length === 0 ? (
-          <div className="col-span-full rounded-2xl border border-dashed border-border bg-muted/20 py-10 text-center">
+          <div className="col-span-full rounded-lg border border-dashed border-slate-200 bg-white py-10 text-center">
             <UserRoundCheck className="mx-auto size-8 text-muted-foreground" />
             <p className="mt-3 text-sm font-medium text-foreground">No faculty accounts found.</p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -219,7 +208,7 @@ export function InstructorsModule({ model }: PortalModuleProps) {
             return (
             <article
               key={member.id}
-              className="rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/30 hover:shadow-md"
+              className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md"
             >
               <div className="flex gap-4">
                 <Avatar className="mt-1 size-16 shrink-0 ring-2 ring-border">
@@ -232,10 +221,10 @@ export function InstructorsModule({ model }: PortalModuleProps) {
                 <div className="min-w-0 flex-1 space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <h4 className="truncate text-xl font-black tracking-tight text-foreground">
+                      <h4 className="truncate text-lg font-semibold tracking-tight text-slate-950">
                         {member.name}
                       </h4>
-                      <p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-primary">
+                      <p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-blue-600">
                         <ShieldCheck className="size-4" />
                         {member.position}
                       </p>

@@ -25,6 +25,7 @@ export type { SemesterRecord } from "./semester"
 export type { SeminarRecord } from "./seminar"
 export type { SubjectRecord } from "./subject"
 export type { ThesisRecord } from "./thesis"
+export type { DeansListEntry } from "./deans-list"
 export type { UserRecord } from "./user"
 export type { YearSectionRecord } from "./year-section"
 export type {

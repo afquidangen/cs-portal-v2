@@ -5,6 +5,7 @@ import { useRef, useState } from "react"
 import { Download, ExternalLink, FileText, Globe, Link2, Loader2, Pencil, Plus, Trash2, Upload, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
   Dialog,
@@ -15,8 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-
-import { Panel } from "../shared/dashboard-ui"
 import type { QuickLinkRecord } from "@/lib/types"
 import { toast } from "sonner"
 import type { PortalModuleProps } from "./types"
@@ -173,10 +172,10 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
     return (
       <div
         key={link._id ?? link.label}
-        className="group relative flex flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-4"
+        className="group relative flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-4"
       >
         <div className="flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
             <FileText className="size-5" />
           </span>
           <div className="min-w-0 flex-1">
@@ -193,7 +192,7 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
           <button
             type="button"
             onClick={() => handleFileDownload(link)}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-primary transition hover:bg-primary/10"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-blue-600 transition hover:bg-blue-50"
             title="Download file"
           >
             <Download className="size-3.5" />
@@ -229,7 +228,7 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
     return (
       <div
         key={link._id ?? link.label}
-        className="group relative flex flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-4"
+        className="group relative flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-4"
       >
         <a
           href={link.href}
@@ -246,7 +245,7 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
               className="size-10 shrink-0 rounded-lg object-contain"
             />
           ) : (
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
               <Link2 className="size-5" />
             </span>
           )}
@@ -290,42 +289,27 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
   return (
     <>
       <div className="space-y-5">
-        <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left shadow-sm sm:px-6">
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
-          <div className="relative flex max-w-4xl flex-col items-start gap-4 sm:flex-row sm:items-center">
-            <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
-              <Link2 className="size-8" />
-            </div>
-            <div>
-              <p className="inline-flex items-center justify-start gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                <ExternalLink className="size-4" />
-                Portal Resources
-              </p>
-              <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-                Quick Links &amp; Downloads
-              </h2>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Access commonly used portal resources and downloadable files.
-              </p>
-            </div>
-          </div>
-        </section>
+        <div className="pt-4">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Quick Links &amp; Downloads</h1>
+          <p className="mt-2 text-sm text-slate-600">Access commonly used portal resources and downloadable files.</p>
+        </div>
 
-        <Panel title="Quick Links" eyebrow="Portal resources">
+        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+          <CardContent className="p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold tracking-tight text-slate-950">Quick Links</h3>
+                <p className="text-sm text-slate-500">Portal resources</p>
+              </div>
           {isAdmin && (
-            <div className="mb-4">
-              <button
-                type="button"
-                onClick={() => setShowQuickLinkForm(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border p-3 text-sm text-muted-foreground transition hover:border-primary/50 hover:text-primary sm:gap-3 sm:p-5"
-              >
-                <Plus className="size-4 sm:size-5" />
-                <span className="font-medium">Add Quick Link</span>
-              </button>
-            </div>
+              <Button size="sm" variant="outline" onClick={() => setShowQuickLinkForm(true)}>
+                <Plus className="size-4" />
+                Add Link
+              </Button>
           )}
+            </div>
           {quickLinks.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
+            <p className="py-8 text-center text-sm text-slate-500">
               No quick links available.
             </p>
           ) : (
@@ -333,23 +317,25 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
               {quickLinks.map(renderQuickLink)}
             </div>
           )}
-        </Panel>
+          </CardContent>
+        </Card>
 
-        <Panel title="Downloadables" eyebrow="ISPSC resources">
+        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+          <CardContent className="p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold tracking-tight text-slate-950">Downloadables</h3>
+                <p className="text-sm text-slate-500">ISPSC resources</p>
+              </div>
           {isAdmin && (
-            <div className="mb-4">
-              <button
-                type="button"
-                onClick={() => setShowDownloadableForm(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border p-3 text-sm text-muted-foreground transition hover:border-primary/50 hover:text-primary sm:gap-3 sm:p-5"
-              >
-                <Upload className="size-4 sm:size-5" />
-                <span className="font-medium">Upload PDF</span>
-              </button>
-            </div>
+              <Button size="sm" variant="outline" onClick={() => setShowDownloadableForm(true)}>
+                <Upload className="size-4" />
+                Upload PDF
+              </Button>
           )}
+            </div>
           {downloadables.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
+            <p className="py-8 text-center text-sm text-slate-500">
               No downloadable files available.
             </p>
           ) : (
@@ -357,7 +343,8 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
               {downloadables.map(renderDownloadableFile)}
             </div>
           )}
-        </Panel>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Quick Links Dialog */}

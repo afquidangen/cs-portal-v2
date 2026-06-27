@@ -4,6 +4,7 @@ import { ArrowDownUp, Check, ChevronDown, Inbox, LifeBuoy, MailPlus, MessageSqua
 import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -19,7 +20,6 @@ import {
 } from "../../data/portal-data"
 import {
   EmptyState,
-  Panel,
   Select as ThemedSelect,
   StatusBadge,
   Textarea,
@@ -61,24 +61,19 @@ export function FeedbackModule({ model }: PortalModuleProps) {
 
   if (role === "student") {
     return (
-      <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
-        <Panel title="Submission Console" className="[&>div:first-child]:hidden">
-          <div className="mb-4 rounded-2xl border border-border bg-muted/20 px-4 py-5 text-center shadow-sm">
-            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
-              <MailPlus className="size-7" />
-            </div>
-            <p className="mt-4 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-              Feedback and Complaints
-            </p>
-            <h3 className="mt-2 text-2xl font-black leading-tight tracking-tight text-foreground">
-              We would like to hear from you, CStizen
-            </h3>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-              Compose your concern, suggestion, or request here. 
-            </p>
-          </div>
-
-          <form onSubmit={handleFeedbackSubmit} className="edu-bg-soft-glacier space-y-3 rounded-xl border border-[var(--edu-border-glacier)] p-4">
+      <div className="space-y-5">
+        <div className="pt-4">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Feedback</h1>
+          <p className="mt-2 text-sm text-slate-600">We would like to hear from you, CStizen. Submit your concern, suggestion, or request.</p>
+        </div>
+        <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
+          <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-slate-200 px-5 py-4">
+              <CardTitle className="text-base font-semibold text-slate-950">Submission Console</CardTitle>
+              <p className="text-xs font-medium text-blue-600">Feedback and Complaints</p>
+            </CardHeader>
+            <CardContent className="p-5">
+          <form onSubmit={handleFeedbackSubmit} className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <ThemedSelect
               value={feedbackDraft.category}
               onChange={(value) =>
@@ -119,38 +114,41 @@ export function FeedbackModule({ model }: PortalModuleProps) {
               Submit Ticket
             </Button>
           </form>
-        </Panel>
+            </CardContent>
+          </Card>
 
-        <Panel title="Personal Ticket Tracker" eyebrow="Status updates">
+          <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-slate-200 px-5 py-4">
+              <CardTitle className="text-base font-semibold text-slate-950">Personal Ticket Tracker</CardTitle>
+              <p className="text-xs font-medium text-blue-600">Status updates</p>
+            </CardHeader>
+            <CardContent className="p-5">
           <TicketList
             tickets={studentTickets}
             empty="No submitted tickets yet."
           />
-        </Panel>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }
 
   if (role === "faculty") {
     return (
-      <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
-        <Panel title="Submission Console" className="[&>div:first-child]:hidden">
-          <div className="mb-4 rounded-2xl border border-border bg-muted/20 px-4 py-5 text-center shadow-sm">
-            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
-              <MailPlus className="size-7" />
-            </div>
-            <p className="mt-4 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-              Feedback and Complaints
-            </p>
-            <h3 className="mt-2 text-2xl font-black leading-tight tracking-tight text-foreground">
-              We would like to hear from you, CStizen.
-            </h3>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-              Compose your concern, suggestion, or request here.
-            </p>
-          </div>
-
-          <form onSubmit={handleFeedbackSubmit} className="edu-bg-soft-glacier space-y-3 rounded-xl border border-[var(--edu-border-glacier)] p-4">
+      <div className="space-y-5">
+        <div className="pt-4">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Feedback</h1>
+          <p className="mt-2 text-sm text-slate-600">We would like to hear from you, CStizen. Submit your concern, suggestion, or request.</p>
+        </div>
+        <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
+          <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-slate-200 px-5 py-4">
+              <CardTitle className="text-base font-semibold text-slate-950">Submission Console</CardTitle>
+              <p className="text-xs font-medium text-blue-600">Feedback and Complaints</p>
+            </CardHeader>
+            <CardContent className="p-5">
+          <form onSubmit={handleFeedbackSubmit} className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <ThemedSelect
               value={feedbackDraft.category}
               onChange={(value) =>
@@ -191,62 +189,60 @@ export function FeedbackModule({ model }: PortalModuleProps) {
               Submit Ticket
             </Button>
           </form>
-        </Panel>
+            </CardContent>
+          </Card>
 
-        <Panel title="Personal Ticket Tracker" eyebrow="Status updates">
+          <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-slate-200 px-5 py-4">
+              <CardTitle className="text-base font-semibold text-slate-950">Personal Ticket Tracker</CardTitle>
+              <p className="text-xs font-medium text-blue-600">Status updates</p>
+            </CardHeader>
+            <CardContent className="p-5">
           <TicketList
             tickets={studentTickets}
             empty="No submitted tickets yet."
           />
-        </Panel>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="space-y-5">
-      <Panel
-        title="Master Inbox"
-        className="[&>div:first-child]:hidden"
-      >
-      <div className="mb-5 rounded-2xl border border-border bg-muted/20 px-4 py-6 text-center shadow-sm">
-        <div className="mx-auto flex size-16 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
-          <Inbox className="size-8" />
-        </div>
-        <p className="mt-4 inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-          <LifeBuoy className="size-4" />
-          Ticket Status Management
-        </p>
-        <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-          Master Inbox
-        </h3>
-        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Review submitted concerns, monitor ticket progress, and keep resolutions organized in one place.
-        </p>
+      <div className="pt-4">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Master Inbox</h1>
+        <p className="mt-2 text-sm text-slate-600">Review submitted concerns, monitor ticket progress, and keep resolutions organized in one place.</p>
       </div>
 
-      <div className="mb-4 grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-3">
         {[
           { label: "Total Tickets", value: String(tickets.length), icon: MessageSquareText },
           { label: "Open", value: String(tickets.filter((ticket) => ticket.status !== "Resolved").length), icon: Inbox },
           { label: "Resolved", value: String(tickets.filter((ticket) => ticket.status === "Resolved").length), icon: TicketCheck },
-        ].map((item) => (
-          <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] p-4">
+        ].map((item) => {
+          const Icon = item.icon
+          return (
+          <Card key={item.label} className="rounded-lg border-slate-200 bg-white shadow-sm">
+            <CardContent className="p-5">
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-600">{item.label}</p>
+                <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{item.value}</p>
               </div>
-              <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
-                <item.icon className="size-5" />
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+                <Icon className="size-5" />
               </span>
             </div>
-          </div>
-        ))}
+            </CardContent>
+          </Card>
+          )
+        })}
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <ArrowDownUp className="size-4 text-muted-foreground" />
+      <div className="flex flex-wrap items-center gap-2">
+        <ArrowDownUp className="size-4 text-slate-400" />
         {(["all", "open", "resolved"] as const).map((opt) => (
           <button
             key={opt}
@@ -255,8 +251,8 @@ export function FeedbackModule({ model }: PortalModuleProps) {
             className={cn(
               "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
               statusFilter === opt
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted"
+                ? "bg-blue-100 text-blue-700"
+                : "text-slate-500 hover:bg-slate-50"
             )}
           >
             {opt === "all" ? "All" : opt === "open" ? "Open" : "Resolved"}
@@ -283,13 +279,13 @@ export function FeedbackModule({ model }: PortalModuleProps) {
         ) : null}
 
         {resolved.length > 0 ? (
-          <details className="group rounded-xl border border-border bg-card shadow-sm">
-            <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
+          <details className="group rounded-lg border border-slate-200 bg-white shadow-sm">
+            <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-500 hover:text-slate-900 [&::-webkit-details-marker]:hidden">
               <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
               <TicketCheck className="size-4" />
               Resolved Tickets ({resolved.length})
             </summary>
-            <div className="space-y-2 border-t border-border px-4 py-3">
+            <div className="space-y-2 border-t border-slate-200 px-4 py-3">
               {resolved.map((ticket) => (
                 <TicketCard
                   key={ticket.id}
@@ -302,7 +298,6 @@ export function FeedbackModule({ model }: PortalModuleProps) {
           </details>
         ) : null}
       </div>
-    </Panel>
     </div>
   )
 }
@@ -317,29 +312,29 @@ function TicketCard({
   undoTicketResolution: (id: string) => void
 }) {
   return (
-    <div className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-primary shadow-sm">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-blue-600 shadow-sm">
               <MessageSquareText className="size-5" />
             </span>
-            <h4 className="text-lg font-bold tracking-tight text-foreground">
+            <h4 className="text-lg font-bold tracking-tight text-slate-950">
               {ticket.subject}
             </h4>
             <StatusBadge value={ticket.status} />
           </div>
 
-          <p className="mt-1 text-sm text-foreground/70">
+          <p className="mt-1 text-sm text-slate-500">
             {ticket.id} - {ticket.studentName} - {ticket.submittedAt}
           </p>
 
-          <p className="mt-3 text-sm leading-6 text-foreground/80">
+          <p className="mt-3 text-sm leading-6 text-slate-700">
             {ticket.description}
           </p>
 
           {ticket.resolution ? (
-            <p className="mt-3 rounded-lg border border-border bg-white p-3 text-sm text-black dark:border-primary/30 dark:bg-[#071224] dark:text-white">
+            <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
               {ticket.resolution}
             </p>
           ) : null}

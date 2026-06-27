@@ -1,6 +1,7 @@
 import { connectToDatabase } from "@/lib/mongodb"
-import { GradeModel } from "@/lib/models"
+import { GradeModel, ScheduleModel } from "@/lib/models"
 import { success, error, badRequest } from "@/lib/api-response"
+import { recomputeDeansListForSemester } from "@/features/portal/lib/deans-list-utils"
 
 export const runtime = "nodejs"
 
@@ -54,6 +55,14 @@ export async function POST(request: Request) {
     }
 
     const updated = await GradeModel.findOne({ classId, studentId }).lean()
+
+    const schedule = await ScheduleModel.findOne({ id: classId }).lean()
+    if (schedule?.semesterId) {
+      recomputeDeansListForSemester(schedule.semesterId).catch((dlErr) =>
+        console.warn("[DeansList] Auto re-evaluation failed after student release:", dlErr)
+      )
+    }
+
     return success({ data: updated })
   } catch (err) {
     return error(err instanceof Error ? err.message : "Unable to process student release.")

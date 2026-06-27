@@ -1,4 +1,10 @@
+
+> cs-portal@0.1.0 dev
+> cross-env NODE_OPTIONS=--openssl-legacy-provider next dev
+
 ▲ Next.js 16.2.6 (Turbopack)
-- Local:         http://127.0.0.1:3000
-- Network:       http://127.0.0.1:3000
-✓ Ready in 2.8s
+- Local:         http://localhost:3000
+- Network:       http://172.17.240.1:3000
+- Environments: .env
+✓ Ready in 1797ms
+[?25h

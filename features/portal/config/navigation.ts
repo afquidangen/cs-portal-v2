@@ -1,4 +1,5 @@
 import {
+  Award,
   Bell,
   BookMarked,
   BookOpen,
@@ -25,7 +26,7 @@ import type { ModuleId, NavItem } from "../types/navigation"
 export const roleNavigation: Record<Role, NavItem[]> = {
   student: [
     { id: "overview", label: "Home", icon: LayoutDashboard },
-    { id: "my-classes", label: "Classes", icon: CalendarDays },
+    { id: "my-classes", label: "My Classes", icon: CalendarDays },
     { id: "grades", label: "Grades & Report", icon: FileSpreadsheet },
     { id: "semester-history", label: "Semester History", icon: History },
     { id: "thesis", label: "Thesis Library", icon: BookOpen },
@@ -64,6 +65,7 @@ export const roleNavigation: Record<Role, NavItem[]> = {
     { id: "semester-admin", label: "Semester Management", icon: CalendarDays },
     { id: "audit", label: "Audit Logs", icon: Database },
     { id: "grading-admin", label: "Grading Rules", icon: Settings },
+    { id: "deans-list", label: "Dean's List", icon: Award },
     { id: "admin-semester-archive", label: "Semester Archive", icon: History },
     { id: "quick-links", label: "Quick Links", icon: LinkIcon },
   ],

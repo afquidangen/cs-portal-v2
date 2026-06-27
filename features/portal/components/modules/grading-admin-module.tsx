@@ -1,10 +1,14 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { GraduationCap, Plus, Table2, Variable } from "lucide-react"
+import { Plus, Table2, Variable } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { Panel } from "../shared/dashboard-ui"
 import type { GradingScheme, TransmutationTable } from "@/lib/types"
 import { SchemeEditor } from "./grading-admin/scheme-editor"
 import { TransmutationEditor } from "./grading-admin/transmutation-editor"
@@ -36,7 +40,9 @@ export function GradingAdminModule() {
     }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    queueMicrotask(() => void load())
+  }, [load])
 
   async function saveScheme(scheme: GradingScheme) {
     console.log("[SAVE] comp0 cats:", JSON.stringify(scheme.components[0]?.categories))
@@ -80,43 +86,43 @@ export function GradingAdminModule() {
   }
 
   return (
-    <Panel title="Grading Configuration">
-      <div className="mb-5 flex flex-col items-start gap-4 rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left shadow-sm sm:flex-row sm:items-center sm:px-6">
-        <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
-          <Variable className="size-8" />
-        </div>
-        <div>
-          <p className="inline-flex items-center justify-start gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-            <GraduationCap className="size-4" />
-            Administrator
-          </p>
-          <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-            Grading Configuration
-          </h3>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Manage grading schemes, category weights, and transmutation tables. Changes affect all grade computations.
-          </p>
-        </div>
+    <div className="space-y-5">
+      <div className="pt-4">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Grading Configuration</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Manage grading schemes, category weights, and transmutation tables used by grade computations.
+        </p>
       </div>
 
       <ActiveSchemePreview schemes={schemes} />
 
-      <div className="mb-4 flex gap-2">
-        <Button variant={activeTab === "schemes" ? "default" : "outline"} onClick={() => setActiveTab("schemes")} className="rounded-lg">
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardContent className="flex flex-wrap gap-2 p-2">
+        <Button
+          variant="ghost"
+          onClick={() => setActiveTab("schemes")}
+          className={cn("h-10 rounded-md text-sm font-semibold", activeTab === "schemes" ? "bg-blue-50 text-blue-600 hover:bg-blue-50 hover:text-blue-600" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950")}
+        >
           <Table2 className="size-4" /> Grading Schemes
         </Button>
-        <Button variant={activeTab === "tables" ? "default" : "outline"} onClick={() => setActiveTab("tables")} className="rounded-lg">
+        <Button
+          variant="ghost"
+          onClick={() => setActiveTab("tables")}
+          className={cn("h-10 rounded-md text-sm font-semibold", activeTab === "tables" ? "bg-blue-50 text-blue-600 hover:bg-blue-50 hover:text-blue-600" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950")}
+        >
           <Variable className="size-4" /> Transmutation Tables
         </Button>
-      </div>
+        </CardContent>
+      </Card>
 
       {activeTab === "schemes" && (
-        <div className="space-y-4">
+        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+          <CardContent className="space-y-4 p-5">
           {!editingScheme && (
             <Button onClick={() => setEditingScheme({
               id: `GS-${Date.now()}`, name: "", subjectType: "Lecture", isDefault: false, isActive: true,
               components: [], createdAt: "", updatedAt: "",
-            })} className="rounded-lg"><Plus className="size-4" /> New Scheme</Button>
+            })} className="h-10 rounded-md bg-blue-600 text-white hover:bg-blue-700"><Plus className="size-4" /> New Scheme</Button>
           )}
 
           {editingScheme && (
@@ -125,7 +131,7 @@ export function GradingAdminModule() {
 
           <div className="space-y-3">
             {schemes.map((scheme) => (
-              <div key={scheme.id} className="flex items-start justify-between gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+              <div key={scheme.id} className="flex items-start justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="min-w-0">
                   <p className="font-semibold text-foreground">{scheme.name}</p>
                   <p className="text-xs text-muted-foreground">
@@ -141,22 +147,24 @@ export function GradingAdminModule() {
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setEditingScheme(scheme)} className="rounded-lg">Edit</Button>
-                  <Button size="sm" variant="outline" onClick={() => deleteScheme(scheme.id)} className="rounded-lg text-destructive">Delete</Button>
+                  <Button size="sm" variant="outline" onClick={() => setEditingScheme(scheme)} className="rounded-md">Edit</Button>
+                  <Button size="sm" variant="outline" onClick={() => deleteScheme(scheme.id)} className="rounded-md text-destructive">Delete</Button>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {activeTab === "tables" && (
-        <div className="space-y-4">
+        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+          <CardContent className="space-y-4 p-5">
           {!editingTable && (
             <Button onClick={() => setEditingTable({
               id: `TT-${Date.now()}`, name: "", subjectType: "All", isDefault: false, isActive: true,
               entries: [], createdAt: "", updatedAt: "",
-            })} className="rounded-lg"><Plus className="size-4" /> New Table</Button>
+            })} className="h-10 rounded-md bg-blue-600 text-white hover:bg-blue-700"><Plus className="size-4" /> New Table</Button>
           )}
 
           {editingTable && (
@@ -165,7 +173,7 @@ export function GradingAdminModule() {
 
           <div className="space-y-3">
             {tables.map((table) => (
-              <div key={table.id} className="flex items-start justify-between gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+              <div key={table.id} className="flex items-start justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="min-w-0">
                   <p className="font-semibold text-foreground">{table.name}</p>
                   <p className="text-xs text-muted-foreground">
@@ -184,14 +192,15 @@ export function GradingAdminModule() {
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setEditingTable(table)} className="rounded-lg">Edit</Button>
-                  <Button size="sm" variant="outline" onClick={() => deleteTable(table.id)} className="rounded-lg text-destructive">Delete</Button>
+                  <Button size="sm" variant="outline" onClick={() => setEditingTable(table)} className="rounded-md">Edit</Button>
+                  <Button size="sm" variant="outline" onClick={() => deleteTable(table.id)} className="rounded-md text-destructive">Delete</Button>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
-    </Panel>
+    </div>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { AlertTriangle, Bell, CalendarDays, Edit, Megaphone, Plus, Radio, Trash2, User, Users, X } from "lucide-react"
+import { AlertTriangle, Bell, CalendarDays, Edit, Megaphone, Plus, Trash2, User, Users, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -55,11 +55,9 @@ type AnnouncementsPanelProps = PortalModuleProps & {
 
 export function AnnouncementsPanel({ model, onShowTrash }: AnnouncementsPanelProps) {
   const {
-    announcements,
     filteredAnnouncements,
     handleDeleteAnnouncement,
     handleUpdateAnnouncement,
-    query,
     role,
     setShowAnnouncementForm,
     facultyClassSections,
@@ -98,24 +96,12 @@ export function AnnouncementsPanel({ model, onShowTrash }: AnnouncementsPanelPro
         title="CS Updates and Announcements"
         className="[&>div:first-child]:hidden"
       >
-        <div className="space-y-4">
-          <div className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-5 sm:px-6">
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:32px_32px] opacity-60 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
-            <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
-              <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
-                <Radio className="size-8" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-                  The Source Code
-                </h3>
-                <p className="mt-2 inline-flex items-center justify-center gap-2 text-sm font-semibold text-muted-foreground sm:justify-start">
-                  <Bell className="size-4" />
-                  CS News and Announcements
-                </p>
-              </div>
-              </div>
+        <div className="space-y-4 pb-6 pt-4">
+          <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Announcements</h1>
+              <p className="mt-2 text-sm text-slate-600">Read department updates, class bulletins, and campus notices.</p>
+            </div>
               <div className="grid w-full grid-cols-3 gap-2 lg:max-w-sm">
                 {[
                   { label: "High", value: priorityTotals.high },
@@ -125,8 +111,8 @@ export function AnnouncementsPanel({ model, onShowTrash }: AnnouncementsPanelPro
                   const priorityStyles = getPriorityStyles(item.label as Announcement["priority"])
 
                   return (
-                  <div key={item.label} className={`rounded-xl border bg-card/80 px-3 py-2 text-center shadow-sm ${priorityStyles.ring}`}>
-                    <p className={`text-lg font-black tabular-nums ${priorityStyles.text}`}>{item.value}</p>
+                  <div key={item.label} className={`rounded-lg border bg-white px-3 py-2 text-center shadow-sm ${priorityStyles.ring}`}>
+                    <p className={`text-lg font-semibold tabular-nums ${priorityStyles.text}`}>{item.value}</p>
                     <p className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${priorityStyles.text}`}>
                       {item.label}
                     </p>
@@ -134,7 +120,6 @@ export function AnnouncementsPanel({ model, onShowTrash }: AnnouncementsPanelPro
                   )
                 })}
               </div>
-            </div>
           </div>
 
           {role === "admin" ? (
@@ -142,7 +127,7 @@ export function AnnouncementsPanel({ model, onShowTrash }: AnnouncementsPanelPro
               <Button
                 size="sm"
                 variant="outline"
-                className="rounded-xl"
+                className="rounded-md border-slate-200"
                 onClick={onShowTrash}
               >
                 <Trash2 className="mr-1.5 size-4" />
@@ -152,7 +137,7 @@ export function AnnouncementsPanel({ model, onShowTrash }: AnnouncementsPanelPro
           ) : null}
 
           {filtered.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border bg-muted/20 py-10 text-center">
+            <div className="rounded-lg border border-dashed border-slate-200 bg-white py-10 text-center">
               <Bell className="mx-auto size-8 text-muted-foreground" />
               <p className="mt-3 text-sm font-medium text-foreground">No announcements yet.</p>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -165,14 +150,14 @@ export function AnnouncementsPanel({ model, onShowTrash }: AnnouncementsPanelPro
                 <button
                   type="button"
                   onClick={() => setShowAnnouncementForm(true)}
-                  className="group flex w-full items-center gap-4 rounded-2xl border border-dashed border-border bg-card p-4 text-left shadow-sm transition hover:border-primary/40 hover:bg-muted/35"
+                  className="group flex w-full items-center gap-4 rounded-lg border border-dashed border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-blue-200 hover:bg-slate-50"
                 >
-                  <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-border bg-muted/35 text-foreground transition group-hover:border-primary/30 group-hover:text-primary">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
                     <Plus className="size-6" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-base font-bold text-foreground">Add Announcement</span>
-                    <span className="mt-1 block text-sm leading-6 text-muted-foreground">
+                    <span className="block text-base font-semibold text-slate-950">Add Announcement</span>
+                    <span className="mt-1 block text-sm leading-6 text-slate-500">
                       Compose a new CS update, choose the audience, and set its priority.
                     </span>
                   </span>
@@ -181,11 +166,11 @@ export function AnnouncementsPanel({ model, onShowTrash }: AnnouncementsPanelPro
 
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
                 {leadAnnouncement ? (
-                  <article className={`relative overflow-hidden rounded-2xl border bg-card p-5 shadow-sm ${getPriorityStyles(leadAnnouncement.priority).ring}`}>
+                  <article className={`relative overflow-hidden rounded-lg border bg-white p-5 shadow-sm ${getPriorityStyles(leadAnnouncement.priority).ring}`}>
                     <div className={`pointer-events-none absolute inset-x-0 top-0 h-1 ${getPriorityStyles(leadAnnouncement.priority).rail}`} />
                     <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div className="flex min-w-0 gap-4">
-                        <span className={`flex size-14 shrink-0 items-center justify-center rounded-2xl border shadow-sm ${getPriorityStyles(leadAnnouncement.priority).icon}`}>
+                        <span className={`flex size-12 shrink-0 items-center justify-center rounded-lg border shadow-sm ${getPriorityStyles(leadAnnouncement.priority).icon}`}>
                           <Megaphone className="size-7" />
                         </span>
                         <div className="min-w-0">
@@ -195,7 +180,7 @@ export function AnnouncementsPanel({ model, onShowTrash }: AnnouncementsPanelPro
                             </span>
                             <StatusBadge value={leadAnnouncement.priority} />
                           </div>
-                          <h4 className="mt-4 text-2xl font-black leading-tight tracking-tight text-foreground">
+                          <h4 className="mt-4 text-xl font-semibold leading-tight tracking-tight text-slate-950">
                             {leadAnnouncement.title}
                           </h4>
                           <p className="mt-3 max-w-4xl text-sm leading-7 text-foreground/80">

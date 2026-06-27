@@ -5,7 +5,8 @@ import { transmutationTableRepository } from "@/features/portal/repositories/tra
 import { assessmentRepository } from "@/features/portal/repositories/assessment.repository"
 import { success, error, badRequest } from "@/lib/api-response"
 import { requireFacultyOrAdmin } from "@/lib/api-auth"
-import { UserModel, CurriculumModel } from "@/lib/models"
+import { UserModel, CurriculumModel, ScheduleModel } from "@/lib/models"
+import { recomputeDeansListForSemester } from "@/features/portal/lib/deans-list-utils"
 import type { GradingPeriod } from "@/lib/types"
 import {
   computeAllCategoryGrades, computeClassStanding,
@@ -423,6 +424,13 @@ export async function POST(request: Request) {
         }
         await UserModel.updateOne({ id: studentId }, { $set: { gradeHistory: history } })
       }
+    }
+
+    const schedule = await ScheduleModel.findOne({ id: classId }).lean()
+    if (schedule?.semesterId) {
+      recomputeDeansListForSemester(schedule.semesterId).catch((dlErr) =>
+        console.warn("[DeansList] Auto re-evaluation failed after compute:", dlErr)
+      )
     }
 
     return success({ grades: updatedGrades })

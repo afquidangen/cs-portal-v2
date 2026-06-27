@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { BookOpen, CalendarDays, Clock, GraduationCap, Layers3, UserRound } from "lucide-react"
+import { BookOpen, CalendarDays, GraduationCap, Layers3, UserRound } from "lucide-react"
 
 import { Panel, Select } from "../shared/dashboard-ui"
 import { formatScheduleTime } from "@/components/ui/time-picker"
@@ -75,24 +75,11 @@ export function MyClassesModule({ model }: PortalModuleProps) {
   const hasNoSchedules = !hasNoSection && visibleSchedules.length === 0
 
   return (
-    <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left shadow-sm sm:px-6">
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
-        <div className="relative flex max-w-4xl flex-col items-start gap-4 sm:flex-row sm:items-center">
-          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
-            <CalendarDays className="size-8" />
-          </div>
-          <div>
-            <p className="inline-flex items-center justify-start gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-              <Clock className="size-4" />
-              Weekly Class Planner
-            </p>
-            <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-              My Schedule
-            </h2>
-          </div>
-        </div>
-      </section>
+    <div className="space-y-4 pb-6 pt-4">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">My Classes</h1>
+        <p className="mt-2 text-sm text-slate-600">View your enrolled subjects and weekly class timetable.</p>
+      </div>
 
       {hasNoSection ? (
         /* ── No section assigned ── */
@@ -120,35 +107,35 @@ export function MyClassesModule({ model }: PortalModuleProps) {
         <>
           {/* Info Cards */}
           <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">My Section</p>
-                  <p className="mt-2 text-lg font-semibold text-foreground">{section}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">My Section</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{section}</p>
                 </div>
-                <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
                   <Layers3 className="size-5" />
                 </span>
               </div>
             </div>
-            <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Enrolled Subjects</p>
-                  <p className="mt-2 text-lg font-semibold text-foreground">{enrolledSubjectNames.length}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Enrolled Subjects</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{enrolledSubjectNames.length}</p>
                 </div>
-                <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
                   <BookOpen className="size-5" />
                 </span>
               </div>
             </div>
-            <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Weekly Classes</p>
-                  <p className="mt-2 text-lg font-semibold text-foreground">{enrolledSchedules.length}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Weekly Classes</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{enrolledSchedules.length}</p>
                 </div>
-                <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
                   <CalendarDays className="size-5" />
                 </span>
               </div>
@@ -160,7 +147,7 @@ export function MyClassesModule({ model }: PortalModuleProps) {
             title="My Enrolled Subjects"
             eyebrow={`${section} · ${enrolledSubjectNames.length} subjects`}
           >
-            <div className="overflow-x-auto rounded-2xl border border-border">
+            <div className="overflow-x-auto rounded-lg border border-slate-200">
               <table className="w-full text-left text-sm">
                 <thead className="bg-muted text-foreground">
                   <tr className="border-b border-border">
@@ -204,7 +191,7 @@ export function MyClassesModule({ model }: PortalModuleProps) {
               </div>
             ) : null}
 
-            <div className="overflow-x-auto rounded-2xl border border-border shadow-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
               <table className="w-full min-w-[800px] text-left text-sm">
                 <thead className="bg-muted text-foreground">
                   <tr className="border-b border-border">
@@ -216,7 +203,7 @@ export function MyClassesModule({ model }: PortalModuleProps) {
                 </thead>
                 <tbody className="divide-y divide-border bg-card">
                   {timeSlots.map((slot, row) => (
-                    <tr key={slot} className="transition-colors hover:bg-muted/20">
+                    <tr key={slot} className="transition-colors hover:bg-slate-50">
                       <td className="whitespace-nowrap px-4 py-4 text-sm font-medium text-muted-foreground">{formatScheduleTime(slot)}</td>
                       {scheduleGrid[row].map((items, col) => (
                         <td key={col} className="px-3 py-2.5 align-top">
@@ -225,9 +212,9 @@ export function MyClassesModule({ model }: PortalModuleProps) {
                           ) : (
                             <div className="space-y-2">
                               {items.map((item) => (
-                                <div key={item.id} className="rounded-lg border-l-[3px] border-l-primary/40 border border-border/60 bg-muted/20 px-3 py-2.5">
-                                  <p className="text-sm font-semibold leading-snug text-foreground">{item.subject}</p>
-                                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground/75">{item.room} &bull; {item.instructor}</p>
+                                <div key={item.id} className="rounded-lg border border-slate-200 border-l-blue-500 bg-blue-50/40 px-3 py-2.5">
+                                  <p className="text-sm font-semibold leading-snug text-slate-950">{item.subject}</p>
+                                  <p className="mt-1 text-xs leading-relaxed text-slate-500">{item.room} - {item.instructor}</p>
                                 </div>
                               ))}
                             </div>

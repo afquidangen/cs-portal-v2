@@ -16,8 +16,8 @@ import {
 import { useEffect, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { Panel } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
 type Member = {
@@ -238,9 +238,8 @@ export function AboutModule({ model }: PortalModuleProps) {
       </div>
     )
   }
-
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <input
         ref={fileRef}
         type="file"
@@ -249,138 +248,139 @@ export function AboutModule({ model }: PortalModuleProps) {
         onChange={handleFileSelected}
       />
 
-      <section className="relative overflow-hidden rounded-xl border border-primary/15 bg-[linear-gradient(120deg,#f8fbff_0%,#eef7ff_56%,#f7fbff_100%)] p-5 shadow-sm dark:border-[#1d3858] dark:bg-[linear-gradient(120deg,#071224_0%,#0b2038_58%,#123768_100%)] sm:p-8">
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(36,120,255,0.08)_1px,transparent_1px),linear-gradient(rgba(36,120,255,0.06)_1px,transparent_1px)] bg-[size:38px_38px] opacity-50 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)]" />
+      <div className="pt-4">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">About ComScite Portal</h1>
+        <p className="mt-2 text-sm text-slate-600">Meet the team and learn about the people behind the portal.</p>
+      </div>
 
-        <div className="relative grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <div className="flex min-h-[260px] flex-col justify-center text-center xl:text-left">
-            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl border border-primary/20 bg-white/80 text-primary shadow-sm dark:border-[#8bd3ff]/25 dark:bg-white/10 dark:text-[#8bd3ff] xl:mx-0">
-              <Users className="size-7" />
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardContent className="p-6">
+          <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+            <div className="flex flex-col justify-center text-center xl:text-left">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-950">
+                Meet the Team
+              </h2>
+              <p className="mt-1 text-lg font-semibold text-blue-600">
+                {data.teamName}
+              </p>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                {data.description}
+              </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs font-semibold text-blue-600 xl:justify-start">
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-100 bg-blue-50 px-3 py-1.5">
+                  <Sparkles className="size-3.5" />
+                  Student-built portal
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-100 bg-blue-50 px-3 py-1.5">
+                  <Code2 className="size-3.5" />
+                  Academic workspace
+                </span>
+              </div>
             </div>
-            <p className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-primary dark:text-[#8bd3ff]">
-              About ComScite Portal
-            </p>
-            <h2 className="mt-3 font-heading text-[2.6rem] font-black uppercase leading-tight tracking-[0.03em] text-foreground sm:text-[3.25rem]">
-              Meet the Team
-            </h2>
-            <p className="mt-2 text-lg font-semibold text-foreground/90 sm:text-xl">
-              {data.teamName}
-            </p>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base xl:mx-0">
-              {data.description}
-            </p>
-            <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs font-semibold text-primary dark:text-[#8bd3ff] xl:justify-start">
-              <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/15 bg-white/70 px-3 py-1.5 dark:border-[#8bd3ff]/20 dark:bg-white/10">
-                <Sparkles className="size-3.5" />
-                Student-built portal
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/15 bg-white/70 px-3 py-1.5 dark:border-[#8bd3ff]/20 dark:bg-white/10">
-                <Code2 className="size-3.5" />
-                Academic workspace
-              </span>
-            </div>
-          </div>
 
-          <div className="relative rounded-xl border border-primary/15 bg-white/72 p-4 shadow-sm backdrop-blur dark:border-[#8bd3ff]/20 dark:bg-white/10">
-            <div className="edu-bg-soft-glacier flex min-h-[260px] items-center justify-center rounded-xl border border-dashed border-[var(--edu-border-glacier)] text-center">
-              {data.teamPictureUrl ? (
-                <div className="relative h-full min-h-[260px] w-full">
-                  <Image
-                    src={data.teamPictureUrl}
-                    alt="Team picture"
-                    fill
-                    className="rounded-xl object-cover"
-                    unoptimized
-                  />
-                </div>
-              ) : (
-                <div className="px-6">
-                  <div className="edu-lapis mx-auto flex size-14 items-center justify-center rounded-xl shadow-sm">
-                    <Camera className="size-7" />
-                  </div>
-                  <p className="mt-4 text-sm font-semibold text-foreground">
-                    Team picture placeholder
-                  </p>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    Add the final group photo here when available.
-                  </p>
-                </div>
-              )}
-            </div>
-            {isAdmin ? (
-              <div className="mt-3 flex items-center justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 gap-1.5 rounded-lg text-xs"
-                  onClick={() => triggerUpload("teamPicture")}
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : (
-                    <Upload className="size-3.5" />
-                  )}
-                  {data.teamPictureUrl ? "Change" : "Upload"}
-                </Button>
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex min-h-[260px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white text-center">
                 {data.teamPictureUrl ? (
+                  <div className="relative h-full min-h-[260px] w-full">
+                    <Image
+                      src={data.teamPictureUrl}
+                      alt="Team picture"
+                      fill
+                      className="rounded-lg object-cover"
+                      unoptimized
+                    />
+                  </div>
+                ) : (
+                  <div className="px-6">
+                    <div className="mx-auto flex size-14 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+                      <Camera className="size-7" />
+                    </div>
+                    <p className="mt-4 text-sm font-semibold text-slate-950">
+                      Team picture placeholder
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      Add the final group photo here when available.
+                    </p>
+                  </div>
+                )}
+              </div>
+              {isAdmin ? (
+                <div className="mt-3 flex items-center justify-end gap-2">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 gap-1.5 rounded-lg text-xs text-red-600 hover:text-red-700"
-                    onClick={() => setDeleteTarget({ type: "teamPicture" })}
+                    className="h-8 gap-1.5 rounded-lg text-xs"
+                    onClick={() => triggerUpload("teamPicture")}
                     disabled={saving}
                   >
-                    <Trash2 className="size-3.5" />
-                    Delete
+                    {saving ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Upload className="size-3.5" />
+                    )}
+                    {data.teamPictureUrl ? "Change" : "Upload"}
                   </Button>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="relative mt-5 grid gap-3 md:grid-cols-3">
-          {data.projectFacts.map((fact) => {
-            const icons = [Code2, Users, CalendarDays] as const
-            const Icon = icons[data.projectFacts.indexOf(fact)] ?? Code2
-            return (
-              <div key={fact.label} className="rounded-xl border border-primary/15 bg-white/72 p-4 shadow-sm backdrop-blur dark:border-[#8bd3ff]/20 dark:bg-white/10">
-                <div className="flex items-start gap-3">
-                  <span className="edu-bg-soft-glacier edu-ring-glacier flex size-10 shrink-0 items-center justify-center rounded-lg border text-primary">
-                    <Icon className="size-5" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{fact.label}</p>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{fact.value}</p>
-                  </div>
+                  {data.teamPictureUrl ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 rounded-lg text-xs text-red-600 hover:text-red-700"
+                      onClick={() => setDeleteTarget({ type: "teamPicture" })}
+                      disabled={saving}
+                    >
+                      <Trash2 className="size-3.5" />
+                      Delete
+                    </Button>
+                  ) : null}
                 </div>
-              </div>
-            )
-          })}
-        </div>
-      </section>
-
-      <Panel title="Team Members and Roles" eyebrow="Member directory">
-        <div className="mb-5 flex items-center gap-3">
-          <div className="edu-bg-soft-glacier edu-ring-glacier flex size-11 items-center justify-center rounded-xl border text-primary">
-            <Users className="size-5" />
+              ) : null}
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold text-foreground">Member Profiles</h3>
-            <p className="text-sm text-foreground/70">Role ownership and contribution areas</p>
-          </div>
-        </div>
 
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            {data.projectFacts.map((fact) => {
+              const icons = [Code2, Users, CalendarDays] as const
+              const Icon = icons[data.projectFacts.indexOf(fact)] ?? Code2
+              return (
+                <Card key={fact.label} className="rounded-lg border-slate-200 bg-white shadow-sm">
+                  <CardContent className="flex items-start gap-3 p-4">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+                      <Icon className="size-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-950">{fact.label}</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-500">{fact.value}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardHeader className="border-b border-slate-200 px-5 py-4">
+          <div className="flex items-center gap-3">
+            <span className="flex size-11 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+              <Users className="size-5" />
+            </span>
+            <div>
+              <CardTitle className="text-base font-semibold text-slate-950">Team Members and Roles</CardTitle>
+              <p className="text-xs text-blue-600">Member directory</p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-5">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {data.teamMembers.map((member, index) => (
             <article
               key={member.name}
-              className="group relative overflow-hidden rounded-xl border border-[var(--edu-border-lapis)] bg-card shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg"
+              className="group relative overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
             >
-              <div className="edu-bg-soft-glacier relative flex h-[220px] items-center justify-center overflow-hidden border-b border-border">
+              <div className="relative flex h-[220px] items-center justify-center overflow-hidden border-b border-slate-200 bg-slate-50">
                 {member.imageUrl ? (
                   <Image
                     src={member.imageUrl}
@@ -390,7 +390,7 @@ export function AboutModule({ model }: PortalModuleProps) {
                     unoptimized
                   />
                 ) : (
-                  <div className="edu-lapis flex size-24 items-center justify-center rounded-full text-2xl font-semibold shadow-sm">
+                  <div className="flex size-24 items-center justify-center rounded-full bg-blue-50 text-2xl font-semibold text-blue-600 ring-1 ring-blue-100">
                     {initials(member.name)}
                   </div>
                 )}
@@ -398,7 +398,7 @@ export function AboutModule({ model }: PortalModuleProps) {
                   <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                     <button
                       type="button"
-                      className="flex size-9 items-center justify-center rounded-full bg-white/90 text-foreground shadow transition hover:bg-white"
+                      className="flex size-9 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow transition hover:bg-white"
                       onClick={() => triggerUpload("member", index)}
                       disabled={saving}
                       title="Upload photo"
@@ -424,37 +424,38 @@ export function AboutModule({ model }: PortalModuleProps) {
                 ) : null}
               </div>
               <div className="p-4">
-                <h4 className="text-base font-semibold text-foreground">{member.name}</h4>
-                <p className="mt-1 text-sm font-medium text-primary">{member.role}</p>
-                <p className="mt-3 text-sm leading-6 text-foreground/75">{member.details}</p>
+                <h4 className="text-base font-semibold text-slate-950">{member.name}</h4>
+                <p className="mt-1 text-sm font-medium text-blue-600">{member.role}</p>
+                <p className="mt-3 text-sm leading-6 text-slate-600">{member.details}</p>
               </div>
             </article>
           ))}
         </div>
-      </Panel>
+        </CardContent>
+      </Card>
 
-      <Panel title="Acknowledgments" eyebrow="Initial contributors">
-        <div className="mb-5 flex items-center gap-3">
-          <div className="edu-bg-soft-glacier edu-ring-glacier flex size-11 items-center justify-center rounded-xl border text-primary">
-            <Heart className="size-5" />
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardHeader className="border-b border-slate-200 px-5 py-4">
+          <div className="flex items-center gap-3">
+            <span className="flex size-11 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+              <Heart className="size-5" />
+            </span>
+            <div>
+              <CardTitle className="text-base font-semibold text-slate-950">Acknowledgments</CardTitle>
+              <p className="text-xs text-blue-600">Initial contributors</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold text-foreground">Credit and Acknowledgment</h3>
-            <p className="text-sm text-foreground/70">Past contributors and foundation</p>
-          </div>
-        </div>
+        </CardHeader>
+        <CardContent className="p-5">
+          <p className="mb-5 text-sm leading-6 text-slate-600">{data.acknowledgment}</p>
 
-        <div className="edu-bg-soft-lapis rounded-xl border border-[var(--edu-border-lapis)] p-6 shadow-sm">
-          <p className="text-sm leading-7 text-foreground/80">{data.acknowledgment}</p>
-        </div>
-
-        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
           {data.pastContributors.map((contributor, index) => (
             <article
-              key={`${contributor.name}-${index}`}
-              className="group relative rounded-xl border border-border bg-card p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+              key={contributor.name}
+              className="group relative rounded-lg border border-slate-200 bg-white p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
             >
-              <div className="edu-bg-soft-glacier mx-auto mb-3 flex aspect-square w-full max-w-[132px] items-center justify-center overflow-hidden rounded-xl border border-dashed border-[var(--edu-border-glacier)] sm:max-w-[116px] xl:max-w-[104px]">
+              <div className="relative mx-auto flex size-[72px] items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-50">
                 {contributor.imageUrl ? (
                   <Image
                     src={contributor.imageUrl}
@@ -465,13 +466,13 @@ export function AboutModule({ model }: PortalModuleProps) {
                     unoptimized
                   />
                 ) : (
-                  <Camera className="size-7 text-primary" />
+                  <Camera className="size-7 text-blue-600" />
                 )}
                 {isAdmin ? (
                   <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                     <button
                       type="button"
-                      className="flex size-8 items-center justify-center rounded-full bg-white/90 text-foreground shadow transition hover:bg-white"
+                      className="flex size-8 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow transition hover:bg-white"
                       onClick={() => triggerUpload("contributor", index)}
                       disabled={saving}
                       title="Upload photo"
@@ -496,12 +497,13 @@ export function AboutModule({ model }: PortalModuleProps) {
                   </div>
                 ) : null}
               </div>
-              <h4 className="text-sm font-semibold leading-5 text-foreground">{contributor.name}</h4>
-              <p className="mt-1 text-xs font-medium leading-5 text-primary">{contributor.role}</p>
+              <h4 className="mt-3 text-sm font-semibold leading-5 text-slate-950">{contributor.name}</h4>
+              <p className="mt-1 text-xs font-medium leading-5 text-blue-600">{contributor.role}</p>
             </article>
           ))}
         </div>
-      </Panel>
+        </CardContent>
+      </Card>
 
       <ConfirmDialog
         open={!!deleteTarget}

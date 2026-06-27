@@ -3,6 +3,7 @@ import { GradeModel } from "@/lib/models"
 import { semestersRepository } from "@/features/portal/repositories/semesters.repository"
 import { schedulesRepository } from "@/features/portal/repositories/schedules.repository"
 import { success, error, notFound } from "@/lib/api-response"
+import { recomputeDeansListForSemester } from "@/features/portal/lib/deans-list-utils"
 
 export const runtime = "nodejs"
 
@@ -63,6 +64,13 @@ export async function POST(
       status: "Archived",
       archivedAt: new Date().toISOString(),
     })
+
+    try {
+      await recomputeDeansListForSemester(id)
+    } catch (dlErr) {
+      console.warn("Dean's List auto-evaluation failed during archive:", dlErr)
+    }
+
     return success(updated)
   } catch (err) {
     return error(err instanceof Error ? err.message : "Unable to archive semester.")

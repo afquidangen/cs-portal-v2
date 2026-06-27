@@ -80,6 +80,7 @@ import { CsoModule } from "./modules/cso-module"
 import { CurriculumModule } from "./modules/curriculum-module"
 import { FeedbackModule } from "./modules/feedback-module"
 import { GradeHistoryModule } from "./modules/grade-history-module"
+import { DeansListModule } from "./modules/deans-list-module"
 import { GradesModule } from "./modules/grades-module"
 import { IrregularStudentsModule } from "./modules/irregular-students-module"
 import { StudentRosterModule } from "./modules/student-roster-module"
@@ -425,6 +426,7 @@ export function RoleDashboard({ role }: { role: Role }) {
     () => visibleAnnouncements.filter((a) => !readAnnouncementIds.has(a.id)).length,
     [visibleAnnouncements, readAnnouncementIds]
   )
+  const isCleanShell = role === "student" || role === "admin" || role === "faculty"
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode)
@@ -472,6 +474,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       curriculum: <CurriculumModule model={model} />,
       "semester-admin": <SemesterManagementModule model={model} />,
       "semester-history": <SemesterHistoryModule model={model} />,
+      "deans-list": <DeansListModule model={model} />,
       "admin-semester-archive": <AdminSemesterArchiveModule model={model} />,
       "faculty-semester-archive": <FacultySemesterArchiveModule model={model} />,
       "quick-links": <QuickLinksModule model={model} />,
@@ -516,11 +519,11 @@ export function RoleDashboard({ role }: { role: Role }) {
     const roleGroups =
       role === "admin"
         ? [
-            { label: "Workspace", items: pick(["overview", "profile"]) },
-            { label: "Academic Setup", items: pick(["academic", "semester-admin", "classes", "curriculum", "grading-admin"]) },
-            { label: "People & Records", items: pick(["users", "instructors", "availability", "audit"]) },
-            { label: "Communications", items: pick(["announcements", "feedback", "templates"]) },
-            { label: "Resources", items: pick(["thesis", "quick-links", "cso"]) },
+            { label: "Navigation", items: pick(["overview", "profile"]) },
+            { label: "Management", items: pick(["users", "audit"]) },
+            { label: "Academic", items: pick(["academic", "classes", "semester-admin", "curriculum", "grading-admin", "deans-list"]) },
+            { label: "Campus", items: pick(["announcements", "availability", "instructors"]) },
+            { label: "Resources", items: pick(["thesis", "quick-links", "cso", "templates", "feedback"]) },
           ]
         : role === "faculty"
           ? [
@@ -538,11 +541,27 @@ export function RoleDashboard({ role }: { role: Role }) {
                 { label: "Resources", items: pick(["quick-links"]) },
               ]
             : [
-                { label: "Workspace", items: pick(["overview", "profile"]) },
-                { label: "My Academics", items: pick(["my-classes", "grades", "semester-history", "curriculum", "grade-history", "thesis"]) },
-                { label: "Campus Support", items: pick(["instructors", "availability", "announcements", "seminars", "feedback"]) },
-                { label: "Resources", items: pick(["quick-links", "cso"]) },
+                { label: "Navigation", items: pick(["overview", "profile"]) },
+                { label: "Academic", items: pick(["my-classes", "grades", "semester-history", "thesis", "curriculum", "grade-history"]) },
+                { label: "Campus", items: pick(["announcements", "instructors"]) },
+                { label: "Resources", items: pick(["cso", "quick-links"]) },
               ]
+
+    if (role === "student") {
+      return roleGroups
+        .map((group) =>
+          group.label === "Resources"
+            ? {
+                ...group,
+                items: [
+                  ...group.items,
+                  { id: "about", label: "About Us", icon: Info },
+                ],
+              }
+            : group
+        )
+        .filter((group) => group.items.length > 0)
+    }
 
     return [
       ...roleGroups,
@@ -960,15 +979,25 @@ export function RoleDashboard({ role }: { role: Role }) {
       <div className="mx-auto flex h-full w-full">
         <aside
           className={cn(
-            "edu-sidebar-shell fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col border-r border-sidebar-border text-sidebar-foreground shadow-2xl shadow-blue-950/10 transition-all duration-300 md:sticky md:top-0 md:h-screen md:translate-x-0",
+            "fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col border-r shadow-2xl shadow-blue-950/10 transition-all duration-300 md:sticky md:top-0 md:h-screen md:translate-x-0",
+            isCleanShell
+              ? "border-slate-200 bg-white text-slate-900"
+              : "edu-sidebar-shell border-sidebar-border text-sidebar-foreground",
             model.sidebarOpen ? "translate-x-0" : "-translate-x-full",
-            effectivelyCollapsed ? "w-[120px]" : "w-[min(282px,92vw)]"
+            effectivelyCollapsed ? "w-[120px]" : isCleanShell ? "w-[min(262px,92vw)]" : "w-[min(282px,92vw)]"
           )}
         >
-          <div className="border-b border-sidebar-border px-4 py-4">
+          <div className={cn("px-4 py-4", isCleanShell ? "border-b border-slate-100" : "border-b border-sidebar-border")}>
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="edu-sidebar-icon flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 shadow-sm ring-1 ring-white/20">
+                <div
+                  className={cn(
+                    "flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl p-1.5 shadow-sm",
+                    isCleanShell
+                      ? "bg-[#07145f] text-white ring-1 ring-slate-200"
+                      : "edu-sidebar-icon bg-white ring-1 ring-white/20"
+                  )}
+                >
                   {model.csoInfo?.portalLogoUrl ? (
                     <Image
                       src={model.csoInfo.portalLogoUrl}
@@ -979,19 +1008,19 @@ export function RoleDashboard({ role }: { role: Role }) {
                       unoptimized
                     />
                   ) : (
-                    <div className="flex size-full items-center justify-center rounded-lg bg-muted">
-                      <ImageIcon className="size-5 text-muted-foreground/50" />
+                    <div className={cn("flex size-full items-center justify-center rounded-lg", isCleanShell ? "bg-white/10" : "bg-muted")}>
+                      <GraduationCap className={cn("size-5", isCleanShell ? "text-white" : "text-muted-foreground/50")} />
                     </div>
                   )}
                 </div>
 
                 {!effectivelyCollapsed ? (
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-white">
+                    <p className={cn("truncate text-sm font-semibold", isCleanShell ? "text-slate-950" : "text-white")}>
                       ComScite Portal
                     </p>
-                    <p className="truncate text-xs capitalize text-white/80">
-                      {role} workspace
+                    <p className={cn("truncate text-xs capitalize", isCleanShell ? "text-slate-600" : "text-white/80")}>
+                      {role === "student" ? "Student Workspace" : role === "admin" ? "Admin Workspace" : `${role} workspace`}
                     </p>
                   </div>
                 ) : null}
@@ -1003,7 +1032,12 @@ export function RoleDashboard({ role }: { role: Role }) {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="hidden rounded-xl text-white/80 hover:bg-white/10 hover:text-white lg:inline-flex"
+                      className={cn(
+                        "hidden rounded-xl lg:inline-flex",
+                        isCleanShell
+                          ? "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                          : "text-white/80 hover:bg-white/10 hover:text-white"
+                      )}
                       onClick={() => setDesktopSidebarCollapsed((prev) => !prev)}
                       aria-label="Toggle sidebar width"
                     >
@@ -1027,11 +1061,14 @@ export function RoleDashboard({ role }: { role: Role }) {
                 model.setSidebarOpen(false)
               }}
               className={cn(
-                "edu-sidebar-profile mt-4 block w-full rounded-xl text-left transition-all",
+                "mt-4 block w-full rounded-xl text-left transition-all",
+                isCleanShell
+                  ? "border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+                  : "edu-sidebar-profile",
                 effectivelyCollapsed ? "p-2" : ""
               )}
             >
-              <Card className="border-0 bg-transparent text-sidebar-foreground shadow-none">
+              <Card className={cn("border-0 bg-transparent shadow-none", isCleanShell ? "text-slate-900" : "text-sidebar-foreground")}>
                 <CardContent
                   className={cn(
                     "flex items-center",
@@ -1044,17 +1081,17 @@ export function RoleDashboard({ role }: { role: Role }) {
                       alt={model.profile.name}
                       className="object-cover"
                     />
-                    <AvatarFallback className="bg-white/10 text-white">
+                    <AvatarFallback className={cn(isCleanShell ? "bg-gradient-to-br from-blue-500 to-violet-600 text-white" : "bg-white/10 text-white")}>
                       {getInitials(model.profile.name)}
                     </AvatarFallback>
                   </Avatar>
 
                   {!effectivelyCollapsed ? (
                     <div className="min-w-0">
-                      <p className="truncate text-base font-medium text-white">
+                      <p className={cn("truncate text-base font-medium", isCleanShell ? "text-slate-950" : "text-white")}>
                         {model.profile.name}
                       </p>
-                      <p className="truncate text-sm text-white/80">
+                      <p className={cn("truncate text-sm", isCleanShell ? "text-slate-600" : "text-white/80")}>
                         {model.profile.title}
                       </p>
                     </div>
@@ -1070,7 +1107,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                 <div key={group.label}>
                   {!effectivelyCollapsed ? (
                     <div className="mb-2 px-2">
-                      <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-white/60">
+                      <p className={cn("text-[11px] font-semibold uppercase tracking-[0.2em]", isCleanShell ? "text-slate-500" : "text-white/60")}>
                         {group.label}
                       </p>
                     </div>
@@ -1090,19 +1127,26 @@ export function RoleDashboard({ role }: { role: Role }) {
                             model.setSidebarOpen(false)
                           }}
                           className={cn(
-                            "group edu-sidebar-button flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 text-white",
+                            "group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all duration-200",
+                            isCleanShell
+                              ? "text-slate-700 hover:bg-slate-50 hover:text-blue-700"
+                              : "edu-sidebar-button text-white",
                             effectivelyCollapsed && "justify-center px-2",
-                            active && "edu-sidebar-button-active text-white"
+                            active && (isCleanShell
+                              ? "bg-blue-50 text-blue-700 shadow-sm"
+                              : "edu-sidebar-button-active text-white")
                           )}
                         >
                           <Icon
                             className={cn(
                               "size-4 shrink-0 transition-colors",
-                              active ? "text-white" : "text-white/80 group-hover:text-white"
+                              isCleanShell
+                                ? active ? "text-blue-700" : "text-slate-500 group-hover:text-blue-700"
+                                : active ? "text-white" : "text-white/80 group-hover:text-white"
                             )}
                           />
                           {!effectivelyCollapsed ? (
-                            <span className="truncate text-white">{item.label}</span>
+                            <span className={cn("truncate", isCleanShell ? "text-current" : "text-white")}>{item.label}</span>
                           ) : null}
                         </button>
                       )
@@ -1113,17 +1157,20 @@ export function RoleDashboard({ role }: { role: Role }) {
             </nav>
           </ScrollArea>
 
-          <div className="border-t border-sidebar-border p-3">
+          <div className={cn("p-3", isCleanShell ? "border-t border-slate-100" : "border-t border-sidebar-border")}>
             <Button
               variant="ghost"
               onClick={() => setLogoutOpen(true)}
               className={cn(
-                "w-full rounded-lg text-white hover:bg-white/10 hover:text-white",
+                "w-full rounded-lg",
+                isCleanShell
+                  ? "justify-start border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-blue-700"
+                  : "text-white hover:bg-white/10 hover:text-white",
                 effectivelyCollapsed ? "justify-center px-0" : "justify-start"
               )}
             >
-              <LogOut className="size-4 text-white" />
-              {!effectivelyCollapsed ? <span className="ml-2 text-white">Logout</span> : null}
+              <LogOut className={cn("size-4", isCleanShell ? "text-current" : "text-white")} />
+              {!effectivelyCollapsed ? <span className={cn("ml-2", isCleanShell ? "text-current" : "text-white")}>Logout</span> : null}
             </Button>
           </div>
         </aside>
@@ -1335,7 +1382,7 @@ export function RoleDashboard({ role }: { role: Role }) {
           </header>
 
           <section className="min-w-0 px-3 pb-6 sm:px-6 lg:px-8">
-            {model.activeModule === "overview" ? (
+            {model.activeModule === "overview" && role !== "student" && role !== "admin" && role !== "faculty" ? (
               <div className="mb-8 space-y-5">
                 <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
                   {role === "faculty" ? (

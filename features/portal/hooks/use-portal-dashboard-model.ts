@@ -391,6 +391,7 @@ export function usePortalDashboardModel(role: Role) {
   const [profileDetails, setProfileDetails] = useState<ProfileDetails>({
     photoUrl: "", firstName: "", middleName: "", lastName: "",
     email: "", contactNumber: "", sex: "", birthday: "", address: "",
+    deansListVisibility: "public",
   })
   const profileName = getProfileFullName(profileDetails)
   const profile = authenticatedUser ?? {
@@ -413,6 +414,7 @@ export function usePortalDashboardModel(role: Role) {
         sex: profileUser?.sex ?? "",
         birthday: profileUser?.birthday ?? "",
         address: profileUser?.address ?? "",
+        deansListVisibility: (profileUser as unknown as Record<string, unknown>)?.deansListVisibility as "public" | "private" ?? "public",
       })
     )
   }, [authenticatedUser, profileUser])
@@ -559,13 +561,17 @@ export function usePortalDashboardModel(role: Role) {
   )
 
   const studentGrades = useMemo(
-    () =>
-      grades.filter(
+    () => {
+      const active = semesters.find((s) => s.status === "Active")
+      if (!active) return []
+      return grades.filter(
         (grade) =>
           grade.studentId === profile.id &&
+          grade.semesterId === active.id &&
           grade.released === true
-      ),
-    [grades, profile.id]
+      )
+    },
+    [grades, profile.id, semesters]
   )
 
   const gradeAverage = useMemo(() => {
@@ -602,19 +608,20 @@ export function usePortalDashboardModel(role: Role) {
   )
 
   const currentSemesterGwaPending = useMemo(
-    () => currentSemesterAllGrades.some((g) => g.released === false),
+    () => currentSemesterAllGrades.some((g) => g.finalReleased === false),
     [currentSemesterAllGrades]
   )
 
   const currentSemesterGwa = useMemo(() => {
-    if (!currentSemesterGrades.length || currentSemesterGwaPending) return null
+    const releasedGrades = currentSemesterAllGrades.filter((g) => g.finalReleased === true)
+    if (!releasedGrades.length || currentSemesterGwaPending) return null
     const average =
-      currentSemesterGrades.reduce(
+      releasedGrades.reduce(
         (sum, grade) => sum + calculateFinalGrade(grade),
         0
-      ) / currentSemesterGrades.length
+      ) / releasedGrades.length
     return Number(average.toFixed(2))
-  }, [currentSemesterGrades, currentSemesterGwaPending])
+  }, [currentSemesterAllGrades, currentSemesterGwaPending])
 
   const currentSemesterTotalUnits = useMemo(
     () => currentSemesterGrades.reduce((s, g) => s + (g.units || 0), 0),
@@ -866,7 +873,7 @@ export function usePortalDashboardModel(role: Role) {
     const gwa = gradeAverage !== "N/A" ? gradeAverage : "—"
     const activeSem = semesters.find((s) => s.status === "Active")
     const syLabel = activeSem ? `S.Y. ${activeSem.schoolYearStart}-${activeSem.schoolYearEnd}` : ""
-    const deansResult = computeDeansList(studentGrades, profileUser?.studentType, profileUser?.currentYearLevel)
+    const deansResult = computeDeansList(studentGrades)
     const deansHtml = deansResult.gwa !== null ? (
       deansResult.eligible
         ? `<p style="margin-top:0;font-size:16px;font-weight:700;color:#16a34a;">Dean's List</p>
@@ -1019,15 +1026,22 @@ export function usePortalDashboardModel(role: Role) {
       const grade = grades.find((g) => g.id === gradeId)
       setGrades((current) => current.filter((g) => g.id !== gradeId))
       if (grade) {
-        void syncApi("DELETE", `/api/portal/grades/${gradeId}`, {})
+        syncApi("DELETE", `/api/portal/grades/${gradeId}`, {}).catch((e) => {
+          if (e.message.includes("(404)")) {
+            console.warn(`Grade ${gradeId} already deleted on server.`)
+          } else {
+            toast.error("Failed to delete grade record.")
+            console.error(e)
+          }
+        })
         addAuditLog(`Unenrolled student ${grade.student} from ${grade.subject}`)
       }
     }
 
-    const remainingInSection = grades.filter(
+    const hasRemaining = gradeId && grades.some(
       (g) => g.studentId === studentId && normalize(g.section ?? "") === normSection && g.id !== gradeId
     )
-    if (remainingInSection.length === 0) {
+    if (!hasRemaining) {
       setRoster((current) =>
         current.map((r) =>
           r.id === studentId && normalize(r.section ?? "") === normSection
@@ -1035,7 +1049,16 @@ export function usePortalDashboardModel(role: Role) {
             : r
         )
       )
-      void syncApi("PUT", `/api/portal/roster/${studentId}`, { enrolled: false })
+      syncApi("PUT", `/api/portal/roster/${studentId}`, { enrolled: false })
+        .then(() => toast.success("Student unenrolled."))
+        .catch((e) => {
+          if (e.message.includes("(404)")) {
+            console.warn(`Roster entry ${studentId} not found on server; local state already updated.`)
+          } else {
+            toast.error("Failed to unenroll student. The student may reappear on refresh.")
+            console.error(e)
+          }
+        })
     }
   }
 
@@ -2129,6 +2152,7 @@ export function usePortalDashboardModel(role: Role) {
       sex: draft.sex,
       birthday: draft.birthday,
       address: draft.address,
+      deansListVisibility: draft.deansListVisibility,
     }
     if (draft.photoUrl !== previousPhotoUrl) {
       if (draft.photoUrl === "" && previousPhotoUrl) {
@@ -2162,6 +2186,7 @@ export function usePortalDashboardModel(role: Role) {
               address: draft.address,
               photoUrl,
               cloudinaryPublicId,
+              deansListVisibility: draft.deansListVisibility,
             }
           : user
       )

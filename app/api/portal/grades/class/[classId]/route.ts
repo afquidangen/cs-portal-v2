@@ -4,6 +4,8 @@ import { assessmentRepository } from "@/features/portal/repositories/assessment.
 import { gradingSchemeRepository } from "@/features/portal/repositories/grading-scheme.repository"
 import { success, error, badRequest } from "@/lib/api-response"
 import { requireFacultyOrAdmin } from "@/lib/api-auth"
+import { ScheduleModel } from "@/lib/models"
+import { recomputeDeansListForSemester } from "@/features/portal/lib/deans-list-utils"
 
 export const runtime = "nodejs"
 
@@ -59,12 +61,11 @@ export async function PUT(
         }
         upsertData.scores = cleanedScores
       }
-      const specialRemarks = ["INC", "FAILED", "DROPPED"]
       const finalRemarks = upsertData.finalRemarks as string | undefined
       const midtermRemarks = upsertData.midtermRemarks as string | undefined
-      if (finalRemarks && specialRemarks.includes(finalRemarks)) {
+      if (finalRemarks) {
         upsertData.remarks = finalRemarks
-      } else if (midtermRemarks && specialRemarks.includes(midtermRemarks)) {
+      } else if (midtermRemarks) {
         upsertData.remarks = midtermRemarks
       }
 
@@ -78,6 +79,14 @@ export async function PUT(
       )
       results.push(updated)
     }
+
+    const schedule = await ScheduleModel.findOne({ id: classId }).lean()
+    if (schedule?.semesterId) {
+      recomputeDeansListForSemester(schedule.semesterId).catch((dlErr) =>
+        console.warn("[DeansList] Auto re-evaluation failed after grade edit:", dlErr)
+      )
+    }
+
     return success({ grades: results })
   } catch (err) {
     console.error("[GradeSaveError]", err)

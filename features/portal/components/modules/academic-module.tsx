@@ -1,9 +1,15 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { BookOpen, CalendarRange, FileSpreadsheet, GraduationCap, Layers3, Plus, Settings2 } from "lucide-react"
+import { BookOpen, CalendarRange, FileSpreadsheet, GraduationCap, Layers3, Plus } from "lucide-react"
 
-import { Panel } from "../shared/dashboard-ui"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import { CurriculumModule } from "./curriculum-module"
 import type { PortalModuleProps } from "./types"
 
@@ -118,39 +124,51 @@ function GradingWorkbooksSection() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <Panel title="Lecture-Only Subject Workbook" eyebrow="Format for non-lab courses">
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardHeader className="border-b border-slate-200 px-5 py-4">
+          <CardTitle className="text-base font-semibold text-slate-950">Lecture-Only Subject Workbook</CardTitle>
+          <p className="text-xs font-medium text-blue-600">Format for non-lab courses</p>
+        </CardHeader>
+        <CardContent className="p-5">
         {lectureScheme ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <GraduationCap className="size-4 text-primary" />
-              <p className="font-medium text-foreground">{lectureScheme.name as string}</p>
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700 dark:bg-emerald-900 dark:text-emerald-400">
+              <GraduationCap className="size-4 text-blue-600" />
+              <p className="font-medium text-slate-900">{lectureScheme.name as string}</p>
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">
                 Active
               </span>
             </div>
             {renderFormula(lectureScheme)}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">No active Lecture scheme configured. Go to Grading Rules to set one up.</p>
+          <p className="text-sm text-slate-500">No active Lecture scheme configured. Go to Grading Rules to set one up.</p>
         )}
-      </Panel>
+        </CardContent>
+      </Card>
 
-      <Panel title="Lecture with Lab Subject Workbook" eyebrow="Format for courses with laboratory component">
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardHeader className="border-b border-slate-200 px-5 py-4">
+          <CardTitle className="text-base font-semibold text-slate-950">Lecture with Lab Subject Workbook</CardTitle>
+          <p className="text-xs font-medium text-blue-600">Format for courses with laboratory component</p>
+        </CardHeader>
+        <CardContent className="p-5">
         {labScheme ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <GraduationCap className="size-4 text-primary" />
-              <p className="font-medium text-foreground">{labScheme.name as string}</p>
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700 dark:bg-emerald-900 dark:text-emerald-400">
+              <GraduationCap className="size-4 text-blue-600" />
+              <p className="font-medium text-slate-900">{labScheme.name as string}</p>
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">
                 Active
               </span>
             </div>
             {renderFormula(labScheme)}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">No active Lecture with Lab scheme configured. Go to Grading Rules to set one up.</p>
+          <p className="text-sm text-slate-500">No active Lecture with Lab scheme configured. Go to Grading Rules to set one up.</p>
         )}
-      </Panel>
+        </CardContent>
+      </Card>
     </div>
   )
 }
@@ -165,26 +183,12 @@ export function AcademicModule({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left shadow-sm sm:px-6">
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
-        <div className="relative flex max-w-4xl flex-col items-start gap-4 sm:flex-row sm:items-center">
-          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
-            <Settings2 className="size-8" />
-          </div>
-          <div>
-            <p className="inline-flex items-center justify-start gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-              <CalendarRange className="size-4" />
-              Academic Configuration
-            </p>
-            <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-              Academic Setup
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Configure semesters, active terms, and curriculum records used across classes, grading, and enrollment workflows.
-            </p>
-          </div>
-        </div>
-      </section>
+      <div className="pt-4">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Academic Setup</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Configure semesters, active terms, curriculum records, and grading workbook formats.
+        </p>
+      </div>
 
       {/* ── Tab bar ── */}
       <div className="grid gap-3 md:grid-cols-3">
@@ -196,23 +200,26 @@ export function AcademicModule({ model }: PortalModuleProps) {
           const Icon = item.icon
 
           return (
-          <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+          <Card key={item.label} className="rounded-lg border-slate-200 bg-white shadow-sm">
+            <CardContent className="p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
-                <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{item.note}</p>
+                <p className="text-sm font-semibold text-slate-600">{item.label}</p>
+                <p className="mt-4 truncate text-2xl font-semibold tracking-tight text-slate-950">{item.value}</p>
+                <p className="mt-1 text-sm text-slate-500">{item.note}</p>
               </div>
-              <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
                 <Icon className="size-5" />
               </span>
             </div>
-          </div>
+            </CardContent>
+          </Card>
           )
         })}
       </div>
 
-      <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-1.5 shadow-sm">
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardContent className="flex flex-wrap gap-2 p-2">
         {TABS.map((tab) => {
           const Icon = tab.icon
           const active = selectedAcademicSection === tab.key
@@ -221,18 +228,20 @@ export function AcademicModule({ model }: PortalModuleProps) {
               key={tab.key}
               type="button"
               onClick={() => setSelectedAcademicSection(tab.key)}
-              className={
+              className={cn(
+                "inline-flex h-10 items-center gap-2 rounded-md px-4 text-sm font-semibold transition",
                 active
-                  ? "inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm"
-                  : "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
-              }
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+              )}
             >
               <Icon className="size-4" />
               {tab.label}
             </button>
           )
         })}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* ───── Curriculum Tab ───── */}
       {selectedAcademicSection === "Curriculum" ? (

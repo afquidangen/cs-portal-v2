@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Award, BarChart3, BookMarked, ClipboardList, Download, FileSpreadsheet, GraduationCap, ListChecks, Search, Send, Upload, UsersRound } from "lucide-react"
+import { Award, BookMarked, ClipboardList, Download, FileSpreadsheet, GraduationCap, ListChecks, Search, Send, Upload, UsersRound } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,7 @@ import {
 } from "../../lib/grades"
 import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
+import type { DeansListEntry } from "@/lib/types"
 import type { GradeRecord } from "@/lib/types/grade"
 import type { GradingScheme, SchemeComponent, TransmutationEntry, TransmutationTable } from "@/lib/types"
 import type { ScheduleItem, ClassStudent, CurriculumRecord, UserRecord } from "../../data/portal-data"
@@ -349,7 +350,13 @@ export function GradesModule({ model }: PortalModuleProps) {
     const gradeMap = new Map<string, GradeRecord>()
     for (const g of allActive) {
       const existing = gradeMap.get(g.code)
-      if (!existing || (g.released && !existing.released)) {
+      if (!existing) {
+        gradeMap.set(g.code, g)
+      } else if (g.semesterId === active.id && existing.semesterId !== active.id) {
+        gradeMap.set(g.code, g)
+      } else if (g.semesterId !== active.id && existing.semesterId === active.id) {
+        continue
+      } else if (g.released && !existing.released) {
         gradeMap.set(g.code, g)
       }
     }
@@ -485,10 +492,46 @@ export function GradesModule({ model }: PortalModuleProps) {
     profileUser, model.curricula,
   ])
 
+  const [publishedDl, setPublishedDl] = useState<DeansListEntry | null>(null)
+
+  useEffect(() => {
+    const semId = model.activeSemester?.id
+    if (!semId) return
+    fetch(`/api/portal/deans-list/student?semesterId=${semId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => setPublishedDl(json?.data ?? null))
+      .catch(() => {})
+  }, [model.activeSemester?.id])
+
   const deansListData = useMemo(
-    () => computeDeansList(visibleGrades, model.profileStudentType, model.profileCurrentYearLevel),
-    [visibleGrades, model.profileStudentType, model.profileCurrentYearLevel]
+    () => computeDeansList(visibleGrades),
+    [visibleGrades]
   )
+
+  const displayDl = useMemo(() => {
+    if (publishedDl) {
+      return {
+        gwa: publishedDl.gwa,
+        eligible:
+          publishedDl.manualOverride === "include"
+            ? true
+            : publishedDl.manualOverride === "exclude"
+            ? false
+            : publishedDl.isQualified,
+        reasons: publishedDl.disqualificationReasons,
+        rank: publishedDl.rank,
+      }
+    }
+    if (!deansListData.eligible) return null
+    return {
+      gwa: deansListData.gwa,
+      eligible: deansListData.eligible,
+      reasons: deansListData.reasons,
+      rank: null,
+    }
+  }, [publishedDl, deansListData])
+
+  const allGradesReleased = visibleGrades.length > 0 && visibleGrades.every((g) => g.finalReleased)
 
   if (model.role === "faculty") {
     return <FacultyGradesPanel model={model} />
@@ -499,28 +542,20 @@ export function GradesModule({ model }: PortalModuleProps) {
       title="Grades & Report"
       className="[&>div:first-child]:hidden"
     >
-      <div className="mb-5 flex flex-col items-start gap-4 rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left shadow-sm sm:flex-row sm:items-center sm:px-6">
-        <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
-          <BarChart3 className="size-8" />
-        </div>
+      <div className="mb-5 flex flex-col gap-3 pt-1 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="inline-flex items-center justify-start gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-            <GraduationCap className="size-4" />
-            Student Records
-          </p>
-          <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-            Grades & Report
-          </h3>
-          <div className="mt-4 flex gap-2">
-            <Button size="sm" onClick={downloadGradeReport} className="rounded-lg">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Grades & Report</h1>
+          <p className="mt-2 text-sm text-slate-600">Track released grades, GWA, and downloadable grade reports.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={downloadGradeReport} className="h-10 rounded-md bg-blue-600 px-4 text-white hover:bg-blue-700">
               <Download className="size-4" />
               Download CSV
             </Button>
-            <Button size="sm" onClick={downloadGradeReportDocument} variant="outline" className="rounded-lg">
+            <Button size="sm" onClick={downloadGradeReportDocument} variant="outline" className="h-10 rounded-md border-slate-200 px-4">
               <FileSpreadsheet className="size-4" />
               Download Document
             </Button>
-          </div>
         </div>
       </div>
 
@@ -540,22 +575,22 @@ export function GradesModule({ model }: PortalModuleProps) {
           },
           {
             label: "GWA Equivalent",
-            value: deansListData.gwa !== null ? deansListData.gwa.toFixed(2) : "N/A",
-            note: deansListData.honors ?? (deansListData.reasons.length > 0 ? deansListData.reasons[0] : "Awaiting complete grades"),
+            value: displayDl && displayDl.gwa !== null && allGradesReleased ? displayDl.gwa.toFixed(2) : "N/A",
+            note: displayDl?.eligible ? "Dean's List" : (displayDl?.reasons?.length ? displayDl.reasons[0] : "Awaiting complete grades"),
             icon: Award,
           },
         ].map((item) => {
           const Icon = item.icon
 
           return (
-            <div key={item.label} className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
+            <div key={item.label} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{item.label}</p>
-                  <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{item.note}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">{item.label}</p>
+                  <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-slate-950">{item.value}</p>
+                  <p className="mt-1 text-sm text-slate-500">{item.note}</p>
                 </div>
-                <span className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
                   <Icon className="size-5" />
                 </span>
               </div>
@@ -564,30 +599,35 @@ export function GradesModule({ model }: PortalModuleProps) {
         })}
       </div>
 
-      {deansListData.gwa !== null && (
-        <div className="mb-6 rounded-2xl border border-border/80 bg-gradient-to-b from-card to-muted/20 p-8 shadow-sm">
+      {displayDl && displayDl.gwa !== null && allGradesReleased && (
+        <div className="mb-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col items-center gap-2 text-center">
-            <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground/50">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               GWA
             </p>
-            <p className="text-4xl font-extrabold tracking-tight text-foreground">
-              {deansListData.gwa.toFixed(2)}
+            <p className="text-4xl font-semibold tracking-tight text-slate-950">
+              {displayDl.gwa.toFixed(2)}
             </p>
-            {deansListData.eligible ? (
+            {displayDl.eligible ? (
               <div className="mt-5 flex flex-col items-center gap-2">
-                <div className="inline-flex items-center gap-2.5 rounded-full border border-green-200 bg-green-50 px-6 py-2.5 shadow-sm dark:border-green-700 dark:bg-green-950/20">
+                <div className="inline-flex items-center gap-2.5 rounded-md border border-emerald-200 bg-emerald-50 px-5 py-2 shadow-sm">
                   <Award className="size-6 text-green-600 dark:text-green-400" />
                   <span className="text-lg font-bold text-green-700 dark:text-green-300">
-                    Dean's Lister
+                    Dean&apos;s Lister
                   </span>
                 </div>
+                {displayDl.rank && (
+                  <p className="text-sm font-semibold text-amber-600">
+                    Rank #{displayDl.rank}
+                  </p>
+                )}
                 <p className="text-sm text-muted-foreground">
-                  Congratulations, CStizen! You're qualified for the Dean's List for the semester.
+                  Congratulations, CStizen! You&apos;re qualified for the Dean&apos;s List for the semester.
                 </p>
               </div>
-            ) : deansListData.reasons.length > 0 ? (
+            ) : displayDl.reasons.length > 0 ? (
               <p className="mt-3 text-sm text-muted-foreground/60 italic">
-                {deansListData.reasons[0]}
+                {displayDl.reasons[0]}
               </p>
             ) : null}
           </div>
@@ -600,43 +640,43 @@ export function GradesModule({ model }: PortalModuleProps) {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-border shadow-sm">
+      <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
         <table className="w-full min-w-[740px] text-left text-sm">
-          <thead className="bg-muted text-foreground">
-            <tr className="border-b border-border">
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+          <thead className="bg-slate-50 text-slate-700">
+            <tr className="border-b border-slate-200">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide">
                 Subject
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide">
                 Units
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide">
                 Midterm
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide">
                 Mid. Remarks
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide">
                 Final Term
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide">
                 Fin. Remarks
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide">
                 Grade %
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide">
                 Final Rating
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide">
                 Equivalent
               </th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-border bg-card">
-            {visibleGrades.length === 0 ? (
-              <tr>
+          <tbody className="divide-y divide-slate-200 bg-white">
+            {visibleGrades.length === 0 && (
+              <tr key="empty">
                 <td
                   colSpan={9}
                   className="px-4 py-12 text-center text-sm text-muted-foreground"
@@ -644,10 +684,10 @@ export function GradesModule({ model }: PortalModuleProps) {
                   No grade records yet.
                 </td>
               </tr>
-            ) : (
-              visibleGrades.map((grade) => {
+            )}
+            {visibleGrades.length > 0 && visibleGrades.map((grade) => {
                 return (
-                  <tr key={grade.id} className="transition-colors hover:bg-muted/50">
+                  <tr key={grade.id} className="transition-colors hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <p className="font-medium text-foreground">
                         {grade.subject}
@@ -701,13 +741,13 @@ export function GradesModule({ model }: PortalModuleProps) {
                   </tr>
                 )
               })
-            )}
+            }
           </tbody>
         </table>
       </div>
 
       <div className="mt-6 rounded-xl border border-border/60 bg-muted/30 px-5 py-4 text-xs leading-relaxed text-muted-foreground">
-        <strong className="font-semibold text-foreground/80">Important Disclaimer:</strong> The grades displayed on this portal are for informational purposes only and do not constitute an official academic record. The Final Report issued and signed by the College Registrar remains the sole official documentation of your grades. In the event of any discrepancy between this digital preview and the official report, the Registrar's record shall prevail.
+        <strong className="font-semibold text-foreground/80">Important Disclaimer:</strong> The grades displayed on this portal are for informational purposes only and do not constitute an official academic record. The Final Report issued and signed by the College Registrar remains the sole official documentation of your grades. In the event of any discrepancy between this digital preview and the official report, the Registrar&apos;s record shall prevail.
       </div>
     </Panel>
   )

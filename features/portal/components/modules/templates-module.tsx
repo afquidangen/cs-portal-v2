@@ -1,21 +1,29 @@
 "use client"
 
-import { Download } from "lucide-react"
+import { Download, FileSpreadsheet } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
-import { Panel } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
 export function TemplatesModule({ model }: PortalModuleProps) {
   const { downloadUserTemplate, setUploadName, uploadName } = model
 
   return (
-    <Panel title="Templates and Uploads" eyebrow="Data gathering">
+    <div className="space-y-5">
+      <div className="pt-4">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Templates and Uploads</h1>
+        <p className="mt-2 text-sm text-slate-600">Download data gathering templates and upload CSV/Excel files.</p>
+      </div>
+
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardContent className="p-6">
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-lg border border-slate-200 p-4">
-          <h4 className="font-semibold text-slate-950">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <FileSpreadsheet className="size-8 text-blue-600" />
+          <h4 className="mt-3 font-semibold text-slate-950">
             Student Account Template
           </h4>
           <p className="mt-2 text-sm text-slate-500">
@@ -30,8 +38,9 @@ export function TemplatesModule({ model }: PortalModuleProps) {
             Download
           </Button>
         </div>
-        <div className="rounded-lg border border-slate-200 p-4">
-          <h4 className="font-semibold text-slate-950">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <FileSpreadsheet className="size-8 text-blue-600" />
+          <h4 className="mt-3 font-semibold text-slate-950">
             Faculty Account Template
           </h4>
           <p className="mt-2 text-sm text-slate-500">
@@ -46,8 +55,9 @@ export function TemplatesModule({ model }: PortalModuleProps) {
             Download
           </Button>
         </div>
-        <div className="rounded-lg border border-slate-200 p-4">
-          <h4 className="font-semibold text-slate-950">Upload Excel File</h4>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <FileSpreadsheet className="size-8 text-blue-600" />
+          <h4 className="mt-3 font-semibold text-slate-950">Upload Excel File</h4>
           <p className="mt-2 text-sm text-slate-500">{uploadName}</p>
           <Input
             type="file"
@@ -59,6 +69,8 @@ export function TemplatesModule({ model }: PortalModuleProps) {
           />
         </div>
       </div>
-    </Panel>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

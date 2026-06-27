@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState, type FormEvent } from "react"
 import { Eye, EyeOff, Lock, Mail } from "lucide-react"
 
-import type { CsoInfoRecord } from "@/lib/types"
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -84,43 +83,21 @@ export function LoginPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#f7fbff]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_22%_26%,rgba(189,231,255,0.34),transparent_30%),radial-gradient(circle_at_82%_72%,rgba(139,211,255,0.18),transparent_34%),linear-gradient(135deg,#fcfeff_0%,#f4fbff_50%,#ffffff_100%)]" />
-      <div className="pointer-events-none absolute left-0 top-0 h-full w-[44%] bg-[linear-gradient(180deg,rgba(189,231,255,0.20),rgba(241,249,255,0.16)_58%,transparent)]" />
-      <div className="pointer-events-none absolute inset-x-6 top-6 h-px bg-[linear-gradient(90deg,transparent,#8bd3ff_18%,#1f6fe5_50%,#8bd3ff_82%,transparent)] opacity-70" />
-      <div className="pointer-events-none absolute inset-x-6 bottom-6 h-px bg-[linear-gradient(90deg,transparent,#cfe7fb_18%,#8bd3ff_50%,#cfe7fb_82%,transparent)] opacity-80" />
-      <div className="pointer-events-none absolute -left-20 bottom-10 h-72 w-72 rounded-full border border-[#8bd3ff]/35 bg-[#eaf7ff]/35 blur-sm" />
-      <div className="pointer-events-none absolute -right-24 top-20 h-80 w-80 rounded-full border border-[#cfe7fb]/70 bg-white/30 blur-sm" />
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[34rem] w-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(139,211,255,0.12),transparent_62%)]" />
-      <div className="pointer-events-none absolute left-8 top-20 hidden w-44 rounded-xl border border-[#cfe7fb] bg-white/70 px-3 py-2 font-mono text-[11px] font-semibold text-[#225688] shadow-sm backdrop-blur lg:block">
-        <div className="mb-1 flex items-center gap-1.5 text-[#18479f]">
-          <span className="size-1.5 rounded-full bg-[#28a7f2]" />
-          API ONLINE
-        </div>
-        <div className="text-[#5f7c99]">latency: 12ms</div>
-      </div>
-      <div className="pointer-events-none absolute right-10 bottom-24 hidden w-48 rounded-xl border border-[#cfe7fb] bg-white/70 px-3 py-2 font-mono text-[11px] font-semibold text-[#225688] shadow-sm backdrop-blur lg:block">
-        <div className="text-[#18479f]">module.auth()</div>
-        <div className="mt-1 text-[#5f7c99]">session: encrypted</div>
-      </div>
-      <div className="pointer-events-none absolute left-[8%] top-[34%] hidden h-24 w-24 border-l border-t border-[#8bd3ff]/70 lg:block">
-        <span className="absolute -right-1 -top-1 size-2 rounded-full bg-[#1f6fe5]" />
-      </div>
-      <div className="pointer-events-none absolute bottom-[30%] right-[8%] hidden h-28 w-28 border-b border-r border-[#8bd3ff]/70 lg:block">
-        <span className="absolute -bottom-1 -left-1 size-2 rounded-full bg-[#28a7f2]" />
-      </div>
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,#fcfeff_0%,#f4fbff_52%,#ffffff_100%)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-[linear-gradient(180deg,rgba(189,231,255,0.36),transparent)]" />
+      <div className="pointer-events-none absolute bottom-0 left-0 h-48 w-full bg-[linear-gradient(0deg,rgba(234,247,255,0.72),transparent)]" />
 
-      <div className="relative mx-auto grid min-h-dvh w-full max-w-5xl items-center gap-8 px-4 py-8 sm:py-10 md:grid-cols-[minmax(0,1fr)_minmax(360px,420px)] md:gap-10 md:px-8">
-        <section className="relative flex flex-col items-center text-center md:items-start md:text-left">
-          <div className="pointer-events-none absolute -inset-x-8 -inset-y-10 rounded-[2rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.42),rgba(234,247,255,0.16))] opacity-80" />
+      <div className="relative mx-auto grid min-h-dvh w-full max-w-6xl items-center gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,430px)] lg:gap-14 lg:px-8">
+        <section className="flex flex-col items-center text-center lg:items-start lg:text-left">
           <Image
             src={portalLogo}
             alt="ComScite Portal logo"
             width={260}
             height={260}
-            className="relative h-auto w-40 max-w-[68vw] object-contain drop-shadow-[0_28px_52px_rgb(24_71_159_/_0.28)] sm:w-52 md:w-64"
+            className="h-auto w-36 max-w-[62vw] object-contain drop-shadow-[0_20px_42px_rgb(24_71_159_/_0.18)] sm:w-48 lg:w-56"
             priority
           />
-          <h1 className="login-terminal relative mt-6" aria-label="ComScite Portal startup status">
+          <h1 className="login-terminal mt-6" aria-label="ComScite Portal startup status">
             <span className="login-terminal-line login-terminal-line-command">
               $ npm run start:comscite
             </span>
@@ -135,31 +112,19 @@ export function LoginPage() {
           </h1>
         </section>
 
-        <Card className="relative w-full overflow-hidden rounded-2xl border border-[#d7e8fb] bg-white/95 shadow-[0_28px_80px_rgb(24_71_159_/_0.16)] backdrop-blur">
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(31,111,229,0.045)_1px,transparent_1px),linear-gradient(rgba(31,111,229,0.04)_1px,transparent_1px)] bg-[size:28px_28px]" />
-          <div className="relative h-1.5 bg-[linear-gradient(90deg,#18479f_0%,#1f6fe5_58%,#28a7f2_100%)]" />
-          <CardHeader className="relative space-y-4 px-5 pt-5 sm:px-6 sm:pt-6">
-            <div className="flex items-center justify-between rounded-xl border border-[#cfe7fb] bg-[#f5fbff] px-3 py-2">
-              <div className="flex items-center gap-1.5" aria-hidden="true">
-                <span className="size-2 rounded-full bg-[#18479f]" />
-                <span className="size-2 rounded-full bg-[#1f6fe5]" />
-                <span className="size-2 rounded-full bg-[#8bd3ff]" />
-              </div>
-              <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[#225688]">
-                auth.session
-              </span>
-            </div>
+        <Card className="w-full overflow-hidden rounded-lg border border-[#d7e8fb] bg-white/95 text-[#071224] shadow-[0_18px_50px_rgb(24_71_159_/_0.12)] backdrop-blur">
+          <CardHeader className="space-y-3 border-b border-[#e3eef9] px-5 py-5 sm:px-6">
             <div className="space-y-1">
-              <CardTitle className="font-mono text-2xl font-bold tracking-tight text-[#071224]">Sign In</CardTitle>
-              <CardDescription className="font-mono text-sm font-bold tracking-[0.04em] text-[#18479f]">
+              <CardTitle className="text-2xl font-semibold tracking-tight text-[#071224]">Sign In</CardTitle>
+              <CardDescription className="text-sm font-medium text-[#5f7187]">
                 Greetings, CStizen.
               </CardDescription>
             </div>
           </CardHeader>
-          <CardContent className="relative px-5 pb-5 sm:px-6 sm:pb-6">
+          <CardContent className="px-5 py-5 sm:px-6 sm:py-6">
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-[#1f3350]">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium text-[#1f3350]">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#5f7c99]" />
                   <Input
@@ -168,14 +133,14 @@ export function LoginPage() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="you@gmail.com"
-                    className="h-11 rounded-xl border-[#d7e8fb] bg-[#f8fbff] pl-9 font-mono text-sm text-[#071224] placeholder:text-[#7d94ab] focus-visible:border-[#1f6fe5] focus-visible:ring-[#1f6fe5]/20"
+                    className="h-11 rounded-md border-[#d7e8fb] bg-white pl-9 text-sm text-[#071224] shadow-sm placeholder:text-[#7d94ab] focus-visible:border-[#1f6fe5] focus-visible:ring-[#1f6fe5]/20"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-[#1f3350]">Password</Label>
+                <Label htmlFor="password" className="text-sm font-medium text-[#1f3350]">Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#5f7c99]" />
                   <Input
@@ -184,7 +149,7 @@ export function LoginPage() {
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     placeholder="Enter test password"
-                    className="h-11 rounded-xl border-[#d7e8fb] bg-[#f8fbff] pl-9 pr-10 font-mono text-sm text-[#071224] placeholder:text-[#7d94ab] focus-visible:border-[#1f6fe5] focus-visible:ring-[#1f6fe5]/20"
+                    className="h-11 rounded-md border-[#d7e8fb] bg-white pl-9 pr-10 text-sm text-[#071224] shadow-sm placeholder:text-[#7d94ab] focus-visible:border-[#1f6fe5] focus-visible:ring-[#1f6fe5]/20"
                     required
                   />
                   <button
@@ -240,7 +205,7 @@ export function LoginPage() {
 
               <Button
                 type="submit"
-                className="h-11 w-full rounded-xl bg-[linear-gradient(90deg,#18479f_0%,#1f6fe5_62%,#28a7f2_100%)] font-semibold text-white shadow-[0_14px_34px_rgb(31_111_229_/_0.28)] transition hover:brightness-105"
+                className="h-11 w-full rounded-md bg-[#18479f] font-semibold text-white shadow-sm transition hover:bg-[#1f6fe5]"
                 disabled={loading}
               >
                 {loading ? "Signing in..." : "Login"}

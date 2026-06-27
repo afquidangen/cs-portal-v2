@@ -9,4 +9,5 @@ export type ProfileDetails = {
   sex: string
   birthday: string
   address: string
+  deansListVisibility: "public" | "private"
 }

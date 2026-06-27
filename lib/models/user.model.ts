@@ -47,6 +47,7 @@ export interface IUser extends Document {
   year?: number
   section?: string
   position?: string
+  deansListVisibility: "public" | "private"
   status: "Active" | "Inactive"
   createdAt?: string
   lastLogin?: string
@@ -117,6 +118,7 @@ const UserSchema = new Schema<IUser>(
     section: String,
     position: String,
     roles: { type: [String], default: [] },
+    deansListVisibility: { type: String, enum: ["public", "private"], default: "public" },
     status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
     createdAt: String,
     lastLogin: String,

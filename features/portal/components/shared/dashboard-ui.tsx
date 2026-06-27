@@ -45,95 +45,50 @@ export function Panel({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-[0_18px_50px_rgb(15_23_42_/_0.06)] transition-all duration-200 dark:shadow-[0_18px_50px_rgb(0_0_0_/_0.22)]",
+        "overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-sm",
         className
       )}
     >
-      <div className="edu-bg-soft-glacier flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5 lg:px-6">
+      <div className="flex flex-col gap-3 border-b border-border bg-card px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           {eyebrow ? (
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
               {eyebrow}
             </p>
           ) : null}
-          <h3 className="mt-1 truncate text-base font-semibold tracking-tight text-foreground sm:text-lg">
+          <h3 className="truncate text-base font-semibold tracking-tight text-card-foreground">
             {title}
           </h3>
         </div>
         {actions ? <div className="w-full shrink-0 sm:w-auto">{actions}</div> : null}
       </div>
-      <div className="p-4 sm:p-5 lg:p-6">{children}</div>
+      <div className="p-5">{children}</div>
     </section>
   )
-}
-
-const eduMetricTones = {
-  abyss: {
-    shell: "border-[var(--edu-border-abyss)] bg-[var(--edu-shell-abyss-bg)]",
-    icon: "edu-abyss edu-ring-abyss",
-    glow: "bg-[rgb(9_44_86_/_0.18)] dark:bg-[rgb(9_44_86_/_0.10)]",
-  },
-  lapis: {
-    shell: "border-[var(--edu-border-lapis)] bg-[var(--edu-shell-lapis-bg)]",
-    icon: "edu-lapis edu-ring-lapis",
-    glow: "bg-[rgb(34_86_136_/_0.18)] dark:bg-[rgb(34_86_136_/_0.10)]",
-  },
-  slate: {
-    shell: "border-[var(--edu-border-slate)] bg-[var(--edu-shell-slate-bg)]",
-    icon: "edu-slate edu-ring-slate",
-    glow: "bg-[rgb(102_140_169_/_0.18)] dark:bg-[rgb(102_140_169_/_0.10)]",
-  },
-  glacier: {
-    shell: "border-[var(--edu-border-glacier)] bg-[var(--edu-shell-glacier-bg)]",
-    icon: "edu-glacier edu-ring-glacier",
-    glow: "bg-[rgb(169_203_224_/_0.24)] dark:bg-[rgb(169_203_224_/_0.18)]",
-  },
 }
 
 export function Metric({
   label,
   value,
   icon: Icon,
-  tone = "slate",
 }: {
   label: string
   value: string
   icon: LucideIcon
-  tone?: keyof typeof eduMetricTones
 }) {
-  const current = eduMetricTones[tone] ?? eduMetricTones.slate
-
   return (
-    <div
-      className={cn(
-        "group relative overflow-hidden rounded-xl border bg-card p-4 shadow-[0_16px_44px_rgb(15_23_42_/_0.06)] ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_56px_rgb(15_23_42_/_0.1)] sm:p-5 dark:ring-white/5",
-        current.shell
-      )}
-    >
-      <div
-        className={cn(
-          "pointer-events-none absolute -right-8 -top-8 size-24 rounded-full blur-2xl opacity-55 transition-opacity duration-200 group-hover:opacity-90",
-          current.glow
-        )}
-      />
-
-      <div className="relative flex items-start justify-between gap-3 sm:gap-4">
+    <div className="rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="break-words text-xs font-semibold uppercase leading-4 tracking-[0.08em] text-muted-foreground sm:tracking-[0.14em]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {label}
           </p>
-          <p className="mt-3 truncate text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <p className="mt-2 text-2xl font-bold tracking-tight text-card-foreground">
             {value}
           </p>
         </div>
-
-        <span
-          className={cn(
-            "flex size-12 shrink-0 items-center justify-center rounded-xl border shadow-sm ring-4 ring-white/50 sm:size-14 dark:ring-white/5",
-            current.icon
-          )}
-        >
-          <Icon className="size-5 sm:size-6" strokeWidth={2.5} />
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
+          <Icon className="size-5" />
         </span>
       </div>
     </div>
@@ -156,7 +111,7 @@ export function SearchBox({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="edu-topbar-highlight h-11 rounded-lg border bg-background pl-10 text-foreground shadow-sm transition-all duration-200 placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/20"
+        className="h-11 rounded-lg border-border bg-card pl-10 text-card-foreground shadow-sm placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/20"
       />
     </div>
   )
@@ -164,7 +119,7 @@ export function SearchBox({
 
 export function EmptyState({ text }: { text: string }) {
   return (
-    <div className="edu-bg-soft-glacier rounded-xl border border-dashed border-border px-6 py-12 text-center shadow-sm">
+    <div className="rounded-xl border border-dashed border-border bg-card px-6 py-12 text-center shadow-sm">
       <p className="mx-auto max-w-md text-sm leading-7 text-muted-foreground">
         {text}
       </p>
@@ -217,18 +172,18 @@ export function Select({
 
       <UiSelect value={value} onValueChange={onChange}>
         <SelectTrigger className={cn(
-          "h-11 rounded-lg border bg-white text-black shadow-sm transition-all duration-200 hover:bg-slate-50 focus:ring-2 focus:ring-ring/20 dark:bg-[#0f1b2b] dark:text-white dark:hover:bg-secondary",
+          "h-11 rounded-lg border bg-card text-card-foreground shadow-sm transition-all duration-200 hover:bg-muted focus:ring-2 focus:ring-ring/20",
           className ?? "border-border"
         )}>
           <SelectValue placeholder="Select option" />
         </SelectTrigger>
 
-        <SelectContent className={cn("border border-border bg-white text-black shadow-2xl dark:bg-[#0f1b2b] dark:text-white", contentClassName)}>
+        <SelectContent className={cn("border border-border bg-popover text-popover-foreground shadow-2xl", contentClassName)}>
           {[...new Set(options)].filter(Boolean).map((option) => (
             <SelectItem
               key={option}
               value={option}
-              className="text-black focus:bg-slate-100 focus:text-black data-[highlighted]:bg-slate-100 data-[highlighted]:text-black data-[state=checked]:bg-slate-100 data-[state=checked]:text-black dark:text-white dark:focus:bg-[#123768] dark:focus:text-white dark:data-[highlighted]:bg-[#123768] dark:data-[highlighted]:text-white dark:data-[state=checked]:bg-[#123768] dark:data-[state=checked]:text-white"
+              className="text-popover-foreground focus:bg-accent focus:text-accent-foreground data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground"
             >
               {option}
             </SelectItem>
@@ -250,20 +205,14 @@ export function TicketList({
 
   return (
     <div className="space-y-3">
-      {tickets.map((ticket, index) => (
+      {tickets.map((ticket) => (
         <article
           key={ticket.id}
-          className={cn(
-            "rounded-xl border bg-card p-5 text-card-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
-            index % 4 === 0 && "edu-ring-glacier edu-bg-soft-glacier",
-            index % 4 === 1 && "edu-ring-lapis edu-bg-soft-lapis",
-            index % 4 === 2 && "edu-ring-slate edu-bg-soft-slate",
-            index % 4 === 3 && "edu-ring-abyss edu-bg-soft-abyss"
-          )}
+          className="rounded-lg border border-border bg-card p-5 text-card-foreground shadow-sm"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h4 className="truncate text-base font-semibold tracking-tight text-foreground">
+              <h4 className="truncate text-base font-semibold tracking-tight text-card-foreground">
                 {ticket.subject}
               </h4>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -273,16 +222,16 @@ export function TicketList({
             <StatusBadge value={ticket.status} />
           </div>
 
-          <p className="mt-4 text-sm leading-7 text-foreground/85">
+          <p className="mt-4 text-sm leading-7 text-muted-foreground">
             {ticket.description}
           </p>
 
           {ticket.resolution ? (
-            <div className="mt-4 rounded-lg border border-border bg-background/70 p-4">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            <div className="mt-4 rounded-lg border border-border bg-muted p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Resolution
               </p>
-              <p className="mt-2 text-sm leading-7 text-foreground/85">
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">
                 {ticket.resolution}
               </p>
             </div>

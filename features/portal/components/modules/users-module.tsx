@@ -21,13 +21,18 @@ import {
   ShieldCheck,
   Trash2,
   UserCheck,
-  UserCog,
   UserX,
   Users,
 } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { toast } from "sonner"
 import {
   Dialog,
@@ -41,7 +46,6 @@ import {
 import { Input } from "@/components/ui/input"
 
 import {
-  Panel,
   SearchBox,
   Select,
   StatusBadge,
@@ -314,26 +318,12 @@ export function UsersModule({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left shadow-sm sm:px-6">
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
-        <div className="relative flex max-w-4xl flex-col items-start gap-4 sm:flex-row sm:items-center">
-          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
-            <UserCog className="size-8" />
-          </div>
-          <div>
-            <p className="inline-flex items-center justify-start gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-              <ShieldCheck className="size-4" />
-              Accounts and Access Control
-            </p>
-            <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-              User Management
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Manage portal accounts, roles, status, curriculum assignments, and student grade registry records.
-            </p>
-          </div>
-        </div>
-      </section>
+      <div className="pt-4">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">User Management</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Manage portal accounts, roles, status, curriculum assignments, and grade registry records.
+        </p>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-7">
         {[
@@ -345,31 +335,33 @@ export function UsersModule({ model }: PortalModuleProps) {
           { label: "Admins", value: stats.admins, icon: ShieldCheck },
           { label: "Trashed", value: stats.trashed, icon: Trash2 },
         ].map((stat) => (
-          <div
+          <Card
             key={stat.label}
-            className="edu-bg-soft-glacier flex items-center gap-3 rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm"
+            className="rounded-lg border-slate-200 bg-white shadow-sm"
           >
-            <div className="edu-lapis flex size-10 shrink-0 items-center justify-center rounded-xl shadow-sm">
-              <stat.icon className="size-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {stat.label}
-              </p>
-              <p className="text-xl font-semibold tracking-tight text-foreground">
-                {stat.value}
-              </p>
-            </div>
-          </div>
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+                <stat.icon className="size-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-600">{stat.label}</p>
+                <p className="text-xl font-semibold tracking-tight text-slate-950">{stat.value}</p>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
-      <Panel
-        title={trashView ? `Recycle Bin (${deletedUsers.length})` : `Active Users (${visibleUsers.length})`}
-        eyebrow={trashView ? "Deleted accounts" : "Search and filter"}
-        className="[&>div:first-child]:border-b-0 [&>div:first-child]:bg-transparent [&>div:first-child]:pb-2 [&>div:first-child>div:first-child]:hidden [&>div:first-child>div:nth-child(2)]:w-full [&>div:first-child>div:nth-child(2)]:sm:w-full"
-        actions={
-          <div className="grid w-full max-w-full min-w-0 grid-cols-1 gap-2 rounded-xl bg-muted/20 p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(240px,1.45fr)_repeat(5,minmax(125px,1fr))_repeat(3,minmax(112px,auto))]">
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardHeader className="px-6 pb-0 pt-6">
+          <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
+            <Users className="size-5 text-blue-600" />
+            {trashView ? `Recycle Bin (${deletedUsers.length})` : `Active Users (${visibleUsers.length})`}
+          </CardTitle>
+          <p className="pt-1 text-sm text-slate-500">{trashView ? "Deleted accounts" : "Search and filter accounts."}</p>
+        </CardHeader>
+        <CardContent className="px-6 pb-6 pt-6">
+          <div className="mb-5 grid w-full max-w-full min-w-0 grid-cols-1 gap-2 rounded-lg border border-slate-200 bg-slate-50/60 p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(240px,1.45fr)_repeat(5,minmax(125px,1fr))_repeat(3,minmax(112px,auto))]">
             <div className="min-w-0 sm:col-span-2 lg:col-span-3 xl:col-span-1 [&>div]:max-w-none">
               <SearchBox
                 value={query}
@@ -473,8 +465,6 @@ export function UsersModule({ model }: PortalModuleProps) {
               </Button>
             ) : null}
           </div>
-        }
-      >
         {!trashView ? (
           <>
             <div className="mb-4 grid gap-3 rounded-xl border border-border bg-muted/20 p-3 text-sm sm:grid-cols-2 xl:grid-cols-5">
@@ -742,7 +732,8 @@ export function UsersModule({ model }: PortalModuleProps) {
             )}
           </>
         )}
-      </Panel>
+        </CardContent>
+      </Card>
 
       {/* ── Add Account Dialog ── */}
       <Dialog open={addOpen} onOpenChange={(o) => {

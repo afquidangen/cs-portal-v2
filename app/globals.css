@@ -302,6 +302,83 @@
     background-color: color-mix(in oklab, var(--muted) 70%, transparent);
   }
 
+  .dark .bg-white {
+    background-color: var(--card);
+  }
+
+  .dark .bg-slate-50 {
+    background-color: var(--muted);
+  }
+
+  .dark .bg-slate-100 {
+    background-color: color-mix(in oklab, var(--muted) 78%, white 4%);
+  }
+
+  .dark .border-slate-100,
+  .dark .border-slate-200,
+  .dark .border-slate-300 {
+    border-color: var(--border);
+  }
+
+  .dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+  .dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
+  .dark .divide-slate-300 > :not([hidden]) ~ :not([hidden]) {
+    border-color: var(--border);
+  }
+
+  .dark .text-slate-950,
+  .dark .text-slate-900,
+  .dark .text-slate-800,
+  .dark .text-black {
+    color: var(--foreground);
+  }
+
+  .dark .text-slate-700,
+  .dark .text-slate-600,
+  .dark .text-slate-500 {
+    color: var(--muted-foreground);
+  }
+
+  .dark .text-slate-400 {
+    color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+  }
+
+  .dark .placeholder\:text-slate-400::placeholder {
+    color: color-mix(in oklab, var(--muted-foreground) 76%, transparent);
+  }
+
+  .dark .hover\:bg-slate-50:hover,
+  .dark .hover\:bg-slate-100:hover {
+    background-color: color-mix(in oklab, var(--muted) 74%, white 4%);
+  }
+
+  .dark .hover\:text-slate-950:hover,
+  .dark .hover\:text-slate-900:hover {
+    color: var(--foreground);
+  }
+
+  .dark .bg-blue-50 {
+    background-color: rgb(59 130 246 / 0.12);
+  }
+
+  .dark .text-blue-600,
+  .dark .text-blue-700 {
+    color: #93c5fd;
+  }
+
+  .dark .border-blue-600,
+  .dark .border-blue-200,
+  .dark .ring-blue-100,
+  .dark .ring-slate-100,
+  .dark .ring-slate-200 {
+    border-color: rgb(96 165 250 / 0.38);
+    --tw-ring-color: rgb(96 165 250 / 0.25);
+  }
+
+  .dark .shadow-sm {
+    --tw-shadow-color: rgb(0 0 0 / 0.28);
+  }
+
   .text-balance {
     text-wrap: balance;
   }
@@ -435,9 +512,9 @@
     display: grid;
     gap: 0.55rem;
     width: min(100%, 38rem);
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-    font-size: clamp(1rem, 1.3vw, 1.2rem);
-    font-weight: 700;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: clamp(0.95rem, 1.2vw, 1.12rem);
+    font-weight: 600;
     line-height: 1.5;
     color: #071224;
   }
@@ -448,7 +525,7 @@
     max-width: max-content;
     overflow: hidden;
     white-space: nowrap;
-    border-right: 2px solid #1f6fe5;
+    border-right: 2px solid rgb(31 111 229 / 0.72);
     animation:
       login-terminal-type 1.15s steps(var(--login-terminal-steps)) forwards,
       login-terminal-caret 0.8s step-end infinite;
@@ -456,14 +533,15 @@
 
   .login-terminal-line-command {
     --login-terminal-steps: 24;
-    font-size: 0.95em;
-    color: #18479f;
+    font-size: 0.92em;
+    color: #5f7187;
   }
 
   .login-terminal-line-welcome {
     --login-terminal-steps: 35;
     animation-delay: 1.1s;
     font-size: 1.08em;
+    color: #071224;
   }
 
   .login-terminal-line-quote {
@@ -472,12 +550,11 @@
       login-terminal-type 1.15s 2.25s steps(var(--login-terminal-steps)) forwards,
       login-terminal-caret 0.8s 2.25s step-end infinite;
     color: #18479f;
-    text-shadow: 0 0 8px rgba(24, 71, 159, 0.5), 0 0 20px rgba(31, 111, 229, 0.3);
   }
 
   .login-terminal-line-status {
     --login-terminal-steps: 34;
-    color: #225688;
+    color: #5f7187;
     animation-delay: 3.4s;
   }
 
@@ -701,6 +778,42 @@
 .ag-root-wrapper {
   width: max-content !important;
   min-width: 100%;
+}
+
+.egrades-grid-shell {
+  height: clamp(440px, 66vh, 760px);
+}
+
+.egrades-grid-shell > div,
+.egrades-grid-shell .ag-theme-alpine,
+.egrades-grid-shell .ag-root-wrapper {
+  height: 100%;
+}
+
+.egrades-grid-shell .ag-header,
+.egrades-grid-shell .ag-header-viewport,
+.egrades-grid-shell .ag-pinned-left-header {
+  background: #f8fafc;
+}
+
+.egrades-grid-shell .ag-header-cell,
+.egrades-grid-shell .ag-header-group-cell {
+  border-color: #e2e8f0;
+}
+
+.egrades-grid-shell .ag-cell {
+  line-height: 1.35;
+}
+
+.egrades-grid-shell .ag-row-hover {
+  background-color: #f8fafc !important;
+}
+
+@media (max-width: 768px) {
+  .egrades-grid-shell {
+    height: 58vh;
+    min-height: 420px;
+  }
 }
 
 

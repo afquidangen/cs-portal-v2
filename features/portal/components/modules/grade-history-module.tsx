@@ -133,9 +133,13 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
   }, [history])
 
   return (
-    <Panel title="Grades Registry" eyebrow="Grades Registry">
+    <Panel title="Grades Registry" className="[&>div:first-child]:hidden">
+      <div className="mb-5 pt-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Grades Registry</h1>
+        <p className="mt-2 text-sm text-slate-600">Review your historical grades by year level and semester.</p>
+      </div>
       {grouped.length === 0 ? (
-        <div className="rounded-[26px] border border-dashed border-border bg-muted/30 px-6 py-14 text-center shadow-sm">
+        <div className="rounded-lg border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
           <BookOpen className="mx-auto mb-3 size-10 text-muted-foreground/40" />
           <p className="text-sm leading-7 text-muted-foreground">
             No grade history records yet.
@@ -146,51 +150,51 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
           {grouped.map((group) => (
             <div key={`${group.yearLevel}-${group.semester}`}>
               <div className="mb-3 flex items-center gap-3">
-                <div className="h-6 w-1 rounded-full bg-primary/60" />
-                <p className="text-sm font-bold text-foreground">
-                  {YEAR_MAP[group.yearLevel] ?? group.yearLevel} &mdash; {group.semester}
+                <div className="h-6 w-1 rounded-full bg-blue-600" />
+                <p className="text-sm font-semibold text-slate-950">
+                  {YEAR_MAP[group.yearLevel] ?? group.yearLevel} - {group.semester}
                 </p>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-slate-500">
                   {group.entries.length} {group.entries.length === 1 ? "subject" : "subjects"}
                 </span>
               </div>
-              <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
+              <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
                 <table className="w-full text-sm">
-                  <thead className="bg-muted text-foreground">
-                    <tr className="border-b border-border">
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                  <thead className="bg-slate-50 text-slate-700">
+                    <tr className="border-b border-slate-200">
+                      <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
                         Subject Code
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                      <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
                         Subject Title
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                      <th className="whitespace-nowrap px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
                         Units
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                      <th className="whitespace-nowrap px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
                         Final Grade
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                      <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
                         Remarks
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border bg-card">
+                  <tbody className="divide-y divide-slate-200 bg-white">
                     {group.entries.map((entry, idx) => (
-                      <tr key={idx} className="transition-colors hover:bg-muted/50">
-                        <td className="px-4 py-3 font-medium text-foreground">
+                      <tr key={idx} className="transition-colors hover:bg-slate-50">
+                        <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-950">
                           {entry.subjectCode}
                         </td>
-                        <td className="px-4 py-3 text-foreground/80">
+                        <td className="whitespace-nowrap px-4 py-3 text-slate-600">
                           {entry.subjectName}
                         </td>
-                        <td className="px-4 py-3 text-center font-mono tabular-nums text-foreground">
+                        <td className="whitespace-nowrap px-4 py-3 text-center font-mono tabular-nums text-slate-700">
                           {entry.units ?? "-"}
                         </td>
-                        <td className="px-4 py-3 text-center font-mono tabular-nums text-foreground">
+                        <td className="whitespace-nowrap px-4 py-3 text-center font-mono tabular-nums text-slate-700">
                           {entry.transmutedGrade.toFixed(2)}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="whitespace-nowrap px-4 py-3">
                           <StatusBadge value={entry.remarks} />
                         </td>
                       </tr>

@@ -4,8 +4,8 @@ import { useMemo, useState } from "react"
 import { Archive, BookOpen, CalendarDays, ChevronDown, ChevronRight, Download, GraduationCap, Users } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import { Panel } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 import type { GradeRecord, ScheduleItem } from "../../data/portal-data"
 import type { SemesterRecord } from "@/lib/types"
@@ -120,41 +120,40 @@ export function AdminSemesterArchiveModule({ model }: PortalModuleProps) {
 
   if (archivedSemesters.length === 0) {
     return (
-      <Panel title="Semester Archive" className="[&>div:first-child]:hidden">
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <Archive className="size-12 text-muted-foreground/40" />
-          <h3 className="mt-4 text-lg font-bold text-foreground">No Archived Semesters</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Archived semesters will appear here once semesters are archived.
-          </p>
+      <div className="space-y-5">
+        <div className="pt-4">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Semester Archive</h1>
+          <p className="mt-2 text-sm text-slate-600">Review archived semesters, schedules, and grade records.</p>
         </div>
-      </Panel>
+        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+          <CardContent className="flex flex-col items-center justify-center py-20 text-center">
+            <Archive className="size-12 text-slate-300" />
+            <h3 className="mt-4 text-lg font-bold text-slate-950">No Archived Semesters</h3>
+            <p className="mt-1 text-sm text-slate-500">
+              Archived semesters will appear here once semesters are archived.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
   return (
-    <Panel title="Semester Archive Management" className="[&>div:first-child]:hidden">
-      <div className="space-y-5">
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 sm:px-6">
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
-          <div className="relative flex items-center gap-4">
-            <div className="flex size-14 items-center justify-center rounded-2xl border border-border bg-card shadow-sm">
-              <Archive className="size-7" />
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Administration</p>
-              <h3 className="text-2xl font-black tracking-tight text-foreground">Semester Archive Management</h3>
-            </div>
-          </div>
-        </div>
+    <div className="space-y-5">
+      <div className="pt-4">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Semester Archive</h1>
+        <p className="mt-2 text-sm text-slate-600">Review archived semesters, schedules, and grade records.</p>
+      </div>
 
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardContent className="p-6">
         <div className="space-y-3">
           {semestersWithData.map(({ semester: sem, schedules: semSchedules, grades: semGrades, instructors, sections, passed }) => {
             const isOpen = expandedId === sem.id
             return (
               <div
                 key={sem.id}
-                className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden"
+                className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden"
               >
                 <div className="flex w-full items-center justify-between gap-2 p-4">
                   <button
@@ -196,23 +195,23 @@ export function AdminSemesterArchiveModule({ model }: PortalModuleProps) {
                   </div>
                 </div>
 
-                {isOpen && (
-                  <div className="border-t border-border px-4 pb-4 pt-3 space-y-4">
+                  {isOpen && (
+                  <div className="border-t border-slate-200 px-4 pb-4 pt-3 space-y-4">
                     {/* Summary cards */}
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                      <div className="rounded-xl border border-border bg-muted/20 px-3 py-2 text-center">
+                      <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-center shadow-sm">
                         <p className="text-xs text-muted-foreground">Schedules</p>
                         <p className="text-lg font-bold text-foreground">{semSchedules.length}</p>
                       </div>
-                      <div className="rounded-xl border border-border bg-muted/20 px-3 py-2 text-center">
+                      <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-center shadow-sm">
                         <p className="text-xs text-muted-foreground">Grade Records</p>
                         <p className="text-lg font-bold text-foreground">{semGrades.length}</p>
                       </div>
-                      <div className="rounded-xl border border-border bg-muted/20 px-3 py-2 text-center">
+                      <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-center shadow-sm">
                         <p className="text-xs text-muted-foreground">Instructors</p>
                         <p className="text-lg font-bold text-foreground">{instructors.length}</p>
                       </div>
-                      <div className="rounded-xl border border-border bg-muted/20 px-3 py-2 text-center">
+                      <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-center shadow-sm">
                         <p className="text-xs text-muted-foreground">Sections</p>
                         <p className="text-lg font-bold text-foreground">{sections.length}</p>
                       </div>
@@ -221,28 +220,28 @@ export function AdminSemesterArchiveModule({ model }: PortalModuleProps) {
                     {/* Schedules table */}
                     {semSchedules.length > 0 && (
                       <div>
-                        <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Schedules & Faculty Assignments</h4>
-                        <div className="overflow-x-auto rounded-xl border border-border">
+                        <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">Schedules & Faculty Assignments</h4>
+                        <div className="overflow-x-auto rounded-lg border border-slate-200">
                           <table className="w-full text-left text-xs">
                             <thead>
-                              <tr className="bg-muted/40 text-muted-foreground">
-                                <th className="px-3 py-2 font-semibold">Day</th>
-                                <th className="px-3 py-2 font-semibold">Time</th>
-                                <th className="px-3 py-2 font-semibold">Subject</th>
-                                <th className="px-3 py-2 font-semibold">Section</th>
-                                <th className="px-3 py-2 font-semibold">Room</th>
-                                <th className="px-3 py-2 font-semibold">Instructor</th>
+                              <tr className="bg-slate-50 text-slate-500">
+                                <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Day</th>
+                                <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Time</th>
+                                <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Subject</th>
+                                <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Section</th>
+                                <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Room</th>
+                                <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Instructor</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-border">
+                            <tbody className="divide-y divide-slate-200">
                               {semSchedules.map((s) => (
-                                <tr key={s.id} className="hover:bg-muted/20">
-                                  <td className="px-3 py-2 text-foreground">{s.day}</td>
-                                  <td className="px-3 py-2 text-foreground">{s.time}</td>
-                                  <td className="px-3 py-2 font-medium text-foreground">{s.subject}</td>
-                                  <td className="px-3 py-2 text-foreground">{s.section}</td>
-                                  <td className="px-3 py-2 text-foreground">{s.room}</td>
-                                  <td className="px-3 py-2 text-foreground">{s.instructor}</td>
+                                <tr key={s.id} className="hover:bg-slate-50">
+                                  <td className="px-3 py-2 text-slate-700">{s.day}</td>
+                                  <td className="px-3 py-2 text-slate-700">{s.time}</td>
+                                  <td className="px-3 py-2 font-medium text-slate-900">{s.subject}</td>
+                                  <td className="px-3 py-2 text-slate-700">{s.section}</td>
+                                  <td className="px-3 py-2 text-slate-700">{s.room}</td>
+                                  <td className="px-3 py-2 text-slate-700">{s.instructor}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -254,31 +253,31 @@ export function AdminSemesterArchiveModule({ model }: PortalModuleProps) {
                     {/* Grade Records table */}
                     {semGrades.length > 0 && (
                       <div>
-                        <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Grade Records</h4>
-                        <div className="overflow-x-auto rounded-xl border border-border">
+                        <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">Grade Records</h4>
+                        <div className="overflow-x-auto rounded-lg border border-slate-200">
                           <table className="w-full text-left text-xs">
                             <thead>
-                              <tr className="bg-muted/40 text-muted-foreground">
-                                <th className="px-3 py-2 font-semibold">Student</th>
-                                <th className="px-3 py-2 font-semibold">Code</th>
-                                <th className="px-3 py-2 font-semibold">Subject</th>
-                                <th className="px-3 py-2 font-semibold text-right">Final Grade</th>
-                                <th className="px-3 py-2 font-semibold text-right">Transmuted</th>
-                                <th className="px-3 py-2 font-semibold text-center">Remarks</th>
+                              <tr className="bg-slate-50 text-slate-500">
+                                <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Student</th>
+                                <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Code</th>
+                                <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Subject</th>
+                                <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-right">Final Grade</th>
+                                <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-right">Transmuted</th>
+                                <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-center">Remarks</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-border">
+                            <tbody className="divide-y divide-slate-200">
                               {semGrades
                                 .sort((a, b) => a.student.localeCompare(b.student))
                                 .map((g) => (
-                                  <tr key={g.id} className="hover:bg-muted/20">
-                                    <td className="px-3 py-2 text-foreground">{g.student}</td>
-                                    <td className="px-3 py-2 font-mono text-foreground">{g.code}</td>
-                                    <td className="px-3 py-2 text-foreground">{g.subject}</td>
-                                    <td className="px-3 py-2 text-right font-mono tabular-nums text-foreground">
+                                  <tr key={g.id} className="hover:bg-slate-50">
+                                    <td className="px-3 py-2 text-slate-700">{g.student}</td>
+                                    <td className="px-3 py-2 font-mono text-slate-700">{g.code}</td>
+                                    <td className="px-3 py-2 text-slate-700">{g.subject}</td>
+                                    <td className="px-3 py-2 text-right font-mono tabular-nums text-slate-700">
                                       {g.finalGrade ?? g.tentativeFinalGrade ?? "---"}
                                     </td>
-                                    <td className="px-3 py-2 text-right font-mono tabular-nums text-foreground">
+                                    <td className="px-3 py-2 text-right font-mono tabular-nums text-slate-700">
                                       {g.transmutedGrade ?? "---"}
                                     </td>
                                     <td className="px-3 py-2 text-center">
@@ -317,7 +316,8 @@ export function AdminSemesterArchiveModule({ model }: PortalModuleProps) {
             )
           })}
         </div>
-      </div>
-    </Panel>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

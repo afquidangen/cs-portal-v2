@@ -4,14 +4,17 @@ import { useEffect, useRef, useState } from "react"
 import { BookOpen, Calendar, Clock, Download, Eye, FileText, GraduationCap, LibraryBig, Loader2, Plus, Search, Tags, FileIcon, ExternalLink, Bookmark, Trash2, Tag, Users, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 import {
-  EmptyState,
-  Metric,
-  Panel,
-  SearchBox,
-  Select,
   StatusBadge,
   Textarea,
 } from "../shared/dashboard-ui"
@@ -192,31 +195,35 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
   }
 
   return (
-    <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-2xl border border-border bg-muted/20 px-4 py-6 text-left shadow-sm sm:px-6">
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(rgba(100,116,139,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-55 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)]" />
-        <div className="relative flex max-w-4xl flex-col items-start gap-4 sm:flex-row sm:items-center">
-          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm">
-            <LibraryBig className="size-8" />
-          </div>
-          <div>
-            <p className="inline-flex items-center justify-start gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-              <Search className="size-4" />
-              Research Repository
-            </p>
-            <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-              Thesis Library
-            </h2>
-            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Browse and manage thesis manuscripts in the research repository.
-            </p>
-          </div>
-        </div>
-      </section>
+    <div className="space-y-6">
+      <div className="pt-4">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Thesis Library</h1>
+        <p className="mt-2 text-sm text-slate-600">Browse and manage thesis manuscripts in the research repository.</p>
+      </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <Metric label="Repository Records" value={String(theses.length)} icon={BookOpen} />
-        <Metric label="Categories" value={String(Math.max(0, categories.length - 1))} icon={Tags} tone="glacier" />
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+          <CardContent className="flex items-center gap-3 p-4">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+              <BookOpen className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Repository Records</p>
+              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950">{theses.length}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+          <CardContent className="flex items-center gap-3 p-4">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+              <Tags className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Categories</p>
+              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950">{Math.max(0, categories.length - 1)}</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Dialog open={showThesisUploadForm} onOpenChange={setShowThesisUploadForm}>
@@ -623,85 +630,112 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
       {showThesisTrash ? (
         <ThesisTrashPanel model={model} onBack={() => setShowThesisTrash(false)} />
       ) : (
-        <Panel
-          title="Thesis Records"
-          actions={
-            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <div className="grow [&>div]:!max-w-none">
-                <SearchBox
+        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+          <CardHeader className="border-b border-slate-200 px-5 py-4">
+            <div className="flex w-full flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold text-slate-950">Thesis Records</CardTitle>
+                {role === "admin" && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowThesisTrash(true)}
+                    className="h-9 gap-1.5 rounded-lg px-3 text-xs shrink-0 sm:hidden"
+                  >
+                    <Trash2 className="size-3.5" />
+                    Trash
+                  </Button>
+                )}
+              </div>
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <Input
                   value={query}
-                  onChange={setQuery}
+                  onChange={(event) => setQuery(event.target.value)}
                   placeholder="Search title, author, adviser, or keyword"
+                  className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-10 text-slate-950 shadow-sm placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/20"
                 />
               </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-1 gap-2 min-w-0">
+                  <Select value={thesisYearFilter} onValueChange={setThesisYearFilter}>
+                    <SelectTrigger className="h-9 flex-1 min-w-0 rounded-lg text-xs">
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map((y) => (
+                        <SelectItem key={y} value={y}>{y}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={thesisCategoryFilter} onValueChange={setThesisCategoryFilter}>
+                    <SelectTrigger className="h-9 flex-1 min-w-0 rounded-lg text-xs">
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               {role === "admin" && (
-                <div className="flex shrink-0 gap-2">
+                  <div className="flex gap-2">
                   <Button
                     type="button"
                     onClick={() => setShowThesisUploadForm((current) => !current)}
-                    className="h-10 gap-2 rounded-lg px-5 text-sm font-semibold"
+                    className="h-9 gap-1.5 rounded-lg px-4 text-xs font-semibold shrink-0"
                   >
-                    <Plus className="size-4" />
-                    Upload Thesis
+                    <Plus className="size-3.5" />
+                    Upload
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setShowThesisTrash(true)}
-                    className="h-10 gap-2 rounded-lg px-5 text-sm font-semibold"
+                    className="h-9 gap-1.5 rounded-lg px-3 text-xs shrink-0 max-sm:hidden"
                   >
-                    <Trash2 className="size-4" />
-                    Trash Bin
+                    <Trash2 className="size-3.5" />
+                    Trash
                   </Button>
-                </div>
+                  </div>
               )}
-              <div className="flex shrink-0 gap-2">
-                <Select
-                  value={thesisYearFilter}
-                  onChange={setThesisYearFilter}
-                  options={years}
-                />
-                <Select
-                  value={thesisCategoryFilter}
-                  onChange={setThesisCategoryFilter}
-                  options={categories}
-                />
               </div>
             </div>
-          }
-        >
+          </CardHeader>
+          <CardContent className="p-5">
 
           <div className="grid gap-4 lg:grid-cols-2">
             {filteredTheses.map((thesis) => (
               <article
                 key={thesis.id}
-                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:shadow-lg hover:ring-1 hover:ring-primary/20"
+                className="group relative cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md"
                 onClick={() => setDetailThesis(thesis)}
               >
                 <div className="flex h-full flex-col p-5">
                   <div className="flex flex-1 items-start gap-3">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/[0.08] text-primary ring-1 ring-primary/10">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
                       <FileIcon className="size-5" />
                     </span>
                     <div className="flex min-w-0 flex-1 flex-col">
                       <div className="flex flex-wrap items-center gap-2">
                         <StatusBadge value={thesis.category} />
-                        <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                        <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
                           {thesis.year}
                         </span>
                       </div>
-                      <h4 className="mt-2 line-clamp-2 text-base font-bold leading-snug tracking-tight text-foreground group-hover:text-primary transition-colors">
+                      <h4 className="mt-2 line-clamp-2 text-base font-bold leading-snug tracking-tight text-slate-950 group-hover:text-blue-600 transition-colors">
                         {thesis.title}
                       </h4>
-                      <p className="mt-1.5 grow truncate text-sm text-foreground/60">{thesis.authors}</p>
+                      <p className="mt-1.5 grow truncate text-sm text-slate-500">{thesis.authors}</p>
                       <div className="flex items-center justify-between gap-2 pt-4">
-                        <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-slate-500">
                           <span className="truncate">{thesis.adviser}</span>
                           {thesis.tags.length > 0 && (
                             <span className="hidden sm:inline-flex items-center gap-1">
-                              <span className="size-1 rounded-full bg-muted-foreground/40" />
+                              <span className="size-1 rounded-full bg-slate-400" />
                               {thesis.tags.slice(0, 2).join(", ")}
-                              {thesis.tags.length > 2 && <span className="text-muted-foreground/50">+{thesis.tags.length - 2}</span>}
+                              {thesis.tags.length > 2 && <span className="text-slate-400">+{thesis.tags.length - 2}</span>}
                             </span>
                           )}
                         </div>
@@ -709,13 +743,13 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                       {thesis.pdfUrl && (
                         <>
                           <button type="button"
-                            className="flex size-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground shadow-sm transition hover:bg-muted hover:text-foreground"
+                            className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
                             onClick={(e) => { e.stopPropagation(); window.open(thesis.pdfUrl, "_blank") }}
                             title="Open PDF">
                             <ExternalLink className="size-3.5" />
                           </button>
                           <button type="button"
-                            className="flex size-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground shadow-sm transition hover:bg-muted hover:text-foreground"
+                            className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
                             onClick={async (e) => {
                               e.stopPropagation()
                               try {
@@ -746,11 +780,12 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
           </div>
 
           {filteredTheses.length === 0 ? (
-            <div className="mt-4">
-              <EmptyState text="No thesis records match the current filters." />
+            <div className="mt-4 rounded-lg border border-dashed border-slate-200 bg-white px-6 py-12 text-center">
+              <p className="text-sm text-slate-500">No thesis records match the current filters.</p>
             </div>
           ) : null}
-        </Panel>
+          </CardContent>
+        </Card>
       )}
     </div>
   )

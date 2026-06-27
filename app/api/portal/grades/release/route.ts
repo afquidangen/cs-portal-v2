@@ -1,7 +1,8 @@
 import { connectToDatabase } from "@/lib/mongodb"
-import { GradeModel, UserModel } from "@/lib/models"
+import { GradeModel, UserModel, ScheduleModel } from "@/lib/models"
 import { success, error, badRequest } from "@/lib/api-response"
 import { transmuteGrade, getGradeRemarks } from "@/features/portal/lib/grade-engine"
+import { recomputeDeansListForSemester } from "@/features/portal/lib/deans-list-utils"
 
 export const runtime = "nodejs"
 
@@ -100,6 +101,14 @@ export async function POST(request: Request) {
     }
 
     const updatedGrades = await GradeModel.find({ classId, studentId: { $in: grades.map((g) => g.studentId) } }).lean()
+
+    const schedule = await ScheduleModel.findOne({ id: classId }).lean()
+    if (schedule?.semesterId) {
+      recomputeDeansListForSemester(schedule.semesterId).catch((dlErr) =>
+        console.warn("[DeansList] Auto re-evaluation failed after release:", dlErr)
+      )
+    }
+
     return success({ modifiedCount: grades.length, grades: updatedGrades })
   } catch (err) {
     return error(err instanceof Error ? err.message : "Unable to release grades.")

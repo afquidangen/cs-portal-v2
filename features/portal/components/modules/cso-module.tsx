@@ -7,6 +7,7 @@ import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
   DialogClose,
@@ -19,7 +20,7 @@ import { ImageCropDialog } from "../shared/image-crop-dialog"
 
 import type { CsoReport } from "../../data/portal-data"
 import type { CsoInfoRecord, GalleryItem } from "@/lib/types"
-import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
+import { Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalDashboardModel } from "../../hooks/use-portal-dashboard-model"
 
 export function CsoModule({ model }: { model: PortalDashboardModel }) {
@@ -209,37 +210,36 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
 
   return (
     <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-xl border border-primary/15 bg-[linear-gradient(120deg,#f8fbff_0%,#eef7ff_56%,#f7fbff_100%)] px-4 py-6 text-center shadow-sm dark:border-[#1d3858] dark:bg-[linear-gradient(120deg,#071224_0%,#0b2038_58%,#123768_100%)] sm:px-8 sm:py-8">
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(36,120,255,0.08)_1px,transparent_1px),linear-gradient(rgba(36,120,255,0.06)_1px,transparent_1px)] bg-[size:38px_38px] opacity-50 dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)]" />
-        <div className="relative mx-auto max-w-3xl">
+      <section className="rounded-lg border border-slate-200 bg-white px-4 py-6 text-center shadow-sm sm:px-8 sm:py-8">
+        <div className="mx-auto max-w-3xl">
           {canManage ? (
-            <div className="absolute right-0 top-0 z-10">
+            <div className="flex justify-end mb-4">
               <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setShowCsoInfoForm(true)}>
                 <Pencil className="size-3.5" />
                 Edit Info
               </Button>
             </div>
           ) : null}
-          <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-2xl border border-primary/20 bg-white/80 p-1.5 shadow-md dark:border-[#8bd3ff]/25 dark:bg-white/10 sm:mb-6 sm:size-32 sm:rounded-3xl">
+          <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm sm:mb-6 sm:size-32">
             {model.csoInfo?.logoUrl ? (
               <Image
                 src={model.csoInfo.logoUrl}
                 alt="CSSO logo"
                 width={200}
                 height={250}
-                className="size-full rounded-xl object-contain"
+                className="size-full rounded-lg object-contain"
                 priority={false}
                 unoptimized
               />
             ) : (
-              <ImageIcon className="size-8 text-foreground/30 sm:size-12" />
+              <ImageIcon className="size-8 text-slate-400 sm:size-12" />
             )}
           </div>
-          <h2 className="font-heading text-[1.4rem] font-black uppercase leading-tight tracking-[0.03em] text-foreground sm:text-[3.35rem]">
+          <h2 className="text-2xl font-bold uppercase leading-tight tracking-tight text-slate-950 sm:text-3xl">
             {model.csoInfo?.orgName ?? "COMPUTING STUDIES STUDENTS ORGANIZATION"}
           </h2>
           {model.csoInfo?.description ? (
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
               {model.csoInfo.description}
             </p>
           ) : null}
@@ -248,18 +248,18 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
               href={model.csoInfo.facebookLink}
               target="_blank"
               rel="noreferrer"
-              className="mx-auto mt-5 inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-[#8bd3ff]/25 dark:bg-[#8bd3ff] dark:text-[#071224]"
+              className="mx-auto mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
             >
               Visit CSSO Facebook Page
               <ExternalLink className="size-4" />
             </a>
           ) : null}
-          <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs font-semibold text-primary dark:text-[#8bd3ff]">
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/15 bg-white/70 px-3 py-1.5 dark:border-[#8bd3ff]/20 dark:bg-white/10">
+          <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs font-semibold text-blue-600">
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-100 bg-blue-50 px-3 py-1.5">
               <Sparkles className="size-3.5" />
               Student leadership
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/15 bg-white/70 px-3 py-1.5 dark:border-[#8bd3ff]/20 dark:bg-white/10">
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-100 bg-blue-50 px-3 py-1.5">
               <Megaphone className="size-3.5" />
               Events and reports
             </span>
@@ -269,15 +269,15 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
       </section>
 
       {model.csoInfo?.facebookLink ? (
-        <div className="overflow-hidden rounded-xl border border-[#1877F2]/20 bg-card shadow-sm dark:border-[#1877F2]/15">
-          <div className="flex items-center justify-between border-b border-[#1877F2]/15 bg-[#1877F2]/5 px-4 py-3 dark:border-[#1877F2]/10 dark:bg-[#1877F2]/[0.07] sm:px-5">
+        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
             <div className="flex items-center gap-2.5">
               <svg viewBox="0 0 24 24" className="size-4 shrink-0 text-[#1877F2]" fill="currentColor">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
               </svg>
               <div>
-                <h3 className="text-sm font-semibold text-foreground">CSSO Facebook Page</h3>
-                <p className="text-[11px] leading-tight text-muted-foreground">Stay updated with our latest posts</p>
+                <h3 className="text-sm font-semibold text-slate-950">CSSO Facebook Page</h3>
+                <p className="text-xs text-slate-500">Stay updated with our latest posts</p>
               </div>
             </div>
             <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" asChild>
@@ -287,7 +287,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
               </a>
             </Button>
           </div>
-          <div className="flex justify-center">
+          <CardContent className="flex justify-center p-0">
             <iframe
               src={`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(model.csoInfo.facebookLink)}&tabs=timeline&width=500&height=600&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`}
               width="500"
@@ -301,28 +301,40 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
               title="CSSO Facebook Page"
               loading="lazy"
             />
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       ) : null}
 
       <div className="grid gap-3 md:grid-cols-3">
         {[
-          { label: "Accomplishments", value: String(accomplishments.length) },
-          { label: "Financial Reports", value: String(financials.length) },
-          { label: "All Documents", value: String(model.csoReports.length) },
-        ].map((item) => (
-          <div key={item.label} className="rounded-xl border border-primary/15 bg-card p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-[#1d3858] sm:p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary dark:text-[#8bd3ff] sm:text-xs">{item.label}</p>
-            <p className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:mt-2 sm:text-2xl">{item.value}</p>
-          </div>
-        ))}
+          { label: "Accomplishments", value: String(accomplishments.length), icon: FileText },
+          { label: "Financial Reports", value: String(financials.length), icon: FileText },
+          { label: "All Documents", value: String(model.csoReports.length), icon: FileText },
+        ].map((item) => {
+          const Icon = item.icon
+          return (
+          <Card key={item.label} className="rounded-lg border-slate-200 bg-white shadow-sm">
+            <CardContent className="p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-600">{item.label}</p>
+                <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{item.value}</p>
+              </div>
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+                <Icon className="size-5" />
+              </span>
+            </div>
+            </CardContent>
+          </Card>
+          )
+        })}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-primary/15 bg-card shadow-sm dark:border-[#1d3858]">
-        <div className="flex items-center justify-between border-b border-border/50 px-4 py-3 sm:px-5">
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div className="flex items-center gap-2">
-            <Images className="size-4 text-primary dark:text-[#8bd3ff]" />
-            <h3 className="text-sm font-semibold text-foreground">CSSO Newsroom</h3>
+            <Images className="size-4 text-blue-600" />
+            <h3 className="text-sm font-semibold text-slate-950">CSSO Newsroom</h3>
           </div>
           {canManage ? (
             <div className="flex gap-2">
@@ -341,7 +353,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
           ) : null}
         </div>
         {isManageGallery ? (
-          <div className="p-4 sm:p-5">
+          <div className="p-5">
             <div className="mb-4 flex items-center justify-between">
               <p className="text-sm text-muted-foreground">{model.galleryItems.length} photo{model.galleryItems.length !== 1 ? "s" : ""}</p>
               <Button size="sm" className="rounded-lg" onClick={() => { setEditingGalleryItem(null); setShowGalleryForm(true) }}>
@@ -407,12 +419,16 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
         ) : (
           <CsoMiniGallery items={model.galleryItems} />
         )}
-      </div>
+      </Card>
 
-      <Panel title="CSSO Organizational Chart">
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardHeader className="border-b border-slate-200 px-5 py-4">
+          <CardTitle className="text-base font-semibold text-slate-950">CSSO Organizational Chart</CardTitle>
+        </CardHeader>
+        <CardContent className="p-5">
         {orgChartUrl ? (
-          <div className="edu-bg-soft-glacier rounded-xl border border-[var(--edu-border-glacier)] bg-card p-4 shadow-sm">
-            <div className="relative overflow-hidden rounded-lg">
+          <div>
+            <div className="relative overflow-hidden rounded-lg border border-slate-200">
               <Image
                 src={orgChartUrl}
                 alt="CSSO Organizational Chart"
@@ -436,10 +452,10 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
             ) : null}
           </div>
         ) : (
-          <div className="edu-bg-soft-glacier flex min-h-56 items-center justify-center rounded-xl border border-dashed border-[var(--edu-border-glacier)] text-center text-foreground/70">
+          <div className="flex min-h-56 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white text-center">
             <div>
-              <ImageIcon className="mx-auto size-10 text-foreground/60" />
-              <p className="mt-3 text-sm font-medium">
+              <ImageIcon className="mx-auto size-10 text-slate-400" />
+              <p className="mt-3 text-sm font-medium text-slate-500">
                 Organizational chart picture placeholder
               </p>
               {canManage ? (
@@ -451,7 +467,8 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
             </div>
           </div>
         )}
-      </Panel>
+        </CardContent>
+      </Card>
 
       <ReportGrid
         title="Accomplishment Reports"
@@ -487,14 +504,19 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
         } : undefined}
       />
 
-      <Panel title="CSSO Constitution and By Laws" eyebrow="Governing document">
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardHeader className="border-b border-slate-200 px-5 py-4">
+          <CardTitle className="text-base font-semibold text-slate-950">CSSO Constitution and By Laws</CardTitle>
+          <p className="text-xs font-medium text-blue-600">Governing document</p>
+        </CardHeader>
+        <CardContent className="p-5">
         {constitutionDoc ? (
-          <div className="edu-bg-soft-lapis flex flex-col gap-4 rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex min-w-0 items-center gap-3">
-              <FileText className="size-6 shrink-0 text-foreground/60" />
+              <FileText className="size-6 shrink-0 text-slate-400" />
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground">Constitution and By Laws</p>
-                <p className="truncate text-xs text-foreground/60">
+                <p className="text-sm font-medium text-slate-900">Constitution and By Laws</p>
+                <p className="truncate text-xs text-slate-500">
                   {constitutionDoc.fileName ?? "PDF document"}
                   {constitutionDoc.fileSize ? ` \u00B7 ${(constitutionDoc.fileSize / 1024).toFixed(0)} KB` : ""}
                 </p>
@@ -520,9 +542,9 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
             </div>
           </div>
         ) : (
-          <div className="edu-bg-soft-glacier flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--edu-border-glacier)] py-12 text-center">
-            <FileText className="mx-auto mb-3 size-10 text-foreground/40" />
-            <p className="text-sm text-foreground/60">No constitution uploaded yet.</p>
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white py-12 text-center">
+            <FileText className="mx-auto mb-3 size-10 text-slate-400" />
+            <p className="text-sm text-slate-500">No constitution uploaded yet.</p>
             {canManage ? (
               <Button size="sm" variant="outline" className="mt-3 rounded-lg" onClick={() => setShowConstitutionUpload(true)}>
                 <Upload className="size-4" />
@@ -531,7 +553,8 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
             ) : null}
           </div>
         )}
-      </Panel>
+        </CardContent>
+      </Card>
 
       {showConstitutionUpload ? (
         <ConstitutionUploadDialog
@@ -743,7 +766,7 @@ function CsoMiniGallery({ items }: { items: GalleryItem[] }) {
   }
 
   return (
-    <section className="overflow-hidden rounded-xl border border-primary/15 bg-card shadow-sm dark:border-[#1d3858]">
+    <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="grid gap-0 lg:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.8fr)]">
         <div className="relative min-h-[400px] bg-muted">
           <Image
@@ -786,13 +809,13 @@ function CsoMiniGallery({ items }: { items: GalleryItem[] }) {
           </div>
         </div>
         <div className="flex flex-col justify-center p-5 sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary dark:text-[#8bd3ff]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
             {activeSlide.meta}
           </p>
-          <h3 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+          <h3 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
             {activeSlide.title}
           </h3>
-          <p className="mt-3 text-sm leading-7 text-foreground/75">
+          <p className="mt-3 text-sm leading-7 text-slate-600">
             {activeSlide.description}
           </p>
         </div>
@@ -819,31 +842,35 @@ function ReportGrid({
   onAdd?: () => void
 }) {
   return (
-    <Panel
-      title={title}
-      eyebrow="CSSO reports and records"
-      actions={
-        onAdd ? (
-          <Button size="sm" variant="default" className="rounded-lg" onClick={onAdd}>
-            <Plus className="size-4" />
-            Add Report
-          </Button>
-        ) : undefined
-      }
-    >
+    <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+      <CardHeader className="border-b border-slate-200 px-5 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base font-semibold text-slate-950">{title}</CardTitle>
+            <p className="text-xs font-medium text-blue-600">CSSO reports and records</p>
+          </div>
+          {onAdd ? (
+            <Button size="sm" variant="default" className="rounded-lg" onClick={onAdd}>
+              <Plus className="size-4" />
+              Add Report
+            </Button>
+          ) : null}
+        </div>
+      </CardHeader>
+      <CardContent className="p-5">
       {reports.length === 0 ? (
-        <p className="py-8 text-center text-sm text-foreground/60">No reports to display.</p>
+        <p className="py-8 text-center text-sm text-slate-500">No reports to display.</p>
       ) : (
         <div className="grid gap-4 lg:grid-cols-3">
           {reports.map((report) => (
             <article
               key={`${title}-${report.id}`}
-              className="group relative rounded-xl border border-[var(--edu-border-lapis)] bg-card p-4 shadow-sm transition-colors hover:shadow-md edu-bg-soft-lapis"
+              className="group relative rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
             >
               {report.file ? (
-                <div className="mb-3 flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2">
-                  <FileText className="size-5 shrink-0 text-foreground/60" />
-                  <span className="truncate text-xs font-medium text-foreground/80">
+                <div className="mb-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                  <FileText className="size-5 shrink-0 text-slate-400" />
+                  <span className="truncate text-xs font-medium text-slate-700">
                     {report.fileName ?? "PDF file"}
                   </span>
                 </div>
@@ -851,18 +878,18 @@ function ReportGrid({
 
               <StatusBadge value={report.type} />
 
-              <h4 className="mt-3 font-semibold text-foreground">
+              <h4 className="mt-3 font-semibold text-slate-950">
                 {report.title}
               </h4>
 
-              <p className="mt-1 text-sm text-foreground/70">{report.date}</p>
+              <p className="mt-1 text-sm text-slate-500">{report.date}</p>
 
-              <p className="mt-3 line-clamp-3 text-sm leading-6 text-foreground/80">
+              <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-700">
                 {report.summary}
               </p>
 
               {report.total ? (
-                <p className="mt-3 text-sm font-semibold text-foreground">
+                <p className="mt-3 text-sm font-semibold text-slate-950">
                   {report.total}
                 </p>
               ) : null}
@@ -914,7 +941,8 @@ function ReportGrid({
           ))}
         </div>
       )}
-    </Panel>
+      </CardContent>
+    </Card>
   )
 }
 
