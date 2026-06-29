@@ -35,6 +35,13 @@ export class UndoRedoManager {
     }
   }
 
+  pushToUndo(snapshot: GridSnapshot): void {
+    this.undoStack.push(snapshot)
+    if (this.undoStack.length > this.maxSize) {
+      this.undoStack.shift()
+    }
+  }
+
   clear(): void {
     this.undoStack = []
     this.redoStack = []

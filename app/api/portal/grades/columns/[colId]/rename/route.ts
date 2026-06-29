@@ -31,6 +31,12 @@ export async function PATCH(
     const gradingPeriod = existing.gradingPeriod as string
     const classId = existing.classId as string
 
+    const allCols = await gradeColumnRepository.findAll({ classId }) as Array<{ id: string; name: string; gradingPeriod: string }>
+    const renameCollision = allCols.some(c => c.id !== colId && c.name === newName && c.gradingPeriod === gradingPeriod)
+    if (renameCollision) {
+      return badRequest(`Column name "${newName}" already exists in this grading period.`)
+    }
+
     const updated = await gradeColumnRepository.update(
       { id: colId },
       { name: newName, displayName: newName }

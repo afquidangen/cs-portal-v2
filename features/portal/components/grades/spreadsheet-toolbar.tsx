@@ -1,7 +1,8 @@
 "use client"
 
+import { useCallback } from "react"
 import {
-  Columns, Columns3, Download, Redo2, RotateCcw, Save,
+  Columns, Columns3, Download, Loader2, Redo2, RotateCcw, Save,
   Trash2, Undo2, Upload,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -22,12 +23,16 @@ export function SpreadsheetToolbar({
   canUndo,
   canRedo,
   columnCount,
+  section,
+  exporting,
 }: {
   onAction: (action: ToolbarAction) => void
   canUndo: boolean
   canRedo: boolean
   columnCount: number
   saveStatus: string
+  section: string | null
+  exporting: boolean
 }) {
   return (
     <div className="sticky top-0 z-20 flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-card p-2 shadow-sm">
@@ -74,10 +79,12 @@ export function SpreadsheetToolbar({
           <Upload className="size-4" />
           <span className="ms-1.5 hidden text-xs md:inline">Import</span>
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => onAction("export")}
-          className="h-8 rounded-md px-2" title="Export Excel">
-          <Download className="size-4" />
-          <span className="ms-1.5 hidden text-xs md:inline">Export</span>
+        <Button size="sm" variant="default" onClick={() => onAction("export")}
+          disabled={!section || exporting}
+          className="h-8 rounded-md bg-blue-600 px-3 text-white hover:bg-blue-700"
+          title={!section ? "Select a section first" : exporting ? "Exporting..." : "Export to Excel"}>
+          {exporting ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+          <span className="ms-1.5 hidden text-xs md:inline">{exporting ? "Exporting..." : "Export"}</span>
         </Button>
       </div>
 

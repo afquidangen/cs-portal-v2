@@ -40,11 +40,7 @@ function scoreKey(col: { name: string; gradingPeriod: string }): string {
 }
 
 function findGradeColumnBySelection(columns: GradeColumn[], selection: string): GradeColumn | undefined {
-  return columns.find((col) => col.name === selection || scoreKey(col) === selection)
-}
-
-function gradeColumnLabel(col: GradeColumn | undefined, fallback: string) {
-  return col?.displayName || col?.name || fallback
+  return columns.find((col) => col.name === selection || col.displayName === selection || scoreKey(col) === selection)
 }
 
 function findCategoryWeight(catName: string, catWeightMap: Map<string, number>): number | undefined {
@@ -361,6 +357,7 @@ export function SpreadsheetGrid({
   gradingScheme,
   activeTab,
   setActiveTab,
+  section,
 }: {
   model: PortalModuleProps["model"]
   selectedSubject: string
@@ -381,6 +378,7 @@ export function SpreadsheetGrid({
   gradingScheme?: { components: Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number; isAttendance?: boolean }>; isExam?: boolean }>; labComponents?: Array<{ name: string; weight: number; categories: Array<{ name: string; weight: number; isAttendance?: boolean }>; isExam?: boolean }>; lectureWeight?: number; laboratoryWeight?: number; subjectType: "Lecture" | "Lecture with Lab" } | null
   activeTab: TabKey
   setActiveTab: (tab: TabKey) => void
+  section: string | null
 }) {
   const gridRef = useRef<AgGridReact>(null)
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
@@ -390,8 +388,8 @@ export function SpreadsheetGrid({
   const [addColumnOpen, setAddColumnOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [renameOpen, setRenameOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [deleteColOpen, setDeleteColOpen] = useState(false)
-  const [selectedColName, setSelectedColName] = useState("")
   const otherColsRef = useRef<Map<string, string[]>>(new Map())
   const [dismissedOther, setDismissedOther] = useState(false)
   const [maxScoreDialogOpen, setMaxScoreDialogOpen] = useState(false)
@@ -416,6 +414,21 @@ export function SpreadsheetGrid({
     const schedule = (model.visibleSchedules as Array<{ id: string; instructor: string; section: string }>).find((s) => s.id === classId)
     return { instructor: schedule?.instructor ?? "", section: schedule?.section ?? "" }
   }, [classId, model.visibleSchedules])
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (!(e.ctrlKey || e.metaKey)) return
+      if (e.key === "z") {
+        e.preventDefault()
+        handleToolbarAction(e.shiftKey ? "redo" : "undo")
+      } else if (e.key === "y") {
+        e.preventDefault()
+        handleToolbarAction("redo")
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  })
 
   useEffect(() => {
     if (gradeMap.size > 0 && !dataLoadedRef.current) {
@@ -682,22 +695,39 @@ export function SpreadsheetGrid({
 
   async function handleExport() {
     if (!classId) return
-    const res = await fetch(`/api/portal/grades/export?classId=${classId}`)
-    if (!res.ok) { toast.error("Failed to export."); return }
-    const blob = await res.blob()
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url; a.download = `grades-${classId}.xlsx`; a.click()
-    URL.revokeObjectURL(url)
+    setExporting(true)
+    try {
+      const params = new URLSearchParams({ classId })
+      if (section) params.set("section", section)
+      const res = await fetch(`/api/portal/grades/export?${params}`)
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        toast.error(err.error || "Failed to export.")
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `Class Record - ${classId}.xlsx`
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setExporting(false)
+    }
   }
 
   async function handleAddColumn(name: string, category: string, maxScore: number, gradingPeriod?: string) {
     const period = gradingPeriod || (activeTab === "summary" ? "midterm" : activeTab)
+    const collision = gradeColumns.some(c =>
+      c.name === name && c.gradingPeriod === period && c.category !== category
+    )
+    const internalName = collision ? `${name}-${category.toLowerCase().replace(/\s+/g, "")}` : name
     try {
       const res = await fetch("/api/portal/grades/columns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ classId, name, category, maxScore, gradingPeriod: period }),
+        body: JSON.stringify({ classId, name: internalName, category, maxScore, gradingPeriod: period, displayName: name }),
       })
       const json = await res.json()
       if (!res.ok) { toast.error(json.error || "Failed to add column."); return }
@@ -706,19 +736,25 @@ export function SpreadsheetGrid({
     } catch { toast.error("Failed to add column.") }
   }
 
-  async function handleRenameColumn(newName: string) {
-    if (!selectedColName) return
-    const col = findGradeColumnBySelection(gradeColumns, selectedColName)
+  async function handleRenameColumn(colId: string, newName: string) {
+    const col = gradeColumns.find((c) => c.id === colId)
     if (!col) return
+    const renameCollision = gradeColumns.some(c =>
+      c.id !== colId && c.name === newName && c.gradingPeriod === col.gradingPeriod
+    )
+    if (renameCollision) {
+      toast.error(`Column name "${newName}" already exists in this grading period.`)
+      return
+    }
     try {
-      const res = await fetch(`/api/portal/grades/columns/${col.id}/rename`, {
+      const res = await fetch(`/api/portal/grades/columns/${colId}/rename`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newName }),
       })
       if (!res.ok) { toast.error("Failed to rename column."); return }
       setGradeColumns((prev) => prev.map((c) =>
-        c.id === col.id ? { ...c, name: newName, displayName: newName } : c
+        c.id === colId ? { ...c, name: newName, displayName: newName } : c
       ))
       toast.success(`Column renamed to "${newName}".`)
     } catch { toast.error("Failed to rename column.") }
@@ -731,20 +767,19 @@ export function SpreadsheetGrid({
     } catch { return false }
   }
 
-  async function handleDeleteColumn() {
-    if (!selectedColName) return
-    const col = findGradeColumnBySelection(gradeColumns, selectedColName)
+  async function handleDeleteColumn(colId: string) {
+    const col = gradeColumns.find((c) => c.id === colId)
     if (!col) return
-    const ok = await deleteGradeColumnById(col.id)
+    const ok = await deleteGradeColumnById(colId)
     if (!ok) { toast.error("Failed to delete column."); return }
-    setGradeColumns((prev) => prev.filter((c) => c.id !== col.id))
+    setGradeColumns((prev) => prev.filter((c) => c.id !== colId))
     const keysToRemove = new Set([col.name, scoreKey(col)])
     setGrades((prev) => prev.map((grade) => {
       const scores = { ...(grade.scores ?? {}) }
       for (const key of keysToRemove) delete scores[key]
       return { ...grade, scores, updatedAt: new Date().toISOString() }
     }))
-    toast.success(`Column "${gradeColumnLabel(col, selectedColName)}" deleted.`)
+    toast.success(`Column "${col.displayName || col.name}" deleted.`)
     setDeleteColOpen(false)
   }
 
@@ -788,35 +823,43 @@ export function SpreadsheetGrid({
     switch (action) {
       case "addColumn": setAddColumnOpen(true); break
       case "renameColumn": {
-        const focused = gridRef.current?.api.getFocusedCell()
-        if (focused) {
-          const colDef = focused.column.getColDef()
-          if (colDef.colId?.startsWith("score_")) {
-            setSelectedColName(colDef.colId.replace("score_", ""))
-            setRenameOpen(true)
-          } else { toast.info("Focus a grade column to rename.") }
-        } else { toast.info("Click a grade column first, then rename.") }
+        setRenameOpen(true)
         break
       }
       case "deleteColumn": {
-        const focused = gridRef.current?.api.getFocusedCell()
-        if (focused) {
-          const colDef = focused.column.getColDef()
-          if (colDef.colId?.startsWith("score_")) {
-            setSelectedColName(colDef.colId.replace("score_", ""))
-            setDeleteColOpen(true)
-          } else { toast.info("Focus a grade column to delete.") }
-        } else { toast.info("Click a grade column first, then delete.") }
+        setDeleteColOpen(true)
         break
       }
       case "undo": {
-        undoManager.current.undo()
-        toast.info("Undo applied.")
+        const snapshot = undoManager.current.undo()
+        if (snapshot) {
+          const currentSnapshot = buildSnapshot(gridData as unknown as Record<string, unknown>[], [])
+          undoManager.current.pushForRedo(currentSnapshot)
+          const restored = Array.from(gradeMap.values()).map((g) => {
+            const oldRow = snapshot.rowData.find((r) => r.studentId === g.studentId)
+            return oldRow
+              ? { ...g, scores: (oldRow.scores ?? {}) as Record<string, number>, updatedAt: new Date().toISOString() }
+              : g
+          })
+          setGrades(restored)
+          autoSave.schedule({ grades: restored, cid: classId })
+        }
         break
       }
       case "redo": {
-        undoManager.current.redo()
-        toast.info("Redo applied.")
+        const snapshot = undoManager.current.redo()
+        if (snapshot) {
+          const currentSnapshot = buildSnapshot(gridData as unknown as Record<string, unknown>[], [])
+          undoManager.current.pushToUndo(currentSnapshot)
+          const restored = Array.from(gradeMap.values()).map((g) => {
+            const nextRow = snapshot.rowData.find((r) => r.studentId === g.studentId)
+            return nextRow
+              ? { ...g, scores: (nextRow.scores ?? {}) as Record<string, number>, updatedAt: new Date().toISOString() }
+              : g
+          })
+          setGrades(restored)
+          autoSave.schedule({ grades: restored, cid: classId })
+        }
         break
       }
       case "import": setImportOpen(true); break
@@ -1413,11 +1456,6 @@ export function SpreadsheetGrid({
     return { totalComp, ...effectiveScheme }
   }, [effectiveScheme])
 
-  const selectedColumnLabel = gradeColumnLabel(
-    findGradeColumnBySelection(gradeColumns, selectedColName),
-    selectedColName
-  )
-
   const [schemeOpen, setSchemeOpen] = useState(false)
 
   const SchemeInfoBanner = useCallback(() => {
@@ -1562,6 +1600,8 @@ export function SpreadsheetGrid({
         canRedo={undoManager.current.canRedo}
         columnCount={filteredColumns.length}
         saveStatus={saveStatus}
+        section={section}
+        exporting={exporting}
       />
 
       <div className="egrades-grid-shell overflow-hidden rounded-lg border border-border bg-card shadow-sm">
@@ -1675,9 +1715,9 @@ export function SpreadsheetGrid({
       <IntelligentImportDialog open={importOpen} onOpenChange={setImportOpen}
         classId={classId} subject={selectedSubject} onImportComplete={handleImportComplete} />
       <RenameColumnDialog open={renameOpen} onOpenChange={setRenameOpen}
-        currentName={selectedColumnLabel} onConfirm={handleRenameColumn} />
+        onConfirm={handleRenameColumn} columns={filteredColumns} />
       <DeleteColumnDialog open={deleteColOpen} onOpenChange={setDeleteColOpen}
-        columnName={selectedColumnLabel} onConfirm={handleDeleteColumn} />
+        onConfirm={handleDeleteColumn} columns={filteredColumns} />
 
       {studentReleaseTarget && (
         <UndoReleaseDialog

@@ -118,3 +118,158 @@ Equivalent to `MG × 0.50 + FG × 0.50`.
 - `app/api/portal/cso-info/route.ts` — upload/destroy cover image
 - `features/portal/components/modules/types.ts` — PortalModuleProps type
 <!-- END:session-3 -->
+
+<!-- BEGIN:session-4 -->
+## Session 4 — Template-Based Excel Export
+
+### Summary
+Replaced the generic `XLSX.utils.aoa_to_sheet()` export with the institution's official Excel templates. The single template file (`templates/2SSY2526 CS4A IAS Class Record (gsheetv4.2).xlsx`) contains 4 sheets: `CLASS RECORD`, `GS MID`, `GS FIN`, `REPORTS OF GRADE`. All sheets are linked via cross-sheet formulas — raw scores go into `CLASS RECORD`, and the other sheets auto-populate.
+
+### Architecture
+1. **`features/portal/lib/export-template-engine.ts`** — Core engine that:
+   - Loads the template via `exceljs` (preserving all formatting)
+   - Populates raw input cells (individual item scores, absences, exam scores) in CLASS RECORD
+   - Uses system-computed values for non-formula cells
+   - Handles lecture-only subjects by hiding lab columns
+   - Copies sheet to output workbook with all support sheets (CLASS RECORD, LOOKUP, PERCENTAGE)
+   - Support sheets are hidden for non-CLASS RECORD exports (formulas still work)
+
+2. **`app/api/portal/grades/export/route.ts`** — Modified to accept `templateType` param:
+   - `?classId=X&templateType=class-record` — Class Record
+   - `?classId=X&templateType=gs-mid` — GS Mid
+   - `?classId=X&templateType=gs-fin` — GS Fin
+   - `?classId=X&templateType=report-of-grades` — Report of Grades
+   - Falls back to original generic export when `templateType` is omitted
+
+3. **`features/portal/components/grades/spreadsheet-toolbar.tsx`** — Replaced single Export button with a `<Select>` dropdown offering the 4 template types
+
+4. **`features/portal/components/grades/spreadsheet-grid.tsx`** — `handleExport()` now accepts optional `templateType`, appends `?templateType=` to the fetch URL
+
+### Key Design Decisions
+- **Library**: `exceljs` (added to package.json) — preserves formatting, formulas, merged cells, borders, fonts, colors, print settings
+- **Template approach**: Only populate raw input cells in CLASS RECORD; let existing template formulas compute PS, WS, CS, grades, transmuted, remarks
+- **Cross-sheet formulas**: GS MID, GS FIN, ROG reference `'CLASS RECORD'!` cells. The output workbook always includes CLASS RECORD (hidden for non-CR exports) so formulas work
+- **Support sheets**: LOOKUP and PERCENTAGE sheets (used by TRANSMUTED formulas) are included as hidden sheets
+- **Lecture-only**: Lab columns are hidden via `worksheet.getColumn(N).hidden = true`
+- **Category matching**: Uses `gradeCategoryMatches()` from grade engine for alias-aware matching
+- **Score ordering**: Columns mapped to template item slots by `order` field, up to 10 items per category
+
+### Files Modified/Created
+| File | Action |
+|---|---|
+| `package.json` | Added `exceljs` dependency |
+| `features/portal/lib/export-template-engine.ts` | **Created** — core engine (~630 lines) |
+| `app/api/portal/grades/export/route.ts` | Modified — added `templateType` param support |
+| `features/portal/components/grades/spreadsheet-toolbar.tsx` | Modified — Export dropdown with 4 types |
+| `features/portal/components/grades/spreadsheet-grid.tsx` | Modified — `handleExport(type)` support |
+
+### Template Capacity
+- CLASS RECORD: ~90 student rows (rows 10-99)
+- GS MID: ~115 student rows (rows 9-123)
+- GS FIN: ~115 student rows (rows 9-123)
+- REPORTS OF GRADE: ~198 students (3-column layout, rows 12-77)
+- Row duplication occurs automatically for classes exceeding template capacity, but cross-sheet formulas in GS MID/FIN/ROG won't extend beyond the original range
+<!-- END:session-4 -->
+
+<!-- BEGIN:session-5 -->
+## Session 5 — Unified Single-File Export
+
+### Summary
+Replaced the per-type dropdown export (Class Record / GS Mid / GS Fin / Report of Grades as separate downloads) with a **single Export button** that outputs **one xlsx file containing all 4 sheets** (CLASS RECORD, GS MID, GS FIN, REPORTS OF GRADE) plus hidden support sheets (LOOKUP, PERCENTAGE).
+
+### Key Changes
+
+**Export Engine** (`export-template-engine.ts`):
+- Removed `ExportType` union, `SHEET_NAMES`, `FILENAME_MAP` — no longer type-parameterized
+- Changed `exportTemplate(classId)` — single params, no template type
+- Resolves semester name & AY from `schedule.semesterId` → `semestersRepository.findOne()`
+- Populates header info (subject, courseNo, section, semester, ay, faculty) on ALL 4 sheets
+- Populates raw scores only on CLASS RECORD
+- Output workbook copies all 4 sheets + LOOKUP + PERCENTAGE
+- Sets `outWb.calcProperties = { fullCalcOnLoad: true }` so Excel recalculates cross-sheet formulas on open
+- Fix: `section.replace()` wrapped with `String(section ?? "")` to prevent undefined errors
+- Removed unused imports (`computeAllCategoryGrades`, `computeClassStanding`, `computeExamGrade`, `computeLaboratoryGrade`, `computePeriodGrade`, `computeLectureGrade`, `computeCategoryGrade`, `assessmentRepository`)
+
+**API Route** (`export/route.ts`):
+- Removed `templateType` query param, `VALID_TEMPLATE_TYPES`, `FILENAME_MAP`
+- Always calls `exportTemplate(classId)` with no type param
+- Filename: `Class Record - {section}.xlsx`
+
+**UI** (`spreadsheet-toolbar.tsx`):
+- Replaced `<Select>` dropdown with a single blue `<Button variant="default">`
+- Removed `export_*` action types from `ToolbarAction`
+
+**Grid** (`spreadsheet-grid.tsx`):
+- `handleExport()` → no `templateType` parameter, no `?templateType=` URL param
+- Removed `action.startsWith("export_")` dispatch block
+
+### Files Modified
+
+| File | Action |
+|---|---|
+| `features/portal/lib/export-template-engine.ts` | Rewritten — removed export types, added semester resolution, unified output |
+| `app/api/portal/grades/export/route.ts` | Simplified — removed templateType handling |
+| `features/portal/components/grades/spreadsheet-toolbar.tsx` | Reverted to single Export button |
+| `features/portal/components/grades/spreadsheet-grid.tsx` | Simplified handleExport, removed export_ dispatch |
+
+### Pre-existing issues (unchanged)
+- TypeScript errors in `deans-list-module.tsx`, `grades-module.tsx`, `role-dashboard.tsx`, `base.repository.ts` — all predate this session
+<!-- END:session-5 -->
+
+<!-- BEGIN:session-6 -->
+## Session 6 — Dynamic Template Column Scanning
+
+### Summary
+Replaced all hardcoded column indices and scheme-based matching with a dynamic template scanning approach. The export now reads the template structure directly (rows 5, 7, 9 of CLASS RECORD) to discover assessment categories, numbered columns, and their positions.
+
+### Key Changes
+
+**New function: `scanTemplateColumnMap(sheet, startCol, endCol)`**
+- Scans row 7 labels to detect category region boundaries (merged cell regions)
+- Strips percentage suffixes via `/\s*-?\s*\d+%\s*$/` to get base names
+- Normalizes base names to aliases using `gradeCategoryMatches`
+- Scans row 9 within each region for assessment numbers (1-10) → `itemColumns[]`
+- Detects special columns: CS, EXAM, attendance (ABS/ATT), total (value "1"), MG/FG, TRANSMUTED, REMARKS
+- Detects lab section start when encountering exercise/work attitude/project categories
+- Returns a `TemplatePeriodMap` object with all category templates and metadata columns
+
+**New types:** `TemplateCategory`, `TemplatePeriodMap` — replace `ClassRecordSectionMapping`, `CategorySlotMapping`
+
+**Rewritten: `populatePeriodSection`**
+- Takes `TemplatePeriodMap` instead of `ClassRecordSectionMapping`
+- Groups GradeColumns by their own `.category` field
+- Matches each column to a template category via `gradeCategoryMatches(cat.alias, col.category)`
+- Writes each item to `itemColumns[order - 1]` (matches assessment number to template column)
+- Writes exam, attendance, absences, computed values to detected columns
+- All scheme parameters removed (`examCategories`, `labCategories`, `isLabSubject`)
+
+**Rewritten: `populateHPSRow`**
+- Same dynamic matching — writes `maxScore` to row 5 at item columns and exam column
+- No longer needs scheme-based category parameters
+
+**Removed:**
+- `buildClassRecordMapping()` — hardcoded column map
+- `ClassRecordSectionMapping`, `CategorySlotMapping` — old type definitions
+- `findStandingAndExamComponents()` — scheme parsing (no longer needed)
+- `gradingSchemeRepository` import, `scheme` loading, `GradingScheme`/`SchemeComponent`/`GradingCategory` type imports
+- `hasLabColumns`/`subjectType`/labAliases detection — replaced by template scan
+
+**Finals detection:**
+- Scans row 3 for "FINALS" label to find the boundary between midterm and finals sections
+- Falls back to `totalCols` if not found
+
+**Lab subject detection:**
+- Determined by `midtermMap.labStartCol != null` (template has exercise/work attitude/project categories)
+- Lab column hiding uses scanned `labStartCol`/`labEndCol` boundaries instead of hardcoded values
+- Row 6 label update uses first category column dynamically instead of hardcoded col 4
+
+**Added:**
+- `labTotalCol` to `TemplatePeriodMap` — lab section total column detected from second "1" in row 7
+- Lab total grade writing (`midtermLaboratoryGrade`/`finalLaboratoryGrade`) restored
+
+### Files
+- `features/portal/lib/export-template-engine.ts` — all changes (534 lines, down from 580)
+
+### Pre-existing issues (unchanged)
+- TypeScript errors in `deans-list-module.tsx`, `grades-module.tsx`, `role-dashboard.tsx`, `base.repository.ts`
+<!-- END:session-6 -->

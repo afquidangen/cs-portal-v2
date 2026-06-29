@@ -30,6 +30,7 @@ export async function POST(request: Request) {
         id: `COL-${Date.now()}`,
         classId: body.classId,
         name: body.name,
+        displayName: body.displayName || body.name,
         category: normalizedCategory,
       gradingPeriod: body.gradingPeriod,
       maxScore: body.maxScore ?? 100,

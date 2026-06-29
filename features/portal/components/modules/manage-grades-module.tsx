@@ -472,6 +472,7 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
                         gradingScheme={gradingScheme}
                         activeTab={activeTab}
                         setActiveTab={setActiveTab}
+                        section={null}
                       />
                     </div>
                   )
@@ -498,6 +499,7 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
                 gradingScheme={gradingScheme}
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
+                section={selectedSection}
               />
             )
           ) : (

@@ -56,6 +56,9 @@ const CATEGORY_PATTERNS: Array<{ pattern: RegExp; category: AutoCategory }> = [
   { pattern: /\b(id|student id|student no|student number|no\.?|number|i\.?d)\b/i, category: "studentId" },
   { pattern: /\b(section|sec|class|year level|year)\b/i, category: "section" },
   { pattern: /\b(remarks|remark|comment|notes|note|passed|failed|status)\b/i, category: "skip" },
+  { pattern: /^(no?\.?|#)\s*$/i, category: "skip" },
+  { pattern: /^(ps|ws|cs|total|sum|class standing)\s*$/i, category: "skip" },
+  { pattern: /^(mg|fg|midterm|final|tentative final|transmuted|credit|units)\s*$/i, category: "skip" },
 ]
 
 const GRADE_PATTERNS: Array<{ pattern: RegExp; gradeCategory: string }> = [
@@ -79,7 +82,12 @@ export function analyzeWorkbook(buffer: Buffer): WorkbookAnalysis {
     cellDates: true,
   })
 
-  const sheetNames = workbook.SheetNames
+  let sheetNames = workbook.SheetNames
+  // Prioritize CLASS RECORD sheet
+  const classRecordIdx = sheetNames.indexOf("CLASS RECORD")
+  if (classRecordIdx > 0) {
+    sheetNames = ["CLASS RECORD", ...sheetNames.filter((_, i) => i !== classRecordIdx)]
+  }
   const sheets: SheetAnalysis[] = []
 
   for (const sheetName of sheetNames) {
