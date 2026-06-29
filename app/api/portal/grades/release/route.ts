@@ -1,9 +1,10 @@
 import { connectToDatabase } from "@/lib/mongodb"
-import { GradeModel, UserModel, ScheduleModel, SemesterModel } from "@/lib/models"
+import { GradeModel, UserModel, ScheduleModel, SemesterModel, PushSubscriptionModel } from "@/lib/models"
 import { success, error, badRequest } from "@/lib/api-response"
 import { transmuteGrade, getGradeRemarks } from "@/features/portal/lib/grade-engine"
 import { recomputeDeansListForSemester } from "@/features/portal/lib/deans-list-utils"
 import { sendGradeReleasedEmail } from "@/features/portal/services/email"
+import { sendPushToSubscriptions } from "@/lib/web-push"
 
 export const runtime = "nodejs"
 
@@ -145,8 +146,59 @@ export async function POST(request: Request) {
             `[Email] ${failed.length} grade release email(s) failed to send`,
           )
         }
+
       } catch (emailErr) {
-        console.warn("[Email] Grade release notification error:", emailErr)
+        console.warn("[Notification] Grade release email error:", emailErr)
+      }
+
+      // Send push notifications — separate try/catch from email
+      try {
+        const studentIds = Array.from(studentMap.keys())
+        if (studentIds.length > 0) {
+          const students = await UserModel.find({ id: { $in: studentIds } })
+            .lean()
+            .select("id pushNotificationsEnabled")
+
+          const pushTargetIds = students
+            .filter((s) => s.pushNotificationsEnabled !== false)
+            .map((s) => s.id)
+
+          if (pushTargetIds.length > 0) {
+            const subscriptions = await PushSubscriptionModel.find({
+              userId: { $in: pushTargetIds },
+            }).lean()
+
+            if (subscriptions.length > 0) {
+              const gradingPeriodLabel =
+                gradingPeriod === "midterm"
+                  ? "Midterm"
+                  : gradingPeriod === "final"
+                    ? "Final"
+                    : "Midterm & Final"
+
+              const subjectList =
+                (schedule as Record<string, unknown> | null)?.subject ?? ""
+
+              await sendPushToSubscriptions(
+                subscriptions as Array<{
+                  id: string
+                  userId: string
+                  endpoint: string
+                  p256dhKey: string
+                  authKey: string
+                }>,
+                {
+                  title: "Student Portal",
+                  body: `Your ${gradingPeriodLabel} grade${gradingPeriod === "both" ? "s" : ""} for ${subjectList} ${subjectList ? "have" : "has"} been released.`,
+                  icon: "/portal-logo.svg",
+                  url: "/student",
+                },
+              )
+            }
+          }
+        }
+      } catch (pushErr) {
+        console.warn("[Notification] Grade release push error:", pushErr)
       }
     })
 

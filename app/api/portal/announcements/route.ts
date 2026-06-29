@@ -1,7 +1,8 @@
 import { announcementsRepository } from "@/features/portal/repositories/announcements.repository"
 import { success, error, badRequest } from "@/lib/api-response"
 import { connectToDatabase } from "@/lib/mongodb"
-import { UserModel } from "@/lib/models"
+import { UserModel, PushSubscriptionModel } from "@/lib/models"
+import { sendPushToSubscriptions } from "@/lib/web-push"
 import { sendAnnouncementEmails } from "@/features/portal/services/email"
 
 export const runtime = "nodejs"
@@ -26,15 +27,22 @@ export async function POST(request: Request) {
     )) as Record<string, unknown>
 
     Promise.resolve().then(async () => {
+      let students: Array<{
+        id: string
+        email: string
+        name: string
+        pushNotificationsEnabled?: boolean
+      }> = []
+
       try {
         await connectToDatabase()
         const query: Record<string, unknown> = { role: "student", status: "Active" }
         if (body.classSections?.length) {
           query.section = { $in: body.classSections }
         }
-        const students = (await UserModel.find(query)
+        students = (await UserModel.find(query)
           .lean()
-          .select("id email name")) as { id: string; email: string; name: string }[]
+          .select("id email name pushNotificationsEnabled")) as typeof students
 
         const validStudents = students.filter((s) => s.email?.includes("@"))
 
@@ -49,7 +57,43 @@ export async function POST(request: Request) {
           },
         )
       } catch (emailErr) {
-        console.warn("[Email] Announcement notification error:", emailErr)
+        console.warn("[Notification] Announcement email error:", emailErr)
+      }
+
+      // Send push notifications — separate try/catch from email
+      try {
+        const pushTargetIds = students
+          .filter((s) => s.pushNotificationsEnabled !== false)
+          .map((s) => s.id)
+
+        if (pushTargetIds.length > 0) {
+          const subscriptions = await PushSubscriptionModel.find({
+            userId: { $in: pushTargetIds },
+          }).lean()
+
+          if (subscriptions.length > 0) {
+            const content = (announcement.content as string) || ""
+            const body = content.length > 120 ? content.slice(0, 120) + "..." : content
+
+            await sendPushToSubscriptions(
+              subscriptions as Array<{
+                id: string
+                userId: string
+                endpoint: string
+                p256dhKey: string
+                authKey: string
+              }>,
+              {
+                title: "Student Portal",
+                body,
+                icon: "/portal-logo.svg",
+                url: "/student",
+              },
+            )
+          }
+        }
+      } catch (pushErr) {
+        console.warn("[Notification] Announcement push error:", pushErr)
       }
     })
 

@@ -48,6 +48,7 @@ export interface IUser extends Document {
   section?: string
   position?: string
   deansListVisibility: "public" | "private"
+  pushNotificationsEnabled: boolean
   status: "Active" | "Inactive"
   createdAt?: string
   lastLogin?: string
@@ -119,6 +120,7 @@ const UserSchema = new Schema<IUser>(
     position: String,
     roles: { type: [String], default: [] },
     deansListVisibility: { type: String, enum: ["public", "private"], default: "public" },
+    pushNotificationsEnabled: { type: Boolean, default: true },
     status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
     createdAt: String,
     lastLogin: String,

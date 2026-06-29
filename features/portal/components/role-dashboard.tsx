@@ -55,6 +55,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { toast } from "sonner"
 type NewsItem = {
   id: string
   title: string
@@ -99,6 +100,7 @@ import { formatScheduleTime } from "@/components/ui/time-picker"
 import type { Announcement, AvailabilityStatus, Role } from "../data/portal-data"
 import { availabilityOptions } from "../data/portal-data"
 import { usePortalDashboardModel } from "../hooks/use-portal-dashboard-model"
+import { usePushNotifications } from "../hooks/use-push-notifications"
 import type { ModuleId } from "../types/navigation"
 import { AcademicModule } from "./modules/academic-module"
 import { AnnouncementManagerModule } from "./modules/announcement-manager-module"
@@ -136,6 +138,8 @@ import { FacultySemesterArchiveModule } from "./modules/faculty-semester-archive
 
 export function RoleDashboard({ role }: { role: Role }) {
   const model = usePortalDashboardModel(role)
+
+  const { pushEnabled, togglePushNotifications } = usePushNotifications(model.profile.id)
 
   const chartLabels = ["Users", "Tickets", "Grades", "Theses", "Announce.", "Audit"]
 
@@ -1390,6 +1394,34 @@ export function RoleDashboard({ role }: { role: Role }) {
                             )
                           })
                         )}
+                      </div>
+                      <div className="flex items-center justify-between border-t border-border bg-muted px-4 py-2.5 dark:bg-[#0f1b2b]">
+                        <span className="text-[11px] font-medium text-muted-foreground">
+                          Push Notifications
+                        </span>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const result = await togglePushNotifications()
+                            if (result.success) {
+                              toast.success(
+                                result.enabled
+                                  ? "Push notifications enabled"
+                                  : "Push notifications disabled"
+                              )
+                            } else {
+                              toast.error("Failed to update preference")
+                            }
+                          }}
+                          className={
+                            "rounded-lg border px-2 py-0.5 text-[11px] font-semibold transition-colors " +
+                            (pushEnabled
+                              ? "border-primary/40 bg-primary/10 text-primary"
+                              : "border-border bg-background text-black dark:border-white/15 dark:bg-white/10 dark:text-white")
+                          }
+                        >
+                          {pushEnabled ? "On" : "Off"}
+                        </button>
                       </div>
                     </div>
                   ) : null}
