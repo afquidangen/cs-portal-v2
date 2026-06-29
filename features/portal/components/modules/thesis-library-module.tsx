@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { BookOpen, Calendar, Clock, Download, Eye, FileText, GraduationCap, LibraryBig, Loader2, Plus, Search, Tags, FileIcon, ExternalLink, Bookmark, Trash2, Tag, Users, X } from "lucide-react"
+import { BookOpen, Calendar, Clock, Download, Eye, FileText, GraduationCap, LibraryBig, Loader2, Plus, Search, Tags, FileIcon, Bookmark, Trash2, Tag, Users, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -82,6 +82,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
   })
   const [replacementFile, setReplacementFile] = useState<{ url: string; name: string } | null>(null)
   const [removingFile, setRemovingFile] = useState(false)
+  const [viewingPdf, setViewingPdf] = useState<ThesisRecord | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function openEditDraft(thesis: ThesisRecord) {
@@ -513,15 +514,15 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                           )}
                         </>
                       ) : detailThesis.pdfUrl ? (
-                        <>
-                          <Button size="sm" variant="outline"
-                            className="h-8 gap-1.5 rounded-lg px-3 text-xs"
-                            onClick={() => window.open(detailThesis.pdfUrl, "_blank")}>
-                            <ExternalLink className="size-3.5" />
-                            Open
+                        <div className="flex w-full flex-col gap-2 sm:flex-row">
+                          <Button size="sm" variant="default"
+                            className="h-9 w-full gap-1.5 rounded-lg px-4 text-xs sm:w-auto"
+                            onClick={() => setViewingPdf(detailThesis)}>
+                            <Eye className="size-4" />
+                            View PDF
                           </Button>
-                          <Button size="sm"
-                            className="h-8 gap-1.5 rounded-lg px-3 text-xs"
+                          <Button size="sm" variant="outline"
+                            className="h-9 w-full gap-1.5 rounded-lg px-4 text-xs sm:w-auto"
                             onClick={async () => {
                               try {
                                 const res = await fetch(detailThesis.pdfUrl)
@@ -538,10 +539,10 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                                 window.open(detailThesis.pdfUrl, "_blank")
                               }
                             }}>
-                            <Download className="size-3.5" />
+                            <Download className="size-4" />
                             Download
                           </Button>
-                        </>
+                        </div>
                       ) : (
                         <p className="text-xs text-muted-foreground">No manuscript file attached</p>
                       )}
@@ -728,50 +729,16 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                         {thesis.title}
                       </h4>
                       <p className="mt-1.5 grow truncate text-sm text-slate-500">{thesis.authors}</p>
-                      <div className="flex items-center justify-between gap-2 pt-4">
-                        <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-slate-500">
-                          <span className="truncate">{thesis.adviser}</span>
-                          {thesis.tags.length > 0 && (
-                            <span className="hidden sm:inline-flex items-center gap-1">
-                              <span className="size-1 rounded-full bg-slate-400" />
-                              {thesis.tags.slice(0, 2).join(", ")}
-                              {thesis.tags.length > 2 && <span className="text-slate-400">+{thesis.tags.length - 2}</span>}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                      {thesis.pdfUrl && (
-                        <>
-                          <button type="button"
-                            className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
-                            onClick={(e) => { e.stopPropagation(); window.open(thesis.pdfUrl, "_blank") }}
-                            title="Open PDF">
-                            <ExternalLink className="size-3.5" />
-                          </button>
-                          <button type="button"
-                            className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
-                            onClick={async (e) => {
-                              e.stopPropagation()
-                              try {
-                                const res = await fetch(thesis.pdfUrl)
-                                const blob = await res.blob()
-                                const url = URL.createObjectURL(blob)
-                                const a = document.createElement("a")
-                                a.href = url
-                                a.download = thesis.fileName || `${thesis.title}.pdf`
-                                document.body.appendChild(a)
-                                a.click()
-                                document.body.removeChild(a)
-                                URL.revokeObjectURL(url)
-                              } catch { window.open(thesis.pdfUrl, "_blank") }
-                            }}
-                            title="Download PDF">
-                            <Download className="size-3.5" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                      <div className="flex flex-wrap items-center gap-2 pt-4 text-xs text-slate-500">
+                        <span className="truncate">{thesis.adviser}</span>
+                        {thesis.tags.length > 0 && (
+                          <span className="hidden sm:inline-flex items-center gap-1">
+                            <span className="size-1 rounded-full bg-slate-400" />
+                            {thesis.tags.slice(0, 2).join(", ")}
+                            {thesis.tags.length > 2 && <span className="text-slate-400">+{thesis.tags.length - 2}</span>}
+                          </span>
+                        )}
+                      </div>
                 </div>
               </div>
             </div>
@@ -787,6 +754,26 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
           </CardContent>
         </Card>
       )}
+      <Dialog open={viewingPdf !== null} onOpenChange={(open) => { if (!open) setViewingPdf(null) }}>
+        <DialogContent className="sm:max-w-[90vw] max-h-[90vh] p-0 gap-0 overflow-hidden rounded-xl">
+          {viewingPdf && (
+            <>
+              <div className="flex items-center justify-between border-b px-4 py-3 pr-14">
+                <DialogTitle className="truncate text-sm font-semibold">
+                  {viewingPdf.title}
+                </DialogTitle>
+              </div>
+              <div className="overflow-hidden" style={{ height: "calc(90vh - 53px)" }}>
+                <iframe
+                  src={`/api/portal/theses/${viewingPdf.id}/pdf`}
+                  title="Thesis PDF Viewer"
+                  className="h-full w-full rounded-none"
+                />
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
