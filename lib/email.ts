@@ -1,12 +1,14 @@
 import nodemailer from "nodemailer"
 
-const transporter = nodemailer.createTransport({
+export const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_APP_PASSWORD,
   },
 })
+
+export const FROM_ADDRESS = `"CS Portal" <${process.env.GMAIL_USER}>`
 
 export async function sendPasswordResetEmail(
   to: string,

@@ -1,8 +1,9 @@
 import { connectToDatabase } from "@/lib/mongodb"
-import { GradeModel, UserModel, ScheduleModel } from "@/lib/models"
+import { GradeModel, UserModel, ScheduleModel, SemesterModel } from "@/lib/models"
 import { success, error, badRequest } from "@/lib/api-response"
 import { transmuteGrade, getGradeRemarks } from "@/features/portal/lib/grade-engine"
 import { recomputeDeansListForSemester } from "@/features/portal/lib/deans-list-utils"
+import { sendGradeReleasedEmail } from "@/features/portal/services/email"
 
 export const runtime = "nodejs"
 
@@ -108,6 +109,46 @@ export async function POST(request: Request) {
         console.warn("[DeansList] Auto re-evaluation failed after release:", dlErr)
       )
     }
+
+    Promise.resolve().then(async () => {
+      try {
+        const semester = schedule?.semesterId
+          ? await SemesterModel.findOne({ id: schedule.semesterId }).lean()
+          : null
+
+        const semesterName = (semester as Record<string, unknown> | null)?.semester as string ?? ""
+        const syStart = (semester as Record<string, unknown> | null)?.schoolYearStart as number ?? 0
+        const syEnd = (semester as Record<string, unknown> | null)?.schoolYearEnd as number ?? 0
+        const facultyName = (schedule as Record<string, unknown> | null)?.instructor as string | undefined
+
+        const emailPromises = Array.from(studentMap.entries()).map(
+          async ([studentId]) => {
+            const user = await UserModel.findOne({ id: studentId })
+            if (!user?.email) return
+
+            await sendGradeReleasedEmail({
+              studentId,
+              studentName: user.name,
+              email: user.email,
+              semester: semesterName,
+              schoolYearStart: syStart,
+              schoolYearEnd: syEnd,
+              facultyName,
+            })
+          },
+        )
+
+        const results = await Promise.allSettled(emailPromises)
+        const failed = results.filter((r) => r.status === "rejected")
+        if (failed.length > 0) {
+          console.warn(
+            `[Email] ${failed.length} grade release email(s) failed to send`,
+          )
+        }
+      } catch (emailErr) {
+        console.warn("[Email] Grade release notification error:", emailErr)
+      }
+    })
 
     return success({ modifiedCount: grades.length, grades: updatedGrades })
   } catch (err) {

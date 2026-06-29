@@ -28,6 +28,7 @@ export type { ThesisRecord } from "./thesis"
 export type { DeansListEntry } from "./deans-list"
 export type { UserRecord } from "./user"
 export type { YearSectionRecord } from "./year-section"
+export type { NotificationLog } from "./notification-log"
 export type {
   PortalCollectionMap,
   PortalCollectionName,
