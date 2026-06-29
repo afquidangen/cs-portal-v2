@@ -7,6 +7,7 @@ export interface ICsoInfo extends Document {
   logoPublicId?: string
   coverImageUrl?: string
   coverImagePublicId?: string
+  coverOpacity: number
   facebookLink: string
   portalLogoUrl: string
   portalLogoPublicId?: string
@@ -20,6 +21,7 @@ const CsoInfoSchema = new Schema<ICsoInfo>(
     logoPublicId: String,
     coverImageUrl: { type: String, default: "" },
     coverImagePublicId: String,
+    coverOpacity: { type: Number, default: 50 },
     facebookLink: { type: String, default: "https://www.facebook.com/profile.php?id=61587590024541" },
     portalLogoUrl: { type: String, default: "/portal-logo.svg" },
     portalLogoPublicId: String,

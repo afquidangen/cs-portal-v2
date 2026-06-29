@@ -1380,7 +1380,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                                   {ann.createdBy ? (
                                     <>
                                       <span className="size-1 rounded-full bg-muted-foreground/30" />
-                                      <span className="text-[11px]">{ann.createdBy} - Faculty</span>
+                                      <span className="text-[11px]">{ann.classSection || ann.classSections?.length ? ann.createdBy : "ADMIN"}</span>
                                     </>
                                   ) : null}
                                   <span className="size-1 rounded-full bg-muted-foreground/30" />
@@ -2137,7 +2137,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                   </span>
                 </div>
                 <DialogDescription className="pt-1 text-muted-foreground">
-                  Published on {viewingAnnouncement.date} &middot; For {viewingAnnouncement.audience}{viewingAnnouncement.createdBy ? ` · By ${viewingAnnouncement.createdBy} - Faculty` : ""}
+                  Published on {viewingAnnouncement.date} &middot; For {viewingAnnouncement.audience}{viewingAnnouncement.createdBy ? ` &middot; By ${viewingAnnouncement.classSection || viewingAnnouncement.classSections?.length ? viewingAnnouncement.createdBy : "ADMIN"}` : ""}
                 </DialogDescription>
               </DialogHeader>
               <div>

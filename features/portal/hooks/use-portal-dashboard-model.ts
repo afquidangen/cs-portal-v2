@@ -3396,7 +3396,8 @@ export function usePortalDashboardModel(role: Role) {
 
   async function fetchTrashedAnnouncements() {
     try {
-      const res = await syncApi<{ data: Announcement[] }>("GET", "/api/portal/announcements/trash")
+      const params = role !== "admin" && role !== "superadmin" ? `?deletedBy=${encodeURIComponent(profile.name)}` : ""
+      const res = await syncApi<{ data: Announcement[] }>("GET", `/api/portal/announcements/trash${params}`)
       setTrashedAnnouncements(res.data ?? [])
     } catch (e) {
       console.error("Failed to fetch trashed announcements", e)

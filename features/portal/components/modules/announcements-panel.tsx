@@ -122,7 +122,7 @@ export function AnnouncementsPanel({ model, onShowTrash }: AnnouncementsPanelPro
               </div>
           </div>
 
-          {role === "admin" ? (
+          {role !== "student" ? (
             <div className="flex justify-end">
               <Button
                 size="sm"
@@ -194,7 +194,7 @@ export function AnnouncementsPanel({ model, onShowTrash }: AnnouncementsPanelPro
                             {leadAnnouncement.createdBy ? (
                               <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/25 px-2.5 py-1.5">
                                 <User className="size-3.5" />
-                                {leadAnnouncement.createdBy} - Faculty
+                                {leadAnnouncement.classSection || leadAnnouncement.classSections?.length ? leadAnnouncement.createdBy : "ADMIN"}
                               </span>
                             ) : null}
                             <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/25 px-2.5 py-1.5">
@@ -317,7 +317,7 @@ export function AnnouncementsPanel({ model, onShowTrash }: AnnouncementsPanelPro
                           {announcement.createdBy ? (
                             <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                               <User className="size-3.5" />
-                              {announcement.createdBy} - Faculty
+                              {announcement.classSection || announcement.classSections?.length ? announcement.createdBy : "ADMIN"}
                             </p>
                           ) : null}
                         </div>

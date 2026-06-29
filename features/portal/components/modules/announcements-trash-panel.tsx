@@ -34,7 +34,7 @@ export function AnnouncementsTrashPanel({ model, onBack }: AnnouncementsTrashPan
   const [restoreId, setRestoreId] = useState<string | null>(null)
   const [permDeleteId, setPermDeleteId] = useState<string | null>(null)
 
-  if (role !== "admin") return null
+  if (role === "student") return null
 
   return (
     <>

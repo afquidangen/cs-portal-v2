@@ -645,7 +645,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
                       {latestAnnouncement.createdBy ? (
                         <span className="inline-flex items-center gap-2">
                           <Users className="size-4" />
-                          {latestAnnouncement.createdBy}
+                          {latestAnnouncement.classSection || latestAnnouncement.classSections?.length ? latestAnnouncement.createdBy : "ADMIN"}
                         </span>
                       ) : null}
                     </div>
@@ -962,7 +962,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
                     {latestAnnouncement.createdBy ? (
                       <span className="inline-flex items-center gap-2">
                         <Users className="size-4" />
-                        {latestAnnouncement.createdBy} - Faculty
+                        {latestAnnouncement.classSection || latestAnnouncement.classSections?.length ? latestAnnouncement.createdBy : "ADMIN"}
                       </span>
                     ) : null}
                   </div>

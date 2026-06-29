@@ -69,7 +69,7 @@ export function LiveAnnouncementCard({
                   <>
                     <span className="mx-1 text-muted-foreground/40">|</span>
                     <User className="size-3" />
-                    {announcement.createdBy} - Faculty
+                    {announcement.classSection || announcement.classSections?.length ? announcement.createdBy : "ADMIN"}
                   </>
                 ) : null}
               </p>

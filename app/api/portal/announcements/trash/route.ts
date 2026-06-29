@@ -4,10 +4,14 @@ import { success, error } from "@/lib/api-response"
 
 export const runtime = "nodejs"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     await connectToDatabase()
-    const trashed = await AnnouncementModel.find({ isDeleted: true }).sort({ deletedAt: -1 }).lean()
+    const url = new URL(request.url)
+    const deletedBy = url.searchParams.get("deletedBy")
+    const filter: Record<string, unknown> = { isDeleted: true }
+    if (deletedBy) filter.deletedBy = deletedBy
+    const trashed = await AnnouncementModel.find(filter).sort({ deletedAt: -1 }).lean()
     return success(trashed)
   } catch (err) {
     return error(err instanceof Error ? err.message : "Unable to fetch trashed announcements.")

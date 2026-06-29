@@ -6,6 +6,7 @@ export type CsoInfoRecord = {
   logoPublicId?: string
   coverImageUrl?: string
   coverImagePublicId?: string
+  coverOpacity?: number
   facebookLink: string
   portalLogoUrl: string
   portalLogoPublicId?: string

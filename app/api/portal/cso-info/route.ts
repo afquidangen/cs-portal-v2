@@ -119,6 +119,7 @@ export async function PUT(request: Request) {
       logoPublicId,
       coverImageUrl,
       coverImagePublicId,
+      coverOpacity: body.coverOpacity ?? 50,
       portalLogoUrl,
       portalLogoPublicId,
     }

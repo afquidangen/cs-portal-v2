@@ -210,80 +210,79 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
 
   return (
     <div className="space-y-5">
-      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <section className="relative overflow-hidden rounded-lg border border-slate-700/50 bg-slate-900 shadow-sm">
         {model.csoInfo?.coverImageUrl ? (
-          <div className="relative aspect-[21/9] w-full overflow-hidden bg-slate-100">
-            <img
-              src={model.csoInfo.coverImageUrl}
-              alt="CSSO cover"
-              className="size-full object-cover"
+          <>
+            <div
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: `url(${model.csoInfo.coverImageUrl})` }}
             />
-            {canManage ? (
-              <div className="absolute right-3 top-3">
-                <Button size="sm" variant="outline" className="rounded-lg bg-white/90 backdrop-blur-sm" onClick={() => setShowCsoInfoForm(true)}>
-                  <Pencil className="size-3.5" />
-                  Edit Info
-                </Button>
-              </div>
+            <div
+              className="absolute inset-0"
+              style={{ backgroundColor: `rgba(0,0,0,${(model.csoInfo.coverOpacity ?? 50) / 100})` }}
+            />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-slate-900" />
+        )}
+
+        <div className="relative z-10 px-4 py-8 text-center sm:px-8 sm:py-12">
+          <div className="mx-auto max-w-3xl">
+            <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-xl border border-slate-600/50 bg-white/95 p-1.5 shadow-sm sm:mb-6 sm:size-32">
+              {model.csoInfo?.logoUrl ? (
+                <Image
+                  src={model.csoInfo.logoUrl}
+                  alt="CSSO logo"
+                  width={200}
+                  height={250}
+                  className="size-full rounded-lg object-contain"
+                  priority={false}
+                  unoptimized
+                />
+              ) : (
+                <ImageIcon className="size-8 text-slate-400 sm:size-12" />
+              )}
+            </div>
+            <h2 className="text-2xl font-bold uppercase leading-tight tracking-tight text-white sm:text-3xl">
+              {model.csoInfo?.orgName ?? "COMPUTING STUDIES STUDENTS ORGANIZATION"}
+            </h2>
+            {model.csoInfo?.description ? (
+              <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">
+                {model.csoInfo.description}
+              </p>
             ) : null}
+            {model.csoInfo?.facebookLink ? (
+              <a
+                href={model.csoInfo.facebookLink}
+                target="_blank"
+                rel="noreferrer"
+                className="mx-auto mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+              >
+                Visit CSSO Facebook Page
+                <ExternalLink className="size-4" />
+              </a>
+            ) : null}
+            <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs font-semibold text-blue-300">
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-400/30 bg-blue-950/50 px-3 py-1.5 backdrop-blur-sm">
+                <Sparkles className="size-3.5" />
+                Student leadership
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-400/30 bg-blue-950/50 px-3 py-1.5 backdrop-blur-sm">
+                <Megaphone className="size-3.5" />
+                Events and reports
+              </span>
+            </div>
           </div>
-        ) : canManage ? (
-          <div className="flex justify-end px-4 pt-6 sm:px-8">
-            <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setShowCsoInfoForm(true)}>
+        </div>
+
+        {canManage ? (
+          <div className="absolute right-3 top-3 z-20">
+            <Button size="sm" variant="outline" className="rounded-lg bg-white/90 backdrop-blur-sm" onClick={() => setShowCsoInfoForm(true)}>
               <Pencil className="size-3.5" />
               Edit Info
             </Button>
           </div>
         ) : null}
-        <div className="px-4 py-6 text-center sm:px-8 sm:py-8">
-          <div className="mx-auto max-w-3xl">
-          <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm sm:mb-6 sm:size-32">
-            {model.csoInfo?.logoUrl ? (
-              <Image
-                src={model.csoInfo.logoUrl}
-                alt="CSSO logo"
-                width={200}
-                height={250}
-                className="size-full rounded-lg object-contain"
-                priority={false}
-                unoptimized
-              />
-            ) : (
-              <ImageIcon className="size-8 text-slate-400 sm:size-12" />
-            )}
-          </div>
-          <h2 className="text-2xl font-bold uppercase leading-tight tracking-tight text-slate-950 sm:text-3xl">
-            {model.csoInfo?.orgName ?? "COMPUTING STUDIES STUDENTS ORGANIZATION"}
-          </h2>
-          {model.csoInfo?.description ? (
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-              {model.csoInfo.description}
-            </p>
-          ) : null}
-          {model.csoInfo?.facebookLink ? (
-            <a
-              href={model.csoInfo.facebookLink}
-              target="_blank"
-              rel="noreferrer"
-              className="mx-auto mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-            >
-              Visit CSSO Facebook Page
-              <ExternalLink className="size-4" />
-            </a>
-          ) : null}
-          <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs font-semibold text-blue-600">
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-100 bg-blue-50 px-3 py-1.5">
-              <Sparkles className="size-3.5" />
-              Student leadership
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-100 bg-blue-50 px-3 py-1.5">
-              <Megaphone className="size-3.5" />
-              Events and reports
-            </span>
-
-          </div>
-          </div>
-        </div>
       </section>
 
       {model.csoInfo?.facebookLink ? (
@@ -1121,6 +1120,7 @@ function CsoInfoFormDialog({
   const [portalLogoPublicId, setPortalLogoPublicId] = useState(data?.portalLogoPublicId ?? "")
   const [coverImageUrl, setCoverImageUrl] = useState(data?.coverImageUrl ?? "")
   const [coverImagePublicId, setCoverImagePublicId] = useState(data?.coverImagePublicId ?? "")
+  const [coverOpacity, setCoverOpacity] = useState(data?.coverOpacity ?? 50)
   const [uploading, setUploading] = useState(false)
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1198,6 +1198,7 @@ function CsoInfoFormDialog({
       portalLogoPublicId: portalLogoUrl ? portalLogoPublicId : "",
       coverImageUrl: coverImageUrl || "",
       coverImagePublicId: coverImageUrl ? coverImagePublicId : "",
+      coverOpacity,
     })
   }
 
@@ -1310,23 +1311,36 @@ function CsoInfoFormDialog({
               className="flex h-10 w-full border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 disabled:pointer-events-none disabled:opacity-50"
             />
             {coverImageUrl ? (
-              <div className="relative mt-2 flex items-center justify-center overflow-hidden border border-border bg-muted/50">
-                <Image
-                  src={coverImageUrl}
-                  alt="Cover preview"
-                  width={400}
-                  height={160}
-                  className="max-h-40 w-full object-cover"
-                  unoptimized
-                />
-                <button
-                  type="button"
-                  onClick={() => setCoverImageUrl("")}
-                  className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-red-500/80 text-white transition hover:bg-red-500"
-                >
-                  <X className="size-3" />
-                </button>
-              </div>
+              <>
+                <div className="relative mt-2 flex items-center justify-center overflow-hidden border border-border bg-muted/50">
+                  <Image
+                    src={coverImageUrl}
+                    alt="Cover preview"
+                    width={400}
+                    height={160}
+                    className="max-h-40 w-full object-cover"
+                    unoptimized
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setCoverImageUrl("")}
+                    className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-red-500/80 text-white transition hover:bg-red-500"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+                <div className="mt-3 space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Overlay Opacity: {coverOpacity}%</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={coverOpacity}
+                    onChange={(e) => setCoverOpacity(Number(e.target.value))}
+                    className="w-full accent-blue-600"
+                  />
+                </div>
+              </>
             ) : null}
           </div>
         </div>

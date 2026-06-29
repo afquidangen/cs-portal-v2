@@ -28,10 +28,11 @@ export async function POST(request: Request) {
     Promise.resolve().then(async () => {
       try {
         await connectToDatabase()
-        const students = (await UserModel.find({
-          role: "student",
-          status: "Active",
-        })
+        const query: Record<string, unknown> = { role: "student", status: "Active" }
+        if (body.classSections?.length) {
+          query.section = { $in: body.classSections }
+        }
+        const students = (await UserModel.find(query)
           .lean()
           .select("id email name")) as { id: string; email: string; name: string }[]
 
