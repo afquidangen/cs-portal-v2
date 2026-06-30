@@ -5,6 +5,7 @@ import { gradesRepository } from "@/features/portal/repositories/grades.reposito
 import { gradeColumnRepository } from "@/features/portal/repositories/grade-column.repository"
 import { schedulesRepository } from "@/features/portal/repositories/schedules.repository"
 import { semestersRepository } from "@/features/portal/repositories/semesters.repository"
+import { usersRepository } from "@/features/portal/repositories/users.repository"
 import { gradeCategoryMatches } from "@/features/portal/lib/grade-engine"
 import type { GradeRecord } from "@/lib/types/grade"
 import type { GradeColumn } from "@/lib/types/grade-column"
@@ -42,11 +43,11 @@ const HEADER_CELLS: Record<string, Array<{ row: number; col: number; key: string
     { row: 6, col: 11, key: "ay" },
   ],
   "REPORTS OF GRADE": [
-    { row: 7, col: 2, key: "courseNo" },
+    { row: 7, col: 3, key: "courseNo" },
     { row: 7, col: 8, key: "section" },
     { row: 7, col: 12, key: "semester" },
     { row: 7, col: 15, key: "ay" },
-    { row: 8, col: 2, key: "subject" },
+    { row: 8, col: 3, key: "subject" },
     { row: 8, col: 12, key: "units" },
   ],
 }
@@ -382,6 +383,19 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
     schedulesRepository.findAll({ id: classId }) as Promise<Record<string, unknown>[]>,
   ])
 
+  // Build sex lookup map from student records
+  const studentIds = [...new Set(grades.map((g) => g.studentId).filter(Boolean))] as string[]
+  const sexMap = new Map<string, string>()
+  if (studentIds.length > 0) {
+    const students = (await usersRepository.findAll({ id: { $in: studentIds } })) as Array<{
+      id: string
+      sex?: string
+    }>
+    for (const s of students) {
+      if (s.sex) sexMap.set(s.id, s.sex)
+    }
+  }
+
   if (section) {
     grades = grades.filter((g) => g.section === section)
   }
@@ -442,12 +456,16 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
     }
   }
 
-  // Ensure REPORTS OF GRADE subject column is wide enough for the descriptive title
+  // Ensure REPORTS OF GRADE header columns are wide enough for their content
   const rogSheet = wb.getWorksheet("REPORTS OF GRADE")
   if (rogSheet) {
-    const needed = Math.max(headerData.subject.length + 2, 14)
-    if (rogSheet.getColumn(2).width < needed) {
-      rogSheet.getColumn(2).width = needed
+    const valueWidth = Math.max(headerData.subject.length + 2, headerData.courseNo.length + 2, 14)
+    if (rogSheet.getColumn(3).width < valueWidth) {
+      rogSheet.getColumn(3).width = valueWidth
+    }
+    const semWidth = Math.max(headerData.semester.length + 2, 12)
+    if (rogSheet.getColumn(12).width < semWidth) {
+      rogSheet.getColumn(12).width = semWidth
     }
   }
 
@@ -493,7 +511,7 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
 
       crSheet.getCell(rowIdx, 1).value = i + 1
       crSheet.getCell(rowIdx, 2).value = formatStudentName(grade.student ?? "")
-      crSheet.getCell(rowIdx, 3).value = ""
+      crSheet.getCell(rowIdx, 3).value = sexMap.get(grade.studentId) ?? ""
 
       populatePeriodSection(crSheet, grade, columns, rowIdx, midtermMap, "midterm")
       populatePeriodSection(crSheet, grade, columns, rowIdx, finalsMap, "final")
@@ -525,10 +543,10 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
     if (finalsMap.examCol != null) ensureWidth(finalsMap.examCol)
 
     if (!isLabSubject && midtermMap.labStartCol != null && midtermMap.labEndCol != null) {
-      for (let c = midtermMap.labStartCol; c <= midtermMap.labEndCol; c++) {
+      for (let c = midtermMap.labStartCol; c <= (midtermMap.labTotalCol ?? midtermMap.labEndCol); c++) {
         crSheet.getColumn(c).hidden = true
       }
-      for (let c = finalsMap.labStartCol ?? finalsStartCol; c <= (finalsMap.labEndCol ?? totalCols); c++) {
+      for (let c = finalsMap.labStartCol ?? finalsStartCol; c <= (finalsMap.labTotalCol ?? finalsMap.labEndCol ?? totalCols); c++) {
         crSheet.getColumn(c).hidden = true
       }
 
@@ -539,8 +557,8 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
           }
         }
       }
-      clearLabHeaders(midtermMap.labStartCol, midtermMap.labEndCol)
-      clearLabHeaders(finalsMap.labStartCol ?? finalsStartCol, finalsMap.labEndCol ?? totalCols)
+      clearLabHeaders(midtermMap.labStartCol, midtermMap.labTotalCol ?? midtermMap.labEndCol)
+      clearLabHeaders(finalsMap.labStartCol ?? finalsStartCol, finalsMap.labTotalCol ?? finalsMap.labEndCol ?? totalCols)
 
       const clearAttendanceHeaders = (startCol: number | undefined, endCol: number | undefined) => {
         if (startCol == null || endCol == null) return
@@ -562,7 +580,7 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
 
       if (midtermMap.categories.length > 0) {
         const firstCatStart = midtermMap.categories[0].itemColumns[0] ?? midtermMap.examCol ?? 0
-        crSheet.getCell(6, firstCatStart).value = "CLASS STANDING - 60%"
+        crSheet.getCell(6, firstCatStart).value = "CLASS STANDING - 40%"
       }
       if (midtermMap.labStartCol != null) {
         crSheet.getCell(6, midtermMap.labStartCol).value = ""
@@ -578,8 +596,8 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
           }
         }
       }
-      clearLabData(midtermMap.labStartCol, midtermMap.labEndCol)
-      clearLabData(finalsMap.labStartCol ?? finalsStartCol, finalsMap.labEndCol ?? totalCols)
+      clearLabData(midtermMap.labStartCol, midtermMap.labTotalCol ?? midtermMap.labEndCol)
+      clearLabData(finalsMap.labStartCol ?? finalsStartCol, finalsMap.labTotalCol ?? finalsMap.labEndCol ?? totalCols)
     }
 
     // Clear template placeholder rows that weren't filled with actual students
@@ -625,7 +643,7 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
   if (!isLabSubject) {
     const gsMid = wb.getWorksheet("GS MID")
     if (gsMid) {
-      gsMid.getCell(7, 4).value = "CLASS STANDING 60%"
+      gsMid.getCell(7, 4).value = "CLASS STANDING 40%"
       for (let c = 15; c <= 23; c++) {
         gsMid.getCell(7, c).value = ""
         gsMid.getColumn(c).hidden = true
@@ -633,7 +651,7 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
     }
     const gsFin = wb.getWorksheet("GS FIN")
     if (gsFin) {
-      gsFin.getCell(7, 3).value = "CLASS STANDING 60%"
+      gsFin.getCell(7, 3).value = "CLASS STANDING 40%"
       for (let c = 14; c <= 22; c++) {
         gsFin.getCell(7, c).value = ""
         gsFin.getColumn(c).hidden = true
@@ -642,6 +660,11 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
   }
 
   wb.calcProperties = { fullCalcOnLoad: true }
+
+  // Remove sheet protection so all cells are editable in the exported file
+  for (const sheet of wb.worksheets) {
+    sheet.sheetProtection = null
+  }
 
   for (const sheetName of ["LOOKUP", "PERCENTAGE"]) {
     const sheet = wb.getWorksheet(sheetName)
