@@ -74,6 +74,8 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
   ]
 
   const [uploading, setUploading] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState("")
+  const [uploadCompressionInfo, setUploadCompressionInfo] = useState<{ original: string; compressed: string } | null>(null)
   const [detailThesis, setDetailThesis] = useState<ThesisRecord | null>(null)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -131,7 +133,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
         body: formData,
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? "Failed to save.")
+      if (!res.ok) throw new Error(json.message ?? json.error ?? "Failed to save.")
       if (json.data) {
         setTheses((prev) => prev.map((t) => t.id === detailThesis.id ? { ...t, ...json.data } : t))
         setDetailThesis(json.data)
@@ -152,11 +154,18 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
     event.preventDefault()
     if (!thesisDraft.title.trim() || !thesisDraft.authors.trim() || !pdfFileRef.current) return
 
+    const file = pdfFileRef.current
+    const needsCompression = file.size > 10 * 1024 * 1024
+
     setUploading(true)
+    setUploadCompressionInfo(null)
+
     try {
       const fileName =
         thesisDraft.fileName ||
         `${thesisDraft.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`
+
+      setUploadStatus("Preparing file...")
 
       const formData = new FormData()
       formData.append("id", `TH-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
@@ -168,14 +177,23 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
       formData.append("abstract", thesisDraft.abstract.trim() || "Abstract will be supplied after manuscript review.")
       formData.append("tags", JSON.stringify(thesisDraft.category.split(" ").filter(Boolean).slice(0, 3)))
       formData.append("fileName", fileName)
-      formData.append("pdf", pdfFileRef.current)
+      formData.append("pdf", file)
+
+      if (needsCompression) {
+        setUploadStatus(`Compressing PDF (${(file.size / 1024 / 1024).toFixed(1)} MB)...`)
+      } else {
+        setUploadStatus("Uploading thesis...")
+      }
 
       const res = await fetch("/api/portal/theses", {
         method: "POST",
         body: formData,
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? "Failed to save.")
+      if (!res.ok) throw new Error(json.message ?? json.error ?? "Failed to save.")
+
+      setUploadStatus("Saving thesis...")
+
       if (json.data) setTheses((current) => [json.data, ...current])
 
       pdfFileRef.current = null
@@ -194,8 +212,11 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
     } catch (e) {
       const message = e instanceof Error ? e.message : "Failed to upload thesis"
       toast.error(message)
+      setUploadStatus("")
     } finally {
       setUploading(false)
+      setUploadStatus("")
+      setUploadCompressionInfo(null)
     }
   }
 
@@ -322,8 +343,8 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                     event.target.value = ""
                     return
                   }
-                  if (file.size > 25 * 1024 * 1024) {
-                    toast.error("File size exceeds 25MB limit. Please upload a smaller PDF.")
+                  if (file.size > 50 * 1024 * 1024) {
+                    toast.error("File size exceeds 50MB limit. Please upload a smaller PDF.")
                     event.target.value = ""
                     return
                   }
@@ -362,8 +383,11 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                 ) : (
                   <Plus className="size-4" />
                 )}
-                {uploading ? "Uploading..." : "Save"}
+                {uploading ? "Processing..." : "Save"}
               </Button>
+              {uploadStatus && (
+                <p className="w-full text-center text-xs text-muted-foreground">{uploadStatus}</p>
+              )}
             </DialogFooter>
           </form>
         </DialogContent>
@@ -564,8 +588,8 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                         e.target.value = ""
                         return
                       }
-                      if (file.size > 25 * 1024 * 1024) {
-                        toast.error("File size exceeds 25MB limit. Please upload a smaller PDF.")
+                      if (file.size > 50 * 1024 * 1024) {
+                        toast.error("File size exceeds 50MB limit. Please upload a smaller PDF.")
                         e.target.value = ""
                         return
                       }

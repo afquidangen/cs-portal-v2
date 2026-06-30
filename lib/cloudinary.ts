@@ -76,3 +76,18 @@ export async function uploadFileStream(
     uploadStream.end(buffer)
   })
 }
+
+export async function uploadFileFromPath(
+  filePath: string,
+  publicId: string,
+  folder: string,
+  resourceType: "raw" | "image" = "raw"
+): Promise<{ secureUrl: string; publicId: string }> {
+  const result = await cloudinary.uploader.upload(filePath, {
+    folder: `cs-portal/${folder}`,
+    public_id: publicId,
+    resource_type: resourceType,
+    timeout: 120000,
+  })
+  return { secureUrl: result.secure_url, publicId: result.public_id }
+}
