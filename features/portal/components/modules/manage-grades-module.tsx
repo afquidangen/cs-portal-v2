@@ -12,7 +12,7 @@ import {
 
 import { Panel } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
-import type { GradeRecord } from "../../data/portal-data"
+import type { GradeRecord, ClassStudent } from "../../data/portal-data"
 import type { GradeColumn, Assessment } from "@/lib/types"
 import { SpreadsheetGrid } from "../grades/spreadsheet-grid"
 import { GradingWorkbookTab } from "../grades/grading-workbook-tab"
@@ -212,26 +212,6 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
     prevActiveModuleRef.current = model.activeModule
   }, [model.activeModule, refreshOnSchemeChange])
 
-  const subjectRoster = useMemo(() => {
-    if (subjectSections.length === 0) return []
-    const sectionSet = new Set(selectedSection ? [selectedSection] : subjectSections)
-    const deletedUsers = new Set(
-      users
-        .filter((u) => u.deletedAt)
-        .map((u) => u.id)
-    )
-    return roster.filter((s) => {
-      if (deletedUsers.has(s.id)) return false
-      if (!s.enrolled) return false
-      return sectionSet.has(s.section)
-    })
-  }, [roster, subjectSections, selectedSection, users])
-
-  const filterSchedules = useMemo(() => {
-    const semesterIds = new Set(visibleSchedules.map((s) => s.semesterId))
-    return semesters.filter((sem) => semesterIds.has(sem.id))
-  }, [visibleSchedules, semesters])
-
   const gradeMap = useMemo(() => {
     const map = new Map<string, GradeRecord>()
     if (!selectedSubject) return map
@@ -240,6 +220,43 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
     }
     return map
   }, [grades, selectedSubject])
+
+  const filterSchedules = useMemo(() => {
+    const semesterIds = new Set(visibleSchedules.map((s) => s.semesterId))
+    return semesters.filter((sem) => semesterIds.has(sem.id))
+  }, [visibleSchedules, semesters])
+
+  const subjectRoster = useMemo(() => {
+    if (subjectSections.length === 0) return []
+    const sectionSet = new Set(selectedSection ? [selectedSection] : subjectSections)
+    const deletedUsers = new Set(
+      users.filter((u) => u.deletedAt).map((u) => u.id)
+    )
+    const seen = new Set<string>()
+    const result: ClassStudent[] = []
+
+    for (const s of roster) {
+      if (deletedUsers.has(s.id)) continue
+      if (!s.enrolled) continue
+      if (!sectionSet.has(s.section)) continue
+      result.push(s)
+      seen.add(s.id)
+    }
+
+    for (const [, g] of gradeMap) {
+      if (!seen.has(g.studentId)) {
+        result.push({
+          id: g.studentId,
+          name: g.student,
+          section: g.section ?? "",
+          enrolled: true,
+        } as ClassStudent)
+        seen.add(g.studentId)
+      }
+    }
+
+    return result
+  }, [roster, subjectSections, selectedSection, users, gradeMap])
 
   const gridData = useMemo(() => {
     const q = studentQuery.toLowerCase().trim()

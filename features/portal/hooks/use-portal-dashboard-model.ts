@@ -1396,12 +1396,18 @@ export function usePortalDashboardModel(role: Role) {
     const normSubject = normalize(subjectLabel)
     const normSection = normalize(section)
 
+    const schedule = classSchedules.find(
+      (s) => normalize(s.subject ?? "") === normSubject && normalize(s.section ?? "") === normSection
+    )
+    const classId = schedule?.id
+
     const existingPassed = grades.find(
       (g) => normalize(g.subject ?? "") === normSubject && normalize(g.section ?? "") === normSection && g.studentId === studentId && g.remarks === "Passed"
     )
     if (existingPassed) {
       const updated = {
         ...existingPassed,
+        classId,
         midtermTransmuted: undefined,
         midterm: 0,
         finalTransmuted: undefined,
@@ -1428,6 +1434,7 @@ export function usePortalDashboardModel(role: Role) {
         subject: subjectLabel,
         code: subjectCode,
         units: 3,
+        classId,
         midtermTransmuted: undefined,
         midterm: 0,
         finalTransmuted: undefined,
@@ -1438,6 +1445,7 @@ export function usePortalDashboardModel(role: Role) {
       setGrades((current) => [newGrade, ...current])
       syncApi("POST", "/api/portal/grades", newGrade).catch(() => {
         setGrades((current) => current.filter((g) => g.id !== newId))
+        toast.error("Failed to save grade record for the added student.")
       })
     }
 
