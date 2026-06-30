@@ -112,7 +112,7 @@ export function UsersModule({ model }: PortalModuleProps) {
   const [gradeHistoryEntry, setGradeHistoryEntry] = useState({
     subjectCode: "",
     subjectName: "",
-    finalPercentile: 0,
+    finalPercentile: undefined,
     transmutedGrade: 0,
     remarks: "FAILED",
     curriculumId: "",
@@ -546,7 +546,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                           </Button>
                         ) : null}
                         {user.role === "student" ? (
-                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "FAILED", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 }) }} title="Grade history">
+                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: undefined, transmutedGrade: 0, remarks: "FAILED", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 }) }} title="Grade history">
                             <History className="size-3.5" />
                           </Button>
                         ) : null}
@@ -620,7 +620,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                                 <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => setChangeCurriculumUser({ user, newCurriculumId: user.curriculumId ?? "", newYearLevel: user.currentYearLevel ?? YEAR_LABELS[String(user.year ?? "1")], newSemester: user.currentSemester ?? "First Semester" })} title="Change curriculum" aria-label="Change curriculum"><ArrowLeftRight className="size-4" /></Button>
                               ) : null}
                               {user.role === "student" ? (
-                                <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "FAILED", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 }) }} title="Grade history" aria-label="Grade history"><History className="size-4" /></Button>
+                                <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: undefined, transmutedGrade: 0, remarks: "FAILED", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 }) }} title="Grade history" aria-label="Grade history"><History className="size-4" /></Button>
                               ) : null}
                               {model.role === "admin" && user.role === "student" ? (
                                 <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => model.handleToggleCsoOfficer(user.id, user.roles?.includes("csso_officer") ? "revoke" : "assign")} title={user.roles?.includes("csso_officer") ? "Revoke CSSO Officer" : "Assign CSSO Officer"} aria-label={user.roles?.includes("csso_officer") ? "Revoke CSSO Officer" : "Assign CSSO Officer"}><ShieldCheck className="size-4" /></Button>
@@ -1184,7 +1184,7 @@ export function UsersModule({ model }: PortalModuleProps) {
         if (!o) {
           setGradeHistoryUser(null)
           setEditGradeHistoryIndex(null)
-          setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "FAILED", curriculumId: "", yearLevel: "", semester: "", section: "", units: 3 })
+          setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: undefined, transmutedGrade: 0, remarks: "FAILED", curriculumId: "", yearLevel: "", semester: "", section: "", units: 3 })
           setGradeEditReason("")
           setGhFilterYear("")
           setGhFilterSemester("")
@@ -1254,7 +1254,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                                 {entry.editedAt ? <span className="ml-1.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400" title={entry.editReason ?? ""}>(edited)</span> : null}
                               </td>
                               <td className="px-4 py-3 text-foreground/80">{entry.subjectName}</td>
-                              <td className="px-4 py-3 text-center text-foreground">{entry.finalPercentile}</td>
+                              <td className="px-4 py-3 text-center text-foreground">{entry.finalPercentile ?? "—"}</td>
                               <td className="px-4 py-3 text-center text-foreground">{entry.transmutedGrade}</td>
                               <td className="px-4 py-3 text-foreground/80">{entry.remarks}</td>
                               <td className="px-4 py-3 text-foreground/60 text-xs">{entry.yearLevel} — {entry.semester}</td>
@@ -1348,7 +1348,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                           type="number"
                           min={0}
                           max={100}
-                          value={gradeHistoryEntry.finalPercentile || ""}
+                          value={gradeHistoryEntry.finalPercentile ?? ""}
                           onChange={(e) => {
                             const val = Number(e.target.value)
                             setGradeHistoryEntry((prev) => ({
@@ -1417,7 +1417,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                       <Button
                         size="sm"
                         className="rounded-xl"
-                        disabled={!gradeHistoryEntry.subjectCode || !gradeHistoryEntry.finalPercentile || (editGradeHistoryIndex !== null && !gradeEditReason.trim())}
+                        disabled={!gradeHistoryEntry.subjectCode || (editGradeHistoryIndex !== null && !gradeEditReason.trim())}
                         onClick={() => {
                           if (!student) return
                           const entry: GradeHistoryEntry = {
@@ -1441,7 +1441,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                           } else {
                             handleAddGradeHistory(student.id, entry)
                           }
-                            setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "FAILED", curriculumId: student.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 })
+                            setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: undefined, transmutedGrade: 0, remarks: "FAILED", curriculumId: student.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 })
                             setGradeEditReason("")
                         }}
                       >
@@ -1455,7 +1455,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                           className="rounded-xl"
                           onClick={() => {
                             setEditGradeHistoryIndex(null)
-                          setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: 0, transmutedGrade: 0, remarks: "FAILED", curriculumId: student.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 })
+                          setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: undefined, transmutedGrade: 0, remarks: "FAILED", curriculumId: student.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 })
                           setGradeEditReason("")
                           }}
                         >

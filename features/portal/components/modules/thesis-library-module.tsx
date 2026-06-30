@@ -84,6 +84,8 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
   const [removingFile, setRemovingFile] = useState(false)
   const [viewingPdf, setViewingPdf] = useState<ThesisRecord | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const pdfFileRef = useRef<File | null>(null)
+  const replacePdfFileRef = useRef<File | null>(null)
 
   function openEditDraft(thesis: ThesisRecord) {
     setEditDraft({
@@ -109,33 +111,35 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
     if (!detailThesis || !editDraft.title.trim() || !editDraft.authors.trim()) return
     setSaving(true)
     try {
-      const body: Record<string, unknown> = {
-        title: editDraft.title.trim(),
-        authors: editDraft.authors.trim(),
-        year: Number(editDraft.year) || detailThesis.year,
-        category: editDraft.category.trim(),
-        adviser: editDraft.adviser.trim() || "For assignment",
-        tags: editDraft.tags.split(",").map((t) => t.trim()).filter(Boolean),
-      }
-      if (replacementFile) {
-        body.pdfUrl = replacementFile.url
-        body.fileName = replacementFile.name
+      const formData = new FormData()
+      formData.append("title", editDraft.title.trim())
+      formData.append("authors", editDraft.authors.trim())
+      formData.append("year", String(Number(editDraft.year) || detailThesis.year))
+      formData.append("category", editDraft.category.trim())
+      formData.append("adviser", editDraft.adviser.trim() || "For assignment")
+      formData.append("tags", editDraft.tags.split(",").map((t) => t.trim()).filter(Boolean).join(","))
+
+      if (replacePdfFileRef.current) {
+        formData.append("pdf", replacePdfFileRef.current)
+        formData.append("fileName", replacementFile?.name || "thesis.pdf")
       } else if (removingFile) {
-        body.pdfUrl = ""
-        body.fileName = ""
+        formData.append("removePdf", "true")
       }
+
       const res = await fetch(`/api/portal/theses/${detailThesis.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: formData,
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? "Failed to save.")
-      setTheses((prev) => prev.map((t) => t.id === detailThesis.id ? { ...t, ...body } : t))
-      setDetailThesis((prev) => prev ? { ...prev, ...body } : null)
+      if (json.data) {
+        setTheses((prev) => prev.map((t) => t.id === detailThesis.id ? { ...t, ...json.data } : t))
+        setDetailThesis(json.data)
+      }
       setEditing(false)
       setReplacementFile(null)
       setRemovingFile(false)
+      replacePdfFileRef.current = null
       toast.success("Thesis updated successfully")
     } catch (e) {
       toast.error(`Failed to update thesis${e instanceof Error ? `: ${e.message}` : ""}`)
@@ -146,36 +150,35 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
 
   async function handleSubmitThesis(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!thesisDraft.title.trim() || !thesisDraft.authors.trim() || !thesisDraft.pdfUrl) return
+    if (!thesisDraft.title.trim() || !thesisDraft.authors.trim() || !pdfFileRef.current) return
 
     setUploading(true)
     try {
-      const newItem = {
-        id: `TH-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        title: thesisDraft.title.trim(),
-        authors: thesisDraft.authors.trim(),
-        year: Number(thesisDraft.year) || 2026,
-        category: thesisDraft.category.trim(),
-        adviser: thesisDraft.adviser.trim() || "For assignment",
-        abstract:
-          thesisDraft.abstract.trim() ||
-          "Abstract will be supplied after manuscript review.",
-        tags: thesisDraft.category.split(" ").filter(Boolean).slice(0, 3),
-        pdfUrl: thesisDraft.pdfUrl,
-        fileName:
-          thesisDraft.fileName ||
-          `${thesisDraft.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`,
-      }
+      const fileName =
+        thesisDraft.fileName ||
+        `${thesisDraft.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`
+
+      const formData = new FormData()
+      formData.append("id", `TH-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
+      formData.append("title", thesisDraft.title.trim())
+      formData.append("authors", thesisDraft.authors.trim())
+      formData.append("year", String(Number(thesisDraft.year) || 2026))
+      formData.append("category", thesisDraft.category.trim())
+      formData.append("adviser", thesisDraft.adviser.trim() || "For assignment")
+      formData.append("abstract", thesisDraft.abstract.trim() || "Abstract will be supplied after manuscript review.")
+      formData.append("tags", JSON.stringify(thesisDraft.category.split(" ").filter(Boolean).slice(0, 3)))
+      formData.append("fileName", fileName)
+      formData.append("pdf", pdfFileRef.current)
 
       const res = await fetch("/api/portal/theses", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newItem),
+        body: formData,
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? "Failed to save.")
       if (json.data) setTheses((current) => [json.data, ...current])
 
+      pdfFileRef.current = null
       setThesisDraft({
         title: "",
         authors: "",
@@ -188,8 +191,9 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
       })
       setShowThesisUploadForm(false)
       toast.success("Thesis uploaded successfully")
-    } catch {
-      toast.error("Failed to upload thesis")
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to upload thesis"
+      toast.error(message)
     } finally {
       setUploading(false)
     }
@@ -318,16 +322,18 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                     event.target.value = ""
                     return
                   }
-
-                  const reader = new FileReader()
-                  reader.onload = () => {
-                    setThesisDraft((current) => ({
-                      ...current,
-                      pdfUrl: reader.result as string,
-                      fileName: file.name,
-                    }))
+                  if (file.size > 25 * 1024 * 1024) {
+                    toast.error("File size exceeds 25MB limit. Please upload a smaller PDF.")
+                    event.target.value = ""
+                    return
                   }
-                  reader.readAsDataURL(file)
+
+                  pdfFileRef.current = file
+                  setThesisDraft((current) => ({
+                    ...current,
+                    pdfUrl: "selected",
+                    fileName: file.name,
+                  }))
                 }}
               />
 
@@ -558,12 +564,14 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                         e.target.value = ""
                         return
                       }
-                      const reader = new FileReader()
-                      reader.onload = () => {
-                        setReplacementFile({ url: reader.result as string, name: file.name })
-                        setRemovingFile(false)
+                      if (file.size > 25 * 1024 * 1024) {
+                        toast.error("File size exceeds 25MB limit. Please upload a smaller PDF.")
+                        e.target.value = ""
+                        return
                       }
-                      reader.readAsDataURL(file)
+                      replacePdfFileRef.current = file
+                      setReplacementFile({ url: "selected", name: file.name })
+                      setRemovingFile(false)
                       e.target.value = ""
                     }} />
                 </div>

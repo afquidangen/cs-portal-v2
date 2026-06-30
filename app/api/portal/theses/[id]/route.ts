@@ -2,7 +2,7 @@ import { thesesRepository } from "@/features/portal/repositories/theses.reposito
 import { success, error, notFound } from "@/lib/api-response"
 import { connectToDatabase } from "@/lib/mongodb"
 import { ThesisModel } from "@/lib/models"
-import { uploadFile, destroyFile } from "@/lib/cloudinary"
+import { uploadFileStream, destroyFile } from "@/lib/cloudinary"
 
 export const runtime = "nodejs"
 
@@ -26,12 +26,42 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
-    const body = await request.json()
+    const formData = await request.formData()
 
-    if (typeof body.pdfUrl === "string" && body.pdfUrl.startsWith("data:")) {
-      const result = await uploadFile(body.pdfUrl, `thesis-${Date.now()}`, "theses")
+    const body: Record<string, unknown> = {}
+
+    const title = formData.get("title") as string | null
+    const authors = formData.get("authors") as string | null
+    const adviser = formData.get("adviser") as string | null
+    const abstract = formData.get("abstract") as string | null
+    const category = formData.get("category") as string | null
+    const year = formData.get("year") as string | null
+
+    if (title) body.title = title
+    if (authors) body.authors = authors
+    if (adviser) body.adviser = adviser
+    if (abstract) body.abstract = abstract
+    if (category) body.category = category
+    if (year) body.year = Number(year)
+
+    const removePdf = formData.get("removePdf") === "true"
+
+    if (removePdf) {
+      body.pdfUrl = ""
+      body.fileName = ""
+    }
+
+    const pdfFile = formData.get("pdf") as File | null
+    if (pdfFile) {
+      if (pdfFile.size > 25 * 1024 * 1024) {
+        return error("File exceeds 25MB upload limit.")
+      }
+      const buffer = Buffer.from(await pdfFile.arrayBuffer())
+      const publicId = `thesis-${Date.now()}`
+      const result = await uploadFileStream(buffer, publicId, "theses")
       body.pdfUrl = result.secureUrl
       body.cloudinaryPublicId = result.publicId
+      body.fileName = pdfFile.name
 
       const existing = await thesesRepository.findById(id) as Record<string, unknown> | null
       if (existing) {

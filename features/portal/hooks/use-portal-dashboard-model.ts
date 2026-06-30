@@ -2519,7 +2519,9 @@ export function usePortalDashboardModel(role: Role) {
           grade.studentId === profile.id ? { ...grade, student: fullName } : grade
         )
       )
-      void syncApi("PUT", `/api/portal/roster/${profile.id}`, { name: fullName })
+      if (profile.role === "student") {
+        void syncApi("PUT", `/api/portal/roster/${profile.id}`, { name: fullName })
+      }
       for (const grade of grades) {
         if (grade.studentId === profile.id) {
           void syncApi("PUT", `/api/portal/grades/${grade.id}`, { student: fullName })

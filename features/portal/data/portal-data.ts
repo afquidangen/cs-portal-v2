@@ -11,7 +11,7 @@ export type TicketStatus = "Pending" | "In Progress" | "Resolved"
 export type GradeHistoryEntry = {
   subjectCode: string
   subjectName: string
-  finalPercentile: number
+  finalPercentile?: number
   transmutedGrade: number
   remarks: string
   curriculumId: string

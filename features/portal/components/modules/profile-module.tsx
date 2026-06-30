@@ -1,7 +1,8 @@
 "use client"
 
-import { CalendarDays, Eye, EyeOff, Lock, Mail, MapPin, Save, Trash2, Undo2, Upload, User } from "lucide-react"
+import { CalendarDays, Eye, EyeOff, Loader2, Lock, Mail, MapPin, Save, Trash2, Undo2, Upload, User } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,17 +28,17 @@ export function ProfileModule({ model }: PortalModuleProps) {
   useEffect(() => {
     queueMicrotask(() => setDraft(profileDetails))
   }, [profileDetails])
-  const [saved, setSaved] = useState(false)
-  const [saveError, setSaveError] = useState(false)
+  const [savingProfile, setSavingProfile] = useState(false)
 
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
   const [cropDialogOpen, setCropDialogOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const [activeSection, setActiveSection] = useState<"personal" | "password">("personal")
   const [passwordForm, setPasswordForm] = useState({ current: "", newPass: "", confirm: "" })
   const [showPasswords, setShowPasswords] = useState(false)
   const [passwordError, setPasswordError] = useState("")
-  const [passwordSuccess, setPasswordSuccess] = useState(false)
+  const [updatingPassword, setUpdatingPassword] = useState(false)
   const passwordInputClass =
     "h-11 rounded-md border-slate-200 bg-white pr-10 text-slate-950 shadow-sm placeholder:text-slate-400 focus-visible:border-blue-500 focus-visible:ring-blue-100"
 
@@ -97,15 +98,15 @@ export function ProfileModule({ model }: PortalModuleProps) {
   }
 
   async function handleSave() {
+    setSavingProfile(true)
     try {
       const result = await handleSaveProfile(draft)
       if (result) setDraft(result)
-      setSaved(true)
-      setSaveError(false)
-      setTimeout(() => setSaved(false), 2000)
+      toast.success("Profile saved successfully")
     } catch {
-      setSaveError(true)
-      setTimeout(() => setSaveError(false), 3000)
+      toast.error("Failed to save profile. Please try again.")
+    } finally {
+      setSavingProfile(false)
     }
   }
 
@@ -117,7 +118,6 @@ export function ProfileModule({ model }: PortalModuleProps) {
 
   async function handlePasswordSave() {
     setPasswordError("")
-    setPasswordSuccess(false)
     if (!passwordForm.current || !passwordForm.newPass || !passwordForm.confirm) {
       setPasswordError("All fields are required.")
       return
@@ -131,13 +131,15 @@ export function ProfileModule({ model }: PortalModuleProps) {
       setPasswordError(validationError)
       return
     }
+    setUpdatingPassword(true)
     try {
       await handleChangePassword(passwordForm.current, passwordForm.newPass)
-      setPasswordSuccess(true)
+      toast.success("Password updated successfully")
       setPasswordForm({ current: "", newPass: "", confirm: "" })
-      setTimeout(() => setPasswordSuccess(false), 3000)
     } catch {
-      setPasswordError("Failed to update password. Check your current password.")
+      toast.error("Failed to update password. Check your current password.")
+    } finally {
+      setUpdatingPassword(false)
     }
   }
 
@@ -184,20 +186,39 @@ export function ProfileModule({ model }: PortalModuleProps) {
 
             <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
               <CardContent className="p-3">
-                <div className="flex h-11 w-full items-center gap-3 rounded-md bg-blue-50 px-4 text-sm font-semibold text-blue-600">
+                <button
+                  type="button"
+                  onClick={() => setActiveSection("personal")}
+                  className={cn(
+                    "flex h-11 w-full items-center gap-3 rounded-md px-4 text-sm font-semibold transition",
+                    activeSection === "personal"
+                      ? "bg-blue-50 text-blue-600"
+                      : "text-slate-700 hover:bg-slate-50"
+                  )}
+                >
                   <User className="size-4" />
                   Personal Information
-                </div>
-                <div className="mt-2 flex h-11 w-full items-center gap-3 rounded-md px-4 text-sm font-semibold text-slate-700">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection("password")}
+                  className={cn(
+                    "mt-2 flex h-11 w-full items-center gap-3 rounded-md px-4 text-sm font-semibold transition",
+                    activeSection === "password"
+                      ? "bg-blue-50 text-blue-600"
+                      : "text-slate-700 hover:bg-slate-50"
+                  )}
+                >
                   <Lock className="size-4" />
                   Change Password
-                </div>
+                </button>
               </CardContent>
             </Card>
           </div>
 
           <div className="space-y-4">
-            <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+            {activeSection === "personal" && (<>
+              <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
               <CardHeader className="px-6 pb-0 pt-6">
                 <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
                   <User className="size-5 text-blue-600" />
@@ -251,66 +272,68 @@ export function ProfileModule({ model }: PortalModuleProps) {
                 </div>
 
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-                  {saveError ? <span className="text-sm font-semibold text-red-600">Failed to save profile. Please try again.</span> : null}
-                  {saved ? <span className="text-sm font-semibold text-emerald-600">Profile saved successfully</span> : null}
                   {hasChanges ? (
                     <Button variant="outline" className="h-10 rounded-md border-slate-200" onClick={handleCancel}>
                       <Undo2 className="mr-1.5 size-4" />
                       Reset
                     </Button>
                   ) : null}
-                  <Button className="h-10 rounded-md bg-blue-600 px-5 text-white hover:bg-blue-700" onClick={handleSave} disabled={!hasChanges}>
-                    <Save className="mr-1.5 size-4" />
+                  <Button className="h-10 rounded-md bg-blue-600 px-5 text-white hover:bg-blue-700" onClick={handleSave} disabled={!hasChanges || savingProfile}>
+                    {savingProfile ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : <Save className="mr-1.5 size-4" />}
                     Save Changes
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-              <CardHeader className="px-6 pb-0 pt-6">
-                <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
-                  <Eye className="size-5 text-slate-700" />
-                  Privacy
-                </CardTitle>
-                <p className="pt-1 text-sm text-slate-500">Control how your information appears in Dean's List rankings.</p>
-              </CardHeader>
-              <CardContent className="px-6 pb-6 pt-7">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-slate-700">Dean's List Ranking Visibility</p>
-                    <p className="text-xs text-slate-500">
-                      {draft.deansListVisibility === "public"
-                        ? "Your name and GWA will be visible in published Dean's List rankings."
-                        : "Your rank will be preserved but your name will be hidden as 'Private Student'."}
-                    </p>
+            {role === "student" && (
+              <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+                <CardHeader className="px-6 pb-0 pt-6">
+                  <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
+                    <Eye className="size-5 text-slate-700" />
+                    Privacy
+                  </CardTitle>
+                  <p className="pt-1 text-sm text-slate-500">Control how your information appears in Dean's List rankings.</p>
+                </CardHeader>
+                <CardContent className="px-6 pb-6 pt-7">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-slate-700">Dean's List Ranking Visibility</p>
+                      <p className="text-xs text-slate-500">
+                        {draft.deansListVisibility === "public"
+                          ? "Your name and GWA will be visible in published Dean's List rankings."
+                          : "Your rank will be preserved but your name will be hidden as 'Private Student'."}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={cn("text-xs font-semibold", draft.deansListVisibility === "private" ? "text-slate-400" : "text-blue-600")}>Public</span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={draft.deansListVisibility === "private"}
+                        onClick={() => setDraft((prev) => ({
+                          ...prev,
+                          deansListVisibility: prev.deansListVisibility === "public" ? "private" : "public",
+                        }))}
+                        className={cn(
+                          "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
+                          draft.deansListVisibility === "private" ? "bg-slate-300" : "bg-blue-600"
+                        )}
+                      >
+                        <span className={cn(
+                          "pointer-events-none inline-block size-5 rounded-full bg-white shadow ring-0 transition-transform",
+                          draft.deansListVisibility === "private" ? "translate-x-5" : "translate-x-0"
+                        )} />
+                      </button>
+                      <span className={cn("text-xs font-semibold", draft.deansListVisibility === "public" ? "text-slate-400" : "text-blue-600")}>Private</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className={cn("text-xs font-semibold", draft.deansListVisibility === "private" ? "text-slate-400" : "text-blue-600")}>Public</span>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={draft.deansListVisibility === "private"}
-                      onClick={() => setDraft((prev) => ({
-                        ...prev,
-                        deansListVisibility: prev.deansListVisibility === "public" ? "private" : "public",
-                      }))}
-                      className={cn(
-                        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
-                        draft.deansListVisibility === "private" ? "bg-slate-300" : "bg-blue-600"
-                      )}
-                    >
-                      <span className={cn(
-                        "pointer-events-none inline-block size-5 rounded-full bg-white shadow ring-0 transition-transform",
-                        draft.deansListVisibility === "private" ? "translate-x-5" : "translate-x-0"
-                      )} />
-                    </button>
-                    <span className={cn("text-xs font-semibold", draft.deansListVisibility === "public" ? "text-slate-400" : "text-blue-600")}>Private</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
+            </>)}
 
+            {activeSection === "password" && (
             <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
               <CardHeader className="px-6 pb-0 pt-6">
                 <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
@@ -346,14 +369,14 @@ export function ProfileModule({ model }: PortalModuleProps) {
                 </div>
                 <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
                   {passwordError ? <span className="text-sm font-semibold text-red-600">{passwordError}</span> : null}
-                  {passwordSuccess ? <span className="text-sm font-semibold text-emerald-600">Password updated successfully</span> : null}
-                  <Button className="h-10 rounded-md bg-blue-600 px-5 text-white hover:bg-blue-700" onClick={handlePasswordSave}>
-                    <Lock className="mr-1.5 size-4" />
+                  <Button className="h-10 rounded-md bg-blue-600 px-5 text-white hover:bg-blue-700" onClick={handlePasswordSave} disabled={updatingPassword}>
+                    {updatingPassword ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : <Lock className="mr-1.5 size-4" />}
                     Update Password
                   </Button>
                 </div>
               </CardContent>
             </Card>
+            )}
           </div>
         </div>
       </div>
