@@ -1,9 +1,8 @@
 "use client"
 
-import { useCallback } from "react"
 import {
-  Columns, Columns3, Download, Loader2, Redo2, RotateCcw, Save,
-  Trash2, Undo2, Upload,
+  Columns, Columns3, Download, Loader2, Maximize2, Minimize2,
+  RotateCcw, Save, Trash2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -11,40 +10,28 @@ export type ToolbarAction =
   | "addColumn"
   | "deleteColumn"
   | "renameColumn"
-  | "undo"
-  | "redo"
-  | "import"
   | "export"
   | "save"
   | "refresh"
+  | "fullscreen"
 
 export function SpreadsheetToolbar({
   onAction,
-  canUndo,
-  canRedo,
   columnCount,
   section,
   exporting,
+  isFullScreen,
 }: {
   onAction: (action: ToolbarAction) => void
-  canUndo: boolean
-  canRedo: boolean
   columnCount: number
   saveStatus: string
   section: string | null
   exporting: boolean
+  isFullScreen: boolean
 }) {
   return (
     <div className="sticky top-0 z-20 flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-card p-2 shadow-sm">
       <div className="flex items-center gap-1 border-r border-border pr-2">
-        <Button size="sm" variant="ghost" onClick={() => onAction("undo")}
-          disabled={!canUndo} className="h-8 rounded-md px-2" title="Undo (Ctrl+Z)">
-          <Undo2 className="size-4" />
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => onAction("redo")}
-          disabled={!canRedo} className="h-8 rounded-md px-2" title="Redo (Ctrl+Y)">
-          <Redo2 className="size-4" />
-        </Button>
         <Button size="sm" variant="ghost" onClick={() => onAction("save")}
           className="h-8 rounded-md px-2" title="Save">
           <Save className="size-4" />
@@ -74,11 +61,6 @@ export function SpreadsheetToolbar({
       </div>
 
       <div className="flex items-center gap-1 border-r border-border pr-2 max-md:border-r-0">
-        <Button size="sm" variant="ghost" onClick={() => onAction("import")}
-          className="h-8 rounded-md px-2" title="Import Excel">
-          <Upload className="size-4" />
-          <span className="ms-1.5 hidden text-xs md:inline">Import</span>
-        </Button>
         <Button size="sm" variant="default" onClick={() => onAction("export")}
           disabled={!section || exporting}
           className="h-8 rounded-md bg-blue-600 px-3 text-white hover:bg-blue-700"
@@ -88,7 +70,14 @@ export function SpreadsheetToolbar({
         </Button>
       </div>
 
-      <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+      <div className="ml-auto flex items-center gap-1 border-l border-border pl-2">
+        <Button size="sm" variant="ghost" onClick={() => onAction("fullscreen")}
+          className="h-8 rounded-md px-2" title={isFullScreen ? "Exit Full Screen (Esc)" : "Full Screen"}>
+          {isFullScreen ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+          <span className="ms-1.5 hidden text-xs md:inline">{isFullScreen ? "Exit" : "Full Screen"}</span>
+        </Button>
+      </div>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <span className="rounded-md bg-muted px-2 py-1 font-medium">{columnCount} cols</span>
       </div>
     </div>

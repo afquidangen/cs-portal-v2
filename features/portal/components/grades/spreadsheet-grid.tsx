@@ -5,7 +5,7 @@ import {
   AlertTriangle, ChevronDown, Search, Save, Megaphone, X,
 } from "lucide-react"
 import { AgGridReact } from "ag-grid-react"
-import type { ColDef, ColGroupDef, CellValueChangedEvent, ColumnResizedEvent, GridReadyEvent, ColumnHeaderClickedEvent } from "ag-grid-community"
+import type { ColDef, ColGroupDef, CellValueChangedEvent, ColumnResizedEvent, ColumnHeaderClickedEvent } from "ag-grid-community"
 import { AllCommunityModule, ModuleRegistry, themeAlpine } from "ag-grid-community"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,12 +20,10 @@ import type { GradeRecord, GradeWorkflowStatus, GradeColumn, Assessment, Release
 import { useAutoSave, type SaveStatus } from "../../lib/auto-save"
 import { computeLivePreview, gradeCategoryMatches, transmuteGrade } from "../../lib/grade-engine"
 import { gradeRemarkOptions } from "../../lib/grades"
-import { UndoRedoManager, buildSnapshot } from "../../lib/undo-redo"
 import { SpreadsheetToolbar, type ToolbarAction } from "./spreadsheet-toolbar"
 import { RenameColumnDialog } from "./rename-column-dialog"
 import { DeleteColumnDialog } from "./delete-column-dialog"
 import { AddColumnDialog } from "../modules/add-column-dialog"
-import { IntelligentImportDialog } from "./intelligent-import-dialog"
 import { SaveStatusIndicator } from "../modules/save-status-indicator"
 
 ModuleRegistry.registerModules([AllCommunityModule])
@@ -386,7 +384,6 @@ export function SpreadsheetGrid({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle")
   const [lastSaved, setLastSaved] = useState<string | null>(null)
   const [addColumnOpen, setAddColumnOpen] = useState(false)
-  const [importOpen, setImportOpen] = useState(false)
   const [renameOpen, setRenameOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [deleteColOpen, setDeleteColOpen] = useState(false)
@@ -401,8 +398,7 @@ export function SpreadsheetGrid({
   const [releasing, setReleasing] = useState(false)
   const [studentReleaseOpen, setStudentReleaseOpen] = useState(false)
   const [studentReleaseTarget, setStudentReleaseTarget] = useState<{ studentId: string; studentName: string; period: "midterm" | "final"; alreadyReleased: boolean } | null>(null)
-
-  const undoManager = useRef(new UndoRedoManager())
+  const [isFullScreen, setIsFullScreen] = useState(false)
 
   const gradeMapRef = useRef(gradeMap)
   gradeMapRef.current = gradeMap
@@ -416,25 +412,24 @@ export function SpreadsheetGrid({
   }, [classId, model.visibleSchedules])
 
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (!(e.ctrlKey || e.metaKey)) return
-      if (e.key === "z") {
-        e.preventDefault()
-        handleToolbarAction(e.shiftKey ? "redo" : "undo")
-      } else if (e.key === "y") {
-        e.preventDefault()
-        handleToolbarAction("redo")
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  })
-
-  useEffect(() => {
     if (gradeMap.size > 0 && !dataLoadedRef.current) {
       dataLoadedRef.current = true
     }
   }, [gradeMap])
+
+  useEffect(() => {
+    function handleFSChange() {
+      const isFS = !!document.fullscreenElement
+      setIsFullScreen(isFS)
+      if (isFS) {
+        document.documentElement.classList.add("egrades-fullscreen")
+      } else {
+        document.documentElement.classList.remove("egrades-fullscreen")
+      }
+    }
+    document.addEventListener("fullscreenchange", handleFSChange)
+    return () => document.removeEventListener("fullscreenchange", handleFSChange)
+  }, [])
 
   const saveGradeData = useCallback(async (data: unknown) => {
     const { grades: gradeData, cid, showToast } = data as { grades: GradeRecord[]; cid: string; showToast?: boolean }
@@ -525,8 +520,6 @@ export function SpreadsheetGrid({
     const { data, colDef, newValue, oldValue } = event
     if (newValue === oldValue) return
 
-    undoManager.current.push(buildSnapshot(gridData as unknown as Record<string, unknown>[], []))
-
     const row = data as StudentGradeRow
     const colId = colDef.colId
 
@@ -591,10 +584,6 @@ export function SpreadsheetGrid({
       )
       autoSave.schedule({ grades: [{ ...grade, ...updates }], cid: classId })
     }
-  }
-
-  function onGridReady(event: GridReadyEvent) {
-    undoManager.current.clear()
   }
 
   function onColumnResized(event: ColumnResizedEvent) {
@@ -808,64 +797,31 @@ export function SpreadsheetGrid({
       toast.error("Failed to delete columns.")
     }
   }
-  function handleImportComplete() {
-    if (!classId) return
-    fetch(`/api/portal/grades/class/${classId}`)
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.data?.grades) setGrades(json.data.grades)
-        if (json.data?.columns) setGradeColumns(json.data.columns)
-      })
-      .catch(() => {})
+  function toggleFullScreen() {
+    const next = !isFullScreen
+    setIsFullScreen(next)
+    if (next) {
+      document.documentElement.classList.add("egrades-fullscreen")
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {})
+      }
+    } else {
+      document.documentElement.classList.remove("egrades-fullscreen")
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {})
+      }
+    }
   }
 
   function handleToolbarAction(action: ToolbarAction) {
     switch (action) {
       case "addColumn": setAddColumnOpen(true); break
-      case "renameColumn": {
-        setRenameOpen(true)
-        break
-      }
-      case "deleteColumn": {
-        setDeleteColOpen(true)
-        break
-      }
-      case "undo": {
-        const snapshot = undoManager.current.undo()
-        if (snapshot) {
-          const currentSnapshot = buildSnapshot(gridData as unknown as Record<string, unknown>[], [])
-          undoManager.current.pushForRedo(currentSnapshot)
-          const restored = Array.from(gradeMap.values()).map((g) => {
-            const oldRow = snapshot.rowData.find((r) => r.studentId === g.studentId)
-            return oldRow
-              ? { ...g, scores: (oldRow.scores ?? {}) as Record<string, number>, updatedAt: new Date().toISOString() }
-              : g
-          })
-          setGrades(restored)
-          autoSave.schedule({ grades: restored, cid: classId })
-        }
-        break
-      }
-      case "redo": {
-        const snapshot = undoManager.current.redo()
-        if (snapshot) {
-          const currentSnapshot = buildSnapshot(gridData as unknown as Record<string, unknown>[], [])
-          undoManager.current.pushToUndo(currentSnapshot)
-          const restored = Array.from(gradeMap.values()).map((g) => {
-            const nextRow = snapshot.rowData.find((r) => r.studentId === g.studentId)
-            return nextRow
-              ? { ...g, scores: (nextRow.scores ?? {}) as Record<string, number>, updatedAt: new Date().toISOString() }
-              : g
-          })
-          setGrades(restored)
-          autoSave.schedule({ grades: restored, cid: classId })
-        }
-        break
-      }
-      case "import": setImportOpen(true); break
+      case "renameColumn": setRenameOpen(true); break
+      case "deleteColumn": setDeleteColOpen(true); break
       case "export": handleExport(); break
       case "refresh": handleRefresh(); break
       case "save": autoSave.saveNow({ grades: Array.from(gradeMap.values()), cid: classId, showToast: true }).then().catch(() => {}); break
+      case "fullscreen": toggleFullScreen(); break
     }
   }
 
@@ -1088,6 +1044,14 @@ export function SpreadsheetGrid({
         },
         cellEditor: "agNumberCellEditor",
         cellEditorParams: { min: 0, max: col.maxScore, precision: 2 },
+        cellClassRules: {
+          "score-cell-missing": (params) => {
+            if (!isEditable) return false
+            const row = params.data as StudentGradeRow
+            const val = row.scores?.[scoreKey(col)]
+            return val === undefined || val === null
+          },
+        },
       }
       let catKey = col.category
       if (catKey === "Performance/Recitation") catKey = "Performance"
@@ -1456,6 +1420,18 @@ export function SpreadsheetGrid({
     return { totalComp, ...effectiveScheme }
   }, [effectiveScheme])
 
+  const missingCount = useMemo(() => {
+    if (activeTab === "summary") return 0
+    let count = 0
+    for (const row of gridData) {
+      for (const col of filteredColumns) {
+        const val = row.scores?.[scoreKey(col)]
+        if (val === undefined || val === null) count++
+      }
+    }
+    return count
+  }, [gridData, filteredColumns, activeTab])
+
   const [schemeOpen, setSchemeOpen] = useState(false)
 
   const SchemeInfoBanner = useCallback(() => {
@@ -1596,13 +1572,23 @@ export function SpreadsheetGrid({
 
       <SpreadsheetToolbar
         onAction={handleToolbarAction}
-        canUndo={undoManager.current.canUndo}
-        canRedo={undoManager.current.canRedo}
         columnCount={filteredColumns.length}
         saveStatus={saveStatus}
         section={section}
         exporting={exporting}
+        isFullScreen={isFullScreen}
       />
+
+      {missingCount > 0 && (
+        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+          <span className="font-medium">Missing Scores:</span>
+          <span className="inline-flex items-center justify-center rounded-full bg-red-200 px-2 py-0.5 text-xs font-bold text-red-800 dark:bg-red-800 dark:text-red-200">
+            {missingCount}
+          </span>
+        </div>
+      )}
+
+      <style>{`.score-cell-missing { background-color: #fef2f2; box-shadow: inset 0 0 0 1px #fca5a5; } .dark .score-cell-missing { background-color: rgba(239, 68, 68, 0.12); box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.4); }`}</style>
 
       <div className="egrades-grid-shell overflow-hidden rounded-lg border border-border bg-card shadow-sm">
         <div className="overflow-auto">
@@ -1634,7 +1620,6 @@ export function SpreadsheetGrid({
           }}
           animateRows
           onCellValueChanged={onCellValueChanged}
-          onGridReady={onGridReady}
           onColumnResized={onColumnResized}
           onColumnHeaderClicked={onColumnHeaderClicked}
           suppressClickEdit
@@ -1686,6 +1671,11 @@ export function SpreadsheetGrid({
             setGrades((prev) => prev.map((g) => gradesToSave.find((c) => c.studentId === g.studentId) ?? g))
           }
           await autoSave.saveNow({ grades: gradesToSave, cid: classId, showToast: true })
+          if (missingCount > 0) {
+            toast.warning("Incomplete Grade Entries", {
+              description: `There are ${missingCount} empty assessment score(s). These have been highlighted in red for your review. You may still continue working, save your changes, or release grades if necessary.`,
+            })
+          }
         }} className="h-9 rounded-md bg-blue-600 shadow-sm hover:bg-blue-700">
           <Save className="size-4" /> Save
         </Button>
@@ -1712,8 +1702,6 @@ export function SpreadsheetGrid({
         onConfirm={(name, cat, max, period) => handleAddColumn(name, cat, max, period)}
         availableCategories={columnCategories}
         defaultPeriod={activeTab === "summary" ? "midterm" : activeTab as "midterm" | "final"} />
-      <IntelligentImportDialog open={importOpen} onOpenChange={setImportOpen}
-        classId={classId} subject={selectedSubject} onImportComplete={handleImportComplete} />
       <RenameColumnDialog open={renameOpen} onOpenChange={setRenameOpen}
         onConfirm={handleRenameColumn} columns={filteredColumns} />
       <DeleteColumnDialog open={deleteColOpen} onOpenChange={setDeleteColOpen}

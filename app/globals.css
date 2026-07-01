@@ -961,4 +961,32 @@
   }
 }
 
+/* ── Full Screen Mode ── */
+html.egrades-fullscreen > body > main > div > aside {
+  transform: translateX(-100%) !important;
+  width: 0 !important;
+  overflow: hidden !important;
+}
+
+html.egrades-fullscreen > body > main > div > div > header {
+  display: none !important;
+}
+
+html.egrades-fullscreen > body > main > div > div > section {
+  padding: 0 !important;
+}
+
+html.egrades-fullscreen .egrades-grid-shell {
+  height: calc(100vh - 100px) !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+}
+
+html.egrades-fullscreen .egrades-grid-shell > div,
+html.egrades-fullscreen .egrades-grid-shell .ag-theme-alpine,
+html.egrades-fullscreen .egrades-grid-shell .ag-root-wrapper {
+  height: 100%;
+}
+
 

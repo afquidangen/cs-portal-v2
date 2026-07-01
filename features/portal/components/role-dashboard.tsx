@@ -435,9 +435,9 @@ export function RoleDashboard({ role }: { role: Role }) {
 
   const visibleAnnouncements = useMemo(
     () => model.announcements.filter((a) => {
-      if (role === "admin") return (a.audience === "All Users" || a.audience === "Students" || a.audience === "Faculty") && !a.classSection && (!a.classSections?.length)
+      if (role === "admin") return a.audience === "All Users"
       if (role === "student") return a.audience === "All Users" || a.audience === "Students" || a.audience?.split(", ").includes(model.profileSection) || (a.classSections?.includes(model.profileSection) ?? false) || a.classSection === model.profileSection
-      return a.audience === "All Users" || a.audience === "Faculty" || a.audience?.split(", ").some((s) => model.facultyClassSections.includes(s)) || (a.classSections?.some((s) => model.facultyClassSections.includes(s)) ?? false) || (a.classSection && model.facultyClassSections.includes(a.classSection)) || a.createdBy === model.profile.name
+      return a.audience === "All Users" || a.audience === "Faculty" || a.createdBy === model.profile.name
     }),
     [model.announcements, role, model.profileSection, model.facultyClassSections, model.profile.name]
   )

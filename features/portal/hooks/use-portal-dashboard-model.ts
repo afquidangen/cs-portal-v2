@@ -1455,7 +1455,10 @@ export function usePortalDashboardModel(role: Role) {
     if (!existingRoster) {
       const newRosterEntry = { id: studentId, name: studentName, section, enrolled: true }
       setRoster((current) => [newRosterEntry, ...current])
-      void syncApi("PUT", `/api/portal/roster/${studentId}`, newRosterEntry)
+      syncApi("PUT", `/api/portal/roster/${studentId}`, newRosterEntry).catch(() => {
+        setRoster((current) => current.filter((r) => !(r.id === studentId && normalize(r.section ?? "") === normSection)))
+        toast.error("Failed to save roster entry for the added student.")
+      })
     } else if (!existingRoster.enrolled) {
       setRoster((current) =>
         current.map((r) =>
@@ -1464,10 +1467,20 @@ export function usePortalDashboardModel(role: Role) {
             : r
         )
       )
-      void syncApi("PUT", `/api/portal/roster/${studentId}`, { enrolled: true })
+      syncApi("PUT", `/api/portal/roster/${studentId}`, { enrolled: true }).catch(() => {
+        setRoster((current) =>
+          current.map((r) =>
+            r.id === studentId && normalize(r.section ?? "") === normSection
+              ? { ...r, enrolled: false }
+              : r
+          )
+        )
+        toast.error("Failed to update roster enrollment for the added student.")
+      })
     }
 
     addAuditLog(`Added student ${studentName} to ${subjectLabel} (${section})`)
+    setTimeout(() => refreshDashboardData(), 300)
   }
 
   function handleUpsertCompletedGrade(
