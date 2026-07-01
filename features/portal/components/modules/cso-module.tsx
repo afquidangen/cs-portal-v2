@@ -20,7 +20,7 @@ import { ImageCropDialog } from "../shared/image-crop-dialog"
 
 import type { CsoReport } from "../../data/portal-data"
 import type { CsoInfoRecord, GalleryItem } from "@/lib/types"
-import { Select, StatusBadge } from "../shared/dashboard-ui"
+import { Select, StatusBadge, Tooltip } from "../shared/dashboard-ui"
 import type { PortalDashboardModel } from "../../hooks/use-portal-dashboard-model"
 
 export function CsoModule({ model }: { model: PortalDashboardModel }) {
@@ -411,22 +411,26 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
                       ) : null}
                     </div>
                     <div className="absolute right-2 top-2 flex gap-1.5 opacity-0 transition group-hover:opacity-100">
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        className="size-8 rounded-full bg-white/90 shadow-sm hover:bg-white"
-                        onClick={() => handleGalleryEdit(item)}
-                      >
-                        <Pencil className="size-3.5" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="destructive"
-                        className="size-8 rounded-full shadow-sm"
-                        onClick={() => handleGalleryDeleteConfirm(item)}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
+                      <Tooltip content="Edit gallery item">
+                        <Button
+                          size="icon"
+                          variant="secondary"
+                          className="size-8 rounded-full bg-white/90 shadow-sm hover:bg-white"
+                          onClick={() => handleGalleryEdit(item)}
+                        >
+                          <Pencil className="size-3.5" />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip content="Delete gallery item">
+                        <Button
+                          size="icon"
+                          variant="destructive"
+                          className="size-8 rounded-full shadow-sm"
+                          onClick={() => handleGalleryDeleteConfirm(item)}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </Tooltip>
                     </div>
                   </article>
                 ))}
@@ -1260,13 +1264,15 @@ function CsoInfoFormDialog({
                   className="max-h-20 w-auto object-contain"
                   unoptimized
                 />
-                <button
-                  type="button"
-                  onClick={() => setLogoUrl("")}
-                  className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-red-500/80 text-white transition hover:bg-red-500"
-                >
-                  <X className="size-3" />
-                </button>
+                <Tooltip content="Remove logo">
+                  <button
+                    type="button"
+                    onClick={() => setLogoUrl("")}
+                    className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-red-500/80 text-white transition hover:bg-red-500"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </Tooltip>
               </div>
             ) : null}
           </div>
@@ -1290,13 +1296,15 @@ function CsoInfoFormDialog({
                   className="max-h-8 w-auto object-contain"
                   unoptimized
                 />
-                <button
-                  type="button"
-                  onClick={() => setPortalLogoUrl("")}
-                  className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-red-500/80 text-white transition hover:bg-red-500"
-                >
-                  <X className="size-3" />
-                </button>
+                <Tooltip content="Remove portal logo">
+                  <button
+                    type="button"
+                    onClick={() => setPortalLogoUrl("")}
+                    className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-red-500/80 text-white transition hover:bg-red-500"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </Tooltip>
               </div>
             ) : null}
           </div>
@@ -1321,13 +1329,15 @@ function CsoInfoFormDialog({
                     className="max-h-40 w-full object-cover"
                     unoptimized
                   />
-                  <button
-                    type="button"
-                    onClick={() => setCoverImageUrl("")}
-                    className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-red-500/80 text-white transition hover:bg-red-500"
-                  >
-                    <X className="size-3" />
-                  </button>
+                  <Tooltip content="Remove cover photo">
+                    <button
+                      type="button"
+                      onClick={() => setCoverImageUrl("")}
+                      className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-red-500/80 text-white transition hover:bg-red-500"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </Tooltip>
                 </div>
                 <div className="mt-3 space-y-1.5">
                   <label className="text-sm font-medium text-foreground">Overlay Opacity: {coverOpacity}%</label>
@@ -1639,13 +1649,15 @@ function ReportFormDialog({
                 <span className="truncate text-sm text-foreground/80">
                   {fileName || "File selected"}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => { setFile(""); setFileName(""); setCloudinaryPublicId("") }}
-                  className="ml-auto flex size-5 items-center justify-center text-foreground/50 transition-colors hover:text-foreground"
-                >
-                  <X className="size-3" />
-                </button>
+                <Tooltip content="Remove file">
+                  <button
+                    type="button"
+                    onClick={() => { setFile(""); setFileName(""); setCloudinaryPublicId("") }}
+                    className="ml-auto flex size-5 items-center justify-center text-foreground/50 transition-colors hover:text-foreground"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </Tooltip>
               </div>
             ) : null}
           </div>

@@ -35,6 +35,7 @@ import {
 import type { LucideIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
+import { Tooltip } from "./shared/dashboard-ui"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -1066,7 +1067,7 @@ export function RoleDashboard({ role }: { role: Role }) {
               </div>
 
               {!isMediumScreen ? (
-                  <div className="group relative flex items-center">
+                  <Tooltip content={desktopSidebarCollapsed ? "Expand sidebar" : "Close sidebar"}>
                     <Button
                       type="button"
                       variant="ghost"
@@ -1086,10 +1087,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                         <PanelLeftClose className="size-4" />
                       )}
                     </Button>
-                    <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-medium text-black opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 dark:bg-black dark:text-white">
-                      {desktopSidebarCollapsed ? "Expand sidebar" : "Close sidebar"}
-                    </span>
-                  </div>
+                  </Tooltip>
                 ) : null}
             </div>
 
@@ -1197,20 +1195,22 @@ export function RoleDashboard({ role }: { role: Role }) {
           </ScrollArea>
 
           <div className={cn("p-3", isCleanShell ? "border-t border-slate-100" : "border-t border-sidebar-border")}>
-            <Button
-              variant="ghost"
-              onClick={() => setLogoutOpen(true)}
-              className={cn(
-                "w-full rounded-lg",
-                isCleanShell
-                  ? "justify-start border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-blue-700"
-                  : "text-white hover:bg-white/10 hover:text-white",
-                effectivelyCollapsed ? "justify-center px-0" : "justify-start"
-              )}
-            >
-              <LogOut className={cn("size-4", isCleanShell ? "text-current" : "text-white")} />
-              {!effectivelyCollapsed ? <span className={cn("ml-2", isCleanShell ? "text-current" : "text-white")}>Logout</span> : null}
-            </Button>
+            <Tooltip content="Logout">
+              <Button
+                variant="ghost"
+                onClick={() => setLogoutOpen(true)}
+                className={cn(
+                  "w-full rounded-lg",
+                  isCleanShell
+                    ? "justify-start border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-blue-700"
+                    : "text-white hover:bg-white/10 hover:text-white",
+                  effectivelyCollapsed ? "justify-center px-0" : "justify-start"
+                )}
+              >
+                <LogOut className={cn("size-4", isCleanShell ? "text-current" : "text-white")} />
+                {!effectivelyCollapsed ? <span className={cn("ml-2", isCleanShell ? "text-current" : "text-white")}>Logout</span> : null}
+              </Button>
+            </Tooltip>
           </div>
         </aside>
 
@@ -1218,15 +1218,17 @@ export function RoleDashboard({ role }: { role: Role }) {
           <header className="sticky top-0 z-30 border-b border-border/70 bg-background/88 backdrop-blur-xl">
             <div className="flex min-h-[72px] items-center justify-between gap-3 px-3 py-3 sm:min-h-[86px] sm:gap-4 sm:px-6 lg:px-8">
               <div className="flex min-w-0 items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-xl md:hidden"
-                  onClick={() => model.setSidebarOpen((open) => !open)}
-                  aria-label="Toggle menu"
-                >
-                  {model.sidebarOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-                </Button>
+                <Tooltip content={model.sidebarOpen ? "Close menu" : "Open menu"} side="bottom">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-xl md:hidden"
+                    onClick={() => model.setSidebarOpen((open) => !open)}
+                    aria-label="Toggle menu"
+                  >
+                    {model.sidebarOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+                  </Button>
+                </Tooltip>
                 <div className="min-w-0">
                   <h2 className="truncate text-base font-semibold text-foreground sm:text-lg">
                     {model.currentTitle}
@@ -1236,30 +1238,32 @@ export function RoleDashboard({ role }: { role: Role }) {
 
               <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                 <div ref={notifRef}>
-                  <Button
-                    ref={notifBtnRef}
-                    variant="outline"
-                    size="icon"
-                    className={cn(
-                      "relative rounded-lg border-border bg-background text-foreground shadow-sm transition hover:bg-muted hover:text-foreground",
-                      showNotifications && "border-primary/40 bg-primary/10 text-primary"
-                    )}
-                    aria-label="Notifications"
-                    onClick={() => {
-                      if (notifBtnRef.current) {
-                        const rect = notifBtnRef.current.getBoundingClientRect()
-                        setNotifPosition({ top: rect.bottom + 8, right: document.documentElement.clientWidth - rect.right })
-                      }
-                      setShowNotifications((prev) => !prev)
-                    }}
-                  >
-                    <Bell className="size-5" />
-                    {unreadCount > 0 ? (
-                      <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold leading-none text-primary-foreground shadow-sm">
-                        {unreadCount > 9 ? "9+" : unreadCount}
-                      </span>
-                    ) : null}
-                  </Button>
+                  <Tooltip content="Notifications" side="bottom">
+                    <Button
+                      ref={notifBtnRef}
+                      variant="outline"
+                      size="icon"
+                      className={cn(
+                        "relative rounded-lg border-border bg-background text-foreground shadow-sm transition hover:bg-muted hover:text-foreground",
+                        showNotifications && "border-primary/40 bg-primary/10 text-primary"
+                      )}
+                      aria-label="Notifications"
+                      onClick={() => {
+                        if (notifBtnRef.current) {
+                          const rect = notifBtnRef.current.getBoundingClientRect()
+                          setNotifPosition({ top: rect.bottom + 8, right: document.documentElement.clientWidth - rect.right })
+                        }
+                        setShowNotifications((prev) => !prev)
+                      }}
+                    >
+                      <Bell className="size-5" />
+                      {unreadCount > 0 ? (
+                        <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold leading-none text-primary-foreground shadow-sm">
+                          {unreadCount > 9 ? "9+" : unreadCount}
+                        </span>
+                      ) : null}
+                    </Button>
+                  </Tooltip>
 
                   {showNotifications ? (
                     <div
@@ -1432,18 +1436,20 @@ export function RoleDashboard({ role }: { role: Role }) {
                   ) : null}
                 </div>
 
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className={cn(
-                    "rounded-lg border-border bg-background text-foreground shadow-sm transition hover:bg-muted hover:text-foreground",
-                    darkMode && "border-primary/40 bg-primary/10 text-primary"
-                  )}
-                  aria-label="Toggle dark mode"
-                  onClick={() => setDarkMode((current) => !current)}
-                >
-                  {darkMode ? <Sun className="size-5" /> : <Moon className="size-5" />}
-                </Button>
+                <Tooltip content={darkMode ? "Light mode" : "Dark mode"} side="bottom">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className={cn(
+                      "rounded-lg border-border bg-background text-foreground shadow-sm transition hover:bg-muted hover:text-foreground",
+                      darkMode && "border-primary/40 bg-primary/10 text-primary"
+                    )}
+                    aria-label="Toggle dark mode"
+                    onClick={() => setDarkMode((current) => !current)}
+                  >
+                    {darkMode ? <Sun className="size-5" /> : <Moon className="size-5" />}
+                  </Button>
+                </Tooltip>
               </div>
             </div>
           </header>
@@ -2247,14 +2253,16 @@ export function RoleDashboard({ role }: { role: Role }) {
 
       {role === "student" && model.activeModule === "overview" && (
         <>
-          <button
-            type="button"
-            onClick={() => setSearchOpen(true)}
-            className="fixed bottom-6 right-6 z-50 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 active:scale-95"
-            aria-label="Search students"
-          >
-            <Search className="size-6" />
-          </button>
+          <Tooltip content="Search students" side="left">
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              className="fixed bottom-6 right-6 z-50 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 active:scale-95"
+              aria-label="Search students"
+            >
+              <Search className="size-6" />
+            </button>
+          </Tooltip>
           <StudentDirectoryDialog open={searchOpen} onOpenChange={setSearchOpen} />
         </>
       )}

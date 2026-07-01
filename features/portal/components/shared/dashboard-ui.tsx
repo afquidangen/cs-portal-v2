@@ -172,18 +172,20 @@ export function Select({
 
       <UiSelect value={value} onValueChange={onChange}>
         <SelectTrigger className={cn(
-          "h-11 rounded-lg border bg-card text-card-foreground shadow-sm transition-all duration-200 hover:bg-muted focus:ring-2 focus:ring-ring/20",
+          "h-11 rounded-lg border bg-white text-black shadow-sm transition-all duration-200 hover:bg-slate-50 focus:ring-2 focus:ring-ring/20 dark:bg-[#0f1b2b] dark:text-white dark:hover:bg-secondary",
           className ?? "border-border"
         )}>
           <SelectValue placeholder="Select option" />
         </SelectTrigger>
 
-        <SelectContent className={cn("border border-border bg-popover text-popover-foreground shadow-2xl", contentClassName)}>
+        <SelectContent
+          position="popper"
+          className={cn("border border-border bg-white text-black shadow-2xl max-h-[260px] overflow-y-auto dark:bg-[#0f1b2b] dark:text-white", contentClassName)}>
           {[...new Set(options)].filter(Boolean).map((option) => (
             <SelectItem
               key={option}
               value={option}
-              className="text-popover-foreground focus:bg-accent focus:text-accent-foreground data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground"
+              className="text-black focus:bg-slate-100 focus:text-black data-[highlighted]:bg-slate-100 data-[highlighted]:text-black data-[state=checked]:bg-slate-100 data-[state=checked]:text-black dark:text-white dark:focus:bg-[#123768] dark:focus:text-white dark:data-[highlighted]:bg-[#123768] dark:data-[highlighted]:text-white dark:data-[state=checked]:bg-[#123768] dark:data-[state=checked]:text-white"
             >
               {option}
             </SelectItem>
@@ -238,6 +240,36 @@ export function TicketList({
           ) : null}
         </article>
       ))}
+    </div>
+  )
+}
+
+export function Tooltip({
+  children,
+  content,
+  side = "right",
+}: {
+  children: React.ReactNode
+  content: string
+  side?: "right" | "bottom" | "left" | "top"
+}) {
+  const positions: Record<string, string> = {
+    right: "left-full top-1/2 -translate-y-1/2 ml-2",
+    bottom: "top-full left-1/2 -translate-x-1/2 mt-2",
+    left: "right-full top-1/2 -translate-y-1/2 mr-2",
+    top: "bottom-full left-1/2 -translate-x-1/2 mb-2",
+  }
+  return (
+    <div className="group relative inline-flex">
+      {children}
+      <span
+        className={cn(
+          "pointer-events-none absolute z-50 whitespace-nowrap rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-medium text-black opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 dark:bg-black dark:text-white",
+          positions[side]
+        )}
+      >
+        {content}
+      </span>
     </div>
   )
 }

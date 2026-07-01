@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
-import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
+import { Panel, Select, StatusBadge, Tooltip } from "../shared/dashboard-ui"
 import type { GradeHistoryEntry } from "../../data/portal-data"
 import type { PortalModuleProps } from "./types"  
 
@@ -545,41 +545,45 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex gap-1.5">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="rounded-xl"
-                                  onClick={() => {
-                                     setGradeForm({
-                                       subjectCode: entry.subjectCode,
-                                       subjectName: entry.subjectName,
-                                       finalPercentile: String(entry.finalPercentile ?? ""),
-                                       remarks: entry.remarks ?? "Passed",
-                                       section: entry.section ?? "",
-                                       units: entry.units ?? 3,
-                                     })
-                                    setGradeDialog({
-                                      mode: "edit",
-                                      subjectCode: entry.subjectCode,
-                                      subjectName: entry.subjectName,
-                                      yearLevel: entry.yearLevel,
-                                      semester: entry.semester,
-                                      section: entry.section ?? "",
-                                      index: idx,
-                                    })
-                                    setGradeEditReason("")
-                                  }}
-                                >
-                                  <Pencil className="size-3.5" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="rounded-xl text-red-500 hover:text-red-600"
-                                  onClick={() => handleRemoveGrade(idx)}
-                                >
-                                  <Trash2 className="size-3.5" />
-                                </Button>
+                                <Tooltip content="Edit grade">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="rounded-xl"
+                                    onClick={() => {
+                                       setGradeForm({
+                                         subjectCode: entry.subjectCode,
+                                         subjectName: entry.subjectName,
+                                         finalPercentile: String(entry.finalPercentile ?? ""),
+                                         remarks: entry.remarks ?? "Passed",
+                                         section: entry.section ?? "",
+                                         units: entry.units ?? 3,
+                                       })
+                                      setGradeDialog({
+                                        mode: "edit",
+                                        subjectCode: entry.subjectCode,
+                                        subjectName: entry.subjectName,
+                                        yearLevel: entry.yearLevel,
+                                        semester: entry.semester,
+                                        section: entry.section ?? "",
+                                        index: idx,
+                                      })
+                                      setGradeEditReason("")
+                                    }}
+                                  >
+                                    <Pencil className="size-3.5" />
+                                  </Button>
+                                </Tooltip>
+                                <Tooltip content="Delete grade">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="rounded-xl text-red-500 hover:text-red-600"
+                                    onClick={() => handleRemoveGrade(idx)}
+                                  >
+                                    <Trash2 className="size-3.5" />
+                                  </Button>
+                                </Tooltip>
                               </div>
                             </td>
                           </tr>

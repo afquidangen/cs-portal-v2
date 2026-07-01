@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
-import { StatusBadge } from "../shared/dashboard-ui"
+import { StatusBadge, Tooltip } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
 const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
@@ -205,14 +205,15 @@ export function AuditModule({ model }: PortalModuleProps) {
           </button>
         </div>
         {(dateFrom || dateTo) && (
-          <button
-            type="button"
-            onClick={clearDates}
-            className="flex size-6 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
-            title="Clear date filter"
-          >
-            <X className="size-3.5" />
-          </button>
+          <Tooltip content="Clear date filter">
+            <button
+              type="button"
+              onClick={clearDates}
+              className="flex size-6 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
+          </Tooltip>
         )}
       </div>
 
@@ -223,13 +224,17 @@ export function AuditModule({ model }: PortalModuleProps) {
           </DialogHeader>
           <div className="p-1">
             <div className="mb-3 flex items-center justify-between">
-              <button type="button" className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted" onClick={handlePrevMonth}>
-                <ChevronLeft className="size-4" />
-              </button>
+              <Tooltip content="Previous month">
+                <button type="button" className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted" onClick={handlePrevMonth}>
+                  <ChevronLeft className="size-4" />
+                </button>
+              </Tooltip>
               <span className="text-sm font-semibold text-foreground">{monthNames[calMonth]} {calYear}</span>
-              <button type="button" className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted" onClick={handleNextMonth}>
-                <ChevronRight className="size-4" />
-              </button>
+              <Tooltip content="Next month">
+                <button type="button" className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted" onClick={handleNextMonth}>
+                  <ChevronRight className="size-4" />
+                </button>
+              </Tooltip>
             </div>
             <div className="mb-2 grid grid-cols-7 text-center text-xs font-medium text-muted-foreground">
               {dayHeaders.map((d) => (<span key={d}>{d}</span>))}

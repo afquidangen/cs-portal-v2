@@ -49,6 +49,7 @@ import {
   SearchBox,
   Select,
   StatusBadge,
+  Tooltip,
 } from "../shared/dashboard-ui"
 import type { GradeHistoryEntry, UserRecord } from "../../data/portal-data"
 import type { PortalModuleProps } from "./types"
@@ -537,30 +538,42 @@ export function UsersModule({ model }: PortalModuleProps) {
                           : user.role === "admin" ? "Regular" : user.academicTitle ? `${user.academicTitle} \u00B7 ${user.employmentType ?? "Regular"}` : null}
                       </div>
                       <div className="mt-3 flex gap-1.5">
-                        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setEditUser(user)} title="Edit user">
-                          <Edit className="size-3.5" />
-                        </Button>
-                        {user.role === "student" ? (
-                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setChangeCurriculumUser({ user, newCurriculumId: user.curriculumId ?? "", newYearLevel: user.currentYearLevel ?? YEAR_LABELS[String(user.year ?? "1")], newSemester: user.currentSemester ?? "First Semester" })} title="Change curriculum">
-                            <ArrowLeftRight className="size-3.5" />
+                        <Tooltip content="Edit user">
+                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setEditUser(user)}>
+                            <Edit className="size-3.5" />
                           </Button>
+                        </Tooltip>
+                        {user.role === "student" ? (
+                          <Tooltip content="Change curriculum">
+                            <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setChangeCurriculumUser({ user, newCurriculumId: user.curriculumId ?? "", newYearLevel: user.currentYearLevel ?? YEAR_LABELS[String(user.year ?? "1")], newSemester: user.currentSemester ?? "First Semester" })}>
+                              <ArrowLeftRight className="size-3.5" />
+                            </Button>
+                          </Tooltip>
                         ) : null}
                         {user.role === "student" ? (
-                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: undefined, transmutedGrade: 0, remarks: "FAILED", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 }) }} title="Grade history">
-                            <History className="size-3.5" />
-                          </Button>
+                          <Tooltip content="Grade history">
+                            <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: undefined, transmutedGrade: 0, remarks: "FAILED", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 }) }}>
+                              <History className="size-3.5" />
+                            </Button>
+                          </Tooltip>
                         ) : null}
                         {model.role === "admin" && user.role === "student" ? (
-                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => model.handleToggleCsoOfficer(user.id, user.roles?.includes("csso_officer") ? "revoke" : "assign")} title={user.roles?.includes("csso_officer") ? "Revoke CSSO Officer" : "Assign CSSO Officer"}>
-                            <ShieldCheck className="size-3.5" />
-                          </Button>
+                          <Tooltip content={user.roles?.includes("csso_officer") ? "Revoke CSSO Officer" : "Assign CSSO Officer"}>
+                            <Button size="sm" variant="outline" className="rounded-xl" onClick={() => model.handleToggleCsoOfficer(user.id, user.roles?.includes("csso_officer") ? "revoke" : "assign")}>
+                              <ShieldCheck className="size-3.5" />
+                            </Button>
+                          </Tooltip>
                         ) : null}
-                        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setToggleUserId(user.id)} title={user.status === "Active" ? "Deactivate" : "Activate"}>
-                          {user.status === "Active" ? <UserX className="size-3.5" /> : <UserCheck className="size-3.5" />}
-                        </Button>
-                        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDeleteUserId(user.id)} title="Move to trash">
-                          <Trash2 className="size-3.5" />
-                        </Button>
+                        <Tooltip content={user.status === "Active" ? "Deactivate" : "Activate"}>
+                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setToggleUserId(user.id)}>
+                            {user.status === "Active" ? <UserX className="size-3.5" /> : <UserCheck className="size-3.5" />}
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Move to trash">
+                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDeleteUserId(user.id)}>
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        </Tooltip>
                       </div>
                     </div>
                   ))}
@@ -615,20 +628,32 @@ export function UsersModule({ model }: PortalModuleProps) {
                           <td className="px-5 py-4 align-middle"><StatusBadge value={user.status} /></td>
                           <td className="px-5 py-4 align-middle">
                             <div className="flex flex-wrap justify-end gap-2">
-                              <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => setEditUser(user)} title="Edit user" aria-label="Edit user"><Edit className="size-4" /></Button>
+                              <Tooltip content="Edit user">
+                                <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => setEditUser(user)} aria-label="Edit user"><Edit className="size-4" /></Button>
+                              </Tooltip>
                               {user.role === "student" ? (
-                                <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => setChangeCurriculumUser({ user, newCurriculumId: user.curriculumId ?? "", newYearLevel: user.currentYearLevel ?? YEAR_LABELS[String(user.year ?? "1")], newSemester: user.currentSemester ?? "First Semester" })} title="Change curriculum" aria-label="Change curriculum"><ArrowLeftRight className="size-4" /></Button>
+                                <Tooltip content="Change curriculum">
+                                  <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => setChangeCurriculumUser({ user, newCurriculumId: user.curriculumId ?? "", newYearLevel: user.currentYearLevel ?? YEAR_LABELS[String(user.year ?? "1")], newSemester: user.currentSemester ?? "First Semester" })} aria-label="Change curriculum"><ArrowLeftRight className="size-4" /></Button>
+                                </Tooltip>
                               ) : null}
                               {user.role === "student" ? (
-                                <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: undefined, transmutedGrade: 0, remarks: "FAILED", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 }) }} title="Grade history" aria-label="Grade history"><History className="size-4" /></Button>
+                                <Tooltip content="Grade history">
+                                  <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => { setGradeHistoryUser(user); setGradeHistoryEntry({ subjectCode: "", subjectName: "", finalPercentile: undefined, transmutedGrade: 0, remarks: "FAILED", curriculumId: user.curriculumId ?? "", yearLevel: "", semester: "", section: "", units: 3 }) }} aria-label="Grade history"><History className="size-4" /></Button>
+                                </Tooltip>
                               ) : null}
                               {model.role === "admin" && user.role === "student" ? (
-                                <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => model.handleToggleCsoOfficer(user.id, user.roles?.includes("csso_officer") ? "revoke" : "assign")} title={user.roles?.includes("csso_officer") ? "Revoke CSSO Officer" : "Assign CSSO Officer"} aria-label={user.roles?.includes("csso_officer") ? "Revoke CSSO Officer" : "Assign CSSO Officer"}><ShieldCheck className="size-4" /></Button>
+                                <Tooltip content={user.roles?.includes("csso_officer") ? "Revoke CSSO Officer" : "Assign CSSO Officer"}>
+                                  <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => model.handleToggleCsoOfficer(user.id, user.roles?.includes("csso_officer") ? "revoke" : "assign")} aria-label={user.roles?.includes("csso_officer") ? "Revoke CSSO Officer" : "Assign CSSO Officer"}><ShieldCheck className="size-4" /></Button>
+                                </Tooltip>
                               ) : null}
-                              <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => setToggleUserId(user.id)} title={user.status === "Active" ? "Deactivate" : "Activate"} aria-label={user.status === "Active" ? "Deactivate user" : "Activate user"}>
-                                {user.status === "Active" ? <UserX className="size-4" /> : <UserCheck className="size-4" />}
-                              </Button>
-                              <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => setDeleteUserId(user.id)} title="Move to trash" aria-label="Move to trash"><Trash2 className="size-4" /></Button>
+                              <Tooltip content={user.status === "Active" ? "Deactivate" : "Activate"}>
+                                <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => setToggleUserId(user.id)} aria-label={user.status === "Active" ? "Deactivate user" : "Activate user"}>
+                                  {user.status === "Active" ? <UserX className="size-4" /> : <UserCheck className="size-4" />}
+                                </Button>
+                              </Tooltip>
+                              <Tooltip content="Move to trash">
+                                <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => setDeleteUserId(user.id)} aria-label="Move to trash"><Trash2 className="size-4" /></Button>
+                              </Tooltip>
                             </div>
                           </td>
                         </tr>
@@ -1261,33 +1286,37 @@ export function UsersModule({ model }: PortalModuleProps) {
                               <td className="px-4 py-3 text-foreground/60 text-xs">{entry.section ?? "—"}</td>
                               <td className="px-4 py-3 text-center">
                                 <div className="flex justify-center gap-1">
-                                  <button
-                                    className="text-blue-500 hover:text-blue-700 text-sm font-semibold"
-                                    onClick={() => {
-                                      setGradeHistoryEntry({
-                                        subjectCode: entry.subjectCode,
-                                        subjectName: entry.subjectName,
-                                        finalPercentile: entry.finalPercentile,
-                                        transmutedGrade: entry.transmutedGrade,
-                                        remarks: entry.remarks,
-                                        curriculumId: entry.curriculumId,
-                                        yearLevel: entry.yearLevel,
-                                        semester: entry.semester,
-                                        section: entry.section ?? "",
-                                        units: entry.units ?? 3,
-                                      })
-                                      setEditGradeHistoryIndex(idx)
-                                      setGradeEditReason("")
-                                    }}
-                                  >
-                                    <Pencil className="size-5 inline" />
-                                  </button>
-                                  <button
-                                    className="text-red-500 hover:text-red-700 text-sm font-semibold"
-                                    onClick={() => handleRemoveGradeHistory(student.id, idx)}
-                                  >
-                                    <Trash2 className="size-5 inline" />
-                                  </button>
+                                  <Tooltip content="Edit grade history entry">
+                                    <button
+                                      className="text-blue-500 hover:text-blue-700 text-sm font-semibold"
+                                      onClick={() => {
+                                        setGradeHistoryEntry({
+                                          subjectCode: entry.subjectCode,
+                                          subjectName: entry.subjectName,
+                                          finalPercentile: entry.finalPercentile,
+                                          transmutedGrade: entry.transmutedGrade,
+                                          remarks: entry.remarks,
+                                          curriculumId: entry.curriculumId,
+                                          yearLevel: entry.yearLevel,
+                                          semester: entry.semester,
+                                          section: entry.section ?? "",
+                                          units: entry.units ?? 3,
+                                        })
+                                        setEditGradeHistoryIndex(idx)
+                                        setGradeEditReason("")
+                                      }}
+                                    >
+                                      <Pencil className="size-5 inline" />
+                                    </button>
+                                  </Tooltip>
+                                  <Tooltip content="Delete grade history entry">
+                                    <button
+                                      className="text-red-500 hover:text-red-700 text-sm font-semibold"
+                                      onClick={() => handleRemoveGradeHistory(student.id, idx)}
+                                    >
+                                      <Trash2 className="size-5 inline" />
+                                    </button>
+                                  </Tooltip>
                                 </div>
                               </td>
                             </tr>
@@ -1659,13 +1688,15 @@ export function UsersModule({ model }: PortalModuleProps) {
                     minLength={8}
                     className="pr-10"
                   />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowPassword((p) => !p)}
-                  >
-                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                  </button>
+                  <Tooltip content={showPassword ? "Hide password" : "Show password"}>
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowPassword((p) => !p)}
+                    >
+                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
 

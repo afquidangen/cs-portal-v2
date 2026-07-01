@@ -26,7 +26,7 @@ import {
 
 import type { ScheduleItem } from "../../data/portal-data"
 import { cn } from "@/lib/utils"
-import { Panel, Select } from "../shared/dashboard-ui"
+import { Panel, Select, Tooltip } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 
 function getInitials(name: string) {
@@ -136,9 +136,11 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
                   <Button type="button" size="sm" variant="outline" className="rounded-xl" onClick={() => startEditStudent(student)}>
                     <Pencil className="size-3.5" /> Edit
                   </Button>
-                  <Button type="button" size="sm" variant="outline" className="rounded-xl" onClick={() => setFacultyDeleteId(student.id)}>
-                    <Trash2 className="size-3.5" />
-                  </Button>
+                  <Tooltip content="Remove student">
+                    <Button type="button" size="sm" variant="outline" className="rounded-xl" onClick={() => setFacultyDeleteId(student.id)}>
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </Tooltip>
                   <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-border px-3 py-1.5 text-sm text-foreground/70 transition hover:bg-muted">
                     <input
                       type="checkbox"
@@ -752,12 +754,16 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                         <td className="hidden sm:table-cell px-4 py-3 text-foreground/80">{item.room}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
-                            <Button type="button" size="sm" variant="ghost" className="rounded-xl" onClick={() => setEditingSchedule(item)}>
-                              <Pencil className="size-3.5" />
-                            </Button>
-                            <Button type="button" size="sm" variant="ghost" className="rounded-xl text-red-500 hover:text-red-600" onClick={() => setDeleteScheduleId(item.id)}>
-                              <Trash2 className="size-3.5" />
-                            </Button>
+                            <Tooltip content="Edit schedule">
+                              <Button type="button" size="sm" variant="ghost" className="rounded-xl" onClick={() => setEditingSchedule(item)}>
+                                <Pencil className="size-3.5" />
+                              </Button>
+                            </Tooltip>
+                            <Tooltip content="Delete schedule">
+                              <Button type="button" size="sm" variant="ghost" className="rounded-xl text-red-500 hover:text-red-600" onClick={() => setDeleteScheduleId(item.id)}>
+                                <Trash2 className="size-3.5" />
+                              </Button>
+                            </Tooltip>
                           </div>
                         </td>
                       </tr>
@@ -787,7 +793,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
             }
             if (!o) setAddScheduleOpen(false)
           }}>
-            <DialogContent className="flex flex-col w-full sm:max-w-lg md:max-w-xl max-h-[85dvh] p-0 gap-0">
+            <DialogContent className="flex flex-col w-full sm:max-w-lg md:max-w-2xl max-h-[85dvh] p-0 gap-0">
               <DialogHeader className="px-5 pt-5 pb-0 shrink-0">
                 <DialogTitle className="text-lg sm:text-xl text-foreground">Add New Class</DialogTitle>
                 <DialogDescription className="pt-1 text-muted-foreground">Create a class under {activeSemester ? `${activeSemester.semester} - ${activeSemester.schoolYearStart}/${activeSemester.schoolYearEnd}` : "selected semester"}</DialogDescription>
@@ -882,8 +888,8 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                               }}
                               className={
                                 checked
-                                  ? "inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm"
-                                  : "inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
+                                  ? "inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-md ring-2 ring-primary/30"
+                                  : "inline-flex items-center gap-2 rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
                               }
                             >
                               {day}
@@ -937,7 +943,7 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
           </Dialog>
 
           <Dialog open={!!editingSchedule} onOpenChange={(open) => { if (!open) setEditingSchedule(null) }}>
-            <DialogContent className="flex flex-col w-full sm:max-w-lg max-h-[85dvh] p-0 gap-0">
+            <DialogContent className="flex flex-col w-full sm:max-w-lg md:max-w-2xl max-h-[85dvh] p-0 gap-0">
               <DialogHeader className="px-5 pt-5 pb-0 shrink-0">
                 <DialogTitle>Edit Class</DialogTitle>
               </DialogHeader>
@@ -1036,21 +1042,21 @@ function AdminView({ model }: { model: PortalModuleProps["model"] }) {
                                 }}
                                 className={
                                   checked
-                                    ? "inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm"
-                                    : "inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
-                                }
-                              >
-                                {day}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                      <div>
-                        <p className="mb-1.5 text-sm font-medium text-foreground">Room</p>
-                        <Input
-                          type="text"
-                          value={editingSchedule.room}
+                                      ? "inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-md ring-2 ring-primary/30"
+                                      : "inline-flex items-center gap-2 rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm font-medium text-foreground/70 transition hover:bg-muted hover:text-foreground"
+                                    }
+                                  >
+                                    {day}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="mb-1.5 text-sm font-medium text-foreground">Room</p>
+                            <Input
+                              type="text"
+                              value={editingSchedule.room}
                           onChange={(e) => setEditingSchedule((c) => ({ ...c!, room: e.target.value }))}
                           placeholder="e.g. Room 101"
                           className="h-11 rounded-md"

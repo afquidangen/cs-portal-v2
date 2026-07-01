@@ -6,7 +6,7 @@ import { CheckCircle2, Clock, DoorOpen, Mail, RefreshCw, ShieldCheck, Trash2, Us
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Panel } from "../shared/dashboard-ui"
+import { Panel, Tooltip } from "../shared/dashboard-ui"
 import type { AvailabilityStatus, FacultyRecord } from "../../data/portal-data"
 import type { PortalModuleProps } from "./types"
 
@@ -258,15 +258,16 @@ export function InstructorsModule({ model }: PortalModuleProps) {
                 </div>
 
                 {role === "admin" && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleDelete(member.id, member.name)}
-                    className="shrink-0 text-destructive hover:text-destructive"
-                    title="Delete faculty account"
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
+                  <Tooltip content="Delete faculty account">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleDelete(member.id, member.name)}
+                      className="shrink-0 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </Tooltip>
                 )}
               </div>
             </article>

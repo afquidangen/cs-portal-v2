@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 
-import { EmptyState, Panel, Select, StatusBadge } from "../shared/dashboard-ui"
+import { EmptyState, Panel, Select, StatusBadge, Tooltip } from "../shared/dashboard-ui"
 import type { CurriculumRecord, GradeRecord } from "../../data/portal-data"
 import type { PortalModuleProps } from "./types"
 import { cn } from "@/lib/utils"
@@ -610,12 +610,16 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
                   <td className="px-4 py-3"><StatusBadge value={curriculum.status} /></td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
-                      <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setEditCurr(curriculum)}>
-                        <Edit className="size-3.5" />
-                      </Button>
-                      <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDeleteCurrId(curriculum.id)}>
-                        <Trash2 className="size-3.5" />
-                      </Button>
+                      <Tooltip content="Edit curriculum">
+                        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setEditCurr(curriculum)}>
+                          <Edit className="size-3.5" />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip content="Delete curriculum">
+                        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDeleteCurrId(curriculum.id)}>
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </Tooltip>
                     </div>
                   </td>
                 </tr>
@@ -771,19 +775,21 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
                             <Plus className="size-3.5" />
                             Subject
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-xl"
-                            onClick={() =>
-                              setDeleteTermKey({
-                                currId: selectedCurriculum.id,
-                                index: globalTermIndex,
-                              })
-                            }
-                          >
-                            <Trash2 className="size-3.5" />
-                          </Button>
+                          <Tooltip content="Delete term">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-xl"
+                              onClick={() =>
+                                setDeleteTermKey({
+                                  currId: selectedCurriculum.id,
+                                  index: globalTermIndex,
+                                })
+                              }
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </Tooltip>
                         </div>
                       </div>
 
@@ -809,39 +815,43 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
                                 <td className="px-4 py-3 text-foreground/80">{subject.total}</td>
                                 <td className="px-4 py-3">
                                   <div className="flex gap-1">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="rounded-xl"
-                                      onClick={() =>
-                                        setEditSubjectKey({
-                                          currId: selectedCurriculum.id,
-                                          termIndex: globalTermIndex,
-                                          subjectIndex: sIdx,
-                                          code: subject.code,
-                                          name: subject.name,
-                                          lec: String(subject.lec),
-                                          lab: String(subject.lab),
-                                          total: String(subject.total),
-                                        })
-                                      }
-                                    >
-                                      <Edit className="size-3.5" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="rounded-xl"
-                                      onClick={() =>
-                                        setDeleteSubjectKey({
-                                          currId: selectedCurriculum.id,
-                                          termIndex: globalTermIndex,
-                                          subjectIndex: sIdx,
-                                        })
-                                      }
-                                    >
-                                      <Trash2 className="size-3.5" />
-                                    </Button>
+                                    <Tooltip content="Edit subject">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="rounded-xl"
+                                    onClick={() =>
+                                      setEditSubjectKey({
+                                        currId: selectedCurriculum.id,
+                                        termIndex: globalTermIndex,
+                                        subjectIndex: sIdx,
+                                        code: subject.code,
+                                        name: subject.name,
+                                        lec: String(subject.lec),
+                                        lab: String(subject.lab),
+                                        total: String(subject.total),
+                                      })
+                                    }
+                                  >
+                                    <Edit className="size-3.5" />
+                                  </Button>
+                                </Tooltip>
+                                <Tooltip content="Delete subject">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="rounded-xl"
+                                    onClick={() =>
+                                      setDeleteSubjectKey({
+                                        currId: selectedCurriculum.id,
+                                        termIndex: globalTermIndex,
+                                        subjectIndex: sIdx,
+                                      })
+                                    }
+                                  >
+                                    <Trash2 className="size-3.5" />
+                                  </Button>
+                                </Tooltip>
                                   </div>
                                 </td>
                               </tr>
