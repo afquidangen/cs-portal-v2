@@ -26,6 +26,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Phone,
+  Search,
   Server,
   Sun,
   Users,
@@ -121,6 +122,7 @@ import { InstructorsModule } from "./modules/instructors-module"
 import { LiveAnnouncementCard } from "./modules/live-announcement-card"
 import { OverviewModule } from "./modules/overview-module"
 import { ProfileModule } from "./modules/profile-module"
+import { StudentDirectoryDialog } from "./student-directory-dialog"
 
 import { QuickLinksModule } from "./modules/quick-links-module"
 import { SchedulePanel } from "./modules/schedule-panel"
@@ -428,6 +430,7 @@ export function RoleDashboard({ role }: { role: Role }) {
   }, [])
 
   const effectivelyCollapsed = desktopSidebarCollapsed || isMediumScreen
+  const [searchOpen, setSearchOpen] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifPosition, setNotifPosition] = useState({ top: 0, right: 0 })
   const notifRef = useRef<HTMLDivElement>(null)
@@ -672,9 +675,11 @@ export function RoleDashboard({ role }: { role: Role }) {
     (user: { email: string; name: string; role: string }) =>
       user.role === "faculty" && (user.email === model.profile.email || user.name === model.profile.name)
   )
+  const DAY_ABBR: Record<string, string> = { Sunday: "S", Monday: "M", Tuesday: "T", Wednesday: "W", Thursday: "Th", Friday: "F", Saturday: "S" }
   const todayLabel = new Date().toLocaleDateString("en-US", { weekday: "long" })
+  const shortToday = DAY_ABBR[todayLabel] ?? ""
   const facultyTodaySchedules = model.visibleSchedules.filter(
-    (item: { day: string }) => item.day === todayLabel
+    (item: { day: string }) => item.day.split(/\s+/).includes(shortToday)
   )
   const facultyFirstName = model.profile.name.split(" ")[0] || model.profile.name
   const facultyGreeting = (() => {
@@ -900,7 +905,7 @@ export function RoleDashboard({ role }: { role: Role }) {
   ], [gwaDisplay, gwaHelper, enrolledSubjectCount, model.studentTickets, unitsDisplay, adminSparklineData])
 
   const studentTodaySchedules = model.visibleSchedules.filter(
-    (item: { day: string }) => item.day === todayLabel
+    (item: { day: string }) => item.day.split(/\s+/).includes(shortToday)
   )
 
   const studentQuickActions = [
@@ -2239,6 +2244,20 @@ export function RoleDashboard({ role }: { role: Role }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {role === "student" && model.activeModule === "overview" && (
+        <>
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="fixed bottom-6 right-6 z-50 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 active:scale-95"
+            aria-label="Search students"
+          >
+            <Search className="size-6" />
+          </button>
+          <StudentDirectoryDialog open={searchOpen} onOpenChange={setSearchOpen} />
+        </>
+      )}
 
     </main>
   )

@@ -37,6 +37,7 @@ import type { AvailabilityStatus } from "../../data/portal-data"
 import type { ModuleId } from "../../types/navigation"
 import type { PortalModuleProps } from "./types"
 import { DeansListRankingsCard } from "../shared/deans-list-rankings-card"
+import { getDailyQuote } from "../../lib/quotes"
 
 function greeting() {
   const hour = new Date().getHours()
@@ -180,6 +181,7 @@ function AdminArt() {
 export function OverviewModule({ model }: PortalModuleProps) {
   const [announcementIdx, setAnnouncementIdx] = useState(0)
   const totalAnnouncements = model.announcements.length
+  const quote = getDailyQuote()
   useEffect(() => {
     if (totalAnnouncements < 2) return
     const interval = setInterval(() => {
@@ -192,8 +194,12 @@ export function OverviewModule({ model }: PortalModuleProps) {
     const facultyAnnouncements = model.filteredAnnouncements.length ? model.filteredAnnouncements : model.announcements
     const latestAnnouncement = facultyAnnouncements[announcementIdx % Math.max(1, facultyAnnouncements.length)]
     const facultyAnnouncementCount = facultyAnnouncements.length
+    const DAY_ABBR: Record<string, string> = { Sunday: "S", Monday: "M", Tuesday: "T", Wednesday: "W", Thursday: "Th", Friday: "F", Saturday: "S" }
     const today = new Date().toLocaleDateString("en-US", { weekday: "long" })
-    const todaySchedules = model.visibleSchedules.filter((item) => item.day === today)
+    const shortToday = DAY_ABBR[today] ?? ""
+    const todaySchedules = model.visibleSchedules
+      .filter((item) => item.day.split(/\s+/).includes(shortToday))
+      .sort((a, b) => a.time.localeCompare(b.time))
     const facultyMember = model.faculty.find(
       (member) => member.email === model.profile.email || member.name === model.profile.name
     )
@@ -503,9 +509,9 @@ export function OverviewModule({ model }: PortalModuleProps) {
             </CardHeader>
             <CardContent className="relative px-6 pb-6 pt-10">
               <blockquote className="max-w-sm text-sm font-medium leading-7 text-slate-800 dark:text-foreground/85">
-                &quot;The beautiful thing about learning is nobody can take it away from you.&quot;
+                &quot;{quote.text}&quot;
               </blockquote>
-              <p className="mt-5 text-sm font-semibold text-slate-700 dark:text-muted-foreground">- B.B. King</p>
+              <p className="mt-5 text-sm font-semibold text-slate-700 dark:text-muted-foreground">- {quote.author}</p>
             </CardContent>
           </Card>
         </div>
@@ -814,9 +820,9 @@ export function OverviewModule({ model }: PortalModuleProps) {
             </CardHeader>
             <CardContent className="relative px-6 pb-6 pt-10">
               <blockquote className="max-w-sm text-sm font-medium leading-7 text-slate-800 dark:text-foreground/85">
-                &quot;The beautiful thing about learning is nobody can take it away from you.&quot;
+                &quot;{quote.text}&quot;
               </blockquote>
-              <p className="mt-5 text-sm font-semibold text-slate-700 dark:text-muted-foreground">- B.B. King</p>
+              <p className="mt-5 text-sm font-semibold text-slate-700 dark:text-muted-foreground">- {quote.author}</p>
             </CardContent>
           </Card>
         </div>
@@ -838,8 +844,12 @@ export function OverviewModule({ model }: PortalModuleProps) {
   const progress = model.totalCurriculumUnits > 0
     ? Math.min(100, Math.round((model.totalCompletedUnits / model.totalCurriculumUnits) * 100))
     : 0
+  const DAY_ABBR: Record<string, string> = { Sunday: "S", Monday: "M", Tuesday: "T", Wednesday: "W", Thursday: "Th", Friday: "F", Saturday: "S" }
   const today = new Date().toLocaleDateString("en-US", { weekday: "long" })
-  const todaySchedules = model.visibleSchedules.filter((item) => item.day === today)
+  const shortToday = DAY_ABBR[today] ?? ""
+  const todaySchedules = model.visibleSchedules
+    .filter((item) => item.day.split(/\s+/).includes(shortToday))
+    .sort((a, b) => a.time.localeCompare(b.time))
   const studentAnnouncements = model.filteredAnnouncements.length ? model.filteredAnnouncements : model.announcements
   const latestAnnouncement = studentAnnouncements[announcementIdx % Math.max(1, studentAnnouncements.length)]
 
@@ -1099,9 +1109,9 @@ export function OverviewModule({ model }: PortalModuleProps) {
           </CardHeader>
           <CardContent className="relative px-6 pb-6 pt-10">
             <blockquote className="max-w-sm text-sm font-medium leading-7 text-slate-800 dark:text-foreground/85">
-              &quot;The beautiful thing about learning is nobody can take it away from you.&quot;
+              &quot;{quote.text}&quot;
             </blockquote>
-            <p className="mt-5 text-sm font-semibold text-slate-700 dark:text-muted-foreground">- B.B. King</p>
+            <p className="mt-5 text-sm font-semibold text-slate-700 dark:text-muted-foreground">- {quote.author}</p>
           </CardContent>
         </Card>
       </div>
