@@ -11,6 +11,7 @@ import {
   ClipboardList,
   Code2,
   Database,
+  ShieldCheck,
   DoorOpen,
   Download,
   GraduationCap,
@@ -2120,19 +2121,27 @@ export function RoleDashboard({ role }: { role: Role }) {
 
       <Dialog open={logoutOpen} onOpenChange={setLogoutOpen}>
         <DialogContent className="max-w-sm overflow-hidden p-0">
-          <div className="bg-[linear-gradient(120deg,#18479f_0%,#1f6fe5_60%,#28a7f2_100%)] px-6 py-5 text-white">
-            <div className="mb-3 flex size-11 items-center justify-center rounded-xl border border-white/20 bg-white/15">
-              <LogOut className="size-5" />
+          <div className="px-6 py-5">
+            <div className="mb-3 flex size-11 items-center justify-center rounded-xl border border-border bg-muted/80 shadow-sm backdrop-blur">
+              {role === "admin" || role === "csso_officer" ? (
+                <ShieldCheck className="size-5 text-foreground" />
+              ) : role === "faculty" ? (
+                <CalendarDays className="size-5 text-foreground" />
+              ) : (
+                <GraduationCap className="size-5 text-foreground" />
+              )}
             </div>
             <DialogHeader>
-              <DialogTitle className="text-xl text-white">Confirm Logout</DialogTitle>
-              <DialogDescription className="pt-1 text-white/78">
+              <DialogTitle className="text-2xl font-bold tracking-tight text-foreground">Confirm Logout</DialogTitle>
+              <DialogDescription className="pt-1 text-muted-foreground">
                 You will need to sign in again to access this workspace.
               </DialogDescription>
             </DialogHeader>
           </div>
 
-          <div className="px-6 pb-6 pt-4">
+          <hr className="border-border" />
+
+          <div className="px-6 pb-6 pt-5">
             <p className="text-sm leading-6 text-muted-foreground">
               End the current portal session for {model.profile.name}?
             </p>

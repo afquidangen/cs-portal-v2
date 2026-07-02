@@ -1587,7 +1587,7 @@ export function usePortalDashboardModel(role: Role) {
   }
 
   function syncFacultyFromUsers() {
-    const facultyUsers = users.filter((u) => u.role === "faculty")
+    const facultyUsers = users.filter((u) => u.role === "faculty" && !u.deletedAt)
     const facultyUserNames = new Set(facultyUsers.map((u) => u.name.toLowerCase().trim()))
     const existingFacultyNames = new Map<string, string>()
     for (const f of faculty) {

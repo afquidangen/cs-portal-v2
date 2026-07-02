@@ -72,14 +72,14 @@ function StatusSummary({ faculty }: { faculty: PortalModuleProps["model"]["facul
         const statusUi = STATUS_CONTROL_UI[stat.status]
         const Icon = statusUi.icon
         return (
-          <Card key={stat.label} className="rounded-lg border-slate-200 bg-white shadow-sm">
+          <Card key={stat.label} className="rounded-lg border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <CardContent className="flex items-center gap-3 p-4">
               <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-lg border shadow-sm", statusUi.className)}>
                 <Icon className="size-5" />
               </span>
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">{stat.label}</p>
-                <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950">{stat.value}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{stat.label}</p>
+                <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-slate-100">{stat.value}</p>
               </div>
             </CardContent>
           </Card>
@@ -143,7 +143,7 @@ function FacultyCard({
               {member.status}
             </span>
             {member.statusUpdatedAt ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-400 whitespace-nowrap">
+              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-400 whitespace-nowrap dark:border-slate-600 dark:bg-slate-800 dark:text-slate-500">
                 <Clock className="size-3" />
                 {timeAgo(member.statusUpdatedAt)}
               </span>
@@ -213,15 +213,15 @@ function AdminStatusEditor({ model }: PortalModuleProps) {
   }, [setFaculty])
 
   return (
-    <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-      <CardHeader className="border-b border-slate-200 px-5 py-4">
-        <CardTitle className="text-base font-semibold text-slate-950">Faculty Status</CardTitle>
-        <p className="text-xs font-medium text-blue-600">Admin control panel</p>
+    <Card className="rounded-lg border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <CardHeader className="border-b border-slate-200 dark:border-slate-700 px-5 py-4">
+        <CardTitle className="text-base font-semibold text-slate-950 dark:text-slate-100">Faculty Status</CardTitle>
+        <p className="text-xs font-medium text-blue-600 dark:text-blue-400">Admin control panel</p>
       </CardHeader>
       <CardContent className="p-5">
       <div className="space-y-2">
         {visibleFaculty.length === 0 ? (
-          <p className="py-8 text-center text-sm text-slate-500">
+          <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
             No faculty members found.
           </p>
         ) : (
@@ -231,26 +231,26 @@ function AdminStatusEditor({ model }: PortalModuleProps) {
             return (
               <div
                 key={member.id}
-                className="flex items-stretch gap-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+                className="flex items-stretch gap-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800"
               >
                 <div className={cn("flex w-10 shrink-0 items-center justify-center", statusUi.className.replace(/border-\S+/g, "").trim())}>
                   <StatusIcon className="size-4" />
                 </div>
                 <div className="flex flex-1 flex-wrap items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0 flex-1">
-                    <h4 className="text-sm font-semibold text-slate-900">{member.name}</h4>
-                    <p className="mt-0.5 text-xs text-slate-500">
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{member.name}</h4>
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                       {member.position} &middot; {member.email}
                     </p>
                     {member.notes ? (
-                      <p className="mt-1 text-xs text-slate-600 line-clamp-1">{member.notes}</p>
+                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 line-clamp-1">{member.notes}</p>
                     ) : null}
                     {member.schedule.length > 0 && (
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {member.schedule.map((slot) => (
                           <span
                             key={slot}
-                            className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] text-slate-500"
+                            className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] text-slate-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-400"
                           >
                             {slot}
                           </span>
@@ -274,7 +274,14 @@ function AdminStatusEditor({ model }: PortalModuleProps) {
 }
 
 export function AvailabilityModule({ model }: PortalModuleProps) {
-  const { faculty, role } = model
+  const { faculty, users, role } = model
+
+  const activeFaculty = useMemo(() => {
+    const activeEmails = new Set(
+      users.filter((u) => u.role === "faculty" && !u.deletedAt).map((u) => u.email.toLowerCase().trim())
+    )
+    return faculty.filter((fr) => activeEmails.has(fr.email.toLowerCase().trim()))
+  }, [faculty, users])
 
   if (role === "faculty") {
     return (
@@ -289,20 +296,20 @@ export function AvailabilityModule({ model }: PortalModuleProps) {
     return (
       <div className="space-y-5">
         <div className="pt-4">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Teacher Status</h1>
-          <p className="mt-2 text-sm text-slate-600">Track faculty availability, class presence, consultation status, and office updates in one dashboard.</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">Teacher Status</h1>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Track faculty availability, class presence, consultation status, and office updates in one dashboard.</p>
         </div>
-        <StatusSummary faculty={faculty} />
+        <StatusSummary faculty={activeFaculty} />
         <AdminStatusEditor model={model} />
       </div>
     )
   }
 
-  return <StudentAvailabilityView model={model} />
+  return <StudentAvailabilityView model={model} activeFaculty={activeFaculty} />
 }
 
-function StudentAvailabilityView({ model }: PortalModuleProps) {
-  const { faculty, filteredFaculty, query, setQuery } = model
+function StudentAvailabilityView({ model, activeFaculty }: PortalModuleProps & { activeFaculty: PortalModuleProps["model"]["faculty"] }) {
+  const { filteredFaculty, query, setQuery } = model
   const [statusFilter, setStatusFilter] = useState<AvailabilityStatus | "All">("All")
 
   const visibleFaculty =
@@ -313,17 +320,17 @@ function StudentAvailabilityView({ model }: PortalModuleProps) {
   return (
     <div className="space-y-5">
       <div className="pt-4">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Teacher Status</h1>
-        <p className="mt-2 text-sm text-slate-600">Check which instructors are available, in class, open for consultation, or out of office.</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">Teacher Status</h1>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Check which instructors are available, in class, open for consultation, or out of office.</p>
       </div>
-      <StatusSummary faculty={faculty} />
+      <StatusSummary faculty={activeFaculty} />
 
-      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-        <CardHeader className="border-b border-slate-200 px-5 py-4">
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <CardHeader className="border-b border-slate-200 dark:border-slate-700 px-5 py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-          <CardTitle className="text-base font-semibold text-slate-950">Faculty Directory</CardTitle>
-          <p className="text-xs font-medium text-blue-600">Search and filter instructors</p>
+          <CardTitle className="text-base font-semibold text-slate-950 dark:text-slate-100">Faculty Directory</CardTitle>
+          <p className="text-xs font-medium text-blue-600 dark:text-blue-400">Search and filter instructors</p>
             </div>
             <div className="relative w-full sm:max-w-sm">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
@@ -331,7 +338,7 @@ function StudentAvailabilityView({ model }: PortalModuleProps) {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search faculty"
-                className="h-11 rounded-lg border border-slate-200 bg-white pl-10 text-slate-950 shadow-sm placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/20"
+                className="h-11 rounded-lg border border-slate-200 bg-white pl-10 text-slate-950 shadow-sm placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
               />
             </div>
           </div>
@@ -346,7 +353,7 @@ function StudentAvailabilityView({ model }: PortalModuleProps) {
                 "rounded-lg px-3.5 py-1.5 text-xs font-medium transition-colors",
                 statusFilter === tab.value
                   ? "bg-blue-600 text-white"
-                  : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
               )}
             >
               {tab.label}
@@ -356,7 +363,7 @@ function StudentAvailabilityView({ model }: PortalModuleProps) {
 
         <div className="space-y-3">
           {visibleFaculty.length === 0 ? (
-            <p className="py-8 text-center text-sm text-slate-500">
+            <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
               No instructors match the current filter.
             </p>
           ) : (
@@ -387,20 +394,20 @@ export function FacultyAvailabilityPanel({ model }: PortalModuleProps) {
   return (
     <div className="space-y-5">
       <div className="flex items-start gap-4">
-        <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm">
-          <CalendarCheck className="size-7 text-blue-600" />
+        <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <CalendarCheck className="size-7 text-blue-600 dark:text-blue-400" />
         </div>
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-950">My Status</h2>
-          <p className="text-sm text-slate-600">Update your availability and daily note.</p>
+          <h2 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">My Status</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400">Update your availability and daily note.</p>
         </div>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[0.78fr_1.22fr]">
-        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <Card className="rounded-lg border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
-              <div className="flex size-12 items-center justify-center rounded-xl bg-blue-50 text-sm font-semibold text-blue-600 ring-1 ring-blue-100">
+              <div className="flex size-12 items-center justify-center rounded-xl bg-blue-50 text-sm font-semibold text-blue-600 ring-1 ring-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:ring-blue-800">
                 {profile.name
                   .split(" ")
                   .map((p: string) => p[0])
@@ -408,10 +415,10 @@ export function FacultyAvailabilityPanel({ model }: PortalModuleProps) {
                   .slice(0, 2)}
               </div>
               <div className="min-w-0">
-                <p className="truncate text-base font-bold text-slate-950">
+                <p className="truncate text-base font-bold text-slate-950 dark:text-slate-100">
                   {profile.name}
                 </p>
-                <p className="text-sm text-slate-500">{profile.title}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{profile.title}</p>
               </div>
             </div>
             <div className={`mt-4 rounded-xl border p-4 ${currentStatusUi.className}`}>
@@ -427,12 +434,12 @@ export function FacultyAvailabilityPanel({ model }: PortalModuleProps) {
           </CardContent>
         </Card>
 
-        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <Card className="rounded-lg border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <form onSubmit={handleFacultySelfStatus}>
           <CardContent className="p-5">
             <div className="mb-4">
-              <p className="text-sm font-bold text-slate-950">Choose your availability</p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="text-sm font-bold text-slate-950 dark:text-slate-100">Choose your availability</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 Select the status that best matches your current schedule.
               </p>
             </div>
@@ -450,7 +457,7 @@ export function FacultyAvailabilityPanel({ model }: PortalModuleProps) {
                     onClick={() => setMyFacultyStatus(status)}
                     className={cn(
                       "rounded-xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm",
-                      active ? statusUi.className : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                      active ? statusUi.className : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                     )}
                   >
                     <div className="flex items-start gap-3">
@@ -467,8 +474,8 @@ export function FacultyAvailabilityPanel({ model }: PortalModuleProps) {
 
             <div className="mt-4">
               <div className="space-y-1.5">
-                <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-950">
-                  <MessageSquareText className="size-4 text-blue-600" />
+                <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-950 dark:text-slate-100">
+                  <MessageSquareText className="size-4 text-blue-600 dark:text-blue-400" />
                   Daily note
                 </label>
                 <Textarea
@@ -505,12 +512,12 @@ export function FacultyDirectoryPanel({
       : filteredFaculty.filter((m) => m.status === statusFilter)
 
   return (
-    <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-      <CardHeader className="border-b border-slate-200 px-5 py-4">
+    <Card className="rounded-lg border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <CardHeader className="border-b border-slate-200 dark:border-slate-700 px-5 py-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-        <CardTitle className="text-base font-semibold text-slate-950">Live Faculty Directory</CardTitle>
-        <p className="text-xs font-medium text-blue-600">Status and profiles</p>
+        <CardTitle className="text-base font-semibold text-slate-950 dark:text-slate-100">Live Faculty Directory</CardTitle>
+        <p className="text-xs font-medium text-blue-600 dark:text-blue-400">Status and profiles</p>
           </div>
           <div className="relative w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
@@ -518,22 +525,22 @@ export function FacultyDirectoryPanel({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search faculty"
-              className="h-11 rounded-lg border border-slate-200 bg-white pl-10 text-slate-950 shadow-sm placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/20"
+              className="h-11 rounded-lg border border-slate-200 bg-white pl-10 text-slate-950 shadow-sm placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
             />
           </div>
         </div>
       </CardHeader>
       <CardContent className="p-5">
       {showFilter && (
-        <div className="mb-4 rounded-lg border border-slate-200 bg-white p-3">
+        <div className="mb-4 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900">Faculty availability board</p>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Faculty availability board</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Showing {visibleFaculty.length} of {filteredFaculty.length} faculty profiles
               </p>
             </div>
-            <Users className="size-5 shrink-0 text-blue-600" />
+            <Users className="size-5 shrink-0 text-blue-600 dark:text-blue-400" />
           </div>
           <div className="grid gap-2 min-[420px]:grid-cols-2 lg:grid-cols-5">
           {STATUS_TABS.map((tab) => (
@@ -544,7 +551,7 @@ export function FacultyDirectoryPanel({
                 "min-h-10 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors",
                 statusFilter === tab.value
                   ? "border-blue-600 bg-blue-600 text-white shadow-sm"
-                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
               )}
             >
               {tab.label}
@@ -555,10 +562,10 @@ export function FacultyDirectoryPanel({
       )}
 
       {visibleFaculty.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-200 bg-white px-6 py-12 text-center">
-          <SearchX className="mx-auto mb-3 size-10 text-slate-300" />
-          <p className="text-sm font-medium text-slate-900">No faculty matched the current view.</p>
-          <p className="mt-1 text-xs text-slate-500">Try another status or search keyword.</p>
+        <div className="rounded-lg border border-dashed border-slate-200 bg-white px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-800">
+          <SearchX className="mx-auto mb-3 size-10 text-slate-300 dark:text-slate-500" />
+          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">No faculty matched the current view.</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Try another status or search keyword.</p>
         </div>
       ) : (
         <div className="grid gap-3 xl:grid-cols-2">
