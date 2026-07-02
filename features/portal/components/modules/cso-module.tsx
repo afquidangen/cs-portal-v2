@@ -23,6 +23,23 @@ import type { CsoInfoRecord, GalleryItem } from "@/lib/types"
 import { Select, StatusBadge, Tooltip } from "../shared/dashboard-ui"
 import type { PortalDashboardModel } from "../../hooks/use-portal-dashboard-model"
 
+function formatRelativeTime(dateStr: string | undefined): string {
+  if (!dateStr) return ""
+  const now = Date.now()
+  const then = new Date(dateStr).getTime()
+  const diffMs = now - then
+  if (diffMs < 0) return "Just now"
+  const seconds = Math.floor(diffMs / 1000)
+  if (seconds < 60) return "Just now"
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days}d ago`
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(then)
+}
+
 export function CsoModule({ model }: { model: PortalDashboardModel }) {
   const [editingReport, setEditingReport] = useState<CsoReport | null>(null)
   const [deletingReport, setDeletingReport] = useState<CsoReport | null>(null)
@@ -409,6 +426,9 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
                       {item.description ? (
                         <p className="mt-1 text-xs text-foreground/70 line-clamp-2">{item.description}</p>
                       ) : null}
+                      {item.createdAt ? (
+                        <time className="mt-1 block text-[10px] text-foreground/40">{formatRelativeTime(item.createdAt)}</time>
+                      ) : null}
                     </div>
                     <div className="absolute right-2 top-2 flex gap-1.5 opacity-0 transition group-hover:opacity-100">
                       <Tooltip content="Edit gallery item">
@@ -753,6 +773,7 @@ function CsoMiniGallery({ items }: { items: GalleryItem[] }) {
       description: item.description,
       image: item.image,
       meta: "Gallery",
+      createdAt: item.createdAt,
     }))
 
   const slides = gallerySlides.slice(0, 10)
@@ -787,7 +808,7 @@ function CsoMiniGallery({ items }: { items: GalleryItem[] }) {
   }
 
   return (
-    <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+    <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <div className="grid gap-0 lg:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.8fr)]">
         <div className="relative min-h-[400px] bg-muted">
           <Image
@@ -803,7 +824,7 @@ function CsoMiniGallery({ items }: { items: GalleryItem[] }) {
               type="button"
               size="icon"
               variant="secondary"
-              className="size-9 rounded-full bg-white/90 text-foreground shadow-sm hover:bg-white"
+              className="size-9 rounded-full bg-white/90 text-foreground shadow-sm hover:bg-white dark:bg-slate-800/90 dark:text-slate-100 dark:hover:bg-slate-700"
               onClick={showPrevious}
               aria-label="Show previous CSSO news item"
             >
@@ -821,7 +842,7 @@ function CsoMiniGallery({ items }: { items: GalleryItem[] }) {
               type="button"
               size="icon"
               variant="secondary"
-              className="size-9 rounded-full bg-white/90 text-foreground shadow-sm hover:bg-white"
+              className="size-9 rounded-full bg-white/90 text-foreground shadow-sm hover:bg-white dark:bg-slate-800/90 dark:text-slate-100 dark:hover:bg-slate-700"
               onClick={showNext}
               aria-label="Show next CSSO gallery item"
             >
@@ -830,15 +851,18 @@ function CsoMiniGallery({ items }: { items: GalleryItem[] }) {
           </div>
         </div>
         <div className="flex flex-col justify-center p-5 sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+          <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
             {activeSlide.meta}
           </p>
-          <h3 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+          <h3 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
             {activeSlide.title}
           </h3>
-          <p className="mt-3 text-sm leading-7 text-slate-600">
+          <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-400">
             {activeSlide.description}
           </p>
+          {activeSlide.createdAt ? (
+            <time className="mt-2 block text-xs text-slate-400 dark:text-slate-500">{formatRelativeTime(activeSlide.createdAt)}</time>
+          ) : null}
         </div>
       </div>
     </section>
