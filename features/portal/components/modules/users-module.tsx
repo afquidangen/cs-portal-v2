@@ -1287,8 +1287,11 @@ export function UsersModule({ model }: PortalModuleProps) {
                               <td className="px-4 py-3 text-center">
                                 <div className="flex justify-center gap-1">
                                   <Tooltip content="Edit grade history entry">
-                                    <button
-                                      className="text-blue-500 hover:text-blue-700 text-sm font-semibold"
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="size-8 rounded-lg text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                                      type="button"
                                       onClick={() => {
                                         setGradeHistoryEntry({
                                           subjectCode: entry.subjectCode,
@@ -1306,16 +1309,19 @@ export function UsersModule({ model }: PortalModuleProps) {
                                         setGradeEditReason("")
                                       }}
                                     >
-                                      <Pencil className="size-5 inline" />
-                                    </button>
+                                      <Pencil className="size-4" />
+                                    </Button>
                                   </Tooltip>
                                   <Tooltip content="Delete grade history entry">
-                                    <button
-                                      className="text-red-500 hover:text-red-700 text-sm font-semibold"
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="size-8 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50"
+                                      type="button"
                                       onClick={() => handleRemoveGradeHistory(student.id, idx)}
                                     >
-                                      <Trash2 className="size-5 inline" />
-                                    </button>
+                                      <Trash2 className="size-4" />
+                                    </Button>
                                   </Tooltip>
                                 </div>
                               </td>

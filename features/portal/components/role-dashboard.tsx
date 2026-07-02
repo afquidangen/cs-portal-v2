@@ -1195,22 +1195,22 @@ export function RoleDashboard({ role }: { role: Role }) {
           </ScrollArea>
 
           <div className={cn("p-3", isCleanShell ? "border-t border-slate-100" : "border-t border-sidebar-border")}>
-            <Tooltip content="Logout">
-              <Button
-                variant="ghost"
-                onClick={() => setLogoutOpen(true)}
-                className={cn(
-                  "w-full rounded-lg",
-                  isCleanShell
-                    ? "justify-start border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-blue-700"
-                    : "text-white hover:bg-white/10 hover:text-white",
-                  effectivelyCollapsed ? "justify-center px-0" : "justify-start"
-                )}
-              >
-                <LogOut className={cn("size-4", isCleanShell ? "text-current" : "text-white")} />
-                {!effectivelyCollapsed ? <span className={cn("ml-2", isCleanShell ? "text-current" : "text-white")}>Logout</span> : null}
-              </Button>
-            </Tooltip>
+            <Button
+              variant="ghost"
+              onClick={() => setLogoutOpen(true)}
+              className={cn(
+                "w-full rounded-lg flex items-center",
+                isCleanShell
+                  ? "text-slate-700 hover:bg-slate-50 hover:text-blue-700"
+                  : "text-white hover:bg-white/10 hover:text-white",
+                effectivelyCollapsed
+                  ? "justify-center px-2 border-0 bg-transparent"
+                  : "justify-start border border-slate-200 bg-white"
+              )}
+            >
+              <LogOut className={cn("size-4 shrink-0", isCleanShell ? "text-current" : "text-white")} />
+              {!effectivelyCollapsed ? <span className={cn("ml-2", isCleanShell ? "text-current" : "text-white")}>Logout</span> : null}
+            </Button>
           </div>
         </aside>
 

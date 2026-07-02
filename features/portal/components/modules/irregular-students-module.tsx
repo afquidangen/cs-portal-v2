@@ -571,7 +571,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
                                       setGradeEditReason("")
                                     }}
                                   >
-                                    <Pencil className="size-3.5" />
+                                    <Pencil className="size-4" />
                                   </Button>
                                 </Tooltip>
                                 <Tooltip content="Delete grade">
@@ -581,7 +581,7 @@ export function IrregularStudentsModule({ model }: PortalModuleProps) {
                                     className="rounded-xl text-red-500 hover:text-red-600"
                                     onClick={() => handleRemoveGrade(idx)}
                                   >
-                                    <Trash2 className="size-3.5" />
+                                    <Trash2 className="size-4" />
                                   </Button>
                                 </Tooltip>
                               </div>
