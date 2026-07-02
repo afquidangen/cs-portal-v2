@@ -25,14 +25,24 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
+    const url = new URL(request.url)
+    const section = url.searchParams.get("section")
+
     await connectToDatabase()
     const user = await UserModel.findOne({ id }).select("role").lean()
     if (!user || user.role !== "student") {
       return badRequest("Only student accounts can be added to the roster.")
     }
+
     const body = await request.json()
-    const student = await rosterRepository.upsert({ id }, body)
-    return success(student)
+
+    if (section) {
+      const student = await rosterRepository.upsert({ id, section }, body)
+      return success(student)
+    }
+
+    await rosterRepository.updateMany({ id }, body)
+    return success({ updated: true })
   } catch (err) {
     return error(err instanceof Error ? err.message : "Unable to update roster entry.")
   }
@@ -44,7 +54,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    await rosterRepository.delete({ id })
+    await rosterRepository.deleteMany({ id })
     return success({ deleted: true })
   } catch (err) {
     return error(err instanceof Error ? err.message : "Unable to delete roster entry.")

@@ -24,6 +24,7 @@ export type GradeRecord = {
   code: string
   units: number
   classId?: string
+  semesterId?: string
   subjectType?: "Lecture" | "Lecture with Lab"
 
   scores?: Record<string, number>

@@ -887,11 +887,32 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
         .filter((g) => g.subject === selectedSubject && g.remarks === "Passed" && g.released)
         .map((g) => g.studentId)
     )
-    return roster.filter((s) => {
-      const userExists = users.some((u) => u.id === s.id && u.role === "student" && !u.deletedAt)
-      return sectionSet.has(s.section) && s.enrolled && userExists && !passedIds.has(s.id)
-    })
-  }, [roster, subjectSections, grades, selectedSubject, users])
+    const seen = new Set<string>()
+    const students: Array<{
+      id: string; name: string; section: string; enrolled: boolean;
+      firstName?: string; middleName?: string; lastName?: string;
+    }> = []
+    for (const g of grades) {
+      if (g.deletedAt) continue
+      if (g.subject !== selectedSubject) continue
+      if (!sectionSet.has(g.section ?? "")) continue
+      if (passedIds.has(g.studentId)) continue
+      if (seen.has(g.studentId)) continue
+      const user = users.find((u) => u.id === g.studentId && u.role === "student" && !u.deletedAt)
+      if (!user) continue
+      students.push({
+        id: g.studentId,
+        name: g.student,
+        section: g.section ?? "",
+        enrolled: true,
+        firstName: user.firstName,
+        middleName: user.middleName,
+        lastName: user.lastName,
+      })
+      seen.add(g.studentId)
+    }
+    return students
+  }, [grades, subjectSections, selectedSubject, users])
 
   const rosterBySection = useMemo(() => {
     const groups = new Map<string, typeof subjectRoster>()

@@ -145,7 +145,7 @@ function FacultyView({ model }: { model: PortalModuleProps["model"] }) {
                     <input
                       type="checkbox"
                       checked={student.enrolled}
-                      onChange={(e) => handleToggleEnrolled(student.id, e.target.checked)}
+                      onChange={(e) => handleToggleEnrolled(student.id, e.target.checked, selectedClassSection)}
                       className="size-4 rounded border-border accent-primary"
                     />
                     Enrolled

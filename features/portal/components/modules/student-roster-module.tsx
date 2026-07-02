@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
+import { getSubjectRoster } from "../../lib/subject-roster"
 
 function getInitials(name: string) {
   return name
@@ -76,13 +77,13 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
 
     const alreadyInSubject = new Set(
       grades
-        .filter((g) => normalize(g.subject) === normalize(selectedSubject ?? ""))
+        .filter((g) => {
+          if (g.deletedAt) return false
+          if (normalize(g.subject ?? "") !== normalize(selectedSubject ?? "")) return false
+          if (normalize(g.section ?? "") !== normalize(addSection)) return false
+          return g.remarks !== "Passed"
+        })
         .map((g) => g.studentId)
-        .concat(
-          roster
-            .filter((r) => sectionOptions.some((s) => normalize(s) === normalize(r.section)) && r.enrolled)
-            .map((r) => r.id)
-        )
     )
 
     return users.filter((u) => {
@@ -91,7 +92,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
       const id = (u.id ?? "").toLowerCase()
       return !alreadyInSubject.has(u.id) && (name.includes(search) || id.includes(search))
     })
-  }, [studentSearch, users, grades, roster, selectedSubject, sectionOptions, addSection])
+  }, [studentSearch, users, grades, selectedSubject, addSection])
 
   function handleAdd(studentId: string, studentName: string) {
     if (!currentSubject?.code || !addSection) return
@@ -108,105 +109,17 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
   }
 
   const rosterStudents = useMemo(() => {
-    if (!selectedSubject) return []
-
-    const currentCode = currentSubject?.code ?? ""
-    const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
-
-    const passedIds = new Set(
-      users
-        .filter((u) =>
-          (u.gradeHistory ?? []).some(
-            (h) =>
-              normalize(h.subjectCode) === normalize(currentCode) &&
-              h.remarks?.toLowerCase() === "passed"
-          )
-        )
-        .map((u) => u.id)
-    )
-
-    const passedIrregularIds = new Set(
-      users
-        .filter((u) =>
-          irregularTypes.includes(u.studentType ?? "") &&
-          (u.gradeHistory ?? []).some(
-            (h) =>
-              normalize(h.subjectCode) === normalize(currentCode) &&
-              h.remarks?.toLowerCase() === "passed"
-          )
-        )
-        .map((u) => u.id)
-    )
-
-    const gradeMap = new Map<
-      string,
-      { id: string; studentId: string; student: string; section: string; released: boolean }
-    >()
-    for (const g of grades) {
-      if (g.deletedAt) continue
-      if (
-        normalize(g.subject ?? "") === normalize(selectedSubject) &&
-        (selectedSection
-          ? normalize(g.section ?? "") === normalize(selectedSection)
-          : sectionOptions.some((section) => normalize(section) === normalize(g.section ?? "")))
-      ) {
-        gradeMap.set(g.studentId, {
-          id: g.id,
-          studentId: g.studentId,
-          student: g.student,
-          section: g.section,
-          released: g.released ?? false,
-        })
-      }
-    }
-
-    const sections = selectedSection ? [selectedSection] : sectionOptions
-
-    const result: {
-      studentId: string
-      student: string
-      section: string
-      gradeId?: string
-      released: boolean
-      enrolled: boolean
-      deletedAt?: string | null
-    }[] = []
-
-    const seen = new Set<string>()
-
-    for (const r of roster) {
-      if (!sections.includes(r.section)) continue
-      if (passedIrregularIds.has(r.id)) continue
-      if (passedIds.has(r.id) && !gradeMap.has(r.id)) continue
-      if (seen.has(r.id)) continue
-      const grade = gradeMap.get(r.id)
-      result.push({
-        studentId: r.id,
-        student: r.name,
-        section: r.section,
-        gradeId: grade?.id,
-        released: grade?.released ?? false,
-        enrolled: r.enrolled,
-        deletedAt: r.deletedAt,
-      })
-      seen.add(r.id)
-    }
-
-    for (const [, g] of gradeMap) {
-      if (!seen.has(g.studentId) && !passedIrregularIds.has(g.studentId)) {
-        result.push({
-          studentId: g.studentId,
-          student: g.student,
-          section: g.section,
-          gradeId: g.id,
-          released: g.released,
-          enrolled: true,
-        })
-      }
-    }
-
-    return result.filter((e) => e.enrolled && !e.deletedAt)
-  }, [grades, roster, users, selectedSubject, selectedSection, sectionOptions, currentSubject?.code])
+    if (!selectedSubject || !currentSubject) return []
+    return getSubjectRoster({
+      roster,
+      grades,
+      users,
+      subject: selectedSubject,
+      subjectCode: currentSubject.code,
+      section: selectedSection,
+      sections: sectionOptions,
+    })
+  }, [grades, roster, users, selectedSubject, selectedSection, sectionOptions, currentSubject])
 
   return (
     <div className="space-y-4 pb-6 pt-4">
@@ -329,20 +242,20 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
                   </thead>
                   <tbody className="divide-y divide-slate-200 bg-white">
                     {rosterStudents.map((entry) => {
-                      const user = users.find((u) => u.id === entry.studentId)
+                      const user = users.find((u) => u.id === entry.id)
                       const studentType = user?.studentType
                       return (
-                        <tr key={entry.studentId} className="transition-colors hover:bg-slate-50">
+                        <tr key={entry.id} className="transition-colors hover:bg-slate-50">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
                               <Avatar className="size-10 shrink-0 ring-1 ring-border">
-                                <AvatarImage src={user?.photoUrl} alt={entry.student} className="object-cover" />
-                                <AvatarFallback className="bg-blue-50 text-xs font-semibold text-blue-600">{getInitials(entry.student)}</AvatarFallback>
+                                <AvatarImage src={user?.photoUrl} alt={entry.name} className="object-cover" />
+                                <AvatarFallback className="bg-blue-50 text-xs font-semibold text-blue-600">{getInitials(entry.lastName ? `${entry.lastName} ${entry.firstName ?? ""}` : entry.name)}</AvatarFallback>
                               </Avatar>
                               <div className="min-w-0">
-                                <p className="truncate font-medium text-slate-950">{entry.student}</p>
-                                <p className="truncate text-xs text-slate-500">{entry.studentId}</p>
-                                {studentType && irregularTypes.includes(studentType) ? (
+                                <p className="truncate font-medium text-slate-950">{entry.lastName ? `${entry.lastName}, ${entry.firstName ?? ""}${entry.middleName ? ` ${entry.middleName}` : ""}` : entry.name}</p>
+                                <p className="truncate text-xs text-slate-500">{entry.id}</p>
+                                {studentType && IRREGULAR_TYPES.includes(studentType) ? (
                                   <StatusBadge value={studentType} />
                                 ) : null}
                               </div>
@@ -365,7 +278,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
                                 size="sm"
                                 variant="outline"
                                 className="h-8 rounded-md border-slate-200 text-red-500 hover:text-red-600"
-                                onClick={() => setConfirmUnenroll({ gradeId: entry.gradeId, studentId: entry.studentId, section: entry.section })}
+                                onClick={() => setConfirmUnenroll({ gradeId: entry.gradeId, studentId: entry.id, section: entry.section })}
                               >
                                 <Trash2 className="size-3.5 mr-1" /> Unenroll
                               </Button>
@@ -491,4 +404,4 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
   )
 }
 
-const irregularTypes = ["Irregular", "Transferee", "Shifter"]
+const IRREGULAR_TYPES = ["Irregular", "Transferee", "Shifter"]

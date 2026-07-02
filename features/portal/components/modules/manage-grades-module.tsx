@@ -13,6 +13,7 @@ import {
 import { Panel } from "../shared/dashboard-ui"
 import type { PortalModuleProps } from "./types"
 import type { GradeRecord, ClassStudent } from "../../data/portal-data"
+import { getSubjectRoster } from "../../lib/subject-roster"
 import type { GradeColumn, Assessment } from "@/lib/types"
 import { SpreadsheetGrid } from "../grades/spreadsheet-grid"
 import { GradingWorkbookTab } from "../grades/grading-workbook-tab"
@@ -62,6 +63,7 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
         return true
       })
       .map((s) => s.section)
+      .filter((s): s is string => !!s)
   }, [visibleSchedules, selectedSubject, selectedSemesterId])
 
   const scheduleBySection = useMemo(() => {
@@ -228,35 +230,17 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
 
   const subjectRoster = useMemo(() => {
     if (subjectSections.length === 0) return []
-    const sectionSet = new Set(selectedSection ? [selectedSection] : subjectSections)
-    const deletedUsers = new Set(
-      users.filter((u) => u.deletedAt).map((u) => u.id)
-    )
-    const seen = new Set<string>()
-    const result: ClassStudent[] = []
-
-    for (const s of roster) {
-      if (deletedUsers.has(s.id)) continue
-      if (!s.enrolled) continue
-      if (!sectionSet.has(s.section)) continue
-      result.push(s)
-      seen.add(s.id)
-    }
-
-    for (const [, g] of gradeMap) {
-      if (!seen.has(g.studentId)) {
-        result.push({
-          id: g.studentId,
-          name: g.student,
-          section: g.section ?? "",
-          enrolled: true,
-        } as ClassStudent)
-        seen.add(g.studentId)
-      }
-    }
-
-    return result
-  }, [roster, subjectSections, selectedSection, users, gradeMap])
+    const code = selectedSubject.split(" - ")[0]?.trim() ?? selectedSubject
+    return getSubjectRoster({
+      roster,
+      grades,
+      users,
+      subject: selectedSubject,
+      subjectCode: code,
+      section: selectedSection,
+      sections: subjectSections,
+    })
+  }, [roster, grades, users, selectedSubject, selectedSection, subjectSections])
 
   const gridData = useMemo(() => {
     const q = studentQuery.toLowerCase().trim()

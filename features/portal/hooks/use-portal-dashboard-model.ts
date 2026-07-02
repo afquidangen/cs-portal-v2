@@ -519,27 +519,22 @@ export function usePortalDashboardModel(role: Role) {
           .map((h) => normalize(h.subjectCode))
       )
 
-      const enrolledSections = [
-        ...new Set([
-          ...grades
-            .filter((g) => g.studentId === profile.id && !passedCodes.has(normalize(g.code)))
-            .map((g) => g.section),
-          ...roster
-            .filter((r) => r.id === profile.id && r.enrolled)
-            .map((r) => r.section),
-        ]),
-      ].filter(Boolean)
-      const allSections = profileSection
-        ? [...new Set([profileSection, ...enrolledSections])]
-        : enrolledSections
-      if (allSections.length === 0) return []
       return classSchedules.filter((item) => {
         const code = normalize(item.subject.split(" - ")[0]?.trim() ?? "")
-        return allSections.some((sec) => item.section.includes(sec)) && !passedCodes.has(code) && belongsToActive(item)
+        const section = normalize(item.section ?? "")
+
+        const hasGrade = grades.some((g) =>
+          g.studentId === profile.id &&
+          normalize(g.code) === code &&
+          normalize(g.section ?? "") === section &&
+          !g.deletedAt
+        )
+
+        return hasGrade && !passedCodes.has(code) && belongsToActive(item)
       })
     }
     return classSchedules
-  }, [classSchedules, role, profileSection, profileUser, profile.name, grades, profile.id, users, semesters])
+  }, [classSchedules, role, profileUser, profile.name, grades, profile.id, semesters])
 
   const selectedScheduleStudents = useMemo(
     () =>
@@ -1334,15 +1329,14 @@ export function usePortalDashboardModel(role: Role) {
     }
   }
 
-  function handleUnenrollFromSubject(studentId: string, section: string, gradeId?: string) {
-    const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
-    const normSection = normalize(section)
-
+  function handleUnenrollFromSubject(studentId: string, _section: string, gradeId?: string) {
     if (gradeId) {
       const grade = grades.find((g) => g.id === gradeId)
       setGrades((current) => current.filter((g) => g.id !== gradeId))
       if (grade) {
-        syncApi("DELETE", `/api/portal/grades/${gradeId}`, {}).catch((e) => {
+        syncApi("DELETE", `/api/portal/grades/${gradeId}`, {}).then(() => {
+          toast.success("Student unenrolled.")
+        }).catch((e) => {
           if (e.message.includes("(404)")) {
             console.warn(`Grade ${gradeId} already deleted on server.`)
           } else {
@@ -1352,29 +1346,6 @@ export function usePortalDashboardModel(role: Role) {
         })
         addAuditLog(`Unenrolled student ${grade.student} from ${grade.subject}`)
       }
-    }
-
-    const hasRemaining = gradeId && grades.some(
-      (g) => g.studentId === studentId && normalize(g.section ?? "") === normSection && g.id !== gradeId
-    )
-    if (!hasRemaining) {
-      setRoster((current) =>
-        current.map((r) =>
-          r.id === studentId && normalize(r.section ?? "") === normSection
-            ? { ...r, enrolled: false }
-            : r
-        )
-      )
-      syncApi("PUT", `/api/portal/roster/${studentId}`, { enrolled: false })
-        .then(() => toast.success("Student unenrolled."))
-        .catch((e) => {
-          if (e.message.includes("(404)")) {
-            console.warn(`Roster entry ${studentId} not found on server; local state already updated.`)
-          } else {
-            toast.error("Failed to unenroll student. The student may reappear on refresh.")
-            console.error(e)
-          }
-        })
     }
   }
 
@@ -1418,14 +1389,16 @@ export function usePortalDashboardModel(role: Role) {
         updatedAt: now,
       }
       setGrades((current) => current.map((g) => g.id === existingPassed.id ? updated : g))
-      void syncApi("PUT", `/api/portal/grades/${existingPassed.id}`, updated)
+      void syncApi("PUT", `/api/portal/grades/${existingPassed.id}`, updated).catch((e) =>
+        console.error("Failed to update grade for re-enrolled student:", e)
+      )
     } else {
       const exists = grades.some(
         (g) => normalize(g.subject ?? "") === normSubject && normalize(g.section ?? "") === normSection && g.studentId === studentId
       )
       if (exists) return
 
-      const newId = `GRD-${Date.now()}`
+      const newId = `GRD-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
       const newGrade: GradeRecord = {
         id: newId,
         studentId,
@@ -1435,6 +1408,7 @@ export function usePortalDashboardModel(role: Role) {
         code: subjectCode,
         units: 3,
         classId,
+        semesterId: schedule?.semesterId,
         midtermTransmuted: undefined,
         midterm: 0,
         finalTransmuted: undefined,
@@ -1443,39 +1417,15 @@ export function usePortalDashboardModel(role: Role) {
         updatedAt: now,
       }
       setGrades((current) => [newGrade, ...current])
-      syncApi("POST", "/api/portal/grades", newGrade).catch(() => {
+      syncApi<{ data: GradeRecord }>("POST", "/api/portal/grades", newGrade).then((res) => {
+        const serverGrade = res?.data
+        if (serverGrade?.id && serverGrade.id !== newId) {
+          setGrades((current) => current.map((g) => g.id === newId ? { ...g, ...serverGrade } : g))
+        }
+      }).catch((e) => {
         setGrades((current) => current.filter((g) => g.id !== newId))
+        console.error("Failed to save grade record:", e)
         toast.error("Failed to save grade record for the added student.")
-      })
-    }
-
-    const existingRoster = roster.find(
-      (r) => r.id === studentId && normalize(r.section ?? "") === normSection
-    )
-    if (!existingRoster) {
-      const newRosterEntry = { id: studentId, name: studentName, section, enrolled: true }
-      setRoster((current) => [newRosterEntry, ...current])
-      syncApi("PUT", `/api/portal/roster/${studentId}`, newRosterEntry).catch(() => {
-        setRoster((current) => current.filter((r) => !(r.id === studentId && normalize(r.section ?? "") === normSection)))
-        toast.error("Failed to save roster entry for the added student.")
-      })
-    } else if (!existingRoster.enrolled) {
-      setRoster((current) =>
-        current.map((r) =>
-          r.id === studentId && normalize(r.section ?? "") === normSection
-            ? { ...r, enrolled: true }
-            : r
-        )
-      )
-      syncApi("PUT", `/api/portal/roster/${studentId}`, { enrolled: true }).catch(() => {
-        setRoster((current) =>
-          current.map((r) =>
-            r.id === studentId && normalize(r.section ?? "") === normSection
-              ? { ...r, enrolled: false }
-              : r
-          )
-        )
-        toast.error("Failed to update roster enrollment for the added student.")
       })
     }
 
@@ -1558,7 +1508,7 @@ export function usePortalDashboardModel(role: Role) {
       if (!inRoster) {
         const newRosterEntry = { id: studentId, name: studentName, section, enrolled: true }
         setRoster((current) => [newRosterEntry, ...current])
-        void syncApi("PUT", `/api/portal/roster/${studentId}`, newRosterEntry)
+        void syncApi("PUT", `/api/portal/roster/${studentId}?section=${encodeURIComponent(section)}`, newRosterEntry)
       }
     }
   }
@@ -2692,10 +2642,11 @@ export function usePortalDashboardModel(role: Role) {
     if (student) addAuditLog(`Removed student "${student.name}" from roster`)
   }
 
-  function handleToggleEnrolled(studentId: string, enrolled: boolean) {
+  function handleToggleEnrolled(studentId: string, enrolled: boolean, section?: string) {
     setRoster((current) =>
       current.map((item) =>
-        item.id === studentId ? { ...item, enrolled } : item
+        section ? (item.id === studentId && item.section === section ? { ...item, enrolled } : item)
+          : item.id === studentId ? { ...item, enrolled } : item
       )
     )
     setUsers((current) =>
@@ -2705,7 +2656,10 @@ export function usePortalDashboardModel(role: Role) {
           : item
       )
     )
-    syncApi("PUT", `/api/portal/roster/${studentId}`, { enrolled }).then(() =>
+    const url = section
+      ? `/api/portal/roster/${studentId}?section=${encodeURIComponent(section)}`
+      : `/api/portal/roster/${studentId}`
+    syncApi("PUT", url, { enrolled }).then(() =>
       toast.success(enrolled ? "Student enrolled." : "Student unenrolled.")
     ).catch((e) => {
       toast.error("Failed to update enrollment.")
