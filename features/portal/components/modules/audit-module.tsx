@@ -1,7 +1,7 @@
 "use client"
 
-import { Activity, CalendarDays, ChevronLeft, ChevronRight, Clock, FileClock, Filter, RefreshCw, Search, ShieldCheck, User, Users, X } from "lucide-react"
-import { useCallback, useMemo, useState } from "react"
+import { Activity, ArrowDownAZ, ArrowUpAZ, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, FileClock, Filter, RefreshCw, Search, ShieldCheck, User, Users, X } from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import {
   Dialog,
@@ -14,6 +14,7 @@ import {
   CardContent,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Select,
   SelectContent,
@@ -52,6 +53,46 @@ function toISODate(year: number, month: number, day: number) {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
 }
 
+const CATEGORIES = [
+  { value: "All", label: "All Categories" },
+  { value: "User Management", label: "User Management", keywords: ["account", "user", "role"] },
+  { value: "Faculty", label: "Faculty", keywords: ["faculty"] },
+  { value: "Enrollment / Grades", label: "Enrollment / Grades", keywords: ["student", "grade", "enrolled", "roster", "unenrolled", "auto-enrolled", "correction"] },
+  { value: "Tickets / Feedback", label: "Tickets / Feedback", keywords: ["ticket", "feedback"] },
+  { value: "Schedules", label: "Schedules", keywords: ["schedule", "class section"] },
+  { value: "Semesters", label: "Semesters", keywords: ["semester"] },
+  { value: "Subjects", label: "Subjects", keywords: ["subject"] },
+  { value: "Curriculum", label: "Curriculum", keywords: ["curriculum", "term"] },
+  { value: "Theses", label: "Theses", keywords: ["thesis"] },
+  { value: "Announcements", label: "Announcements", keywords: ["announcement"] },
+  { value: "Quick Links / Downloads", label: "Quick Links / Downloads", keywords: ["quick link", "manual", "downloadable"] },
+  { value: "CSO / Gallery", label: "CSO / Gallery", keywords: ["cso", "gallery", "event"] },
+]
+
+function getCategory(action: string): string {
+  const lower = action.toLowerCase()
+  for (const cat of CATEGORIES) {
+    if (cat.value === "All") continue
+    if (cat.keywords?.some((kw) => lower.includes(kw))) return cat.value
+  }
+  return "Other"
+}
+
+function getLogDateStr(log: { createdAt?: string; time: string }): string | null {
+  if (log.createdAt) {
+    const d = new Date(log.createdAt)
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10)
+  }
+  const d = new Date(log.time)
+  if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10)
+  const m = log.time.match(/^(\w+\s+\d+,\s+\d{4})/)
+  if (m) {
+    const d2 = new Date(m[1])
+    if (!isNaN(d2.getTime())) return d2.toISOString().slice(0, 10)
+  }
+  return null
+}
+
 export function AuditModule({ model }: PortalModuleProps) {
   const { auditLogs } = model
   const [search, setSearch] = useState("")
@@ -62,24 +103,52 @@ export function AuditModule({ model }: PortalModuleProps) {
   const [pickerTarget, setPickerTarget] = useState<PickerTarget>("from")
   const [calYear, setCalYear] = useState(new Date().getFullYear())
   const [calMonth, setCalMonth] = useState(new Date().getMonth())
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest")
+  const [categoryFilter, setCategoryFilter] = useState("All")
+  const [actorSearch, setActorSearch] = useState("")
+  const [actorDropdownOpen, setActorDropdownOpen] = useState(false)
+  const actorDropdownRef = useRef<HTMLDivElement>(null)
 
   const todayStr = useMemo(() => toISODate(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()), [])
 
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (actorDropdownRef.current && !actorDropdownRef.current.contains(e.target as Node)) {
+        setActorDropdownOpen(false)
+      }
+    }
+    if (actorDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+      return () => document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [actorDropdownOpen])
+
   const actors = Array.from(new Set(auditLogs.map((log: { actor: string }) => log.actor)))
 
-  const filtered = auditLogs.filter((log: { actor: string; action: string; time: string }) => {
+  const filtered = auditLogs.filter((log: { actor: string; action: string; time: string; createdAt?: string }) => {
     if (actorFilter !== "All" && log.actor !== actorFilter) return false
+    if (categoryFilter !== "All" && getCategory(log.action) !== categoryFilter) return false
     if (search && !log.action.toLowerCase().includes(search.toLowerCase())) return false
-    if (dateFrom) {
-      const logDate = log.time.slice(0, 10)
-      if (logDate < dateFrom) return false
-    }
-    if (dateTo) {
-      const logDate = log.time.slice(0, 10)
-      if (logDate > dateTo) return false
+    if (dateFrom || dateTo) {
+      const logDateStr = getLogDateStr(log)
+      if (logDateStr) {
+        if (dateFrom && logDateStr < dateFrom) return false
+        if (dateTo && logDateStr > dateTo) return false
+      }
     }
     return true
   })
+
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      const da = getLogDateStr(a)
+      const db = getLogDateStr(b)
+      if (!da && !db) return 0
+      if (!da) return 1
+      if (!db) return -1
+      return sortOrder === "newest" ? db.localeCompare(da) : da.localeCompare(db)
+    })
+  }, [filtered, sortOrder])
 
   const calendarGrid = useMemo(() => buildCalendarGrid(calYear, calMonth), [calYear, calMonth])
 
@@ -167,19 +236,71 @@ export function AuditModule({ model }: PortalModuleProps) {
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Filter className="size-4 text-muted-foreground" />
-        {actors.length > 1 ? (
-          <Select value={actorFilter} onValueChange={setActorFilter}>
-            <SelectTrigger className="h-8 w-44 text-xs">
-              <SelectValue placeholder="Filter by actor" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">All Actors</SelectItem>
-              {actors.map((actor: string) => (
-                <SelectItem key={actor} value={actor}>{actor}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : null}
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="h-8 w-40 text-xs">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            {CATEGORIES.map((cat) => (
+              <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="relative" ref={actorDropdownRef}>
+          <button
+            type="button"
+            onClick={() => { setActorDropdownOpen((o) => !o); if (!actorDropdownOpen) setActorSearch("") }}
+            className="flex h-8 w-44 items-center justify-between rounded-xl border border-border bg-white px-3 text-xs text-black shadow-sm transition-colors hover:bg-slate-50 dark:bg-[#0f1b2b] dark:text-white dark:hover:bg-secondary"
+          >
+            <span className={cn("truncate", actorFilter !== "All" ? "font-medium text-black dark:text-white" : "text-muted-foreground")}>
+              {actorFilter !== "All" ? actorFilter : "All Actors"}
+            </span>
+            <ChevronDown className="ml-1 size-3.5 shrink-0 opacity-70" />
+          </button>
+          {actorDropdownOpen && (
+            <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-lg border border-border bg-white text-black shadow-2xl shadow-blue-950/10 dark:bg-[#0f1b2b] dark:text-white dark:shadow-black/40 overflow-hidden">
+              <div className="p-1.5">
+                <Input
+                  placeholder="Search actors..."
+                  value={actorSearch}
+                  onChange={(e) => setActorSearch(e.target.value)}
+                  className="h-7 text-xs"
+                  autoFocus
+                />
+              </div>
+              <ScrollArea className="max-h-48">
+                <div className="p-1 pt-0">
+                  {actors
+                    .filter((a) => a.toLowerCase().includes(actorSearch.toLowerCase()))
+                    .map((actor) => (
+                      <button
+                        key={actor}
+                        type="button"
+                        onClick={() => { setActorFilter(actor); setActorDropdownOpen(false); setActorSearch("") }}
+                        className="flex w-full items-center rounded-md px-2 py-1.5 text-xs text-black hover:bg-slate-100 dark:text-white dark:hover:bg-[#123768]"
+                      >
+                        <Check className={cn("mr-2 size-3 shrink-0", actorFilter === actor ? "opacity-100" : "opacity-0")} />
+                        <span className="truncate">{actor}</span>
+                      </button>
+                    ))}
+                  {actors.filter((a) => a.toLowerCase().includes(actorSearch.toLowerCase())).length === 0 && (
+                    <p className="px-2 py-4 text-center text-xs text-muted-foreground">No actors found</p>
+                  )}
+                </div>
+              </ScrollArea>
+              <div className="border-t border-border p-1">
+                <button
+                  type="button"
+                  onClick={() => { setActorFilter("All"); setActorDropdownOpen(false); setActorSearch("") }}
+                  className="flex w-full items-center rounded-md px-2 py-1.5 text-xs text-black hover:bg-slate-100 dark:text-white dark:hover:bg-[#123768]"
+                >
+                  <Check className={cn("mr-2 size-3 shrink-0", actorFilter === "All" ? "opacity-100" : "opacity-0")} />
+                  All Actors
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-1">
           <CalendarDays className="size-3.5 text-muted-foreground" />
           <button
@@ -215,6 +336,16 @@ export function AuditModule({ model }: PortalModuleProps) {
             </button>
           </Tooltip>
         )}
+        <Tooltip content={sortOrder === "newest" ? "Newest first" : "Oldest first"}>
+          <button
+            type="button"
+            onClick={() => setSortOrder((o) => o === "newest" ? "oldest" : "newest")}
+            className="flex h-8 items-center gap-1 rounded-xl border border-border bg-card px-3 text-xs text-muted-foreground transition-colors hover:bg-muted"
+          >
+            {sortOrder === "newest" ? <ArrowDownAZ className="size-3.5" /> : <ArrowUpAZ className="size-3.5" />}
+            {sortOrder === "newest" ? "Newest" : "Oldest"}
+          </button>
+        </Tooltip>
       </div>
 
       <Dialog open={showCalendar} onOpenChange={(open) => { if (!open) setShowCalendar(false) }}>
@@ -276,13 +407,13 @@ export function AuditModule({ model }: PortalModuleProps) {
               No audit logs found.
             </p>
             <p className="text-xs text-muted-foreground/60">
-              {search || actorFilter !== "All" || dateFrom || dateTo
+              {search || actorFilter !== "All" || categoryFilter !== "All" || dateFrom || dateTo
                 ? "Try adjusting your filters."
                 : "Activity will appear here as actions are performed."}
             </p>
           </div>
         ) : (
-          filtered.map((log: { id: string; actor: string; action: string; time: string }, index: number) => (
+          sorted.map((log: { id: string; actor: string; action: string; time: string }, index: number) => (
             <div
               key={log.id}
               className={cn(
