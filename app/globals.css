@@ -649,6 +649,86 @@
     color: rgb(255 255 255 / 0.6);
   }
 
+  .login-shell {
+    background:
+      linear-gradient(135deg, rgb(244 249 255 / 0.95) 0%, rgb(225 237 253 / 0.95) 50%, rgb(236 244 255 / 0.95) 100%),
+      repeating-linear-gradient(90deg, rgb(41 107 194 / 0.035) 0 1px, transparent 1px 36px);
+  }
+
+  .login-shell::before,
+  .login-shell::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    border: 28px solid rgb(32 120 238 / 0.13);
+    border-radius: 999px;
+  }
+
+  .login-shell::before {
+    top: -88px;
+    right: -70px;
+    width: 220px;
+    height: 220px;
+  }
+
+  .login-shell::after {
+    bottom: -96px;
+    left: -84px;
+    width: 200px;
+    height: 200px;
+    border-color: rgb(64 152 225 / 0.12);
+  }
+
+  .login-circuit {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0.26;
+    background:
+      linear-gradient(rgb(47 109 183 / 0.22), rgb(47 109 183 / 0.22)) 0 18px / 150px 1px no-repeat,
+      linear-gradient(rgb(47 109 183 / 0.18), rgb(47 109 183 / 0.18)) 0 74px / 190px 1px no-repeat,
+      linear-gradient(90deg, rgb(47 109 183 / 0.2), rgb(47 109 183 / 0.2)) 54px 18px / 1px 58px no-repeat,
+      linear-gradient(90deg, rgb(47 109 183 / 0.18), rgb(47 109 183 / 0.18)) 148px 74px / 1px 72px no-repeat,
+      radial-gradient(circle, rgb(47 109 183 / 0.2) 0 3px, transparent 3px) 150px 15px / 14px 14px no-repeat,
+      radial-gradient(circle, rgb(47 109 183 / 0.18) 0 3px, transparent 3px) 190px 71px / 14px 14px no-repeat,
+      linear-gradient(135deg, transparent 42%, rgb(47 109 183 / 0.18) 43% 45%, transparent 46%) 0 0 / 220px 150px no-repeat;
+  }
+
+  .login-circuit-left {
+    left: -6px;
+    top: 18px;
+    width: 260px;
+    height: 170px;
+  }
+
+  .login-circuit-right {
+    right: 28px;
+    bottom: 36px;
+    width: 260px;
+    height: 170px;
+    transform: rotate(180deg);
+  }
+
+  .login-halftone {
+    position: absolute;
+    pointer-events: none;
+    width: 220px;
+    height: 240px;
+    opacity: 0.34;
+    background-image: radial-gradient(circle, rgb(48 109 190 / 0.25) 1px, transparent 1.5px);
+    background-size: 9px 9px;
+    mask-image: linear-gradient(135deg, transparent 0%, black 22%, black 72%, transparent 100%);
+  }
+
+  .login-halftone-top {
+    top: 0;
+    right: 70px;
+  }
+
+  .login-halftone-bottom {
+    bottom: 18px;
+    left: 0;
+  }
+
   .login-terminal {
     display: grid;
     gap: 0.55rem;
@@ -801,6 +881,34 @@
   }
 
   @media (max-width: 640px) {
+    .login-shell::before {
+      top: -118px;
+      right: -118px;
+    }
+
+    .login-shell::after {
+      bottom: -124px;
+      left: -124px;
+    }
+
+    .login-circuit {
+      opacity: 0.22;
+    }
+
+    .login-circuit-left {
+      left: -48px;
+      top: 10px;
+    }
+
+    .login-circuit-right {
+      right: -72px;
+      bottom: 8px;
+    }
+
+    .login-halftone {
+      opacity: 0.26;
+    }
+
     .login-terminal {
       justify-items: center;
       gap: 0.4rem;

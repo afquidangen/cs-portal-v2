@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, type FormEvent } from "react"
-import { Eye, EyeOff, Lock, Mail } from "lucide-react"
+import { ArrowRight, Database, Eye, EyeOff, Lock, Mail } from "lucide-react"
 
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardHeader,
   CardTitle,
 } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -82,95 +81,111 @@ export function LoginPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#f7fbff]">
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,#fcfeff_0%,#f4fbff_52%,#ffffff_100%)]" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-[linear-gradient(180deg,rgba(189,231,255,0.36),transparent)]" />
-      <div className="pointer-events-none absolute bottom-0 left-0 h-48 w-full bg-[linear-gradient(0deg,rgba(234,247,255,0.72),transparent)]" />
+    <main className="login-shell relative min-h-screen overflow-hidden bg-[#eaf2ff] text-[#08142c]">
+      <div className="login-circuit login-circuit-left" />
+      <div className="login-circuit login-circuit-right" />
+      <div className="login-halftone login-halftone-top" />
+      <div className="login-halftone login-halftone-bottom" />
 
-      <div className="relative mx-auto grid min-h-dvh w-full max-w-6xl items-center gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,430px)] lg:gap-14 lg:px-8">
-        <section className="flex flex-col items-center text-center lg:items-start lg:text-left">
+      <div className="relative z-10 mx-auto grid min-h-dvh w-full max-w-5xl items-center gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(340px,380px)_1px_minmax(340px,380px)] lg:justify-center lg:gap-10 lg:px-8">
+        <section className="flex flex-col items-center text-center">
           <Image
             src={portalLogo}
             alt="ComScite Portal logo"
-            width={260}
-            height={260}
-            className="h-auto w-36 max-w-[62vw] object-contain drop-shadow-[0_20px_42px_rgb(24_71_159_/_0.18)] sm:w-48 lg:w-56"
+            width={340}
+            height={340}
+            className="h-auto w-44 max-w-[68vw] object-contain drop-shadow-[0_24px_38px_rgb(28_96_190_/_0.22)] sm:w-56 lg:w-72"
             priority
           />
-          <h1 className="login-terminal mt-6" aria-label="ComScite Portal startup status">
-            <span className="login-terminal-line login-terminal-line-command">
-              $ npm run start:comscite
-            </span>
-            <span className="login-terminal-line login-terminal-line-welcome">
-              Welcome to ComScite Portal v26      </span>
-            <span className="login-terminal-line login-terminal-line-quote">
-              Code, Connect, Conquer
-            </span>
-            <span className="login-terminal-line login-terminal-line-status">
-              Status: Online | Environment: Ready
-            </span>
-          </h1>
+          <div className="mt-6 h-px w-44 bg-[linear-gradient(90deg,transparent,#2a73cf,transparent)] sm:w-52" />
+          <p className="mt-5 text-base font-bold tracking-normal text-[#184f9e] sm:text-lg">
+            Code, Connect, Conquer
+          </p>
+
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-0 overflow-hidden rounded-lg border border-white/70 bg-white/58 text-xs font-bold text-[#164a95] shadow-[0_10px_26px_rgb(38_93_168_/_0.1)] backdrop-blur-md sm:text-sm">
+            <div className="flex h-9 items-center gap-2 px-3">
+              <span className="size-2 rounded-full bg-[#1ecb96] shadow-[0_0_0_4px_rgb(30_203_150_/_0.14)]" />
+              Online
+            </div>
+            <div className="h-5 w-px bg-[#bfd1e8]" />
+            <div className="flex h-9 items-center gap-2 px-3">
+              <Database className="size-3.5 text-[#1b68cf]" />
+              Production
+            </div>
+            <div className="h-5 w-px bg-[#bfd1e8]" />
+            <div className="flex h-9 items-center px-3">v26</div>
+          </div>
         </section>
 
-        <Card className="w-full overflow-hidden rounded-lg border border-[#d7e8fb] bg-white/95 text-[#071224] shadow-[0_18px_50px_rgb(24_71_159_/_0.12)] backdrop-blur">
-          <CardHeader className="space-y-3 border-b border-[#e3eef9] px-5 py-5 sm:px-6">
-            <div className="space-y-1">
-              <CardTitle className="text-2xl font-semibold tracking-tight text-[#071224]">Sign In</CardTitle>
-              <CardDescription className="text-sm font-medium text-[#5f7187]">
-                Greetings, CStizen.
-              </CardDescription>
-            </div>
-          </CardHeader>
+        <div className="hidden h-[28rem] w-px bg-[#c8d5e8] lg:block" />
+
+        <Card className="mx-auto w-full max-w-[380px] overflow-hidden rounded-2xl border border-white/70 bg-white/80 text-[#08142c] shadow-[0_22px_56px_rgb(44_93_151_/_0.16)] backdrop-blur-xl">
           <CardContent className="px-5 py-5 sm:px-6 sm:py-6">
-            <form onSubmit={handleLogin} className="space-y-4">
+            <div className="flex items-center gap-3 border-b border-[#d9e4f1] pb-5">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#e6eef9] text-[#176ac9] shadow-inner">
+                <Lock className="size-6 stroke-[2.2]" />
+              </div>
+              <div className="min-w-0">
+                <CardTitle className="text-2xl font-extrabold leading-tight tracking-normal text-[#08142c]">
+                  Greetings, CStizen.
+                </CardTitle>
+                <CardDescription className="mt-1 text-sm font-semibold leading-5 text-[#68778f]">
+                  Sign in to continue to{" "}
+                  <span className="block font-extrabold text-[#145fb9] sm:inline">ComScite Portal</span>
+                </CardDescription>
+              </div>
+            </div>
+
+            <form onSubmit={handleLogin} className="mt-6 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-[#1f3350]">Email</Label>
+                <Label htmlFor="email" className="text-xs font-extrabold text-[#172741] sm:text-sm">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#5f7c99]" />
+                  <Mail className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[#67778e]" />
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="you@gmail.com"
-                    className="h-11 rounded-md border-[#d7e8fb] bg-white pl-9 text-sm text-[#071224] shadow-sm placeholder:text-[#7d94ab] focus-visible:border-[#1f6fe5] focus-visible:ring-[#1f6fe5]/20"
+                    className="h-12 rounded-lg border-[#d8e0ea] bg-white/70 pl-11 text-sm font-semibold text-[#08142c] shadow-[0_8px_18px_rgb(72_101_140_/_0.08)] placeholder:text-[#738197] focus-visible:border-[#1f6fe5] focus-visible:ring-[#1f6fe5]/20"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-[#1f3350]">Password</Label>
+                <Label htmlFor="password" className="text-xs font-extrabold text-[#172741] sm:text-sm">Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#5f7c99]" />
+                  <Lock className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[#67778e]" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Enter test password"
-                    className="h-11 rounded-md border-[#d7e8fb] bg-white pl-9 pr-10 text-sm text-[#071224] shadow-sm placeholder:text-[#7d94ab] focus-visible:border-[#1f6fe5] focus-visible:ring-[#1f6fe5]/20"
+                    placeholder="Enter your password"
+                    className="h-12 rounded-lg border-[#d8e0ea] bg-white/70 pl-11 pr-11 text-sm font-semibold text-[#08142c] shadow-[0_8px_18px_rgb(72_101_140_/_0.08)] placeholder:text-[#738197] focus-visible:border-[#1f6fe5] focus-visible:ring-[#1f6fe5]/20"
                     required
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5f7c99] hover:text-[#071224]"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-[#67778e] transition hover:bg-[#e6eef9] hover:text-[#08142c]"
                     onClick={() => setShowPassword((p) => !p)}
                     tabIndex={-1}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-3 text-sm">
-                <label className="flex items-center gap-2 text-[#5f7187]">
-                  <Checkbox id="remember" />
+              <div className="flex items-center justify-between gap-3 text-xs font-semibold sm:text-sm">
+                <label className="flex items-center gap-2 text-[#5f6675]">
+                  <Checkbox id="remember" className="size-4 rounded-md border-[#b8c4d4] bg-white" />
                   <span>Remember me</span>
                 </label>
                 <button
                   type="button"
-                  className="font-semibold text-[#18479f] hover:text-[#071224] disabled:opacity-50"
+                  className="font-extrabold text-[#164c9c] transition hover:text-[#08142c] disabled:opacity-50"
                   disabled={forgotLoading || forgotSent}
                   onClick={async () => {
                     if (!email.trim()) {
@@ -205,11 +220,19 @@ export function LoginPage() {
 
               <Button
                 type="submit"
-                className="h-11 w-full rounded-md bg-[#18479f] font-semibold text-white shadow-sm transition hover:bg-[#1f6fe5]"
+                className="mt-1 h-12 w-full rounded-lg bg-[linear-gradient(135deg,#0e48b8_0%,#2078ee_100%)] text-sm font-extrabold text-white shadow-[0_14px_28px_rgb(22_104_207_/_0.25)] transition hover:brightness-105"
                 disabled={loading}
               >
-                {loading ? "Signing in..." : "Login"}
+                {loading ? (
+                  "Signing in..."
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight className="size-4" />
+                  </>
+                )}
               </Button>
+
             </form>
           </CardContent>
         </Card>
