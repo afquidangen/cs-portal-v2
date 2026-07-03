@@ -75,6 +75,7 @@ export function UsersModule({ model }: PortalModuleProps) {
     handleChangeCurriculum,
     handleAddGradeHistory,
     handleRemoveGradeHistory,
+    handleDeleteCompletedGrade,
     handleUpdateGradeHistory,
     newUser,
     query,
@@ -101,6 +102,7 @@ export function UsersModule({ model }: PortalModuleProps) {
   const [permanentDeleteUserId, setPermanentDeleteUserId] = useState<string | null>(null)
   const [toggleUserId, setToggleUserId] = useState<string | null>(null)
   const [deleteAllConfirm, setDeleteAllConfirm] = useState(false)
+  const [deleteGradeConfirm, setDeleteGradeConfirm] = useState<{ userId: string; index: number; subjectCode: string; subjectName: string } | null>(null)
   const [batchLoading, setBatchLoading] = useState<string | null>(null)
   const [duplicateConfirm, setDuplicateConfirm] = useState<{ existingUser: UserRecord; message: string } | null>(null)
   const [changeCurriculumUser, setChangeCurriculumUser] = useState<{
@@ -1318,7 +1320,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                                       variant="ghost"
                                       className="size-8 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50"
                                       type="button"
-                                      onClick={() => handleRemoveGradeHistory(student.id, idx)}
+                                      onClick={() => setDeleteGradeConfirm({ userId: student.id, index: idx, subjectCode: entry.subjectCode, subjectName: entry.subjectName })}
                                     >
                                       <Trash2 className="size-4" />
                                     </Button>
@@ -2058,6 +2060,43 @@ export function UsersModule({ model }: PortalModuleProps) {
             <Button variant="destructive" onClick={handleDeleteAll}>
               <Trash2 className="mr-1.5 size-4" />
               Yes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Delete Grade History Confirmation ── */}
+      <Dialog
+        open={!!deleteGradeConfirm}
+        onOpenChange={(o) => !o && setDeleteGradeConfirm(null)}
+      >
+        <DialogContent className="w-[95vw] sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-foreground">Delete Grade Record?</DialogTitle>
+            <DialogDescription className="pt-1 text-muted-foreground">
+              <span className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" />
+                This will permanently remove the grade entry for{" "}
+                <strong>{deleteGradeConfirm?.subjectName ?? deleteGradeConfirm?.subjectCode}</strong>{" "}
+                from the student's grade history and the grade registry.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-2 gap-2">
+            <DialogClose asChild>
+              <Button variant="ghost">Cancel</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!deleteGradeConfirm) return
+                handleRemoveGradeHistory(deleteGradeConfirm.userId, deleteGradeConfirm.index)
+                handleDeleteCompletedGrade(deleteGradeConfirm.userId, deleteGradeConfirm.subjectCode)
+                setDeleteGradeConfirm(null)
+              }}
+            >
+              <Trash2 className="mr-1.5 size-4" />
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>

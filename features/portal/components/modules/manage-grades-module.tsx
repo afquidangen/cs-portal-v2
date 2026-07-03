@@ -80,7 +80,7 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
   useEffect(() => {
     if (selectedSubject && subjectSections.length > 0) {
       const schedule = visibleSchedules.find(
-        (s) => s.subject === selectedSubject && s.section === (selectedSection || subjectSections[0])
+        (s) => s.subject === selectedSubject &&         s.section === selectedSection
       )
       if (schedule) setClassId(schedule.id)
     }
@@ -126,26 +126,6 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
       })
       .catch(() => {})
   }, [classId, selectedSubject, curricula, setGrades])
-
-  useEffect(() => {
-    if (!selectedSubject || selectedSection !== null || !classId) return
-    const otherIds = subjectSections
-      .map((section) => scheduleBySection.get(section))
-      .filter((cid): cid is string => !!cid && cid !== classId)
-    for (const cid of otherIds) {
-      fetch(`/api/portal/grades/class/${cid}`)
-        .then((r) => r.json())
-        .then((json) => {
-          if (json.data?.grades) {
-            setGrades((prev) => {
-              const filtered = prev.filter((g) => g.classId !== cid)
-              return [...filtered, ...json.data.grades]
-            })
-          }
-        })
-        .catch(() => {})
-    }
-  }, [selectedSubject, selectedSection, classId, subjectSections, scheduleBySection, setGrades])
 
   const prevActiveModuleRef = useRef(model.activeModule)
 
@@ -355,7 +335,14 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
                 </p>
                 <Select
                   value={selectedSubject}
-                  onValueChange={(v) => { setSelectedSubject(v); setSelectedSection(null) }}
+                  onValueChange={(v) => {
+                  setSelectedSubject(v)
+                  const firstSection = visibleSchedules
+                    .filter((s) => s.subject === v && (!selectedSemesterId || s.semesterId === selectedSemesterId))
+                    .map((s) => s.section)
+                    .find(Boolean)
+                  setSelectedSection(firstSection ?? null)
+                }}
                 >
                   <SelectTrigger className="h-10 w-full rounded-md border-slate-200 bg-white">
                     <SelectValue placeholder={semesterSubjects.length === 0 ? "No subjects assigned" : "Select a subject..."} />
@@ -374,14 +361,13 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
                   <UsersRound className="size-4" /> Section
                 </p>
                 <Select
-                  value={selectedSection ?? "all"}
-                  onValueChange={(v) => setSelectedSection(v === "all" ? null : v)}
+                  value={selectedSection ?? ""}
+                  onValueChange={(v) => setSelectedSection(v)}
                 >
                   <SelectTrigger className="h-10 w-full rounded-md border-slate-200 bg-white">
                     <SelectValue placeholder="Select section..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Sections ({subjectSections.length})</SelectItem>
                     {subjectSections.map((s) => (
                       <SelectItem key={s} value={s}>Section {s}</SelectItem>
                     ))}
@@ -428,81 +414,28 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
             </button>
           </div>
           {egradesTab === "gradesheet" ? (
-            selectedSection === null ? (
-              <div className="space-y-10">
-                {subjectSections.map((section, idx) => {
-                  const sectionClassId = scheduleBySection.get(section)
-                  if (!sectionClassId) return null
-                  const sectionData = gridData
-                    .filter((row) => row.section === section)
-                    .map((row, i) => ({ ...row, no: i + 1 }))
-                  if (sectionData.length === 0) return null
-                  const sectionStudentIds = new Set(
-                    subjectRoster.filter((s) => s.section === section).map((s) => s.id)
-                  )
-                  const sectionGradeMap = new Map(
-                    [...gradeMap.entries()].filter(([id]) => sectionStudentIds.has(id))
-                  )
-                  return (
-                    <div key={section}>
-                      {idx > 0 && (
-                        <div className="relative">
-                          <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-border" />
-                          </div>
-                        </div>
-                      )}
-                      <SpreadsheetGrid
-                        key={sectionClassId}
-                        model={model}
-                        selectedSubject={selectedSubject}
-                        classId={sectionClassId}
-                        gradeColumns={gradeColumns}
-                        setGradeColumns={setGradeColumns}
-                        gridData={sectionData}
-                        gradeMap={sectionGradeMap}
-                        setGrades={setGrades}
-                        roster={roster}
-                        subjectRoster={subjectRoster.filter((s) => s.section === section)}
-                        studentQuery={studentQuery}
-                        setStudentQuery={setStudentQuery}
-                        computedOnce={computedOnce}
-                        setComputedOnce={setComputedOnce}
-                        darkMode={darkMode}
-                        assessments={assessments}
-                        gradingScheme={gradingScheme}
-                        activeTab={activeTab}
-                        setActiveTab={setActiveTab}
-                        section={null}
-                      />
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <SpreadsheetGrid
-                model={model}
-                selectedSubject={selectedSubject}
-                classId={classId}
-                gradeColumns={gradeColumns}
-                setGradeColumns={setGradeColumns}
-                gridData={gridData}
-                gradeMap={gradeMap}
-                setGrades={setGrades}
-                roster={roster}
-                subjectRoster={subjectRoster}
-                studentQuery={studentQuery}
-                setStudentQuery={setStudentQuery}
-                computedOnce={computedOnce}
-                setComputedOnce={setComputedOnce}
-                darkMode={darkMode}
-                assessments={assessments}
-                gradingScheme={gradingScheme}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                section={selectedSection}
-              />
-            )
+            <SpreadsheetGrid
+              model={model}
+              selectedSubject={selectedSubject}
+              classId={classId}
+              gradeColumns={gradeColumns}
+              setGradeColumns={setGradeColumns}
+              gridData={gridData}
+              gradeMap={gradeMap}
+              setGrades={setGrades}
+              roster={roster}
+              subjectRoster={subjectRoster}
+              studentQuery={studentQuery}
+              setStudentQuery={setStudentQuery}
+              computedOnce={computedOnce}
+              setComputedOnce={setComputedOnce}
+              darkMode={darkMode}
+              assessments={assessments}
+              gradingScheme={gradingScheme}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              section={selectedSection}
+            />
           ) : (
             <GradingWorkbookTab
               classId={classId}

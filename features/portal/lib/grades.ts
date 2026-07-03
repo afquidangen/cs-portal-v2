@@ -92,7 +92,7 @@ export function computeDeansList(
   const reasons: string[] = []
 
   const filtered = grades.filter((g) => {
-    return g.transmutedGrade !== undefined && g.released === true
+    return g.transmutedGrade !== undefined && g.finalReleased === true
   })
 
   console.log(`[DeansList] Processing ${filtered.length} subjects with released grades`)

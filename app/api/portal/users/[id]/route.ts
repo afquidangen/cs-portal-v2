@@ -2,6 +2,9 @@ import { usersRepository } from "@/features/portal/repositories/users.repository
 import { rosterRepository } from "@/features/portal/repositories/roster.repository"
 import { gradesRepository } from "@/features/portal/repositories/grades.repository"
 import { facultyRepository } from "@/features/portal/repositories/faculty.repository"
+import { schedulesRepository } from "@/features/portal/repositories/schedules.repository"
+import { gradeColumnRepository } from "@/features/portal/repositories/grade-column.repository"
+import { assessmentRepository } from "@/features/portal/repositories/assessment.repository"
 import { UserModel } from "@/lib/models"
 import { success, error, notFound } from "@/lib/api-response"
 import { uploadProfilePhoto, destroyFile } from "@/lib/cloudinary"
@@ -85,6 +88,21 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
+
+    const user = await usersRepository.findById(id) as Record<string, unknown> | null
+    if (user?.role === "faculty") {
+      const schedules = await schedulesRepository.findAll({ instructor: user.name as string }) as Record<string, unknown>[]
+      const classIds = schedules.map((s) => s.id as string)
+      if (classIds.length > 0) {
+        await Promise.all([
+          gradeColumnRepository.deleteMany({ classId: { $in: classIds } }).catch(() => {}),
+          assessmentRepository.deleteMany({ classId: { $in: classIds } }).catch(() => {}),
+          gradesRepository.softDelete({ classId: { $in: classIds } }).catch(() => {}),
+          schedulesRepository.deleteMany({ id: { $in: classIds } }).catch(() => {}),
+        ])
+      }
+    }
+
     const deleted = await usersRepository.softDelete({ id })
     if (!deleted) return notFound("User")
     await Promise.all([

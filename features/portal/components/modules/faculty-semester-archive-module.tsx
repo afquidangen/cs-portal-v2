@@ -24,8 +24,6 @@ function getSemesterGrades(
   grades: GradeRecord[],
   schedules: ScheduleItem[]
 ): GradeRecord[] {
-  const direct = grades.filter((g) => g.semesterId === semester.id)
-  if (direct.length > 0) return direct
   const pairs = new Set(
     schedules
       .filter((s) => s.semesterId === semester.id)
@@ -44,7 +42,7 @@ export function FacultySemesterArchiveModule({ model }: PortalModuleProps) {
       .map((sem) => {
         const semSchedules = getSemesterSchedules(sem, classSchedules, instructorName)
         if (semSchedules.length === 0) return null
-        const semGrades = getSemesterGrades(sem, grades, classSchedules)
+        const semGrades = getSemesterGrades(sem, grades, semSchedules)
         const sections = [...new Set(semSchedules.map((s) => s.section).filter(Boolean))]
         return { semester: sem, schedules: semSchedules, grades: semGrades, sections }
       })

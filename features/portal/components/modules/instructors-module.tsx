@@ -59,7 +59,7 @@ function getInitials(name: string) {
 }
 
 export function InstructorsModule({ model }: PortalModuleProps) {
-  const { faculty, users, visibleSchedules, deleteFacultyMember, syncFacultyFromUsers, role } = model
+  const { faculty, users, visibleSchedules, deleteFacultyMember, syncFacultyFromUsers, updateFacultyStatus, role } = model
 
   const [enrollmentFilter, setEnrollmentFilter] = useState("All")
   const [statusFilter, setStatusFilter] = useState<AvailabilityStatus | "All">("All")
@@ -230,10 +230,23 @@ export function InstructorsModule({ model }: PortalModuleProps) {
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1.5">
-                      <span className={cn("inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold", statusColor.className)}>
-                        <StatusIcon className="size-3.5" />
-                        {member.status}
-                      </span>
+                      {role === "admin" ? (
+                        <select
+                          value={member.status}
+                          onChange={(e) => updateFacultyStatus(member.id, e.target.value as AvailabilityStatus)}
+                          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="Available">Available</option>
+                          <option value="In Class">In Class</option>
+                          <option value="Consultation Only">Consultation Only</option>
+                          <option value="Out of Office">Out of Office</option>
+                        </select>
+                      ) : (
+                        <span className={cn("inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold", statusColor.className)}>
+                          <StatusIcon className="size-3.5" />
+                          {member.status}
+                        </span>
+                      )}
                       {member.statusUpdatedAt ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-400 whitespace-nowrap">
                           <Clock className="size-3" />

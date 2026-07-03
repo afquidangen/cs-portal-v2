@@ -16,7 +16,7 @@ export type DeansListEvaluation = {
 export function evaluateDeansList(
   grades: Array<{
     transmutedGrade?: number | null
-    released?: boolean | null
+    finalReleased?: boolean | null
     remarks?: string | null
     finalRemarks?: string | null
     midtermRemarks?: string | null
@@ -28,8 +28,13 @@ export function evaluateDeansList(
 ): DeansListEvaluation {
   const reasons: string[] = []
 
+  const anyUnreleased = grades.length > 0 && grades.some((g) => g.finalReleased !== true)
+  if (anyUnreleased) {
+    return { isQualified: false, gwa: null, reasons: ["Not all grades have been released yet"] }
+  }
+
   const filtered = grades.filter(
-    (g) => g.transmutedGrade !== undefined && g.transmutedGrade !== null && g.released === true
+    (g) => g.transmutedGrade !== undefined && g.transmutedGrade !== null
   )
 
   console.log(`[DeansList:S] Processing ${filtered.length} subjects with released grades`)

@@ -668,7 +668,8 @@ export function RoleDashboard({ role }: { role: Role }) {
   })
   const facultyMember = model.faculty.find(
     (member: { email: string; name: string }) =>
-      member.email === model.profile.email || member.name === model.profile.name
+      member.email?.toLowerCase().trim() === model.profile.email?.toLowerCase().trim() ||
+      member.name?.toLowerCase().trim() === model.profile.name?.toLowerCase().trim()
   )
   const facultyUser = model.users.find(
     (user: { email: string; name: string; role: string }) =>
@@ -1743,6 +1744,8 @@ export function RoleDashboard({ role }: { role: Role }) {
                                             model.setMyFacultyStatus(status)
                                             if (facultyMember) {
                                               model.updateFacultyStatus(facultyMember.id, status, model.myFacultyNotes)
+                                            } else {
+                                              toast.error("Faculty record not found. Sync faculty from Users first.")
                                             }
                                           }}
                                           className={cn(

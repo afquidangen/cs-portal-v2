@@ -202,7 +202,9 @@ export function OverviewModule({ model }: PortalModuleProps) {
       .filter((item) => item.day.split(/\s+/).includes(shortToday))
       .sort((a, b) => a.time.localeCompare(b.time))
     const facultyMember = model.faculty.find(
-      (member) => member.email === model.profile.email || member.name === model.profile.name
+      (member) =>
+        member.email?.toLowerCase().trim() === model.profile.email?.toLowerCase().trim() ||
+        member.name?.toLowerCase().trim() === model.profile.name?.toLowerCase().trim()
     )
     const facultyUser = model.users.find(
       (user) => user.role === "faculty" && (user.email === model.profile.email || user.name === model.profile.name)
@@ -414,7 +416,8 @@ export function OverviewModule({ model }: PortalModuleProps) {
                           type="button"
                           onClick={() => {
                             model.setMyFacultyStatus(status)
-                            if (facultyMember) model.updateFacultyStatus(facultyMember.id, status, model.myFacultyNotes)
+                            if (!facultyMember) return
+                            model.updateFacultyStatus(facultyMember.id, status, model.myFacultyNotes)
                           }}
                           className={cn(
                             "rounded-md border px-3 py-1.5 text-xs font-semibold transition",

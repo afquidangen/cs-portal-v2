@@ -53,7 +53,7 @@ export async function PUT(
     }
     const results = []
     for (const grade of body.grades) {
-      const { __v: _v, _id, id: _clientId, ...upsertData } = grade
+      const { __v: _v, _id, ...upsertData } = grade
       if (upsertData.scores) {
         const cleanedScores: Record<string, number> = {}
         for (const [key, value] of Object.entries(upsertData.scores as Record<string, unknown>)) {
@@ -69,14 +69,9 @@ export async function PUT(
         upsertData.remarks = midtermRemarks
       }
 
-      const updated = await gradesRepository.upsert(
-        {
-          studentId: grade.studentId,
-          code: grade.code,
-          semesterId: grade.semesterId || null,
-        },
-        { ...upsertData, classId }
-      )
+      const filter: Record<string, unknown> = { studentId: grade.studentId, code: grade.code }
+      if (grade.semesterId) filter.semesterId = grade.semesterId
+      const updated = await gradesRepository.upsert(filter, { ...upsertData, classId })
       results.push(updated)
     }
 

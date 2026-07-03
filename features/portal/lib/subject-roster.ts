@@ -96,6 +96,7 @@ export function getSubjectRoster(params: {
   )
 
   const result: SubjectRosterEntry[] = []
+  const seen = new Set<string>()
 
   for (const g of grades) {
     if (g.deletedAt) continue
@@ -105,6 +106,8 @@ export function getSubjectRoster(params: {
     ) continue
 
     if (passedIrregularIds.has(g.studentId)) continue
+    if (seen.has(g.studentId)) continue
+    seen.add(g.studentId)
 
     const user = users.find((u) => u.id === g.studentId)
     result.push({

@@ -531,7 +531,107 @@ export function GradesModule({ model }: PortalModuleProps) {
     }
   }, [publishedDl, deansListData])
 
-  const allGradesReleased = visibleGrades.length > 0 && visibleGrades.every((g) => g.finalReleased)
+  const allGradesReleased = useMemo(() => {
+    if (visibleGrades.length === 0) return false
+    if (!visibleGrades.every((g) => g.finalReleased)) return false
+
+    const active = model.activeSemester
+    if (!active) return true
+
+    const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
+    const activeSchedules = (model.classSchedules as ScheduleItem[])
+      .filter((s) => s.semesterId === active.id)
+
+    const studentSections = [
+      model.profileSection,
+      ...(model.roster as ClassStudent[])
+        .filter((r) => r.id === model.profile.id && r.enrolled)
+        .map((r) => r.section),
+    ].filter(Boolean)
+
+    const expectedCodes = new Set<string>()
+    for (const s of activeSchedules) {
+      const matchesSection = studentSections.some((sec) => s.section.includes(sec))
+      if (!matchesSection) continue
+      const code = normalize(s.subject.split(" - ")[0]?.trim() ?? s.subject)
+      expectedCodes.add(code)
+    }
+
+    const yearLevel = profileUser?.currentYearLevel ?? ""
+    const curriculum = (model.curricula as CurriculumRecord[])
+      .find((c) => c.id === profileUser?.curriculumId)
+    const curriculumTerm = curriculum?.terms.find(
+      (t) => t.year === yearLevel && t.semester === active.semester
+    )
+    if (curriculumTerm) {
+      for (const sub of curriculumTerm.subjects) {
+        expectedCodes.add(normalize(sub.code))
+      }
+    }
+
+    // Same finalized/retake filtering as visibleGrades
+    const finalizedStatuses = new Set(["passed", "failed", "inc", "dropped", "unofficial drop", "unofficial dropped"])
+    const gradeHistory = profileUser?.gradeHistory ?? []
+
+    const historyFinalizedCodes = new Set(
+      gradeHistory
+        .filter((h) => finalizedStatuses.has(h.remarks?.toLowerCase()))
+        .map((h) => normalize(h.subjectCode))
+    )
+    const gradesFinalizedCodes = new Set(
+      (model.allStudentGrades as GradeRecord[] ?? [])
+        .filter((g) => {
+          if (g.semesterId === active.id) return false
+          const r = (g.remarks || g.finalRemarks || "").toLowerCase()
+          return finalizedStatuses.has(r)
+        })
+        .map((g) => normalize(g.code))
+    )
+    const finalizedCodes = new Set([...historyFinalizedCodes, ...gradesFinalizedCodes])
+
+    const historyRetakeCodes = new Set(
+      gradeHistory
+        .filter((h) => {
+          const r = h.remarks?.toLowerCase()
+          return r !== "passed" && r !== undefined && finalizedStatuses.has(r)
+        })
+        .map((h) => normalize(h.subjectCode))
+    )
+    const gradesRetakeCodes = new Set(
+      (model.allStudentGrades as GradeRecord[] ?? [])
+        .filter((g) => {
+          if (g.semesterId === active.id) return false
+          const r = (g.remarks || g.finalRemarks || "").toLowerCase()
+          return r !== "passed" && finalizedStatuses.has(r)
+        })
+        .map((g) => normalize(g.code))
+    )
+    const retakeCodes = new Set(
+      [...historyRetakeCodes, ...gradesRetakeCodes].filter((code) =>
+        activeSchedules.some((s) => {
+          const sCode = normalize(s.subject.split(" - ")[0]?.trim() ?? "")
+          return sCode === code
+        })
+      )
+    )
+
+    const allStudentGradeRecords = [
+      ...(model.grades as GradeRecord[]),
+      ...(model.allStudentGrades as GradeRecord[] ?? []),
+    ].filter((g) => g.studentId === model.profile.id)
+
+    for (const code of expectedCodes) {
+      if (finalizedCodes.has(code) && !retakeCodes.has(code)) continue
+      const grade = allStudentGradeRecords.find((g) => normalize(g.code) === code)
+      if (!grade || !grade.finalReleased) return false
+    }
+
+    return true
+  }, [
+    visibleGrades, model.activeSemester, model.classSchedules,
+    model.grades, model.allStudentGrades, model.profile.id,
+    model.profileSection, model.roster, model.curricula, profileUser,
+  ])
 
   if (model.role === "faculty") {
     return <FacultyGradesPanel model={model} />
@@ -882,11 +982,6 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
   const subjectRoster = useMemo(() => {
     if (subjectSections.length === 0) return []
     const sectionSet = new Set(subjectSections)
-    const passedIds = new Set(
-      grades
-        .filter((g) => g.subject === selectedSubject && g.remarks === "Passed" && g.released)
-        .map((g) => g.studentId)
-    )
     const seen = new Set<string>()
     const students: Array<{
       id: string; name: string; section: string; enrolled: boolean;
@@ -896,7 +991,6 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
       if (g.deletedAt) continue
       if (g.subject !== selectedSubject) continue
       if (!sectionSet.has(g.section ?? "")) continue
-      if (passedIds.has(g.studentId)) continue
       if (seen.has(g.studentId)) continue
       const user = users.find((u) => u.id === g.studentId && u.role === "student" && !u.deletedAt)
       if (!user) continue

@@ -1923,6 +1923,7 @@ export function usePortalDashboardModel(role: Role) {
         grade.studentId === userId ? { ...grade, deletedAt: now } : grade
       )
     )
+    setFaculty((current) => current.filter((item) => item.id !== userId))
     syncApi("DELETE", `/api/portal/users/${userId}`).then(() =>
       toast.success(user ? `User "${user.name}" moved to trash.` : "User moved to trash.")
     ).catch((e) => {
@@ -1951,9 +1952,10 @@ export function usePortalDashboardModel(role: Role) {
         grade.studentId === userId ? { ...grade, deletedAt: null } : grade
       )
     )
-    syncApi("POST", `/api/portal/users/${userId}/restore`).then(() =>
+    syncApi("POST", `/api/portal/users/${userId}/restore`).then(() => {
       toast.success(user ? `User "${user.name}" restored.` : "User restored.")
-    ).catch((e) => {
+      if (user?.role === "faculty") refreshDashboardData()
+    }).catch((e) => {
       toast.error("Failed to restore user.")
       console.error(e)
     })
@@ -1969,6 +1971,7 @@ export function usePortalDashboardModel(role: Role) {
     setGrades((current) =>
       current.filter((grade) => grade.studentId !== userId)
     )
+    setFaculty((current) => current.filter((item) => item.id !== userId))
     syncApi("DELETE", `/api/portal/users/${userId}/permanent`).then(() =>
       toast.success(user ? `User "${user.name}" permanently deleted.` : "User permanently deleted.")
     ).catch((e) => {
@@ -3507,7 +3510,11 @@ export function usePortalDashboardModel(role: Role) {
 
   function handleFacultySelfStatus(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const facultyMember = faculty.find((f) => f.email === profile.email)
+    const facultyMember = faculty.find(
+      (f) =>
+        f.email?.toLowerCase().trim() === profile.email?.toLowerCase().trim() ||
+        f.name?.toLowerCase().trim() === profile.name?.toLowerCase().trim()
+    )
     if (facultyMember) {
       updateFacultyStatus(facultyMember.id, myFacultyStatus, myFacultyNotes)
     }

@@ -1,5 +1,5 @@
 import { connectToDatabase } from "@/lib/mongodb"
-import { DeansListModel, GradeModel, SemesterModel, UserModel } from "@/lib/models"
+import { DeansListModel, GradeModel, SemesterModel, UserModel, ScheduleModel, CurriculumModel } from "@/lib/models"
 import { evaluateDeansList } from "./deans-list-evaluator"
 import { v4 as uuid } from "@/lib/uuid"
 import { normalizeYearLevel } from "./year-level"
@@ -11,6 +11,9 @@ export async function recomputeDeansListForSemester(semesterId: string): Promise
   if (!semester) return
 
   const allGrades = await GradeModel.find({ semesterId, deletedAt: null }).lean()
+  const schedules = await ScheduleModel.find({ semesterId }).lean()
+  const curricula = await CurriculumModel.find({ status: "Active" }).lean()
+
   const studentIds = [...new Set(allGrades.map((g) => g.studentId))]
 
   const users = await UserModel.find({
@@ -18,19 +21,73 @@ export async function recomputeDeansListForSemester(semesterId: string): Promise
     role: "student",
   }).lean()
 
+  const semesterRecord = semester as unknown as Record<string, unknown>
+  const semesterName = (semesterRecord.semester as string) ?? ""
+
   for (const user of users) {
     const yearLevel = normalizeYearLevel((user as unknown as Record<string, unknown>).currentYearLevel as string | undefined)
     if (!yearLevel) continue
 
     const userGrades = allGrades.filter((g) => g.studentId === user.id)
-    const totalUnits = userGrades.reduce(
-      (sum, g) => sum + ((g.units as number) ?? 0),
-      0
-    )
+    const userRecord = user as unknown as Record<string, unknown>
+    const userCurriculumId = userRecord.curriculumId as string | undefined
+
+    // Determine student's sections from their grade records
+    const userSections = new Set(userGrades.map((g) => (g.section as string) ?? "").filter(Boolean))
+
+    // Build expected subject codes from schedules matching student's sections
+    const normalizeCode = (s: string) => s.replace(/\s+/g, "").toLowerCase()
+    const expectedCodes = new Map<string, number>()
+
+    for (const schedule of schedules) {
+      const sched = schedule as unknown as Record<string, unknown>
+      const section = (sched.section as string) ?? ""
+      if (section && !userSections.has(section)) continue
+      const code = ((sched.subject as string) ?? "").split(" - ")[0]?.trim()
+      if (!code) continue
+      expectedCodes.set(normalizeCode(code), 0)
+    }
+
+    // Add curriculum subjects for the student's year level and semester
+    const curriculum = curricula.find((c) => (c as unknown as Record<string, unknown>).id === userCurriculumId)
+    const curriculumTerm = (curriculum as { terms?: Array<{ year: string; semester: string; subjects: Array<{ code: string; total: number }> }> } | undefined)?.terms
+      ?.find((t) => t.year === yearLevel && t.semester === semesterName)
+    if (curriculumTerm) {
+      for (const sub of curriculumTerm.subjects) {
+        const key = normalizeCode(sub.code)
+        if (!expectedCodes.has(key)) {
+          expectedCodes.set(key, sub.total)
+        } else if (expectedCodes.get(key) === 0) {
+          expectedCodes.set(key, sub.total)
+        }
+      }
+    }
+
+    // Check if any expected subject has no grade record
+    let hasMissingSubject = false
+    for (const [code] of expectedCodes) {
+      const hasGrade = userGrades.some((g) => {
+        const gCode = ((g.code as string) ?? "").replace(/\s+/g, "").toLowerCase()
+        return gCode === code
+      })
+      if (!hasGrade) {
+        hasMissingSubject = true
+        break
+      }
+    }
+
+    // Compute totalUnits: from expected subjects (with curriculum units) when available
+    let totalUnits = 0
+    for (const [, units] of expectedCodes) {
+      totalUnits += units
+    }
+    if (totalUnits === 0) {
+      totalUnits = userGrades.reduce((sum, g) => sum + ((g.units as number) ?? 0), 0)
+    }
 
     const evalGrades = userGrades.map((g) => ({
       transmutedGrade: g.transmutedGrade,
-      released: g.released,
+      finalReleased: g.finalReleased,
       remarks: g.remarks,
       finalRemarks: g.finalRemarks,
       midtermRemarks: g.midtermRemarks,
@@ -39,7 +96,12 @@ export async function recomputeDeansListForSemester(semesterId: string): Promise
       code: g.code,
     }))
 
-    const result = evaluateDeansList(evalGrades, totalUnits)
+    let result: { isQualified: boolean; gwa: number | null; reasons: string[] }
+    if (hasMissingSubject) {
+      result = { isQualified: false, gwa: null, reasons: ["Not all grades have been released yet"] }
+    } else {
+      result = evaluateDeansList(evalGrades, totalUnits)
+    }
 
     const existingEntry = await DeansListModel.findOne({
       semesterId,
