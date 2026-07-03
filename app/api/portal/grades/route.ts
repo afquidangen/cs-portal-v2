@@ -3,6 +3,7 @@ import { connectToDatabase } from "@/lib/mongodb"
 import { UserModel } from "@/lib/models/user.model"
 import { success, error, badRequest } from "@/lib/api-response"
 import { GradeModel } from "@/lib/models/grade.model"
+import { ScheduleModel } from "@/lib/models"
 
 export const runtime = "nodejs"
 
@@ -22,13 +23,16 @@ export async function POST(request: Request) {
       return badRequest("Grade id and studentId are required.")
     }
     await connectToDatabase()
+    if (!body.semesterId && body.classId) {
+      const schedule = await ScheduleModel.findOne({ id: body.classId }).select("semesterId").lean()
+      if (schedule?.semesterId) body.semesterId = schedule.semesterId
+    }
     const user = await UserModel.findOne({ id: body.studentId }).select("role").lean()
     if (!user || user.role !== "student") {
       return badRequest("Only student accounts can be graded.")
     }
 
     const filter: Record<string, unknown> = { studentId: body.studentId, code: body.code }
-    if (body.semesterId) filter.semesterId = body.semesterId
 
     const existing = await GradeModel.findOne(filter)
     if (existing) {

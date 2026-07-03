@@ -51,9 +51,13 @@ export async function PUT(
     if (!body.grades || !Array.isArray(body.grades)) {
       return badRequest("grades array is required.")
     }
+    const schedule = await ScheduleModel.findOne({ id: classId }).lean()
+    const semesterId = schedule?.semesterId
+
     const results = []
     for (const grade of body.grades) {
       const { __v: _v, _id, ...upsertData } = grade
+      if (!upsertData.semesterId && semesterId) upsertData.semesterId = semesterId
       if (upsertData.scores) {
         const cleanedScores: Record<string, number> = {}
         for (const [key, value] of Object.entries(upsertData.scores as Record<string, unknown>)) {
@@ -70,14 +74,12 @@ export async function PUT(
       }
 
       const filter: Record<string, unknown> = { studentId: grade.studentId, code: grade.code }
-      if (grade.semesterId) filter.semesterId = grade.semesterId
       const updated = await gradesRepository.upsert(filter, { ...upsertData, classId })
       results.push(updated)
     }
 
-    const schedule = await ScheduleModel.findOne({ id: classId }).lean()
-    if (schedule?.semesterId) {
-      recomputeDeansListForSemester(schedule.semesterId).catch((dlErr) =>
+    if (semesterId) {
+      recomputeDeansListForSemester(semesterId).catch((dlErr) =>
         console.warn("[DeansList] Auto re-evaluation failed after grade edit:", dlErr)
       )
     }

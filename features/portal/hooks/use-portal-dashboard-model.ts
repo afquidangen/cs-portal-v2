@@ -556,6 +556,14 @@ export function usePortalDashboardModel(role: Role) {
     [selectedScheduleEntry, grades]
   )
 
+  const scheduleSemesterMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const s of classSchedules) {
+      if (s.semesterId) map.set(s.id, s.semesterId)
+    }
+    return map
+  }, [classSchedules])
+
   const studentGrades = useMemo(
     () => {
       const active = semesters.find((s) => s.status === "Active")
@@ -563,11 +571,11 @@ export function usePortalDashboardModel(role: Role) {
       return grades.filter(
         (grade) =>
           grade.studentId === profile.id &&
-          grade.semesterId === active.id &&
+          (grade.semesterId === active.id || scheduleSemesterMap.get(grade.classId) === active.id) &&
           grade.released === true
       )
     },
-    [grades, profile.id, semesters]
+    [grades, profile.id, semesters, scheduleSemesterMap]
   )
 
   const gradeAverage = useMemo(() => {
@@ -592,10 +600,10 @@ export function usePortalDashboardModel(role: Role) {
       return grades.filter(
         (grade) =>
           grade.studentId === profile.id &&
-          grade.semesterId === active.id
+          (grade.semesterId === active.id || scheduleSemesterMap.get(grade.classId) === active.id)
       )
     },
-    [grades, profile.id, semesters]
+    [grades, profile.id, semesters, scheduleSemesterMap]
   )
 
   const currentSemesterGrades = useMemo(

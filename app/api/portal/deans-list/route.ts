@@ -40,12 +40,16 @@ export async function POST(request: Request) {
     const semester = await SemesterModel.findOne({ id: semesterId }).lean()
     if (!semester) return badRequest("Semester not found.")
 
-    const allGrades = await GradeModel.find({
-      semesterId,
-      deletedAt: null,
-    }).lean()
-
     const schedules = await ScheduleModel.find({ semesterId }).lean()
+    const semesterClassIds = schedules.map((s) => (s as unknown as Record<string, unknown>).id as string).filter(Boolean)
+
+    const allGrades = await GradeModel.find({
+      deletedAt: null,
+      $or: [
+        { semesterId },
+        { semesterId: { $exists: false }, classId: { $in: semesterClassIds } },
+      ],
+    }).lean()
     const curricula = await CurriculumModel.find({ status: "Active" }).lean()
 
     const studentsWithGrades = [
@@ -62,8 +66,7 @@ export async function POST(request: Request) {
     const semesterName = (semesterRecord.semester as string) ?? ""
 
     for (const user of users) {
-      const yearLevel = normalizeYearLevel((user as unknown as Record<string, unknown>).currentYearLevel as string | undefined)
-      if (!yearLevel) continue
+      const yearLevel = normalizeYearLevel((user as unknown as Record<string, unknown>).currentYearLevel as string | undefined) ?? "Unknown"
 
       const userGrades = allGrades.filter((g) => g.studentId === user.id)
       const userRecord = user as unknown as Record<string, unknown>
@@ -113,14 +116,8 @@ export async function POST(request: Request) {
         }
       }
 
-      // Compute totalUnits from expected subjects (with curriculum units)
-      let totalUnits = 0
-      for (const [, units] of expectedCodes) {
-        totalUnits += units
-      }
-      if (totalUnits === 0) {
-        totalUnits = userGrades.reduce((sum, g) => sum + ((g.units as number) ?? 0), 0)
-      }
+      // Compute totalUnits from actual enrolled subjects (includes added subjects)
+      const totalUnits = userGrades.reduce((sum, g) => sum + ((g.units as number) ?? 0), 0)
 
       const evaluationGrades = userGrades.map((g) => ({
         transmutedGrade: g.transmutedGrade,
