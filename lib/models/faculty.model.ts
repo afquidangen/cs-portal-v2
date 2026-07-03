@@ -11,6 +11,8 @@ export interface IFaculty extends Document {
   notes: string
   schedule: string[]
   statusUpdatedAt?: string
+  isDeleted?: boolean
+  deletedAt?: string | null
 }
 
 const FacultySchema = new Schema<IFaculty>(
@@ -29,6 +31,8 @@ const FacultySchema = new Schema<IFaculty>(
     notes: { type: String, default: "" },
     schedule: [{ type: String }],
     statusUpdatedAt: { type: String },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: String, default: null },
   },
   { timestamps: true }
 )

@@ -101,7 +101,7 @@ import { abbreviateCourse } from "@/lib/constants/courses"
 
 import { formatScheduleTime } from "@/components/ui/time-picker"
 
-import type { Announcement, AvailabilityStatus, Role } from "../data/portal-data"
+import type { Announcement, AvailabilityStatus, GradeRecord, Role } from "../data/portal-data"
 import { availabilityOptions } from "../data/portal-data"
 import { usePortalDashboardModel } from "../hooks/use-portal-dashboard-model"
 import { usePushNotifications } from "../hooks/use-push-notifications"
@@ -813,54 +813,14 @@ export function RoleDashboard({ role }: { role: Role }) {
       ? "Awaiting grade release"
       : "No grades yet"
 
-  const completedUnits = model.totalCompletedUnits ?? 0
-  const totalUnits = model.totalCurriculumUnits ?? 0
-  const unitsDisplay = totalUnits > 0
-    ? `${completedUnits} / ${totalUnits} Units`
-    : completedUnits > 0
-      ? `${completedUnits} Units`
-      : "N/A"
+  const visibleGrades = (model.visibleGrades as GradeRecord[]) ?? []
+  const currentUnits = visibleGrades.reduce((s, g) => s + (g.units || 0), 0)
+  const unitsDisplay = currentUnits > 0 ? `${currentUnits} Units` : "N/A"
 
-  const enrolledSubjectCount = useMemo(() => {
-    const activeSem = model.activeSemester
-    if (!activeSem || !studentUser?.curriculumId) {
-      return new Set(model.visibleSchedules.map((s: { subject: string }) => s.subject)).size
-    }
-    const curriculum = (model.curricula ?? []).find(
-      (c: { id: string }) => c.id === studentUser.curriculumId
-    )
-    if (!curriculum) {
-      return new Set(model.visibleSchedules.map((s: { subject: string }) => s.subject)).size
-    }
-    const term = curriculum.terms.find(
-      (t: { year: string; semester: string }) =>
-        t.year === studentUser.currentYearLevel && t.semester === activeSem.semester
-    )
-    if (!term) {
-      return new Set(model.visibleSchedules.map((s: { subject: string }) => s.subject)).size
-    }
-
-    const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
-    const finalizedStatuses = new Set(["passed", "failed", "inc", "dropped", "unofficial drop", "unofficial dropped"])
-
-    // Collect finalized codes from grade history
-    const finalizedCodes = new Set(
-      (studentUser?.gradeHistory ?? [])
-        .filter((h) => finalizedStatuses.has(h.remarks?.toLowerCase()))
-        .map((h) => normalize(h.subjectCode))
-    )
-
-    // Also check all released grades across semesters (excluding current)
-    for (const g of (model.allStudentGrades ?? [])) {
-      if ((g as any).semesterId === activeSem.id) continue
-      const r = ((g as any).remarks || (g as any).finalRemarks || "").toLowerCase()
-      if (finalizedStatuses.has(r)) {
-        finalizedCodes.add(normalize((g as any).code))
-      }
-    }
-
-    return term.subjects.filter((s) => !finalizedCodes.has(normalize(s.code))).length
-  }, [model.activeSemester, model.curricula, studentUser, model.visibleSchedules, model.allStudentGrades])
+  const enrolledSubjectCount = useMemo(
+    () => new Set(visibleGrades.map((g) => g.code).filter(Boolean)).size,
+    [visibleGrades]
+  )
 
   const studentProfileFacts = [
     { label: "Program", value: studentCourse, icon: BookOpen },

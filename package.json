@@ -9,7 +9,8 @@
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
     "seed:schemes": "tsx scripts/seed-grading-schemes.ts",
-    "migrate:performance-category": "tsx scripts/migrate-performance-category.ts"
+    "migrate:performance-category": "tsx scripts/migrate-performance-category.ts",
+    "migrate:faculty-isDeleted": "tsx scripts/migrate-faculty-isDeleted.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",

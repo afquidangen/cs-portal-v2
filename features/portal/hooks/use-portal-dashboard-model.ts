@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import {
   type ChangeEvent,
   type FormEvent,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -37,7 +38,7 @@ import {
 } from "../data/portal-data"
 import type { CsoInfoRecord, SemesterRecord, SubjectRecord } from "@/lib/types"
 import { csvEscape, downloadFile } from "../lib/downloads"
-import { calculateFinalGrade, computeDeansList, transmutedToEquivalent } from "../lib/grades"
+import { computeDeansList, transmutedToEquivalent } from "../lib/grades"
 import { parseScheduleWorkbook } from "../lib/xlsx"
 import type { ModuleId } from "../types/navigation"
 
@@ -500,42 +501,6 @@ export function usePortalDashboardModel(role: Role) {
   }, [classSchedules, profileUser, profile.name, semesters])
 
   const profileSection = roster.find((s) => s.id === profile.id && s.enrolled)?.section ?? profileUser?.section ?? ""
-  const visibleSchedules = useMemo(() => {
-    const activeIds = new Set(semesters.filter((s) => s.status === "Active").map((s) => s.id))
-    const belongsToActive = (item: ScheduleItem) =>
-      !item.semesterId || activeIds.has(item.semesterId)
-
-    if (role === "faculty") {
-      const facultyName = profileUser?.name ?? profile.name
-      return classSchedules.filter((item) =>
-        item.instructor === facultyName && belongsToActive(item)
-      )
-    }
-    if (role === "student") {
-      const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
-      const passedCodes = new Set(
-        (profileUser?.gradeHistory ?? [])
-          .filter((h) => h.remarks?.toLowerCase() === "passed")
-          .map((h) => normalize(h.subjectCode))
-      )
-
-      return classSchedules.filter((item) => {
-        const code = normalize(item.subject.split(" - ")[0]?.trim() ?? "")
-        const section = normalize(item.section ?? "")
-
-        const hasGrade = grades.some((g) =>
-          g.studentId === profile.id &&
-          normalize(g.code) === code &&
-          normalize(g.section ?? "") === section &&
-          !g.deletedAt
-        )
-
-        return hasGrade && !passedCodes.has(code) && belongsToActive(item)
-      })
-    }
-    return classSchedules
-  }, [classSchedules, role, profileUser, profile.name, grades, profile.id, semesters])
-
   const selectedScheduleStudents = useMemo(
     () =>
       selectedScheduleEntry
@@ -564,6 +529,28 @@ export function usePortalDashboardModel(role: Role) {
     return map
   }, [classSchedules])
 
+  const sectionSemesterMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const s of classSchedules) {
+      if (s.semesterId) {
+        const key = `${(s.subject ?? "").replace(/\s+/g, "").toLowerCase()}|${(s.section ?? "").replace(/\s+/g, "").toLowerCase()}`
+        map.set(key, s.semesterId)
+      }
+    }
+    return map
+  }, [classSchedules])
+
+  const normalizeSectionKey = (subject: string, section: string) =>
+    `${(subject ?? "").replace(/\s+/g, "").toLowerCase()}|${(section ?? "").replace(/\s+/g, "").toLowerCase()}`
+
+  const belongsToActiveSemester = useCallback(
+    (grade: GradeRecord, activeId: string) =>
+      grade.semesterId === activeId ||
+      scheduleSemesterMap.get(grade.classId ?? "") === activeId ||
+      sectionSemesterMap.get(normalizeSectionKey(grade.subject ?? "", grade.section ?? "")) === activeId,
+    [scheduleSemesterMap, sectionSemesterMap]
+  )
+
   const studentGrades = useMemo(
     () => {
       const active = semesters.find((s) => s.status === "Active")
@@ -571,20 +558,21 @@ export function usePortalDashboardModel(role: Role) {
       return grades.filter(
         (grade) =>
           grade.studentId === profile.id &&
-          (grade.semesterId === active.id || scheduleSemesterMap.get(grade.classId) === active.id) &&
+          belongsToActiveSemester(grade, active.id) &&
           grade.released === true
       )
     },
-    [grades, profile.id, semesters, scheduleSemesterMap]
+    [grades, profile.id, semesters, belongsToActiveSemester]
   )
 
   const gradeAverage = useMemo(() => {
-    if (!studentGrades.length) return "N/A"
+    const withGrade = studentGrades.filter((g) => g.transmutedGrade != null)
+    if (!withGrade.length) return "N/A"
     const average =
-      studentGrades.reduce(
-        (sum, grade) => sum + calculateFinalGrade(grade),
+      withGrade.reduce(
+        (sum, grade) => sum + grade.transmutedGrade!,
         0
-      ) / studentGrades.length
+      ) / withGrade.length
     return average.toFixed(2)
   }, [studentGrades])
 
@@ -600,10 +588,10 @@ export function usePortalDashboardModel(role: Role) {
       return grades.filter(
         (grade) =>
           grade.studentId === profile.id &&
-          (grade.semesterId === active.id || scheduleSemesterMap.get(grade.classId) === active.id)
+          belongsToActiveSemester(grade, active.id)
       )
     },
-    [grades, profile.id, semesters, scheduleSemesterMap]
+    [grades, profile.id, semesters, belongsToActiveSemester]
   )
 
   const currentSemesterGrades = useMemo(
@@ -617,15 +605,252 @@ export function usePortalDashboardModel(role: Role) {
   )
 
   const currentSemesterGwa = useMemo(() => {
-    const releasedGrades = currentSemesterAllGrades.filter((g) => g.finalReleased === true)
-    if (!releasedGrades.length || currentSemesterGwaPending) return null
+    const releasedGrades = currentSemesterAllGrades.filter((g) => g.transmutedGrade != null && g.finalReleased === true)
+    if (!releasedGrades.length) return null
     const average =
       releasedGrades.reduce(
-        (sum, grade) => sum + calculateFinalGrade(grade),
+        (sum, grade) => sum + grade.transmutedGrade!,
         0
       ) / releasedGrades.length
     return Number(average.toFixed(2))
-  }, [currentSemesterAllGrades, currentSemesterGwaPending])
+  }, [currentSemesterAllGrades])
+
+  const visibleGrades = useMemo(() => {
+    const activeIds = new Set(semesters.filter((s) => s.status === "Active").map((s) => s.id))
+    if (activeIds.size === 0) return []
+
+    const active = semesters.find((s) => s.status === "Active")!
+    const activeSchedules = classSchedules.filter(
+      (s) => !s.semesterId || activeIds.has(s.semesterId)
+    )
+    const activeScheduleIds = new Set(activeSchedules.map((s) => s.id))
+    const activePairs = new Set(
+      activeSchedules.map((s) => `${s.section}|${s.subject}`)
+    )
+
+    const allActive = grades.filter((g) => {
+      if (g.studentId !== profile.id) return false
+      if (g.deletedAt) return false
+      return (
+        activeIds.has(g.semesterId) ||
+        (g.classId && activeScheduleIds.has(g.classId)) ||
+        activePairs.has(`${g.section}|${g.subject}`)
+      )
+    })
+
+    const gradeMap = new Map<string, GradeRecord>()
+    for (const g of allActive) {
+      const existing = gradeMap.get(g.code)
+      if (!existing) {
+        gradeMap.set(g.code, g)
+      } else if (activeIds.has(g.semesterId) && !activeIds.has(existing.semesterId)) {
+        gradeMap.set(g.code, g)
+      } else if (!activeIds.has(g.semesterId) && activeIds.has(existing.semesterId)) {
+        continue
+      } else if (g.released && !existing.released) {
+        gradeMap.set(g.code, g)
+      }
+    }
+
+    const studentSections = [
+      profileSection,
+      ...roster
+        .filter((r) => r.id === profile.id && r.enrolled)
+        .map((r) => r.section),
+    ].filter(Boolean)
+    const normSection = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "")
+    const normalizedStudentSecs = studentSections.map(normSection)
+
+    const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
+    const finalizedStatuses = new Set(["passed", "failed", "inc", "dropped", "unofficial drop", "unofficial dropped"])
+    const gradeHistory = profileUser?.gradeHistory ?? []
+
+    const historyFinalizedCodes = new Set(
+      gradeHistory
+        .filter((h) => finalizedStatuses.has(h.remarks?.toLowerCase()))
+        .map((h) => normalize(h.subjectCode))
+    )
+
+    const allGradesArray = allStudentGrades ?? []
+    const gradesFinalizedCodes = new Set(
+      allGradesArray
+        .filter((g) => {
+          if (activeIds.has(g.semesterId)) return false
+          const r = (g.remarks || g.finalRemarks || "").toLowerCase()
+          return finalizedStatuses.has(r)
+        })
+        .map((g) => normalize(g.code))
+    )
+
+    const finalizedCodes = new Set([...historyFinalizedCodes, ...gradesFinalizedCodes])
+
+    const historyRetakeCodes = new Set(
+      gradeHistory
+        .filter((h) => {
+          const r = h.remarks?.toLowerCase()
+          return r !== "passed" && r !== undefined && finalizedStatuses.has(r)
+        })
+        .map((h) => normalize(h.subjectCode))
+    )
+    const gradesRetakeCodes = new Set(
+      allGradesArray
+        .filter((g) => {
+          if (activeIds.has(g.semesterId)) return false
+          const r = (g.remarks || g.finalRemarks || "").toLowerCase()
+          return r !== "passed" && finalizedStatuses.has(r)
+        })
+        .map((g) => normalize(g.code))
+    )
+    const retakeCodes = new Set(
+      [...historyRetakeCodes, ...gradesRetakeCodes].filter((code) =>
+        activeSchedules.some((s) => {
+          const sCode = normalize(s.subject.split(" - ")[0]?.trim() ?? "")
+          return sCode === code
+        })
+      )
+    )
+
+    const yearLevel = profileUser?.currentYearLevel ?? ""
+    const curriculum = curricula.find((c) => c.id === profileUser?.curriculumId)
+    const curriculumTerms = curriculum?.terms ?? []
+    const curriculumTerm = curriculumTerms.find(
+      (t) => t.year === yearLevel && t.semester === active.semester
+    )
+
+    for (const schedule of activeSchedules) {
+      const code = schedule.subject.split(" - ")[0]?.trim() ?? schedule.subject
+      const matchesSection = normalizedStudentSecs.some((sec) =>
+        normSection(schedule.section).includes(sec)
+      )
+      if (!matchesSection) continue
+      if (finalizedCodes.has(normalize(code)) && !retakeCodes.has(normalize(code))) continue
+      if (gradeMap.has(code)) continue
+
+      let units = 0
+      if (curriculumTerm) {
+        const sub = curriculumTerm.subjects.find((s) => s.code === code)
+        if (sub) units = sub.total
+      }
+
+      gradeMap.set(code, {
+        id: `pending-${schedule.id}`,
+        studentId: profile.id,
+        student: profile.name,
+        section: schedule.section,
+        subject: schedule.subject,
+        code,
+        units,
+        classId: schedule.id,
+        semesterId: active.id,
+        released: false,
+        updatedAt: "",
+      } as GradeRecord)
+    }
+
+    if (profileUser?.curriculumId && curriculumTerm) {
+      for (const sub of curriculumTerm.subjects) {
+        const code = sub.code
+        const normCode = normalize(code)
+        if (gradeMap.has(code)) continue
+        if (finalizedCodes.has(normCode) && !retakeCodes.has(normCode)) continue
+
+        gradeMap.set(code, {
+          id: `pending-curriculum-${code}`,
+          studentId: profile.id,
+          student: profile.name,
+          section: studentSections[0] ?? "TBD",
+          subject: `${code} - ${sub.name}`,
+          code,
+          units: sub.total,
+          classId: "",
+          semesterId: active.id,
+          released: false,
+          updatedAt: "",
+        } as GradeRecord)
+      }
+    }
+
+    return [...gradeMap.values()]
+  }, [
+    semesters, classSchedules, grades, profile.id, profile.name,
+    allStudentGrades, profileSection, roster, profileUser, curricula,
+  ])
+
+  const visibleSchedules = useMemo(() => {
+    const activeIds = new Set(semesters.filter((s) => s.status === "Active").map((s) => s.id))
+    const belongsToActive = (item: ScheduleItem) =>
+      !item.semesterId || activeIds.has(item.semesterId)
+
+    if (role === "faculty") {
+      const facultyName = profileUser?.name ?? profile.name
+      return classSchedules.filter((item) =>
+        item.instructor === facultyName && belongsToActive(item)
+      )
+    }
+    if (role === "student") {
+      const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "")
+      const normalizeCode = (s: string) => s.replace(/\s+/g, "").toLowerCase()
+
+      const passedCodes = new Set(
+        (profileUser?.gradeHistory ?? [])
+          .filter((h) => h.remarks?.toLowerCase() === "passed")
+          .map((h) => normalize(h.subjectCode))
+      )
+
+      const studentSections = [
+        profileSection,
+        ...roster
+          .filter((r) => r.id === profile.id && r.enrolled)
+          .map((r) => r.section),
+      ].filter(Boolean)
+      const normalizedStudentSecs = studentSections.map((s) => normalize(s))
+
+      const matched = classSchedules.filter((item) => {
+        const code = normalize(item.subject.split(" - ")[0]?.trim() ?? "")
+        const section = normalize(item.section ?? "")
+        const isEnrolled = normalizedStudentSecs.some((sec) =>
+          section.includes(sec)
+        )
+        return isEnrolled && !passedCodes.has(code) && belongsToActive(item)
+      })
+
+      // Supplement with subjects from visibleGrades not covered by schedules
+      const scheduleCodes = new Set(
+        matched.map((s) => normalizeCode(s.subject.split(" - ")[0]?.trim() ?? ""))
+      )
+
+      for (const grade of visibleGrades) {
+        const code = normalizeCode(grade.code)
+        if (scheduleCodes.has(code)) continue
+
+        // Use existing schedule data when available (even if section didn't match)
+        const existing = classSchedules.find(
+          (s) =>
+            belongsToActive(s) &&
+            normalizeCode(s.subject.split(" - ")[0]?.trim() ?? "") === code
+        )
+
+        if (existing) {
+          matched.push(existing)
+        } else {
+          matched.push({
+            id: `noclass-${code}`,
+            day: "",
+            time: "",
+            subject: grade.subject,
+            room: "—",
+            instructor: "—",
+            section: grade.section,
+            semesterId: grade.semesterId ?? "",
+          })
+        }
+        scheduleCodes.add(code)
+      }
+
+      return matched
+    }
+    return classSchedules
+  }, [classSchedules, role, profileUser, profile.name, roster, profileSection, profile.id, semesters, visibleGrades])
 
   const currentSemesterTotalUnits = useMemo(
     () => currentSemesterGrades.reduce((s, g) => s + (g.units || 0), 0),
@@ -962,10 +1187,11 @@ export function usePortalDashboardModel(role: Role) {
   }
 
   function downloadGradeReportPdf() {
-    const first = studentGrades[0]
+    const data = visibleGrades
+    const first = data[0]
     const studentName = first?.student ?? profile.name
     const studentSection = first?.section ?? profileSection
-    const rows = studentGrades.map((grade) => {
+    const rows = data.map((grade) => {
       const midterm = grade.midtermReleased && grade.midtermGrade !== undefined ? grade.midtermGrade.toFixed(2) : "—"
       const midRem = grade.midtermReleased && grade.midtermRemarks ? grade.midtermRemarks : "—"
       const finalTerm = grade.finalReleased && grade.tentativeFinalGrade !== undefined ? grade.tentativeFinalGrade.toFixed(2) : "—"
@@ -982,11 +1208,14 @@ export function usePortalDashboardModel(role: Role) {
       </tr>`
     }).join("\n")
 
-    const gwa = gradeAverage !== "N/A" ? gradeAverage : "—"
-    const totalUnits = studentGrades.reduce((sum, g) => sum + (g.units || 0), 0)
+    const withGrade = data.filter((g) => g.transmutedGrade != null)
+    const gwa = withGrade.length
+      ? (withGrade.reduce((sum, g) => sum + g.transmutedGrade!, 0) / withGrade.length).toFixed(2)
+      : "—"
+    const totalUnits = data.reduce((sum, g) => sum + (g.units || 0), 0)
     const activeSem = semesters.find((s) => s.status === "Active")
     const syLabel = activeSem ? `S.Y. ${activeSem.schoolYearStart}-${activeSem.schoolYearEnd}` : ""
-    const deansResult = computeDeansList(studentGrades)
+    const deansResult = computeDeansList(data)
     const deansHtml = deansResult.gwa !== null ? (
       deansResult.eligible
         ? `<p style="margin-top:0;font-size:16px;font-weight:700;color:#16a34a;">Dean's List</p>
@@ -1932,6 +2161,11 @@ export function usePortalDashboardModel(role: Role) {
       )
     )
     setFaculty((current) => current.filter((item) => item.id !== userId))
+    if (user?.role === "faculty") {
+      syncApi("DELETE", `/api/portal/faculty/${userId}`, {}).catch((e) =>
+        console.error("Failed to soft-delete faculty record:", e)
+      )
+    }
     syncApi("DELETE", `/api/portal/users/${userId}`).then(() =>
       toast.success(user ? `User "${user.name}" moved to trash.` : "User moved to trash.")
     ).catch((e) => {
@@ -1960,6 +2194,11 @@ export function usePortalDashboardModel(role: Role) {
         grade.studentId === userId ? { ...grade, deletedAt: null } : grade
       )
     )
+    if (user?.role === "faculty") {
+      syncApi("PATCH", `/api/portal/faculty/${userId}`, { restore: true }).catch((e) =>
+        console.error("Failed to restore faculty record:", e)
+      )
+    }
     syncApi("POST", `/api/portal/users/${userId}/restore`).then(() => {
       toast.success(user ? `User "${user.name}" restored.` : "User restored.")
       if (user?.role === "faculty") refreshDashboardData()
@@ -3741,6 +3980,7 @@ export function usePortalDashboardModel(role: Role) {
     currentSemesterGrades,
     currentSemesterGwa,
     currentSemesterGwaPending,
+    visibleGrades,
     currentSemesterTotalUnits,
     currentSemesterPassedUnits,
     totalCompletedUnits,

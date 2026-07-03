@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils"
 import { abbreviateCourse } from "@/lib/constants/courses"
 
 import { availabilityOptions } from "../../data/portal-data"
-import type { AvailabilityStatus } from "../../data/portal-data"
+import type { AvailabilityStatus, GradeRecord } from "../../data/portal-data"
 import type { ModuleId } from "../../types/navigation"
 import type { PortalModuleProps } from "./types"
 import { DeansListRankingsCard } from "../shared/deans-list-rankings-card"
@@ -842,8 +842,9 @@ export function OverviewModule({ model }: PortalModuleProps) {
       ? "Pending"
       : model.gradeAverage
 
-  const activeSubjectCount = new Set(model.visibleSchedules.map((item) => item.subject)).size
-  const unitsTaken = model.currentSemesterTotalUnits || model.totalCompletedUnits || 0
+  const visibleGrades = (model.visibleGrades as GradeRecord[]) ?? []
+  const activeSubjectCount = new Set(visibleGrades.map((g) => g.code).filter(Boolean)).size
+  const unitsTaken = visibleGrades.reduce((s, g) => s + (g.units || 0), 0)
   const progress = model.totalCurriculumUnits > 0
     ? Math.min(100, Math.round((model.totalCompletedUnits / model.totalCurriculumUnits) * 100))
     : 0

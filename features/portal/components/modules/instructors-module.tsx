@@ -85,8 +85,13 @@ export function InstructorsModule({ model }: PortalModuleProps) {
     for (const fr of faculty) {
       const email = fr.email?.toLowerCase().trim() ?? ""
       if (!activeEmails.has(email)) continue
-      const key = fr.name.toLowerCase().trim()
-      seen.set(key, fr)
+      const existing = seen.get(email)
+      if (!existing) {
+        seen.set(email, fr)
+      } else {
+        const matchedUser = userByEmail.get(email)
+        if (matchedUser?.id === fr.id) seen.set(email, fr)
+      }
     }
     return Array.from(seen.values()).map((fr) => {
       const user = userByEmail.get(fr.email?.toLowerCase().trim() ?? "")
