@@ -58,6 +58,15 @@ export async function PUT(
     if (category) body.category = category
     if (year) body.year = Number(year)
 
+    const tags = formData.get("tags") as string | null
+    if (tags) {
+      try {
+        body.tags = JSON.parse(tags)
+      } catch {
+        body.tags = tags.split(",").map((t: string) => t.trim()).filter(Boolean)
+      }
+    }
+
     const removePdf = formData.get("removePdf") === "true"
 
     if (removePdf) {

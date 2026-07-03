@@ -119,7 +119,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
       formData.append("year", String(Number(editDraft.year) || detailThesis.year))
       formData.append("category", editDraft.category.trim())
       formData.append("adviser", editDraft.adviser.trim() || "For assignment")
-      formData.append("tags", editDraft.tags.split(",").map((t) => t.trim()).filter(Boolean).join(","))
+      formData.append("tags", JSON.stringify(editDraft.tags.split(",").map((t) => t.trim()).filter(Boolean)))
 
       if (replacePdfFileRef.current) {
         formData.append("pdf", replacePdfFileRef.current)
@@ -174,7 +174,6 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
       formData.append("year", String(Number(thesisDraft.year) || 2026))
       formData.append("category", thesisDraft.category.trim())
       formData.append("adviser", thesisDraft.adviser.trim() || "For assignment")
-      formData.append("abstract", thesisDraft.abstract.trim() || "Abstract will be supplied after manuscript review.")
       formData.append("tags", JSON.stringify(thesisDraft.category.split(" ").filter(Boolean).slice(0, 3)))
       formData.append("fileName", fileName)
       formData.append("pdf", file)
@@ -203,7 +202,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
         year: "2026",
         category: "Software Engineering",
         adviser: "",
-        abstract: "",
+
         pdfUrl: "",
         fileName: "",
       })
@@ -358,16 +357,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
                 }}
               />
 
-              <Textarea
-                value={thesisDraft.abstract}
-                onChange={(value) =>
-                  setThesisDraft((current) => ({
-                    ...current,
-                    abstract: value,
-                  }))
-                }
-                placeholder="Abstract"
-              />
+
             </div>
 
             <DialogFooter className="gap-2">
