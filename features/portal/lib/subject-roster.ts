@@ -1,5 +1,3 @@
-const IRREGULAR_TYPES = ["Irregular", "Transferee", "Shifter"]
-
 function normalize(s?: string | null) {
   return (s ?? "").replace(/\s+/g, "").toLowerCase()
 }
@@ -68,33 +66,6 @@ export function getSubjectRoster(params: {
     section ? [normalize(section)] : sections.map(normalize)
   )
 
-  const passedIds = new Set(
-    users
-      .filter(
-        (u) =>
-          (u.gradeHistory ?? []).some(
-            (h) =>
-              normalize(h.subjectCode) === normCode &&
-              h.remarks?.toLowerCase() === "passed"
-          )
-      )
-      .map((u) => u.id)
-  )
-
-  const passedIrregularIds = new Set(
-    users
-      .filter(
-        (u) =>
-          IRREGULAR_TYPES.includes(u.studentType ?? "") &&
-          (u.gradeHistory ?? []).some(
-            (h) =>
-              normalize(h.subjectCode) === normCode &&
-              h.remarks?.toLowerCase() === "passed"
-          )
-      )
-      .map((u) => u.id)
-  )
-
   const result: SubjectRosterEntry[] = []
   const seen = new Set<string>()
 
@@ -105,7 +76,6 @@ export function getSubjectRoster(params: {
       !sectionSet.has(normalize(g.section ?? ""))
     ) continue
 
-    if (passedIrregularIds.has(g.studentId)) continue
     if (seen.has(g.studentId)) continue
     seen.add(g.studentId)
 
