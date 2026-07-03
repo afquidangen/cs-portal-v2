@@ -21,6 +21,7 @@ import {
   Layers3,
   LogOut,
   Mail,
+  Megaphone,
   Menu,
   MessageSquareWarning,
   Moon,
@@ -394,10 +395,6 @@ export function RoleDashboard({ role }: { role: Role }) {
     () => model.users.filter((u: { createdAt?: string }) => filterByDate(u.createdAt)),
     [model.users, filterByDate]
   )
-  const filteredTickets = useMemo(
-    () => model.tickets.filter((t: { submittedAt: string }) => filterByDate(t.submittedAt)),
-    [model.tickets, filterByDate]
-  )
   const filteredGrades = useMemo(
     () => model.grades.filter((g: { updatedAt: string }) => filterByDate(g.updatedAt)),
     [model.grades, filterByDate]
@@ -417,12 +414,12 @@ export function RoleDashboard({ role }: { role: Role }) {
 
   const adminSparklineData = useMemo(() => [
     filteredUsers.length,
-    filteredTickets.length,
+    filteredAnnouncements.length,
     filteredGrades.length,
     filteredTheses.length,
     filteredAnnouncements.length,
     filteredAuditLogs.length,
-  ], [filteredUsers.length, filteredTickets.length, filteredGrades.length, filteredTheses.length, filteredAnnouncements.length, filteredAuditLogs.length])
+  ], [filteredUsers.length, filteredAnnouncements.length, filteredGrades.length, filteredTheses.length, filteredAnnouncements.length, filteredAuditLogs.length])
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px) and (max-width: 1023px)")
@@ -634,20 +631,20 @@ export function RoleDashboard({ role }: { role: Role }) {
       sparkline: adminSparklineData,
     },
     {
-      label: "Open Tickets",
-      value: String(model.tickets.filter((t: { status: string }) => t.status !== "Resolved").length),
-      icon: Bell,
+      label: "Announcements",
+      value: String(model.announcements.length),
+      icon: Megaphone,
       accent: "amber",
       sparkline: adminSparklineData,
     },
-  ], [model.userStats.students, model.userStats.faculty, model.theses.length, model.tickets, adminSparklineData])
+  ], [model.userStats.students, model.userStats.faculty, model.theses.length, model.announcements.length, adminSparklineData])
 
   const performanceMetrics = useMemo(() => [
     { label: "Audit Entries", value: filteredAuditLogs.length.toLocaleString(), trend: "System log" },
     { label: "Users", value: (filteredUsers.length || model.userStats.students + model.userStats.faculty + model.userStats.admins).toLocaleString(), trend: "Registered accounts" },
     { label: "Theses", value: filteredTheses.length.toLocaleString(), trend: "Library records" },
-    { label: "Tickets", value: String(filteredTickets.filter((t: { status: string }) => t.status !== "Resolved").length), trend: "Open tickets" },
-  ], [filteredAuditLogs.length, filteredUsers.length, model.userStats.students, model.userStats.faculty, model.userStats.admins, filteredTheses.length, filteredTickets])
+    { label: "Announcements", value: filteredAnnouncements.length.toLocaleString(), trend: "Posted announcements" },
+  ], [filteredAuditLogs.length, filteredUsers.length, model.userStats.students, model.userStats.faculty, model.userStats.admins, filteredTheses.length, filteredAnnouncements])
 
   const systemHealth = [
     { label: "Database", status: "Operational", icon: Database },

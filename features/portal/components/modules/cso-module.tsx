@@ -245,7 +245,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
 
         <div className="relative z-10 px-4 py-8 text-center sm:px-8 sm:py-12">
           <div className="mx-auto max-w-3xl">
-            <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-xl border border-slate-600/50 bg-white/95 p-1.5 shadow-sm sm:mb-6 sm:size-32">
+            <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-xl border border-slate-600/50 bg-white/95 p-1.5 shadow-sm sm:mb-6 sm:size-32 dark:bg-white/95">
               {model.csoInfo?.logoUrl ? (
                 <Image
                   src={model.csoInfo.logoUrl}
@@ -268,17 +268,6 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
                 {model.csoInfo.description}
               </p>
             ) : null}
-            {model.csoInfo?.facebookLink ? (
-              <a
-                href={model.csoInfo.facebookLink}
-                target="_blank"
-                rel="noreferrer"
-                className="mx-auto mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-              >
-                Visit CSSO Facebook Page
-                <ExternalLink className="size-4" />
-              </a>
-            ) : null}
             <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs font-semibold text-blue-300">
               <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-400/30 bg-blue-950/50 px-3 py-1.5 backdrop-blur-sm">
                 <Sparkles className="size-3.5" />
@@ -294,7 +283,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
 
         {canManage ? (
           <div className="absolute right-3 top-3 z-20">
-            <Button size="sm" variant="outline" className="rounded-lg bg-white/90 backdrop-blur-sm" onClick={() => setShowCsoInfoForm(true)}>
+            <Button size="sm" variant="outline" className="rounded-lg bg-white/90 backdrop-blur-sm dark:bg-white/10 dark:backdrop-blur-md dark:border-white/20" onClick={() => setShowCsoInfoForm(true)}>
               <Pencil className="size-3.5" />
               Edit Info
             </Button>
@@ -431,21 +420,19 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
                       ) : null}
                     </div>
                     <div className="absolute right-2 top-2 flex gap-1.5 opacity-0 transition group-hover:opacity-100">
-                      <Tooltip content="Edit gallery item">
-                        <Button
-                          size="icon"
-                          variant="secondary"
-                          className="size-8 rounded-full bg-white/90 shadow-sm hover:bg-white"
-                          onClick={() => handleGalleryEdit(item)}
-                        >
-                          <Pencil className="size-3.5" />
-                        </Button>
-                      </Tooltip>
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="size-8 rounded-full bg-white shadow-sm hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white"
+                        onClick={() => handleGalleryEdit(item)}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
                       <Tooltip content="Delete gallery item">
                         <Button
                           size="icon"
                           variant="destructive"
-                          className="size-8 rounded-full shadow-sm"
+                          className="size-8 rounded-full bg-white shadow-sm hover:bg-red-50 dark:bg-red-900/60 dark:hover:bg-red-800/70 dark:shadow-none"
                           onClick={() => handleGalleryDeleteConfirm(item)}
                         >
                           <Trash2 className="size-3.5" />

@@ -79,12 +79,13 @@ function pastelIconClass(tone: PastelTone) {
   return pastelIconClasses[tone]
 }
 
-function MiniSparkline({ tone = "blue" }: { tone?: "blue" | "purple" | "orange" | "green" }) {
+function MiniSparkline({ tone = "blue" }: { tone?: "blue" | "purple" | "orange" | "green" | "amber" }) {
   const colors = {
     blue: "#2563eb",
     purple: "#7c3aed",
     orange: "#f97316",
     green: "#16a34a",
+    amber: "#d7a11f",
   }
 
   return (
@@ -521,7 +522,6 @@ export function OverviewModule({ model }: PortalModuleProps) {
 
   if (model.role === "admin") {
     const latestAnnouncement = model.announcements[announcementIdx % Math.max(1, model.announcements.length)]
-    const openTickets = model.tickets.filter((ticket) => ticket.status !== "Resolved").length
     const activeUsers = model.users.filter((user) => user.status !== "Inactive" && !user.deletedAt).length
     const adminFacts = [
       { label: `ID: ${model.profile.id || "SA-00-0000"}`, icon: ClipboardList },
@@ -552,20 +552,20 @@ export function OverviewModule({ model }: PortalModuleProps) {
         iconClass: pastelIconClass("emerald"),
       },
       {
-        label: "Open Tickets",
-        value: String(openTickets),
-        helper: "Needs attention",
-        icon: MessageSquare,
-        tone: "orange" as const,
-        iconClass: pastelIconClass("orange"),
+        label: "Announcements",
+        value: String(model.announcements.length),
+        helper: "Posted announcements",
+        icon: Megaphone,
+        tone: "amber" as const,
+        iconClass: pastelIconClass("amber"),
       },
     ]
     const analyticsData = [
       { label: "Users", value: model.users.length, color: "#2563eb" },
-      { label: "Tickets", value: model.tickets.length, color: "#7c3aed" },
+      { label: "Announce.", value: model.announcements.length, color: "#0891b2" },
       { label: "Grades", value: model.grades.length, color: "#f97316" },
       { label: "Theses", value: model.theses.length, color: "#16a34a" },
-      { label: "Announce.", value: model.announcements.length, color: "#0891b2" },
+      { label: "Tickets", value: model.tickets.length, color: "#7c3aed" },
       { label: "Audit", value: model.auditLogs.length, color: "#475569" },
     ]
     const analyticsMax = Math.max(1, ...analyticsData.map((item) => item.value))
@@ -578,7 +578,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
       { label: "Audit Entries", value: model.auditLogs.length.toLocaleString(), trend: "System log" },
       { label: "Users", value: activeUsers.toLocaleString(), trend: "Registered accounts" },
       { label: "Theses", value: model.theses.length.toLocaleString(), trend: "Library records" },
-      { label: "Tickets", value: openTickets.toLocaleString(), trend: "Open tickets" },
+      { label: "Announcements", value: model.announcements.length.toLocaleString(), trend: "Posted announcements" },
     ]
 
     return (
@@ -873,8 +873,8 @@ export function OverviewModule({ model }: PortalModuleProps) {
       value: String(activeSubjectCount),
       helper: "This semester",
       icon: BookOpen,
-      tone: "blue" as const,
-      iconClass: pastelIconClass("blue"),
+        tone: "amber" as const,
+        iconClass: pastelIconClass("amber"),
     },
     {
       label: "Units Taken",
