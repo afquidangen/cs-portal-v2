@@ -19,10 +19,16 @@ import type { CategoryGradeResult } from "@/features/portal/lib/grade-engine"
 
 export const runtime = "nodejs"
 
-function scoreKey(col: { name: string; gradingPeriod?: string }) {
-  return col.gradingPeriod && col.gradingPeriod !== "both"
-    ? `${col.gradingPeriod}_${col.name}`
-    : col.name
+function scoreKey(col: { id: string }): string {
+  return col.id
+}
+
+function getScore(scores: Record<string, number> | undefined, col: { id: string; name: string; gradingPeriod?: string }): number {
+  if (!scores) return 0
+  const v = scores[col.id]
+  if (v !== undefined) return v
+  const oldKey = col.gradingPeriod && col.gradingPeriod !== "both" ? `${col.gradingPeriod}_${col.name}` : col.name
+  return scores[oldKey] ?? scores[col.name] ?? 0
 }
 
 export async function POST(request: Request) {
@@ -79,7 +85,7 @@ export async function POST(request: Request) {
     const lectureWeight = (schemeData.lectureWeight as number) ?? 40
     const laboratoryWeight = (schemeData.laboratoryWeight as number) ?? 60
 
-    const columnsData = allColumns as Array<{ category: string; name: string; maxScore: number; gradingPeriod?: string }>
+    const columnsData = allColumns as Array<{ id: string; category: string; name: string; maxScore: number; gradingPeriod?: string }>
     const assessmentData = allAssessments as Array<{ id: string; classId: string; name: string; category: string; maxScore: number; gradingPeriod?: string; scores: Array<{ studentId: string; score: number }> }>
 
     const periodColumns = columnsData.filter(
@@ -102,7 +108,7 @@ export async function POST(request: Request) {
     for (const col of periodColumns) {
       const studentScore = grades.some((g) => {
         const scores = (g as Record<string, unknown>).scores as Record<string, number> | undefined
-        return (scores?.[scoreKey(col)] ?? scores?.[col.name] ?? 0) > (col.maxScore ?? 0)
+        return getScore(scores, col) > (col.maxScore ?? 0)
       })
       if (studentScore) validationErrors.push(`Column "${col.name}" has student scores exceeding max score of ${col.maxScore}.`)
     }
@@ -185,7 +191,7 @@ export async function POST(request: Request) {
           if (examColumnNames.has(col.name)) {
             examItems.push({
               maxScore: col.maxScore,
-              studentScore: scores[scoreKey(col)] ?? scores[col.name] ?? 0,
+              studentScore: getScore(scores, col),
             })
             continue
           }
@@ -199,7 +205,7 @@ export async function POST(request: Request) {
             if (!target[categoryName!]) {
               target[categoryName!] = { studentScores: [], maxScores: [] }
             }
-            target[categoryName!].studentScores.push(scores[scoreKey(col)] ?? scores[col.name] ?? 0)
+            target[categoryName!].studentScores.push(getScore(scores, col))
             target[categoryName!].maxScores.push(col.maxScore)
           }
         }
@@ -248,7 +254,7 @@ export async function POST(request: Request) {
           if (examColumnNames.has(col.name)) {
             examItems.push({
               maxScore: col.maxScore,
-              studentScore: scores[scoreKey(col)] ?? scores[col.name] ?? 0,
+              studentScore: getScore(scores, col),
             })
             continue
           }
@@ -257,7 +263,7 @@ export async function POST(request: Request) {
           if (!assessmentsByCategory[categoryName]) {
             assessmentsByCategory[categoryName] = { studentScores: [], maxScores: [] }
           }
-          assessmentsByCategory[categoryName].studentScores.push(scores[scoreKey(col)] ?? scores[col.name] ?? 0)
+          assessmentsByCategory[categoryName].studentScores.push(getScore(scores, col))
           assessmentsByCategory[categoryName].maxScores.push(col.maxScore)
         }
 

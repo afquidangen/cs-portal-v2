@@ -33,8 +33,16 @@ function fmtNum(val: unknown) {
   return isNaN(n) ? "" : n.toFixed(2)
 }
 
-function scoreKey(col: { name: string; gradingPeriod: string }): string {
-  return col.gradingPeriod === "both" ? col.name : `${col.gradingPeriod}_${col.name}`
+function scoreKey(col: { id: string }): string {
+  return col.id
+}
+
+function getScore(scores: Record<string, number> | undefined, col: { id: string; name: string; gradingPeriod: string }): number | undefined {
+  if (!scores) return undefined
+  const v = scores[col.id]
+  if (v !== undefined) return v
+  const oldKey = col.gradingPeriod === "both" ? col.name : `${col.gradingPeriod}_${col.name}`
+  return scores[oldKey] ?? scores[col.name] ?? undefined
 }
 
 function findGradeColumnBySelection(columns: GradeColumn[], selection: string): GradeColumn | undefined {
@@ -391,6 +399,7 @@ export function SpreadsheetGrid({
   const [dismissedOther, setDismissedOther] = useState(false)
   const [maxScoreDialogOpen, setMaxScoreDialogOpen] = useState(false)
   const [maxScoreColName, setMaxScoreColName] = useState("")
+  const [maxScoreColDisplayName, setMaxScoreColDisplayName] = useState("")
   const [maxScoreCurrent, setMaxScoreCurrent] = useState(0)
   const [releaseOpen, setReleaseOpen] = useState(false)
   const [releaseMidterm, setReleaseMidterm] = useState(true)
@@ -602,10 +611,11 @@ export function SpreadsheetGrid({
       for (const child of children) {
         const id = child.getColDef().colId
         if (id?.startsWith("score_")) {
-          const colName = id.replace("score_", "")
-          const colData = findGradeColumnBySelection(gradeColumns, colName)
+          const colId = id.replace("score_", "")
+          const colData = gradeColumns.find((c) => c.id === colId)
           if (colData) {
-            setMaxScoreColName(scoreKey(colData))
+            setMaxScoreColName(colData.id)
+            setMaxScoreColDisplayName(colData.displayName || colData.name)
             setMaxScoreCurrent(colData.maxScore)
             setMaxScoreDialogOpen(true)
             return
@@ -762,7 +772,7 @@ export function SpreadsheetGrid({
     const ok = await deleteGradeColumnById(colId)
     if (!ok) { toast.error("Failed to delete column."); return }
     setGradeColumns((prev) => prev.filter((c) => c.id !== colId))
-    const keysToRemove = new Set([col.name, scoreKey(col)])
+    const keysToRemove = new Set([col.id, `${col.gradingPeriod}_${col.name}`, col.name])
     setGrades((prev) => prev.map((grade) => {
       const scores = { ...(grade.scores ?? {}) }
       for (const key of keysToRemove) delete scores[key]
@@ -785,7 +795,7 @@ export function SpreadsheetGrid({
       }
     }
     setGradeColumns((prev) => prev.filter((c) => !deletedIds.includes(c.id)))
-    const scoreKeysToRemove = new Set(colsToDelete.flatMap((col) => [col.name, scoreKey(col)]))
+    const scoreKeysToRemove = new Set(colsToDelete.flatMap((col) => [col.id, `${col.gradingPeriod}_${col.name}`, col.name]))
     setGrades((prev) => prev.map((grade) => {
       const scores = { ...(grade.scores ?? {}) }
       for (const key of scoreKeysToRemove) delete scores[key]
@@ -849,8 +859,8 @@ export function SpreadsheetGrid({
     return map
   }, [effectiveScheme])
 
-  const handleUpdateMaxScore = useCallback(async (colName: string, newMaxScore: number) => {
-    const col = findGradeColumnBySelection(gradeColumns, colName)
+  const handleUpdateMaxScore = useCallback(async (colId: string, newMaxScore: number) => {
+    const col = gradeColumns.find((c) => c.id === colId)
     if (!col || col.maxScore === newMaxScore) return
     try {
       const res = await fetch(`/api/portal/grades/columns/${col.id}`, {
@@ -1033,13 +1043,14 @@ export function SpreadsheetGrid({
         },
         valueGetter: (params) => {
           const row = params.data as StudentGradeRow
-          return row.scores?.[scoreKey(col)] ?? ""
+          const v = getScore(row.scores, col)
+          return v === undefined ? "" : v
         },
         valueSetter: (params) => {
           const row = params.data as StudentGradeRow
           const val = params.newValue
           const num = val === "" || val === null || val === undefined ? 0 : Number(val)
-          row.scores = { ...row.scores, [scoreKey(col)]: isNaN(num) ? 0 : num }
+          row.scores = { ...row.scores, [col.id]: isNaN(num) ? 0 : num }
           return true
         },
         cellEditor: "agNumberCellEditor",
@@ -1048,8 +1059,8 @@ export function SpreadsheetGrid({
           "score-cell-missing": (params) => {
             if (!isEditable) return false
             const row = params.data as StudentGradeRow
-            const val = row.scores?.[scoreKey(col)]
-            return val === undefined || val === null
+            const v = getScore(row.scores, col)
+            return v === undefined || v === null
           },
         },
       }
@@ -1425,7 +1436,7 @@ export function SpreadsheetGrid({
     let count = 0
     for (const row of gridData) {
       for (const col of filteredColumns) {
-        const val = row.scores?.[scoreKey(col)]
+        const val = getScore(row.scores, col)
         if (val === undefined || val === null) count++
       }
     }
@@ -1694,7 +1705,7 @@ export function SpreadsheetGrid({
       <EditMaxScoreDialog
         open={maxScoreDialogOpen}
         onOpenChange={setMaxScoreDialogOpen}
-        colName={maxScoreColName}
+        colName={maxScoreColDisplayName}
         currentMax={maxScoreCurrent}
         onConfirm={(newMax) => handleUpdateMaxScore(maxScoreColName, newMax)}
       />

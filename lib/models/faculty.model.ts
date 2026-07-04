@@ -21,7 +21,7 @@ const FacultySchema = new Schema<IFaculty>(
     name: { type: String, required: true },
     position: String,
     role: String,
-    email: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
     education: String,
     status: {
       type: String,

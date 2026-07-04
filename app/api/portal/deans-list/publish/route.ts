@@ -26,6 +26,8 @@ export async function POST(request: Request) {
       groups[yl].push(e)
     }
 
+    const allQualifiedIds: string[] = []
+
     for (const yearLevel of YEAR_LEVELS) {
       const group = groups[yearLevel]
       if (!group || group.length === 0) continue
@@ -44,11 +46,13 @@ export async function POST(request: Request) {
           { $set: { rank: i + 1 } }
         )
       }
+
+      allQualifiedIds.push(...qualified.map((e) => e.id))
     }
 
     const now = new Date().toISOString()
     await DeansListModel.updateMany(
-      { semesterId },
+      { id: { $in: allQualifiedIds } },
       { $set: { published: true, publishedAt: now, needsRecalculation: false } }
     )
 

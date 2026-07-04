@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-export type GradingPeriodOption = "midterm" | "final" | "both"
+export type GradingPeriodOption = "midterm" | "final"
 
 export function AddColumnDialog({
   open,
@@ -97,7 +97,7 @@ export function AddColumnDialog({
           <div className="grid gap-2">
             <label className="text-sm font-medium text-foreground">Grading Period</label>
             <div className="flex gap-2">
-              {(["midterm", "final", "both"] as GradingPeriodOption[]).map((p) => (
+              {(["midterm", "final"] as GradingPeriodOption[]).map((p) => (
                 <Button
                   key={p}
                   type="button"

@@ -983,7 +983,7 @@ export function usePortalDashboardModel(role: Role) {
     for (const member of faculty) {
       const email = member.email?.toLowerCase().trim() ?? ""
       if (!activeFacultyEmails.has(email)) continue
-      const key = member.name.toLowerCase().trim()
+      const key = email
       const user = userByFacultyEmail.get(email)
       seen.set(key, user ? { ...member, name: user.name ?? member.name, photoUrl: user.photoUrl } : member)
     }
@@ -1825,23 +1825,23 @@ export function usePortalDashboardModel(role: Role) {
 
   function syncFacultyFromUsers() {
     const facultyUsers = users.filter((u) => u.role === "faculty" && !u.deletedAt)
-    const facultyUserNames = new Set(facultyUsers.map((u) => u.name.toLowerCase().trim()))
-    const existingFacultyNames = new Map<string, string>()
+    const facultyUserEmails = new Set(facultyUsers.map((u) => u.email.toLowerCase().trim()))
+    const existingFacultyByEmail = new Map<string, string>()
     for (const f of faculty) {
-      existingFacultyNames.set(f.name.toLowerCase().trim(), f.id)
+      existingFacultyByEmail.set(f.email.toLowerCase().trim(), f.id)
     }
 
     for (const member of faculty) {
-      if (!facultyUserNames.has(member.name.toLowerCase().trim())) {
+      if (!facultyUserEmails.has(member.email.toLowerCase().trim())) {
         void syncApi("DELETE", `/api/portal/faculty/${member.id}`)
         addAuditLog(`Deleted faculty account "${member.name}"`)
       }
     }
 
-    setFaculty((current) => current.filter((m) => facultyUserNames.has(m.name.toLowerCase().trim())))
+    setFaculty((current) => current.filter((m) => facultyUserEmails.has(m.email.toLowerCase().trim())))
 
     for (const user of facultyUsers) {
-      if (!existingFacultyNames.has(user.name.toLowerCase().trim())) {
+      if (!existingFacultyByEmail.has(user.email.toLowerCase().trim())) {
         const newId = `FAC-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
         const newEntry = {
           id: newId,
@@ -2160,12 +2160,7 @@ export function usePortalDashboardModel(role: Role) {
         grade.studentId === userId ? { ...grade, deletedAt: now } : grade
       )
     )
-    setFaculty((current) => current.filter((item) => item.id !== userId))
-    if (user?.role === "faculty") {
-      syncApi("DELETE", `/api/portal/faculty/${userId}`, {}).catch((e) =>
-        console.error("Failed to soft-delete faculty record:", e)
-      )
-    }
+    setFaculty((current) => current.filter((item) => item.email !== user?.email))
     syncApi("DELETE", `/api/portal/users/${userId}`).then(() =>
       toast.success(user ? `User "${user.name}" moved to trash.` : "User moved to trash.")
     ).catch((e) => {
@@ -2218,7 +2213,7 @@ export function usePortalDashboardModel(role: Role) {
     setGrades((current) =>
       current.filter((grade) => grade.studentId !== userId)
     )
-    setFaculty((current) => current.filter((item) => item.id !== userId))
+    setFaculty((current) => current.filter((item) => item.email !== user?.email))
     syncApi("DELETE", `/api/portal/users/${userId}/permanent`).then(() =>
       toast.success(user ? `User "${user.name}" permanently deleted.` : "User permanently deleted.")
     ).catch((e) => {

@@ -42,6 +42,10 @@ export async function GET(request: Request) {
       semesterId: effectiveSemesterId,
       published: true,
       needsRecalculation: { $ne: true },
+      $or: [
+        { isQualified: true, manualOverride: { $ne: "exclude" } },
+        { manualOverride: "include" },
+      ],
     }
 
     if (auth.user.role === "student" && currentUserYearLevel) {

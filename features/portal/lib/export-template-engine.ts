@@ -383,22 +383,34 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
     schedulesRepository.findAll({ id: classId }) as Promise<Record<string, unknown>[]>,
   ])
 
-  // Build sex lookup map from student records
+  // Build sex lookup map and sort key map from student records
   const studentIds = [...new Set(grades.map((g) => g.studentId).filter(Boolean))] as string[]
   const sexMap = new Map<string, string>()
+  const studentSortMap = new Map<string, string>()
   if (studentIds.length > 0) {
     const students = (await usersRepository.findAll({ id: { $in: studentIds } })) as Array<{
       id: string
       sex?: string
+      firstName?: string
+      lastName?: string
+      name?: string
     }>
     for (const s of students) {
       if (s.sex) sexMap.set(s.id, s.sex)
+      const key = (s.lastName ?? s.name?.split(" ").pop() ?? "").toLowerCase()
+      studentSortMap.set(s.id, key)
     }
   }
 
   if (section) {
     grades = grades.filter((g) => g.section === section)
   }
+
+  grades.sort((a, b) => {
+    const aKey = studentSortMap.get(a.studentId) ?? (a.student ?? "").toLowerCase()
+    const bKey = studentSortMap.get(b.studentId) ?? (b.student ?? "").toLowerCase()
+    return aKey.localeCompare(bKey)
+  })
 
   if (grades.length === 0) {
     throw new Error("No grades found for this class.")
@@ -467,6 +479,16 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
     if (rogSheet.getColumn(12).width < semWidth) {
       rogSheet.getColumn(12).width = semWidth
     }
+  }
+
+  // Widen dean name column in GS MID and GS FIN footers
+  const gsMidSheet = wb.getWorksheet("GS MID")
+  if (gsMidSheet && (gsMidSheet.getColumn(14).width ?? 0) < 30) {
+    gsMidSheet.getColumn(14).width = 38
+  }
+  const gsFinSheet = wb.getWorksheet("GS FIN")
+  if (gsFinSheet && (gsFinSheet.getColumn(13).width ?? 0) < 38) {
+    gsFinSheet.getColumn(13).width = 38
   }
 
   const crSheet = wb.getWorksheet("CLASS RECORD")

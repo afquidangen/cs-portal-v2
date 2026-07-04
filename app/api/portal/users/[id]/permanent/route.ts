@@ -28,6 +28,7 @@ export async function DELETE(
           schedulesRepository.deleteMany({ id: { $in: classIds } }).catch(() => {}),
         ])
       }
+      await facultyRepository.deleteMany({ email: user.email as string }).catch(() => {})
     }
 
     const deleted = await usersRepository.delete({ id })
@@ -35,7 +36,6 @@ export async function DELETE(
     await Promise.all([
       rosterRepository.delete({ id }).catch(() => {}),
       gradesRepository.deleteMany({ studentId: id }).catch(() => {}),
-      facultyRepository.delete({ id }).catch(() => {}),
     ])
     return success({ deleted: true })
   } catch (err) {

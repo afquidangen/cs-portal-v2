@@ -292,7 +292,7 @@ export function computeExamGrade(
 
 function buildComponentAssessments(
   categories: Array<{ name: string }>,
-  columns: Array<{ name: string; category: string; maxScore: number; gradingPeriod?: string }>,
+  columns: Array<{ id: string; name: string; category: string; maxScore: number; gradingPeriod?: string }>,
   assessments: Array<{ name: string; category: string; maxScore: number; scores: Array<{ studentId: string; score: number }> }>,
   studentId: string,
   scores: Record<string, number>
@@ -305,10 +305,13 @@ function buildComponentAssessments(
     if (!result[categoryName]) {
       result[categoryName] = { studentScores: [], maxScores: [] }
     }
-    const key = col.gradingPeriod && col.gradingPeriod !== "both"
-      ? `${col.gradingPeriod}_${col.name}`
-      : col.name
-    result[categoryName].studentScores.push(scores[key] ?? scores[col.name] ?? 0)
+    const v = scores[col.id]
+    if (v !== undefined) {
+      result[categoryName].studentScores.push(v)
+    } else {
+      const oldKey = col.gradingPeriod && col.gradingPeriod !== "both" ? `${col.gradingPeriod}_${col.name}` : col.name
+      result[categoryName].studentScores.push(scores[oldKey] ?? scores[col.name] ?? 0)
+    }
     result[categoryName].maxScores.push(col.maxScore)
   }
 
@@ -336,7 +339,7 @@ function buildCategoryWeightMap(categories: GradingCategoryDef[]): Record<string
 
 export function computeLivePreview(params: {
   scores: Record<string, number>
-  columns: Array<{ name: string; category: string; maxScore: number; gradingPeriod?: string }>
+  columns: Array<{ id: string; name: string; category: string; maxScore: number; gradingPeriod?: string }>
   assessments: Array<{ name: string; category: string; maxScore: number; scores: Array<{ studentId: string; score: number }> }>
   studentId: string
   components: SchemeComponentDef[]
@@ -419,13 +422,13 @@ export function computeLivePreview(params: {
 
     const examItems: Array<{ maxScore: number; studentScore: number }> = []
     for (const col of columns.filter((c) => isExamItem(c.category))) {
-      const key = col.gradingPeriod && col.gradingPeriod !== "both"
-        ? `${col.gradingPeriod}_${col.name}`
-        : col.name
-      examItems.push({
-        maxScore: col.maxScore,
-        studentScore: scores[key] ?? scores[col.name] ?? 0,
-      })
+      const v = scores[col.id]
+      if (v !== undefined) {
+        examItems.push({ maxScore: col.maxScore, studentScore: v })
+      } else {
+        const oldKey = col.gradingPeriod && col.gradingPeriod !== "both" ? `${col.gradingPeriod}_${col.name}` : col.name
+        examItems.push({ maxScore: col.maxScore, studentScore: scores[oldKey] ?? scores[col.name] ?? 0 })
+      }
     }
     for (const asm of assessments.filter((a) => isExamItem(a.category))) {
       examItems.push({
@@ -452,13 +455,13 @@ export function computeLivePreview(params: {
 
     const examItems: Array<{ maxScore: number; studentScore: number }> = []
     for (const col of columns.filter((c) => isExamItem(c.category))) {
-      const key = col.gradingPeriod && col.gradingPeriod !== "both"
-        ? `${col.gradingPeriod}_${col.name}`
-        : col.name
-      examItems.push({
-        maxScore: col.maxScore,
-        studentScore: scores[key] ?? scores[col.name] ?? 0,
-      })
+      const v = scores[col.id]
+      if (v !== undefined) {
+        examItems.push({ maxScore: col.maxScore, studentScore: v })
+      } else {
+        const oldKey = col.gradingPeriod && col.gradingPeriod !== "both" ? `${col.gradingPeriod}_${col.name}` : col.name
+        examItems.push({ maxScore: col.maxScore, studentScore: scores[oldKey] ?? scores[col.name] ?? 0 })
+      }
     }
     for (const asm of assessments.filter((a) => isExamItem(a.category))) {
       examItems.push({

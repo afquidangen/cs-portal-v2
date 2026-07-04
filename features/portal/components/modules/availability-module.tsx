@@ -185,16 +185,15 @@ function AdminStatusEditor({ model }: PortalModuleProps) {
 
   const visibleFaculty = useMemo(() => {
     const activeEmails = new Set(userByEmail.keys())
-    return faculty
-      .filter((fr) => activeEmails.has(fr.email.toLowerCase().trim()))
-      .map((fr) => {
-        const user = userByEmail.get(fr.email.toLowerCase().trim())
-        return {
-          ...fr,
-          name: user?.name ?? fr.name,
-          email: user?.email ?? fr.email,
-        }
-      })
+    const seen = new Map<string, (typeof faculty)[number]>()
+    for (const fr of faculty) {
+      const email = fr.email?.toLowerCase().trim() ?? ""
+      if (!activeEmails.has(email)) continue
+      if (seen.has(email)) continue
+      const user = userByEmail.get(email)
+      seen.set(email, user ? { ...fr, name: user.name ?? fr.name, email: user.email ?? fr.email } : fr)
+    }
+    return Array.from(seen.values())
   }, [faculty, userByEmail])
 
   useEffect(() => {
@@ -280,7 +279,14 @@ export function AvailabilityModule({ model }: PortalModuleProps) {
     const activeEmails = new Set(
       users.filter((u) => u.role === "faculty" && !u.deletedAt).map((u) => u.email.toLowerCase().trim())
     )
-    return faculty.filter((fr) => activeEmails.has(fr.email.toLowerCase().trim()))
+    const seen = new Map<string, (typeof faculty)[number]>()
+    for (const fr of faculty) {
+      const email = fr.email?.toLowerCase().trim() ?? ""
+      if (!activeEmails.has(email)) continue
+      if (seen.has(email)) continue
+      seen.set(email, fr)
+    }
+    return Array.from(seen.values())
   }, [faculty, users])
 
   if (role === "faculty") {

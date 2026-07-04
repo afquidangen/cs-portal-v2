@@ -206,7 +206,7 @@ export function FacultySemesterArchiveModule({ model }: PortalModuleProps) {
                                       {g.finalGrade != null ? g.finalGrade.toFixed(2) : g.tentativeFinalGrade != null ? g.tentativeFinalGrade.toFixed(2) : "---"}
                                     </td>
                                     <td className="px-3 py-2 text-right font-mono tabular-nums text-foreground">
-                                      {g.transmutedGrade ?? "---"}
+                                      {g.transmutedGrade != null ? g.transmutedGrade.toFixed(2) : "---"}
                                     </td>
                                     <td className="px-3 py-2 text-center">
                                       <span className={cn(
