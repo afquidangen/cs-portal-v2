@@ -19,7 +19,7 @@ export function gradeReleasedHtml(
     </p>
 
     <p style="color:#475569;font-size:14px;margin:0 0 20px;line-height:1.6;">
-      You may now log in to the Student Portal to view your grades.
+      You may now log in to the COMSCITE Portal to view your grades.
     </p>
 
     ${facultyLine}

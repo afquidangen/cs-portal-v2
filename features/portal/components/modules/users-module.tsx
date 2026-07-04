@@ -97,9 +97,9 @@ export function UsersModule({ model }: PortalModuleProps) {
   } = model
 
   const [editUser, setEditUser] = useState<(UserRecord & { password?: string }) | null>(null)
-  const [deleteUserId, setDeleteUserId] = useState<string | null>(null)
+  const [deleteUserInfo, setDeleteUserInfo] = useState<{ id: string; name: string } | null>(null)
   const [restoreUserId, setRestoreUserId] = useState<string | null>(null)
-  const [permanentDeleteUserId, setPermanentDeleteUserId] = useState<string | null>(null)
+  const [permanentDeleteUserInfo, setPermanentDeleteUserInfo] = useState<{ id: string; name: string } | null>(null)
   const [toggleUserId, setToggleUserId] = useState<string | null>(null)
   const [deleteAllConfirm, setDeleteAllConfirm] = useState(false)
   const [deleteGradeConfirm, setDeleteGradeConfirm] = useState<{ userId: string; index: number; subjectCode: string; subjectName: string } | null>(null)
@@ -258,9 +258,9 @@ export function UsersModule({ model }: PortalModuleProps) {
   }
 
   function handleDeleteConfirm() {
-    if (!deleteUserId) return
-    deleteUser(deleteUserId)
-    setDeleteUserId(null)
+    if (!deleteUserInfo) return
+    deleteUser(deleteUserInfo.id)
+    setDeleteUserInfo(null)
   }
 
   function handleRestoreConfirm() {
@@ -270,9 +270,9 @@ export function UsersModule({ model }: PortalModuleProps) {
   }
 
   function handlePermanentDeleteConfirm() {
-    if (!permanentDeleteUserId) return
-    permanentlyDeleteUser(permanentDeleteUserId)
-    setPermanentDeleteUserId(null)
+    if (!permanentDeleteUserInfo) return
+    permanentlyDeleteUser(permanentDeleteUserInfo.id)
+    setPermanentDeleteUserInfo(null)
   }
 
   async function handleRestoreAll() {
@@ -356,25 +356,27 @@ export function UsersModule({ model }: PortalModuleProps) {
       </div>
 
       <Card className="rounded-lg border-border bg-card shadow-sm">
-        <CardHeader className="px-6 pb-0 pt-6">
-          <CardTitle className="flex items-center gap-3 text-base font-semibold text-foreground">
-            <Users className="size-5 text-blue-600" />
-            {trashView ? `Recycle Bin (${deletedUsers.length})` : `Active Users (${visibleUsers.length})`}
-          </CardTitle>
-          <p className="pt-1 text-sm text-muted-foreground">{trashView ? "Deleted accounts" : "Search and filter accounts."}</p>
+        <CardHeader className="flex flex-row items-center justify-between gap-4 px-6 pb-0 pt-6">
+          <div>
+            <CardTitle className="flex items-center gap-3 text-base font-semibold text-foreground">
+              <Users className="size-5 text-blue-600" />
+              {trashView ? `Recycle Bin (${deletedUsers.length})` : `Active Users (${visibleUsers.length})`}
+            </CardTitle>
+            <p className="pt-1 text-sm text-muted-foreground">{trashView ? "Deleted accounts" : "Search and filter accounts."}</p>
+          </div>
+          <div className="min-w-0 w-full max-w-sm shrink-0">
+            <SearchBox
+              value={query}
+              onChange={(v) => {
+                setQuery(v)
+                setPage(1)
+              }}
+              placeholder="Search name, email, or ID"
+            />
+          </div>
         </CardHeader>
         <CardContent className="px-6 pb-6 pt-6">
-          <div className="mb-5 grid w-full max-w-full min-w-0 grid-cols-1 gap-2 rounded-lg border border-border bg-muted/20 p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(240px,1.45fr)_repeat(5,minmax(125px,1fr))_repeat(3,minmax(112px,auto))]">
-            <div className="min-w-0 sm:col-span-2 lg:col-span-3 xl:col-span-1 [&>div]:max-w-none">
-              <SearchBox
-                value={query}
-                onChange={(v) => {
-                  setQuery(v)
-                  setPage(1)
-                }}
-                placeholder="Search name, email, or ID"
-              />
-            </div>
+          <div className="mb-5 grid w-full max-w-full min-w-0 grid-cols-1 gap-2 rounded-lg border border-border bg-muted/20 p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[repeat(5,minmax(125px,1fr))_repeat(3,minmax(100px,auto))]">
             <Select
               value={roleFilter}
               onChange={(v) => {
@@ -438,7 +440,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                 setTrashView(!trashView)
                 setPage(1)
               }}
-              className="h-11 w-full whitespace-nowrap rounded-lg sm:col-span-2 lg:col-span-1 xl:col-span-1"
+              className="h-10 w-full whitespace-nowrap rounded-lg px-0.5 sm:col-span-2 lg:col-span-1 xl:col-span-1"
               title={trashView ? "View active users" : "View recycle bin"}
             >
               <Trash2 className="size-4" />
@@ -448,7 +450,7 @@ export function UsersModule({ model }: PortalModuleProps) {
               type="button"
               variant="outline"
               onClick={() => refreshDashboardData()}
-              className="h-11 w-full whitespace-nowrap rounded-lg sm:col-span-2 lg:col-span-1 xl:col-span-1"
+              className="h-10 w-full whitespace-nowrap rounded-lg px-0.5 sm:col-span-2 lg:col-span-1 xl:col-span-1"
               title="Refresh records"
             >
               <RefreshCw className="size-4" />
@@ -457,11 +459,12 @@ export function UsersModule({ model }: PortalModuleProps) {
             {!trashView ? (
               <Button
                 type="button"
+                variant="outline"
                 onClick={() => {
                   setAddRole("student")
                   setAddOpen(true)
                 }}
-                className="h-11 w-full whitespace-nowrap rounded-lg sm:col-span-2 lg:col-span-1 xl:col-span-1"
+                className="h-10 w-full whitespace-nowrap rounded-lg px-0.5 sm:col-span-2 lg:col-span-1 xl:col-span-1"
               >
                 <Plus className="size-4" />
                 Add User
@@ -572,7 +575,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                           </Button>
                         </Tooltip>
                         <Tooltip content="Move to trash">
-                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDeleteUserId(user.id)}>
+                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDeleteUserInfo({ id: user.id, name: user.name })}>
                             <Trash2 className="size-3.5" />
                           </Button>
                         </Tooltip>
@@ -654,7 +657,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                                 </Button>
                               </Tooltip>
                               <Tooltip content="Move to trash">
-                                <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => setDeleteUserId(user.id)} aria-label="Move to trash"><Trash2 className="size-4" /></Button>
+                                <Button size="icon" variant="outline" className="size-10 rounded-xl" onClick={() => setDeleteUserInfo({ id: user.id, name: user.name })} aria-label="Move to trash"><Trash2 className="size-4" /></Button>
                               </Tooltip>
                             </div>
                           </td>
@@ -744,7 +747,7 @@ export function UsersModule({ model }: PortalModuleProps) {
                               <RotateCcw className="size-3.5" />
                               Restore
                             </Button>
-                            <Button size="sm" variant="outline" className="rounded-xl border-red-500/30 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950" onClick={() => setPermanentDeleteUserId(user.id)} title="Permanently delete">
+                            <Button size="sm" variant="outline" className="rounded-xl border-red-500/30 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950" onClick={() => setPermanentDeleteUserInfo({ id: user.id, name: user.name })} title="Permanently delete">
                               <Trash2 className="size-3.5" />
                               Delete Forever
                             </Button>
@@ -1910,14 +1913,14 @@ export function UsersModule({ model }: PortalModuleProps) {
       </Dialog>
 
       <Dialog
-        open={!!deleteUserId}
-        onOpenChange={(o) => !o && setDeleteUserId(null)}
+        open={!!deleteUserInfo}
+        onOpenChange={(o) => !o && setDeleteUserInfo(null)}
       >
         <DialogContent className="w-[95vw] sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-xl text-foreground">Move to Trash?</DialogTitle>
             <DialogDescription className="pt-1 text-muted-foreground">
-              The account will be moved to the recycle bin. You can restore it later.
+              The account &ldquo;{deleteUserInfo?.name}&rdquo; will be moved to the recycle bin. You can restore it later.
             </DialogDescription>
           </DialogHeader>
 
@@ -1968,8 +1971,8 @@ export function UsersModule({ model }: PortalModuleProps) {
       </Dialog>
 
       <Dialog
-        open={!!permanentDeleteUserId}
-        onOpenChange={(o) => !o && setPermanentDeleteUserId(null)}
+        open={!!permanentDeleteUserInfo}
+        onOpenChange={(o) => !o && setPermanentDeleteUserInfo(null)}
       >
         <DialogContent className="w-[95vw] sm:max-w-sm">
           <DialogHeader>
@@ -1977,7 +1980,7 @@ export function UsersModule({ model }: PortalModuleProps) {
             <DialogDescription className="pt-1 text-muted-foreground">
               <span className="flex items-start gap-2">
                 <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" />
-                This action cannot be undone. The user and all associated data (grades, roster, records) will be permanently removed.
+                This will permanently delete &ldquo;{permanentDeleteUserInfo?.name}&rdquo; and all associated data (grades, roster, records). This cannot be undone.
               </span>
             </DialogDescription>
           </DialogHeader>

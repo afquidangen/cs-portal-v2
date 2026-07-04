@@ -1,5 +1,5 @@
 import { connectToDatabase } from "@/lib/mongodb"
-import { DeansListModel, GradeModel, UserModel, SemesterModel, ScheduleModel } from "@/lib/models"
+import { DeansListModel, GradeModel, UserModel, SemesterModel, ScheduleModel, ClassStudentModel } from "@/lib/models"
 import { success, error, badRequest } from "@/lib/api-response"
 import { requireAdmin } from "@/lib/api-auth"
 import { evaluateDeansList } from "@/features/portal/lib/deans-list-evaluator"
@@ -47,15 +47,23 @@ export async function POST(request: Request) {
       deletedAt: null,
       $or: [
         { semesterId },
-        { semesterId: { $exists: false }, classId: { $in: semesterClassIds } },
+        { classId: { $in: semesterClassIds } },
       ],
     }).lean()
     const studentsWithGrades = [
       ...new Set(allGrades.map((g) => g.studentId)),
     ]
 
+    const scheduleSections = schedules.map((s) => (s as unknown as Record<string, unknown>).section as string).filter(Boolean)
+    const rosterStudents = scheduleSections.length > 0
+      ? await ClassStudentModel.find({ enrolled: true, section: { $in: scheduleSections } }).lean()
+      : []
+    const rosterStudentIds = rosterStudents.map((r) => r.id)
+
+    const allStudentIds = [...new Set([...studentsWithGrades, ...rosterStudentIds])]
+
     const users = await UserModel.find({
-      id: { $in: studentsWithGrades },
+      id: { $in: allStudentIds },
       role: "student",
     }).lean()
 

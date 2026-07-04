@@ -1,5 +1,5 @@
 import { connectToDatabase } from "@/lib/mongodb"
-import { DeansListModel, GradeModel, SemesterModel, UserModel, ScheduleModel } from "@/lib/models"
+import { DeansListModel, GradeModel, SemesterModel, UserModel, ScheduleModel, ClassStudentModel } from "@/lib/models"
 import { evaluateDeansList } from "./deans-list-evaluator"
 import { v4 as uuid } from "@/lib/uuid"
 import { normalizeYearLevel } from "./year-level"
@@ -17,13 +17,21 @@ export async function recomputeDeansListForSemester(semesterId: string): Promise
     deletedAt: null,
     $or: [
       { semesterId },
-      { semesterId: { $exists: false }, classId: { $in: semesterClassIds } },
+      { classId: { $in: semesterClassIds } },
     ],
   }).lean()
-  const studentIds = [...new Set(allGrades.map((g) => g.studentId))]
+  const studentsWithGrades = [...new Set(allGrades.map((g) => g.studentId))]
+
+  const scheduleSections = schedules.map((s) => (s as unknown as Record<string, unknown>).section as string).filter(Boolean)
+  const rosterStudents = scheduleSections.length > 0
+    ? await ClassStudentModel.find({ enrolled: true, section: { $in: scheduleSections } }).lean()
+    : []
+  const rosterStudentIds = rosterStudents.map((r) => r.id)
+
+  const allStudentIds = [...new Set([...studentsWithGrades, ...rosterStudentIds])]
 
   const users = await UserModel.find({
-    id: { $in: studentIds },
+    id: { $in: allStudentIds },
     role: "student",
   }).lean()
 
