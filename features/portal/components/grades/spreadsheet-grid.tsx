@@ -485,7 +485,7 @@ export function SpreadsheetGrid({
       if (col.gradingPeriod !== activeTab) return false
       if (ignore.has(col.name.toLowerCase())) return false
       return true
-    })
+    }).sort((a, b) => a.order - b.order)
   }, [gradeColumns, activeTab])
 
   const filteredAssessments = useMemo(() => {
@@ -1303,7 +1303,24 @@ export function SpreadsheetGrid({
        }, valueFormatter: (params) => fmtNum(params.value), cellStyle: { fontWeight: 500, backgroundColor: "color-mix(in srgb, var(--accent), transparent 50%)" },
      }
 
+    const schemeCompOrder: string[] = []
+    if (effectiveScheme) {
+      for (const comp of effectiveScheme.components) schemeCompOrder.push(comp.name)
+      for (const lab of effectiveScheme.labComponents ?? []) schemeCompOrder.push(lab.name)
+    }
+    for (const compName of schemeCompOrder) {
+      const catGroups = compCatGroups.get(compName)
+      if (!catGroups) continue
+      const compWt = compWeightMap.get(compName)
+      cols.push({
+        headerName: compWt != null ? `${compName} (${compWt}%)` : compName,
+        headerClass: "ag-component-group-header",
+        marryChildren: true,
+        children: catGroups,
+      })
+    }
     for (const [compName, catGroups] of compCatGroups) {
+      if (schemeCompOrder.includes(compName)) continue
       const compWt = compWeightMap.get(compName)
       cols.push({
         headerName: compWt != null ? `${compName} (${compWt}%)` : compName,
