@@ -568,11 +568,11 @@ export function usePortalDashboardModel(role: Role) {
   )
 
   const gradeAverage = useMemo(() => {
-    const withGrade = studentGrades.filter((g) => g.transmutedGrade != null)
+    const withGrade = studentGrades.filter((g) => (g.releasedTransmutedGrade ?? g.transmutedGrade) != null)
     if (!withGrade.length) return "N/A"
     const average =
       withGrade.reduce(
-        (sum, grade) => sum + grade.transmutedGrade!,
+        (sum, grade) => sum + (grade.releasedTransmutedGrade ?? grade.transmutedGrade)!,
         0
       ) / withGrade.length
     return average.toFixed(2)
@@ -607,11 +607,11 @@ export function usePortalDashboardModel(role: Role) {
   )
 
   const currentSemesterGwa = useMemo(() => {
-    const releasedGrades = currentSemesterAllGrades.filter((g) => g.transmutedGrade != null && g.finalReleased === true)
+    const releasedGrades = currentSemesterAllGrades.filter((g) => (g.releasedTransmutedGrade ?? g.transmutedGrade) != null && g.finalReleased === true)
     if (!releasedGrades.length) return null
     const average =
       releasedGrades.reduce(
-        (sum, grade) => sum + grade.transmutedGrade!,
+        (sum, grade) => sum + (grade.releasedTransmutedGrade ?? grade.transmutedGrade)!,
         0
       ) / releasedGrades.length
     return Number(average.toFixed(2))
@@ -1194,14 +1194,14 @@ export function usePortalDashboardModel(role: Role) {
     const studentName = first?.student ?? profile.name
     const studentSection = first?.section ?? profileSection
     const rows = data.map((grade) => {
-      const midterm = grade.midtermReleased && grade.midtermGrade !== undefined ? grade.midtermGrade.toFixed(2) : "—"
-      const midRem = grade.midtermReleased && grade.midtermRemarks ? grade.midtermRemarks : "—"
-      const finalTerm = grade.finalReleased && grade.tentativeFinalGrade !== undefined ? grade.tentativeFinalGrade.toFixed(2) : "—"
-      const finRem = grade.finalReleased && grade.finalRemarks ? grade.finalRemarks : "—"
-      const gPct = grade.finalReleased && grade.finalGrade !== undefined ? grade.finalGrade.toFixed(2) : "—"
-      const rating = grade.finalReleased && grade.finalGrade !== undefined ? grade.finalGrade.toFixed(0) : "—"
-      const equiv = grade.finalReleased && grade.transmutedGrade !== undefined ? grade.transmutedGrade.toFixed(2) : "—"
-      const status = grade.finalReleased ? (grade.remarks || "Passed") : "—"
+      const midterm = grade.midtermReleased && (grade.releasedMidtermGrade ?? grade.midtermGrade) !== undefined ? (grade.releasedMidtermGrade ?? grade.midtermGrade)!.toFixed(2) : "—"
+      const midRem = grade.midtermReleased && (grade.releasedMidtermRemarks ?? grade.midtermRemarks) ? (grade.releasedMidtermRemarks ?? grade.midtermRemarks) : "—"
+      const finalTerm = grade.finalReleased && (grade.releasedTentativeFinalGrade ?? grade.tentativeFinalGrade) !== undefined ? (grade.releasedTentativeFinalGrade ?? grade.tentativeFinalGrade)!.toFixed(2) : "—"
+      const finRem = grade.finalReleased && (grade.releasedFinalRemarks ?? grade.finalRemarks) ? (grade.releasedFinalRemarks ?? grade.finalRemarks) : "—"
+      const gPct = grade.finalReleased && (grade.releasedFinalGrade ?? grade.finalGrade) !== undefined ? (grade.releasedFinalGrade ?? grade.finalGrade)!.toFixed(2) : "—"
+      const rating = grade.finalReleased && (grade.releasedFinalGrade ?? grade.finalGrade) !== undefined ? (grade.releasedFinalGrade ?? grade.finalGrade)!.toFixed(0) : "—"
+      const equiv = grade.finalReleased && (grade.releasedTransmutedGrade ?? grade.transmutedGrade) !== undefined ? (grade.releasedTransmutedGrade ?? grade.transmutedGrade)!.toFixed(2) : "—"
+      const status = grade.finalReleased ? ((grade.releasedRemarks ?? grade.remarks) || "Passed") : "—"
       return `<tr>
         <td>${escHtml(grade.subject)}</td>
         <td>${escHtml(grade.code)}</td>
@@ -1210,9 +1210,9 @@ export function usePortalDashboardModel(role: Role) {
       </tr>`
     }).join("\n")
 
-    const withGrade = data.filter((g) => g.transmutedGrade != null)
+    const withGrade = data.filter((g) => (g.releasedTransmutedGrade ?? g.transmutedGrade) != null)
     const gwa = withGrade.length
-      ? (withGrade.reduce((sum, g) => sum + g.transmutedGrade!, 0) / withGrade.length).toFixed(2)
+      ? (withGrade.reduce((sum, g) => sum + (g.releasedTransmutedGrade ?? g.transmutedGrade)!, 0) / withGrade.length).toFixed(2)
       : "—"
     const totalUnits = data.reduce((sum, g) => sum + (g.units || 0), 0)
     const activeSem = semesters.find((s) => s.status === "Active")
@@ -1320,119 +1320,214 @@ export function usePortalDashboardModel(role: Role) {
     const uniqueYears = Array.from(new Set(allTerms.map((t) => t.year as string)))
 
     function findGrade(code: string): string {
+      const normalizedCode = code.trim().toLowerCase().replace(/[^a-z0-9]/g, "")
       const gr = grades.find(
-        (g) => g.studentId === profile.id && g.code === code && (g.released || g.finalReleased)
+        (g) => {
+          if (g.studentId !== profile.id) return false
+          const gradeCode = (g.code || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "")
+          return gradeCode === normalizedCode && g.midtermReleased && g.finalReleased
+        }
       )
-      if (gr?.finalReleased && gr.transmutedGrade !== undefined) return gr.transmutedGrade.toFixed(2)
+      if (gr?.finalReleased && (gr.releasedTransmutedGrade ?? gr.transmutedGrade) !== undefined) return (gr.releasedTransmutedGrade ?? gr.transmutedGrade)!.toFixed(2)
       const hist = (studentUser?.gradeHistory as Array<Record<string, unknown>> | undefined)
       if (hist) {
-        const entry = hist.find((h) => (h.subjectCode as string)?.toLowerCase() === code.toLowerCase())
+        const entry = hist.find((h) => {
+          const entryCode = ((h.subjectCode as string) || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "")
+          return entryCode === normalizedCode
+        })
         if (entry && entry.transmutedGrade !== undefined) return Number(entry.transmutedGrade).toFixed(2)
       }
       return "—"
     }
 
     function findRemarks(code: string): string {
+      const normalizedCode = code.trim().toLowerCase().replace(/[^a-z0-9]/g, "")
       const gr = grades.find(
-        (g) => g.studentId === profile.id && g.code === code && g.finalReleased
+        (g) => {
+          if (g.studentId !== profile.id) return false
+          const gradeCode = (g.code || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "")
+          return gradeCode === normalizedCode && g.midtermReleased && g.finalReleased
+        }
       )
-      if (gr?.remarks) return gr.remarks
+      if (gr && (gr.releasedRemarks || gr.remarks)) return (gr.releasedRemarks ?? gr.remarks)!
       const hist = (studentUser?.gradeHistory as Array<Record<string, unknown>> | undefined)
       if (hist) {
-        const entry = hist.find((h) => (h.subjectCode as string)?.toLowerCase() === code.toLowerCase())
+        const entry = hist.find((h) => {
+          const entryCode = ((h.subjectCode as string) || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "")
+          return entryCode === normalizedCode
+        })
         if (entry?.remarks) return entry.remarks as string
       }
       return ""
     }
 
-    const tablesHtml = uniqueYears.map((year) => {
-      const yearTerms = allTerms.filter((t) => t.year === year)
-      const rows = yearTerms.flatMap((term) => {
+    const yearOrder: Record<string, number> = {
+      "First Year": 1,
+      "Second Year": 2,
+      "Third Year": 3,
+      "Fourth Year": 4,
+      "Fifth Year": 5
+    }
+
+    const semesterOrder: Record<string, number> = {
+      "First Semester": 1,
+      "Second Semester": 2,
+      "Midyear": 3
+    }
+
+    function buildTermTable(terms: Array<Record<string, unknown>>): string {
+      // Sort terms by year and semester
+      const sortedTerms = [...terms].sort((a, b) => {
+        const yearA = a.year as string
+        const yearB = b.year as string
+        const semA = a.semester as string
+        const semB = b.semester as string
+        
+        // Sort by year order first
+        const yearDiff = (yearOrder[yearA] || 99) - (yearOrder[yearB] || 99)
+        if (yearDiff !== 0) {
+          return yearDiff
+        }
+        
+        // Then sort by semester order
+        return (semesterOrder[semA] || 99) - (semesterOrder[semB] || 99)
+      })
+
+      const rows = sortedTerms.flatMap((term) => {
+        const year = term.year as string
         const semester = term.semester as string
         const subjects = (term.subjects as Array<Record<string, unknown>>) ?? []
-        const semHeader = `<tr style="background:#e2e8f0;"><td colspan="5" style="font-weight:800;color:#0f172a;padding:4px 6px;border-bottom:2px solid #94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;">${escHtml(semester)}</td></tr>`
+        const yearSemHeader = `<tr style="background:#e2e8f0;"><td colspan="5" style="font-weight:700;color:#0f172a;padding:10px 12px;border-bottom:2px solid #94a3b8;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;margin-top:16px;">${escHtml(year)} - ${escHtml(semester)}</td></tr>`
         const subjectRows = subjects.map((sub) => {
           const code = sub.code as string
           const gradeVal = findGrade(code)
           const remarksVal = findRemarks(code)
           return `<tr>
-            <td style="padding:3px 6px;border-bottom:1px solid #e2e8f0;color:#334155;">${escHtml(code)}</td>
-            <td style="padding:3px 6px;border-bottom:1px solid #e2e8f0;color:#334155;">${escHtml(sub.name as string)}</td>
-            <td style="padding:3px 6px;border-bottom:1px solid #e2e8f0;color:#334155;text-align:center;">${sub.total ?? "—"}</td>
-            <td style="padding:3px 6px;border-bottom:1px solid #e2e8f0;color:#334155;text-align:center;font-weight:600;">${gradeVal}</td>
-            <td style="padding:3px 6px;border-bottom:1px solid #e2e8f0;color:#334155;text-align:center;">${remarksVal ? escHtml(remarksVal) : "—"}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;color:#334155;font-size:12px;">${escHtml(code)}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;color:#334155;font-size:12px;">${escHtml(sub.name as string)}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;color:#334155;text-align:center;font-size:12px;">${sub.total ?? "—"}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;color:#334155;text-align:center;font-weight:600;font-size:12px;">${gradeVal}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;color:#334155;text-align:center;font-size:12px;">${remarksVal ? escHtml(remarksVal) : "—"}</td>
           </tr>`
         })
-        return [semHeader, ...subjectRows]
+        return [yearSemHeader, ...subjectRows]
       })
-      return `
-        <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;margin-top:8px;">${escHtml(year)}</div>
-        <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:11px;">
+
+      return `<table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:12px;table-layout:fixed;">
           <thead>
             <tr>
-              <th style="background:#f1f5f9;text-align:left;padding:4px 6px;font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;">Subject Code</th>
-              <th style="background:#f1f5f9;text-align:left;padding:4px 6px;font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;">Descriptive Title</th>
-              <th style="background:#f1f5f9;text-align:left;padding:4px 6px;font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;">Units</th>
-              <th style="background:#f1f5f9;text-align:left;padding:4px 6px;font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;">Grade</th>
-              <th style="background:#f1f5f9;text-align:left;padding:4px 6px;font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;">Remarks</th>
+              <th style="background:#f1f5f9;text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;width:15%;">Subject Code</th>
+              <th style="background:#f1f5f9;text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;width:45%;">Descriptive Title</th>
+              <th style="background:#f1f5f9;text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;width:10%;">Units</th>
+              <th style="background:#f1f5f9;text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;width:15%;">Grade</th>
+              <th style="background:#f1f5f9;text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;width:15%;">Remarks</th>
             </tr>
           </thead>
           <tbody>
             ${rows.join("\n")}
           </tbody>
         </table>`
-    }).join("\n")
+    }
 
-    const html = `<div style="font-family:'Calibri','Segoe UI',Arial,sans-serif;font-size:12px;color:#1e293b;padding:15px;max-width:800px;">
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;border-bottom:2px solid #1e293b;padding-bottom:8px;">
+    const headerHtml = `<div style="display:flex;align-items:center;gap:15px;margin-bottom:16px;border-bottom:2px solid #1e293b;padding-bottom:12px;">
     <div style="flex-shrink:0;">
       ${LOGO_IMG_TAG.replace('<img', '<img style="width:50px;height:50px;"')}
     </div>
     <div style="display:flex;flex-direction:column;gap:1px;">
       <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.1em;">Republic of the Philippines</div>
-      <div style="font-size:16px;font-weight:800;color:#0f172a;letter-spacing:0.04em;line-height:1.2;">ILOCOS SUR POLYTECHNIC STATE COLLEGE - MAIN CAMPUS</div>
-      <div style="font-size:11px;color:#64748b;">San Nicolas, Candon City, Ilocos Sur</div>
+      <div style="font-size:14px;font-weight:800;color:#0f172a;letter-spacing:0.04em;line-height:1.2;">ILOCOS SUR POLYTECHNIC STATE COLLEGE - MAIN CAMPUS</div>
+      <div style="font-size:10px;color:#64748b;">San Nicolas, Candon City, Ilocos Sur</div>
     </div>
   </div>
 
-  <h1 style="text-align:center;font-size:28px;font-weight:800;color:#0f172a;margin-bottom:8px;">APPRAISAL SHEET</h1>
-  <p style="text-align:center;font-size:14px;font-weight:600;color:#475569;margin-bottom:16px;">${escHtml((enrolledCurriculum.name as string) ?? "")}</p>
+  <h1 style="text-align:center;font-size:18px;font-weight:700;margin-bottom:6px;">APPRAISAL SHEET</h1>
+  <p style="text-align:center;font-size:12px;font-weight:600;color:#475569;margin-bottom:12px;">${escHtml((enrolledCurriculum.name as string) ?? "")}</p>
 
-  <div style="margin-bottom:16px;">
-    <div style="display:flex;gap:20px;margin-bottom:2px;">
-      <div style="flex:1;">
-        <p style="font-size:17px;line-height:1.3;color:#334155;"><strong style="display:inline-block;min-width:160px;color:#0f172a;">Student Name:</strong> ${escHtml(profile.name)}</p>
+  <div style="margin-bottom:32px;">
+    <div style="display:flex;gap:32px;margin-bottom:6px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <span style="font-size:12px;text-transform:uppercase;letter-spacing:0.12em;color:#94a3b8;font-weight:600;">Student Name</span>
+        <span style="font-weight:700;font-size:20px;">${escHtml(profile.name)}</span>
       </div>
-      <div style="flex:1;">
-        <p style="font-size:17px;line-height:1.3;color:#334155;"><strong style="display:inline-block;min-width:80px;color:#0f172a;">Student ID:</strong> ${escHtml(profile.id)}</p>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <span style="font-size:12px;text-transform:uppercase;letter-spacing:0.12em;color:#94a3b8;font-weight:600;">Student ID</span>
+        <span style="font-weight:700;font-size:20px;">${escHtml(profile.id)}</span>
       </div>
     </div>
-  </div>
+  </div>`
 
-  ${tablesHtml}
+    const sortedYears = [...uniqueYears].sort((a, b) => 
+      (yearOrder[a] || 99) - (yearOrder[b] || 99)
+    )
+
+    const page1Terms = allTerms.filter((t) => {
+      const year = t.year as string
+      const semester = t.semester as string
+      return year === sortedYears[0] ||
+        (sortedYears.length > 1 && year === sortedYears[1] && semester === "First Semester")
+    })
+
+    const page2Terms = allTerms.filter((t) => {
+      const year = t.year as string
+      const semester = t.semester as string
+      return !(year === sortedYears[0] ||
+        (sortedYears.length > 1 && year === sortedYears[1] && semester === "First Semester"))
+    })
+
+    const needsSecondPage = page2Terms.length > 0
+
+    const page1Table = buildTermTable(page1Terms)
+    const page2Table = buildTermTable(page2Terms)
+
+    const page1Html = `<div style="font-family:'Calibri','Segoe UI',Arial,sans-serif;font-size:11px;color:#1e293b;padding:15px;width:216mm;">
+  ${headerHtml}
+  ${page1Table}
 </div>`
 
-    const container = document.createElement("div")
-    container.style.position = "fixed"
-    container.style.left = "-9999px"
-    container.style.top = "0"
-    container.innerHTML = html
-    document.body.appendChild(container)
+    const page2Html = `<div style="font-family:'Calibri','Segoe UI',Arial,sans-serif;font-size:11px;color:#1e293b;padding:15px;width:216mm;">
+  ${page2Table}
+</div>`
 
-    html2canvas(container, { scale: 2, useCORS: true, backgroundColor: "#ffffff" }).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png")
+    const container1 = document.createElement("div")
+    container1.style.position = "fixed"
+    container1.style.left = "-9999px"
+    container1.style.top = "0"
+    container1.innerHTML = page1Html
+    document.body.appendChild(container1)
+
+    const renderPage = (container: HTMLElement) =>
+      html2canvas(container, { scale: 2, useCORS: true, backgroundColor: "#ffffff" })
+
+    renderPage(container1).then((canvas1) => {
       const pdf = new jsPDF("p", "mm", "legal")
       const pdfWidth = pdf.internal.pageSize.getWidth()
       const pdfHeight = pdf.internal.pageSize.getHeight()
-      const imgWidth = canvas.width
-      const imgHeight = canvas.height
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight)
-      const imgX = (pdfWidth - imgWidth * ratio) / 2
-      pdf.addImage(imgData, "PNG", imgX, 0, imgWidth * ratio, imgHeight * ratio)
-      pdf.save(`Appraisal Sheet - ${profile.name}.pdf`)
-      document.body.removeChild(container)
+
+      const ratio1 = Math.min(pdfWidth / canvas1.width, pdfHeight / canvas1.height)
+      pdf.addImage(canvas1.toDataURL("image/png"), "PNG", 0, 0, canvas1.width * ratio1, canvas1.height * ratio1)
+
+      if (needsSecondPage) {
+        const container2 = document.createElement("div")
+        container2.style.position = "fixed"
+        container2.style.left = "-9999px"
+        container2.style.top = "0"
+        container2.innerHTML = page2Html
+        document.body.appendChild(container2)
+
+        return renderPage(container2).then((canvas2) => {
+          pdf.addPage()
+          const ratio2 = Math.min(pdfWidth / canvas2.width, pdfHeight / canvas2.height)
+          pdf.addImage(canvas2.toDataURL("image/png"), "PNG", 0, 0, canvas2.width * ratio2, canvas2.height * ratio2)
+          document.body.removeChild(container2)
+          pdf.save(`Appraisal Sheet - ${profile.name}.pdf`)
+          document.body.removeChild(container1)
+        })
+      } else {
+        pdf.save(`Appraisal Sheet - ${profile.name}.pdf`)
+        document.body.removeChild(container1)
+      }
     }).catch(() => {
-      document.body.removeChild(container)
+      document.body.removeChild(container1)
       toast.error("Failed to generate PDF")
     })
   }

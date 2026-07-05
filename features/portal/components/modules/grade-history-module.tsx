@@ -49,8 +49,18 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
   const history = useMemo(() => {
     const base = studentUser?.gradeHistory ? [...studentUser.gradeHistory] : []
     const releasedGrades = (model.allStudentGrades as GradeRecord[] | undefined)?.filter(
-      (g) => g.finalGrade !== undefined && g.transmutedGrade !== undefined
+      (g) => 
+        g.midtermReleased === true && 
+        g.finalReleased === true && 
+        g.finalGrade !== undefined && 
+        g.transmutedGrade !== undefined
     ) ?? []
+    // Case-insensitive comparison
+    const releasedCodes = new Set(releasedGrades.map(g => (g.code || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "")))
+    const filteredBase = base.filter(entry => {
+      const entryCode = (entry.subjectCode || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "")
+      return releasedCodes.has(entryCode)
+    })
     const curriculumId = studentUser?.curriculumId ?? ""
     const curriculum = (model.curricula as CurriculumRecord[] | undefined)?.find((c) => c.id === curriculumId)
 
@@ -72,37 +82,41 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
       const term = findTermForSubject(grade.code)
       const yearLevel = term?.year ?? ""
       const semester = term?.semester ?? ""
-      const existingIdx = base.findIndex((h) => h.subjectCode === grade.code)
+      const normalizedGradeCode = (grade.code || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "")
+      const existingIdx = filteredBase.findIndex((h) => {
+        const entryCode = (h.subjectCode || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "")
+        return entryCode === normalizedGradeCode
+      })
       const entry: GradeHistoryEntry = {
         subjectCode: grade.code,
         subjectName: grade.subject,
-        finalPercentile: grade.finalGrade!,
-        transmutedGrade: grade.transmutedGrade!,
+        finalPercentile: grade.releasedFinalGrade ?? grade.finalGrade!,
+        transmutedGrade: grade.releasedTransmutedGrade ?? grade.transmutedGrade!,
         units: grade.units,
-        remarks: grade.midtermRemarks && grade.finalRemarks
-          ? (grade.finalRemarks.toLowerCase() === "passed" && grade.midtermRemarks.toLowerCase() === "passed"
+        remarks: grade.releasedMidtermRemarks && grade.releasedFinalRemarks
+          ? (grade.releasedFinalRemarks.toLowerCase() === "passed" && grade.releasedMidtermRemarks.toLowerCase() === "passed"
             ? "Passed"
-            : grade.midtermRemarks.toLowerCase() !== "passed"
-              ? grade.midtermRemarks
-              : grade.finalRemarks)
-          : grade.finalRemarks || grade.midtermRemarks || grade.remarks || "Passed",
+            : grade.releasedMidtermRemarks.toLowerCase() !== "passed"
+              ? grade.releasedMidtermRemarks
+              : grade.releasedFinalRemarks)
+          : (grade.releasedFinalRemarks ?? grade.releasedMidtermRemarks ?? grade.releasedRemarks ?? "Passed"),
         curriculumId,
         yearLevel,
         semester,
         section: grade.section,
       }
       if (existingIdx >= 0) {
-        base[existingIdx] = {
-          ...base[existingIdx],
+        filteredBase[existingIdx] = {
+          ...filteredBase[existingIdx],
           ...entry,
         }
       } else {
-        base.push(entry)
+        filteredBase.push(entry)
       }
     }
 
     // Override yearLevel/semester from curriculum (source of truth) for all entries
-    for (const entry of base) {
+    for (const entry of filteredBase) {
       const term = findTermForSubject(entry.subjectCode)
       if (term) {
         entry.yearLevel = term.year
@@ -110,7 +124,7 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
       }
     }
 
-    return base
+    return filteredBase
   }, [studentUser?.gradeHistory, model.allStudentGrades, activeSemester, model.curricula])
 
   const grouped = useMemo(() => {

@@ -57,7 +57,7 @@ const CATEGORIES = [
   { value: "All", label: "All Categories" },
   { value: "User Management", label: "User Management", keywords: ["account", "user", "role"] },
   { value: "Faculty", label: "Faculty", keywords: ["faculty"] },
-  { value: "Enrollment / Grades", label: "Enrollment / Grades", keywords: ["student", "grade", "enrolled", "roster", "unenrolled", "auto-enrolled", "correction"] },
+  { value: "Enrollment / Grades", label: "Enrollment / Grades", keywords: ["student", "grade", "enrolled", "roster", "unenrolled", "auto-enrolled", "correction", "release", "unrelease"] },
   { value: "Tickets / Feedback", label: "Tickets / Feedback", keywords: ["ticket", "feedback"] },
   { value: "Schedules", label: "Schedules", keywords: ["schedule", "class section"] },
   { value: "Semesters", label: "Semesters", keywords: ["semester"] },

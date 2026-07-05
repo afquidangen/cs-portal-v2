@@ -71,12 +71,12 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
   }
 
   function deriveRemarks(grade: GradeRecord): string {
-    const mr = grade.midtermRemarks
-    const fr = grade.finalRemarks
+    const mr = grade.releasedMidtermRemarks
+    const fr = grade.releasedFinalRemarks
     const mrLower = String(mr ?? "").toLowerCase()
     const frLower = String(fr ?? "").toLowerCase()
     const bothPassed = fr && mr && frLower === "passed" && mrLower === "passed"
-    return bothPassed ? "passed" : (mr && mrLower !== "passed" ? mrLower : frLower || (grade.remarks || "").toLowerCase())
+    return bothPassed ? "passed" : (mr && mrLower !== "passed" ? mrLower : frLower || ((grade.releasedRemarks ?? grade.remarks) || "").toLowerCase())
   }
 
   function getSubjectStatus(
@@ -87,14 +87,21 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
   ): { label: string; className: string } | null {
     // 1. Check released grade records — any year/semester
     const gradeRecord = grades.find(
-      (g: GradeRecord) => g.studentId === profile.id && (g.released || g.finalReleased || g.midtermReleased) && codeMatches(g.code, code)
+      (g: GradeRecord) => g.studentId === profile.id && g.midtermReleased && g.finalReleased && codeMatches(g.code, code)
     )
     if (gradeRecord) {
       const r = deriveRemarks(gradeRecord)
-      if (r === "passed" || (gradeRecord.gradePercentage ?? 0) >= 75) {
+      // Only use percentage fallback if remarks are empty
+      if (r === "passed") {
         return { label: "Passed", className: "text-green-600 dark:text-green-400" }
       }
-      return statusLabel(r)
+      if (r === "" || r === undefined) {
+        const pct = gradeRecord.releasedFinalGrade ?? gradeRecord.finalGrade ?? gradeRecord.gradePercentage ?? 0
+        if (pct >= 75) {
+          return { label: "Passed", className: "text-green-600 dark:text-green-400" }
+        }
+      }
+      return statusLabel(r || "failed")
     }
 
     // 2. Check student grade history — any year/semester

@@ -58,11 +58,11 @@ export async function recomputeDeansListForSemester(semesterId: string): Promise
     const totalUnits = uniqueGrades.reduce((sum, g) => sum + ((g.units as number) ?? 0), 0)
 
     const evalGrades = uniqueGrades.map((g) => ({
-      transmutedGrade: g.transmutedGrade,
+      transmutedGrade: g.releasedTransmutedGrade ?? g.transmutedGrade,
       finalReleased: g.finalReleased,
-      remarks: g.remarks,
-      finalRemarks: g.finalRemarks,
-      midtermRemarks: g.midtermRemarks,
+      remarks: g.releasedRemarks ?? g.remarks,
+      finalRemarks: g.releasedFinalRemarks ?? g.finalRemarks,
+      midtermRemarks: g.releasedMidtermRemarks ?? g.midtermRemarks,
       units: g.units,
       subject: g.subject,
       code: g.code,

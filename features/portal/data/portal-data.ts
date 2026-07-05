@@ -117,9 +117,18 @@ export type GradeRecord = {
   midtermReleaseHistory?: Array<{ action: "released" | "unreleased" | "re-released"; reason?: string; timestamp: string }>
   finalReleaseHistory?: Array<{ action: "released" | "unreleased" | "re-released"; reason?: string; timestamp: string }>
   released?: boolean
-  semesterId?: string
   deletedAt?: string | null
   updatedAt: string
+
+  releasedMidtermGrade?: number
+  releasedMidtermTransmuted?: number
+  releasedMidtermRemarks?: string
+  releasedTentativeFinalGrade?: number
+  releasedFinalTransmuted?: number
+  releasedFinalRemarks?: string
+  releasedFinalGrade?: number
+  releasedTransmutedGrade?: number
+  releasedRemarks?: string
 }
 
 export type ThesisRecord = {

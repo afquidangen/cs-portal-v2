@@ -92,17 +92,17 @@ export function computeDeansList(
   const reasons: string[] = []
 
   const filtered = grades.filter((g) => {
-    return g.transmutedGrade !== undefined && g.finalReleased === true
+    return (g.releasedTransmutedGrade ?? g.transmutedGrade) !== undefined && g.finalReleased === true
   })
 
   console.log(`[DeansList] Processing ${filtered.length} subjects with released grades`)
 
   for (const g of filtered) {
-    const disqualified = isDisqualifyingRemark([g.finalRemarks, g.midtermRemarks])
+    const disqualified = isDisqualifyingRemark([g.releasedFinalRemarks ?? g.finalRemarks, g.releasedMidtermRemarks ?? g.midtermRemarks])
     console.log(
-      `[DeansList]   ${g.code ?? g.subject}: transmuted=${g.transmutedGrade?.toFixed(2)}, ` +
-      `remarks="${g.remarks ?? ""}", finalRemarks="${g.finalRemarks ?? ""}", ` +
-      `midtermRemarks="${g.midtermRemarks ?? ""}", disqualified=${disqualified}`
+      `[DeansList]   ${g.code ?? g.subject}: transmuted=${(g.releasedTransmutedGrade ?? g.transmutedGrade)?.toFixed(2)}, ` +
+      `remarks="${g.releasedRemarks ?? g.remarks ?? ""}", finalRemarks="${g.releasedFinalRemarks ?? g.finalRemarks ?? ""}", ` +
+      `midtermRemarks="${g.releasedMidtermRemarks ?? g.midtermRemarks ?? ""}", disqualified=${disqualified}`
     )
   }
 
@@ -118,30 +118,30 @@ export function computeDeansList(
     reasons.push(`Total enrolled units (${totalUnits}) is less than the required 17 units`)
   }
 
-  const gwa = Number((filtered.reduce((sum, g) => sum + (g.transmutedGrade ?? 0), 0) / filtered.length).toFixed(2))
+  const gwa = Number((filtered.reduce((sum, g) => sum + ((g.releasedTransmutedGrade ?? g.transmutedGrade) ?? 0), 0) / filtered.length).toFixed(2))
   const passGwa = gwa <= 1.75
   console.log(`[DeansList] GWA: ${gwa.toFixed(2)} ${passGwa ? "PASS" : "FAIL"}`)
   if (!passGwa) {
     reasons.push(`GWA of ${gwa.toFixed(2)} exceeds the 1.75 threshold`)
   }
 
-  const gradeWith25 = filtered.find((g) => (g.transmutedGrade ?? 0) >= 2.50)
+  const gradeWith25 = filtered.find((g) => ((g.releasedTransmutedGrade ?? g.transmutedGrade) ?? 0) >= 2.50)
   const passNo25 = !gradeWith25
-  console.log(`[DeansList] Has Grade >= 2.50: ${gradeWith25 ? `YES (${gradeWith25.transmutedGrade?.toFixed(2)} in ${gradeWith25.subject})` : "NO"} ${passNo25 ? "PASS" : "FAIL"}`)
+  console.log(`[DeansList] Has Grade >= 2.50: ${gradeWith25 ? `YES (${(gradeWith25.releasedTransmutedGrade ?? gradeWith25.transmutedGrade)?.toFixed(2)} in ${gradeWith25.subject})` : "NO"} ${passNo25 ? "PASS" : "FAIL"}`)
   if (!passNo25) {
     reasons.push(
-      `No grade of 2.50 or higher — found ${gradeWith25.transmutedGrade?.toFixed(2)} in ${gradeWith25.subject}`
+      `No grade of 2.50 or higher — found ${(gradeWith25!.releasedTransmutedGrade ?? gradeWith25!.transmutedGrade)?.toFixed(2)} in ${gradeWith25!.subject}`
     )
   }
 
   const hasBadRemarks = filtered.some((g) =>
-    isDisqualifyingRemark([g.finalRemarks, g.midtermRemarks])
+    isDisqualifyingRemark([g.releasedFinalRemarks ?? g.finalRemarks, g.releasedMidtermRemarks ?? g.midtermRemarks])
   )
   console.log(`[DeansList] Has INC/Failed/Dropped (released grades): ${hasBadRemarks} ${!hasBadRemarks ? "PASS" : "FAIL"}`)
   if (hasBadRemarks) {
     const offenders = filtered
-      .filter((g) => isDisqualifyingRemark([g.finalRemarks, g.midtermRemarks]))
-      .map((g) => `${g.code ?? g.subject} (remarks="${g.remarks ?? ""}", finalRemarks="${g.finalRemarks ?? ""}", midtermRemarks="${g.midtermRemarks ?? ""}")`)
+      .filter((g) => isDisqualifyingRemark([g.releasedFinalRemarks ?? g.finalRemarks, g.releasedMidtermRemarks ?? g.midtermRemarks]))
+      .map((g) => `${g.code ?? g.subject} (remarks="${g.releasedRemarks ?? g.remarks ?? ""}", finalRemarks="${g.releasedFinalRemarks ?? g.finalRemarks ?? ""}", midtermRemarks="${g.releasedMidtermRemarks ?? g.midtermRemarks ?? ""}")`)
     console.log(`[DeansList] Offending subjects: ${offenders.join(", ")}`)
     reasons.push("Has an INC, Failed, or Dropped grade")
   }

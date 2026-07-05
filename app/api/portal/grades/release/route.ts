@@ -5,11 +5,16 @@ import { transmuteGrade, getGradeRemarks } from "@/features/portal/lib/grade-eng
 import { recomputeDeansListForSemester } from "@/features/portal/lib/deans-list-utils"
 import { sendGradeReleasedEmail } from "@/features/portal/services/email"
 import { sendPushToSubscriptions } from "@/lib/web-push"
+import { requireFacultyOrAdmin } from "@/lib/api-auth"
+import { auditLogsRepository } from "@/features/portal/repositories/audit-logs.repository"
 
 export const runtime = "nodejs"
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireFacultyOrAdmin(request)
+    if (auth instanceof Response) return auth
+
     const body = await request.json()
     const { classId, gradingPeriod } = body
     if (!classId) {
@@ -18,38 +23,65 @@ export async function POST(request: Request) {
 
     await connectToDatabase()
 
-    const filter: Record<string, unknown> = { classId }
-    if (gradingPeriod === "midterm") filter.midtermReleased = { $ne: true }
-    if (gradingPeriod === "final") filter.finalReleased = { $ne: true }
-
-    const grades = await GradeModel.find(filter).lean()
+    const grades = await GradeModel.find({ classId }).lean()
     if (grades.length === 0) {
-      return success({ modifiedCount: 0, message: "All grades already released for this period." })
+      return success({ modifiedCount: 0, message: "No grades found for this class." })
     }
 
-    const setFields: Record<string, unknown> = { released: true }
     const timestamp = new Date().toISOString()
-    const historyEntry = { action: "released", timestamp }
+    const releaseMidterm = gradingPeriod === "midterm" || gradingPeriod === "both" || !gradingPeriod
+    const releaseFinal = gradingPeriod === "final" || gradingPeriod === "both" || !gradingPeriod
 
-    if (gradingPeriod === "midterm") {
-      setFields.midtermReleased = true
-      await GradeModel.updateMany(filter, {
-        $set: setFields,
-        $push: { midtermReleaseHistory: historyEntry },
-      })
-    } else if (gradingPeriod === "final") {
-      setFields.finalReleased = true
-      await GradeModel.updateMany(filter, {
-        $set: setFields,
-        $push: { finalReleaseHistory: historyEntry },
-      })
-    } else {
-      setFields.midtermReleased = true
-      setFields.finalReleased = true
-      await GradeModel.updateMany(filter, {
-        $set: setFields,
-        $push: { midtermReleaseHistory: historyEntry, finalReleaseHistory: historyEntry },
-      })
+    for (const grade of grades) {
+      const g = grade as unknown as Record<string, unknown>
+      const setFields: Record<string, unknown> = { released: true }
+      const pushFields: Record<string, unknown> = {}
+
+      if (releaseMidterm) {
+        setFields.midtermReleased = true
+        setFields.releasedMidtermGrade = g.midtermGrade
+        setFields.releasedMidtermTransmuted = g.midtermTransmuted
+        setFields.releasedMidtermRemarks = g.midtermRemarks
+        pushFields.midtermReleaseHistory = {
+          action: (g.midtermReleased === true) ? "re-released" : "released",
+          timestamp,
+        }
+      }
+
+      if (releaseFinal) {
+        setFields.finalReleased = true
+        setFields.releasedTentativeFinalGrade = g.tentativeFinalGrade
+        setFields.releasedFinalTransmuted = g.finalTransmuted
+        setFields.releasedFinalRemarks = g.finalRemarks
+        pushFields.finalReleaseHistory = {
+          action: (g.finalReleased === true) ? "re-released" : "released",
+          timestamp,
+        }
+      }
+
+      const midtermReleased = releaseMidterm ? true : g.midtermReleased
+      const finalReleased = releaseFinal ? true : g.finalReleased
+
+      if (midtermReleased && finalReleased) {
+        const rMidterm = (releaseMidterm ? g.midtermGrade : g.releasedMidtermGrade) as number | undefined
+        const rFinal = (releaseFinal ? g.tentativeFinalGrade : g.releasedTentativeFinalGrade) as number | undefined
+
+        if (rMidterm !== undefined && rFinal !== undefined) {
+          const overallGrade = (rMidterm + rFinal) / 2
+          const overallTransmuted = transmuteGrade(overallGrade)
+          const overallRemarks = getGradeRemarks(overallTransmuted)
+          setFields.releasedFinalGrade = overallGrade
+          setFields.releasedTransmutedGrade = overallTransmuted
+          setFields.releasedRemarks = overallRemarks
+        }
+      }
+
+      const updateOps: Record<string, unknown> = { $set: setFields }
+      if (Object.keys(pushFields).length > 0) {
+        updateOps.$push = pushFields
+      }
+
+      await GradeModel.updateOne({ _id: g._id as string }, updateOps)
     }
 
     const studentMap = new Map<string, typeof grades>()
@@ -111,6 +143,21 @@ export async function POST(request: Request) {
       )
     }
 
+    // Audit logging
+    const subject = (schedule as Record<string, unknown> | null)?.subject ?? ""
+    const section = (schedule as Record<string, unknown> | null)?.section ?? ""
+    const gradingPeriodLabel = gradingPeriod === "midterm" ? "Midterm" : gradingPeriod === "final" ? "Final" : "Midterm & Final"
+    
+    const time = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) + " " +
+      new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
+    
+    auditLogsRepository.create({
+      id: `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      actor: auth.user.name,
+      action: `Released ${gradingPeriodLabel} grades for ${subject} (${section}) — ${grades.length} student(s)`,
+      time,
+    }).catch(() => {})
+
     Promise.resolve().then(async () => {
       try {
         const semester = schedule?.semesterId
@@ -151,7 +198,6 @@ export async function POST(request: Request) {
         console.warn("[Notification] Grade release email error:", emailErr)
       }
 
-      // Send push notifications — separate try/catch from email
       try {
         const studentIds = Array.from(studentMap.keys())
         if (studentIds.length > 0) {

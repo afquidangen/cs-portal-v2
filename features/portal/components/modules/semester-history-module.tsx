@@ -49,33 +49,31 @@ function getSemesterGrades(
 }
 
 function getRemarks(g: GradeRecord): string {
-  const fr = g.finalRemarks || g.remarks
-  const mr = g.midtermRemarks
+  const fr = g.releasedFinalRemarks ?? g.finalRemarks ?? g.releasedRemarks ?? g.remarks
+  const mr = g.releasedMidtermRemarks ?? g.midtermRemarks
   const frLower = fr?.toLowerCase()
   const mrLower = mr?.toLowerCase()
 
-  // Only "Passed" if both periods explicitly passed
   if (fr && mr && frLower === "passed" && mrLower === "passed") return "Passed"
-  // Midterm non-passing — surface it
   if (mr && mrLower !== "passed") return mr
-  // Final non-passing — surface it
   if (fr && frLower !== "passed") return fr
-  // Final "Passed" with no midterm data — return as-is
   if (fr) return fr
 
-  if (g.transmutedGrade != null && g.transmutedGrade > 0) {
-    return g.transmutedGrade <= 3.0 ? "Passed" : "Failed"
+  const tg = g.releasedTransmutedGrade ?? g.transmutedGrade
+  if (tg != null && tg > 0) {
+    return tg <= 3.0 ? "Passed" : "Failed"
   }
-  if (g.finalGrade != null && g.finalGrade > 0) {
-    return g.finalGrade >= 75 ? "Passed" : "Failed"
+  const fg = g.releasedFinalGrade ?? g.finalGrade
+  if (fg != null && fg > 0) {
+    return fg >= 75 ? "Passed" : "Failed"
   }
   return "---"
 }
 
 function computeGWA(grades: GradeRecord[]): number | null {
   const tg = grades
-    .filter((g) => g.transmutedGrade != null && g.transmutedGrade > 0)
-    .map((g) => g.transmutedGrade!)
+    .filter((g) => (g.releasedTransmutedGrade ?? g.transmutedGrade) != null && (g.releasedTransmutedGrade ?? g.transmutedGrade)! > 0)
+    .map((g) => (g.releasedTransmutedGrade ?? g.transmutedGrade)!)
   if (tg.length === 0) return null
   return tg.reduce((a, b) => a + b, 0) / tg.length
 }
@@ -222,10 +220,10 @@ export function SemesterHistoryModule({ model }: PortalModuleProps) {
                                     <td className="px-3 py-2 text-foreground">{g.subject}</td>
                                     <td className="px-3 py-2 text-right text-muted-foreground">{g.units}</td>
                                     <td className="px-3 py-2 text-right font-mono tabular-nums text-foreground">
-                                      {g.finalGrade != null ? g.finalGrade.toFixed(2) : g.tentativeFinalGrade != null ? g.tentativeFinalGrade.toFixed(2) : "---"}
+                                      {(g.releasedFinalGrade ?? g.finalGrade) != null ? (g.releasedFinalGrade ?? g.finalGrade)!.toFixed(2) : (g.releasedTentativeFinalGrade ?? g.tentativeFinalGrade) != null ? (g.releasedTentativeFinalGrade ?? g.tentativeFinalGrade)!.toFixed(2) : "---"}
                                     </td>
                                     <td className="px-3 py-2 text-right font-mono tabular-nums text-foreground">
-                                      {g.transmutedGrade != null ? g.transmutedGrade.toFixed(2) : "---"}
+                                      {(g.releasedTransmutedGrade ?? g.transmutedGrade) != null ? (g.releasedTransmutedGrade ?? g.transmutedGrade)!.toFixed(2) : "---"}
                                     </td>
                                     <td className="px-3 py-2 text-center">
                                       <span className={cn(

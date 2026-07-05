@@ -4,7 +4,7 @@ import { assessmentRepository } from "@/features/portal/repositories/assessment.
 import { gradingSchemeRepository } from "@/features/portal/repositories/grading-scheme.repository"
 import { success, error, badRequest } from "@/lib/api-response"
 import { requireFacultyOrAdmin } from "@/lib/api-auth"
-import { ScheduleModel } from "@/lib/models"
+import { ScheduleModel, GradeModel } from "@/lib/models"
 import { recomputeDeansListForSemester } from "@/features/portal/lib/deans-list-utils"
 
 export const runtime = "nodejs"
@@ -51,6 +51,34 @@ export async function PUT(
     if (!body.grades || !Array.isArray(body.grades)) {
       return badRequest("grades array is required.")
     }
+    
+    const gradingPeriod = body.gradingPeriod || "midterm"
+    
+    const existingGrades = await GradeModel.find({ classId }).lean()
+    const existingMap = new Map(existingGrades.map(g => [`${g.studentId}_${g.code}`, g]))
+    
+    const rejectedGrades: Array<{ studentId: string; code: string; reason: string }> = []
+    
+    for (const grade of body.grades) {
+      const key = `${grade.studentId}_${grade.code}`
+      const existing = existingMap.get(key)
+      
+      if (existing) {
+        if (gradingPeriod === "midterm" && existing.midtermReleased) {
+          rejectedGrades.push({ studentId: grade.studentId, code: grade.code, reason: "Midterm grade is released" })
+          continue
+        }
+        if (gradingPeriod === "final" && existing.finalReleased) {
+          rejectedGrades.push({ studentId: grade.studentId, code: grade.code, reason: "Final grade is released" })
+          continue
+        }
+      }
+    }
+    
+    if (rejectedGrades.length > 0) {
+      return badRequest(`${rejectedGrades.length} grade(s) are released and cannot be edited. Unrelease them first.`)
+    }
+    
     const schedule = await ScheduleModel.findOne({ id: classId }).lean()
     const semesterId = schedule?.semesterId
 

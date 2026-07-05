@@ -68,6 +68,16 @@ export interface IGrade extends Document {
   gradingSchemeId?: string
   semesterId?: string
 
+  releasedMidtermGrade?: number
+  releasedMidtermTransmuted?: number
+  releasedMidtermRemarks?: string
+  releasedTentativeFinalGrade?: number
+  releasedFinalTransmuted?: number
+  releasedFinalRemarks?: string
+  releasedFinalGrade?: number
+  releasedTransmutedGrade?: number
+  releasedRemarks?: string
+
   updatedAt: string
   deletedAt?: string | null
 }
@@ -143,6 +153,16 @@ const GradeSchema = new Schema<IGrade>(
     released: { type: Boolean, default: false },
     gradingSchemeId: String,
     semesterId: { type: String },
+
+    releasedMidtermGrade: Number,
+    releasedMidtermTransmuted: Number,
+    releasedMidtermRemarks: String,
+    releasedTentativeFinalGrade: Number,
+    releasedFinalTransmuted: Number,
+    releasedFinalRemarks: String,
+    releasedFinalGrade: Number,
+    releasedTransmutedGrade: Number,
+    releasedRemarks: String,
 
     updatedAt: String,
     deletedAt: { type: String, default: null },

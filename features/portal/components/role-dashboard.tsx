@@ -1432,7 +1432,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                             {facultyGreeting}, {facultyFirstName}
                           </h1>
                           <p className="mt-4 max-w-xl text-sm leading-6 text-white/86">
-                            Here&apos;s what&apos;s happening with your classes today.
+                            Welcome to ComScite. Here&apos;s what&apos;s happening with your classes today.
                           </p>
                         </div>
 
@@ -2080,45 +2080,35 @@ export function RoleDashboard({ role }: { role: Role }) {
       </Dialog>
 
       <Dialog open={logoutOpen} onOpenChange={setLogoutOpen}>
-        <DialogContent className="max-w-sm overflow-hidden p-0">
-          <div className="px-6 py-5">
-            <div className="mb-3 flex size-11 items-center justify-center rounded-xl border border-border bg-muted/80 shadow-sm backdrop-blur">
-              {role === "admin" || role === "csso_officer" ? (
-                <ShieldCheck className="size-5 text-foreground" />
-              ) : role === "faculty" ? (
-                <CalendarDays className="size-5 text-foreground" />
-              ) : (
-                <GraduationCap className="size-5 text-foreground" />
-              )}
-            </div>
+        <DialogContent className="max-w-sm overflow-hidden p-0 border-white/70 dark:border-slate-700 bg-[#eaf2ff]/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-[0_22px_56px_rgb(44_93_151_/_0.16)] dark:shadow-[0_22px_56px_rgb(0_0_0_/_0.5)]">
+          <div className="px-6 py-5 bg-white/80 dark:bg-slate-800/80">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold tracking-tight text-foreground">Confirm Logout</DialogTitle>
-              <DialogDescription className="pt-1 text-muted-foreground">
+              <DialogTitle className="text-2xl font-extrabold tracking-normal text-[#08142c] dark:text-white">Confirm Logout</DialogTitle>
+              <DialogDescription className="pt-1 text-sm font-semibold text-[#68778f] dark:text-slate-400">
                 You will need to sign in again to access this workspace.
               </DialogDescription>
             </DialogHeader>
           </div>
 
-          <hr className="border-border" />
+          <hr className="border-[#d9e4f1] dark:border-slate-700" />
 
-          <div className="px-6 pb-6 pt-5">
-            <p className="text-sm leading-6 text-muted-foreground">
-              End the current portal session for {model.profile.name}?
+          <div className="px-6 pb-6 pt-5 bg-white/80 dark:bg-slate-800/80">
+            <p className="text-sm leading-6 font-semibold text-[#68778f] dark:text-slate-400">
+              End the current portal session for <span className="text-[#08142c] dark:text-white">{model.profile.name}</span>?
             </p>
             <DialogFooter className="mt-5 gap-2">
               <DialogClose asChild>
-                <Button variant="outline">
+                <Button variant="outline" className="border-[#d8e0ea] dark:border-slate-600 bg-white/70 dark:bg-slate-700/70 text-[#08142c] dark:text-white font-semibold hover:bg-[#e6eef9] dark:hover:bg-slate-600">
                   Cancel
                 </Button>
               </DialogClose>
               <Button
-                variant="destructive"
                 onClick={() => {
                   model.handleLogout()
                   setLogoutOpen(false)
                 }}
+                className="bg-white/90 dark:bg-slate-700 text-[#08142c] dark:text-white font-semibold border border-[#d8e0ea] dark:border-slate-600 hover:bg-[#e6eef9] dark:hover:bg-slate-600"
               >
-                <LogOut className="mr-1.5 size-4" />
                 Logout
               </Button>
             </DialogFooter>

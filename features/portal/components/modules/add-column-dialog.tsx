@@ -67,18 +67,28 @@ export function AddColumnDialog({
           <div className="grid gap-2">
             <label className="text-sm font-medium text-foreground">Category</label>
             <div className="flex flex-wrap gap-2">
-              {availableCategories.map((cat) => (
-                <Button
-                  key={cat}
-                  type="button"
-                  variant={category === cat ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCategory(cat)}
-                  className={`rounded-lg ${category === cat ? "shadow-sm ring-1 ring-primary/50 ring-offset-1 ring-offset-background font-semibold" : ""}`}
-                >
-                  {cat}
-                </Button>
-              ))}
+              {availableCategories.map((cat) => {
+                const isAttendance = cat.toLowerCase().includes("attendance")
+                return (
+                  <Button
+                    key={cat}
+                    type="button"
+                    variant={category === cat ? "default" : "outline"}
+                    size="sm"
+                    disabled={isAttendance}
+                    onClick={() => !isAttendance && setCategory(cat)}
+                    className={`rounded-lg ${
+                      isAttendance 
+                        ? "opacity-50 cursor-not-allowed" 
+                        : category === cat 
+                          ? "shadow-sm ring-1 ring-primary/50 ring-offset-1 ring-offset-background font-semibold" 
+                          : ""
+                    }`}
+                  >
+                    {cat}
+                  </Button>
+                )
+              })}
               {category && !availableCategories.includes(category) && (
                 <span className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1 text-sm">
                   {category}

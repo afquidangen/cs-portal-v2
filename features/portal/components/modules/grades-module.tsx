@@ -630,44 +630,44 @@ export function GradesModule({ model }: PortalModuleProps) {
 
                     {/* Midterm Grade */}
                     <td className="px-4 py-3 text-foreground/80">
-                      {grade.midtermReleased && grade.midtermGrade !== undefined
-                        ? grade.midtermGrade.toFixed(2)
+                      {grade.midtermReleased && (grade.releasedMidtermGrade ?? grade.midtermGrade) !== undefined
+                        ? (grade.releasedMidtermGrade ?? grade.midtermGrade)!.toFixed(2)
                         : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
                     </td>
                     {/* Mid. Remarks */}
                     <td className="px-4 py-3">
-                      {grade.midtermReleased && grade.midtermRemarks
-                        ? <StatusBadge value={grade.midtermRemarks} />
+                      {grade.midtermReleased && (grade.releasedMidtermRemarks ?? grade.midtermRemarks)
+                        ? <StatusBadge value={grade.releasedMidtermRemarks ?? grade.midtermRemarks!} />
                         : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
                     </td>
                     {/* Tentative Final */}
                     <td className="px-4 py-3 text-foreground/80">
-                      {grade.finalReleased && grade.tentativeFinalGrade !== undefined
-                        ? grade.tentativeFinalGrade.toFixed(2)
+                      {grade.finalReleased && (grade.releasedTentativeFinalGrade ?? grade.tentativeFinalGrade) !== undefined
+                        ? (grade.releasedTentativeFinalGrade ?? grade.tentativeFinalGrade)!.toFixed(2)
                         : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
                     </td>
                     {/* Fin. Remarks */}
                     <td className="px-4 py-3">
-                      {grade.finalReleased && grade.finalRemarks
-                        ? <StatusBadge value={grade.finalRemarks} />
+                      {grade.finalReleased && (grade.releasedFinalRemarks ?? grade.finalRemarks)
+                        ? <StatusBadge value={grade.releasedFinalRemarks ?? grade.finalRemarks!} />
                         : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
                     </td>
                     {/* Percentile */}
                     <td className="px-4 py-3 text-foreground/80">
-                      {grade.finalReleased && grade.finalGrade !== undefined
-                        ? grade.finalGrade.toFixed(2)
+                      {grade.finalReleased && (grade.releasedFinalGrade ?? grade.finalGrade) !== undefined
+                        ? (grade.releasedFinalGrade ?? grade.finalGrade)!.toFixed(2)
                         : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
                     </td>
                     {/* Final Rating */}
                     <td className="px-4 py-3 text-foreground/80">
-                      {grade.finalReleased && grade.finalGrade !== undefined
-                        ? grade.finalGrade.toFixed(0)
+                      {grade.finalReleased && (grade.releasedFinalGrade ?? grade.finalGrade) !== undefined
+                        ? (grade.releasedFinalGrade ?? grade.finalGrade)!.toFixed(0)
                         : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
                     </td>
                     {/* Transmuted */}
                     <td className="px-4 py-3 font-semibold text-foreground">
-                      {grade.finalReleased && grade.transmutedGrade !== undefined
-                        ? grade.transmutedGrade.toFixed(2)
+                      {grade.finalReleased && (grade.releasedTransmutedGrade ?? grade.transmutedGrade) !== undefined
+                        ? (grade.releasedTransmutedGrade ?? grade.transmutedGrade)!.toFixed(2)
                         : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
                     </td>
                   </tr>
@@ -1025,26 +1025,19 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
             <BookMarked className="size-4" />
             Subject
           </p>
-          <div className="flex flex-wrap gap-2">
-            {facultySubjects.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No subjects assigned for this semester.</p>
-            ) : (
-              facultySubjects.map((s) => (
-                <Button
-                  key={s.subject}
-                  type="button"
-                  variant={selectedSubject === s.subject ? "default" : "outline"}
-                  onClick={() => {
-                    setSelectedSubject(s.subject)
-                    setSelectedSection(null)
-                  }}
-                  className="rounded-xl"
-                >
-                  {s.subject}
-                </Button>
-              ))
-            )}
-          </div>
+          {facultySubjects.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No subjects assigned for this semester.</p>
+          ) : (
+            <Select
+              value={selectedSubject}
+              onChange={(value) => {
+                setSelectedSubject(value)
+                setSelectedSection(null)
+              }}
+              options={facultySubjects.map((s) => s.subject)}
+              className="w-full"
+            />
+          )}
         </div>
       )}
 

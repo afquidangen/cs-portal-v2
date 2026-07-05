@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
-  AlertTriangle, ChevronDown, Search, Save, Megaphone, X,
+  AlertTriangle, ChevronDown, Search, Save, Megaphone, X, Undo2,
 } from "lucide-react"
 import { AgGridReact } from "ag-grid-react"
 import type { ColDef, ColGroupDef, CellValueChangedEvent, ColumnResizedEvent, ColumnHeaderClickedEvent } from "ag-grid-community"
@@ -298,6 +298,75 @@ function UndoReleaseDialog({
   )
 }
 
+function BatchUnreleaseDialog({
+  open, onOpenChange, onConfirm, loading, releasedCount,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  onConfirm: (period: "midterm" | "final", reason: string) => Promise<void>
+  loading: boolean
+  releasedCount: number
+}) {
+  const [period, setPeriod] = useState<"midterm" | "final">("midterm")
+  const [reason, setReason] = useState("")
+
+  useEffect(() => {
+    if (open) { setReason(""); setPeriod("midterm") }
+  }, [open])
+
+  async function handleConfirm() {
+    if (!reason.trim()) return
+    await onConfirm(period, reason.trim())
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Unrelease All Grades</DialogTitle>
+          <DialogDescription>
+            This will unrelease grades for <strong>{releasedCount} students</strong>. Students will no longer see these grades.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Period *</label>
+            <select
+              value={period}
+              onChange={(e) => setPeriod(e.target.value as "midterm" | "final")}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            >
+              <option value="midterm">Midterm</option>
+              <option value="final">Final</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Reason *</label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              rows={3}
+              placeholder="Explain why you are unreleasing grades..."
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-lg" disabled={loading}>Cancel</Button>
+          <Button 
+            onClick={handleConfirm} 
+            className="rounded-lg bg-red-600 hover:bg-red-700" 
+            disabled={!reason.trim() || loading}
+          >
+            {loading ? "Unreleasing..." : `Unrelease ${releasedCount} Grades`}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 type CategoryPreviewData = {
   category: string
   totalStudentScore: number
@@ -407,12 +476,28 @@ export function SpreadsheetGrid({
   const [releasing, setReleasing] = useState(false)
   const [studentReleaseOpen, setStudentReleaseOpen] = useState(false)
   const [studentReleaseTarget, setStudentReleaseTarget] = useState<{ studentId: string; studentName: string; period: "midterm" | "final"; alreadyReleased: boolean } | null>(null)
+  const [batchUnreleaseOpen, setBatchUnreleaseOpen] = useState(false)
+  const [batchUnreleaseLoading, setBatchUnreleaseLoading] = useState(false)
   const [isFullScreen, setIsFullScreen] = useState(false)
 
   const gradeMapRef = useRef(gradeMap)
   gradeMapRef.current = gradeMap
   const [liveData, setLiveData] = useState<Map<string, LivePreviewEntry>>(new Map())
   const dataLoadedRef = useRef(false)
+
+  const hasReleasedGrades = useMemo(() => {
+    return Array.from(gradeMap.values()).some(g => 
+      (activeTab === "midterm" && g.midtermReleased) ||
+      (activeTab === "final" && g.finalReleased)
+    )
+  }, [gradeMap, activeTab])
+
+  const releasedCount = useMemo(() => {
+    return Array.from(gradeMap.values()).filter(g => 
+      (activeTab === "midterm" && g.midtermReleased) ||
+      (activeTab === "final" && g.finalReleased)
+    ).length
+  }, [gradeMap, activeTab])
 
   const scheduleInfo = useMemo(() => {
     if (!classId || !model.visibleSchedules) return { instructor: "", section: "" }
@@ -449,7 +534,7 @@ export function SpreadsheetGrid({
     const res = await fetch(`/api/portal/grades/class/${cid}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ grades: gradeData }),
+      body: JSON.stringify({ grades: gradeData, gradingPeriod: activeTab }),
     })
     if (!res.ok) {
       const text = await res.text().catch(() => "")
@@ -689,6 +774,31 @@ export function SpreadsheetGrid({
       toast.success(action === "unrelease" ? "Grades unreleased." : "Grades re-released.")
     } catch {
       toast.error("Failed to update release status.")
+    }
+  }
+
+  async function handleBatchUnrelease(period: "midterm" | "final", reason: string) {
+    if (!classId) return
+    setBatchUnreleaseLoading(true)
+    try {
+      const res = await fetch("/api/portal/grades/batch-unrelease", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ classId, period, reason }),
+      })
+      const json = await res.json()
+      if (!res.ok) { toast.error(json.error || "Failed to unrelease grades."); return }
+      const refreshRes = await fetch(`/api/portal/grades/class/${classId}`)
+      const refreshJson = await refreshRes.json()
+      if (refreshJson.data?.grades) {
+        setGrades(refreshJson.data.grades)
+      }
+      toast.success(`${json.data?.count || 0} grades unreleased.`)
+    } catch {
+      toast.error("Failed to unrelease grades.")
+    } finally {
+      setBatchUnreleaseLoading(false)
+      setBatchUnreleaseOpen(false)
     }
   }
 
@@ -1039,6 +1149,9 @@ export function SpreadsheetGrid({
         filter: "agNumberColumnFilter",
         editable: (params) => {
           if (!isEditable) return false
+          const row = params.data as StudentGradeRow
+          if (activeTab === "midterm" && row.midtermReleased) return false
+          if (activeTab === "final" && row.finalReleased) return false
           return true
         },
         valueGetter: (params) => {
@@ -1650,6 +1763,16 @@ export function SpreadsheetGrid({
           onCellValueChanged={onCellValueChanged}
           onColumnResized={onColumnResized}
           onColumnHeaderClicked={onColumnHeaderClicked}
+          onCellClicked={(params) => {
+            if (params.colDef?.colId?.startsWith('score_')) {
+              const row = params.data as StudentGradeRow
+              const isLocked = (activeTab === "midterm" && row.midtermReleased) ||
+                               (activeTab === "final" && row.finalReleased)
+              if (isLocked) {
+                toast.error("This grade has been released and cannot be edited. Unrelease it first if changes are needed.")
+              }
+            }
+          }}
           suppressClickEdit
           singleClickEdit
           stopEditingWhenCellsLoseFocus
@@ -1712,6 +1835,16 @@ export function SpreadsheetGrid({
         <Button size="default" variant="outline" onClick={() => setReleaseOpen(true)} className="h-9 rounded-md border-border">
           <Megaphone className="size-4" /> Release
         </Button>
+        {hasReleasedGrades && (
+          <Button 
+            size="default" 
+            variant="outline" 
+            onClick={() => setBatchUnreleaseOpen(true)} 
+            className="h-9 rounded-md border-border text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
+          >
+            <Undo2 className="size-4" /> Unrelease All ({releasedCount})
+          </Button>
+        )}
       </div>
 
       <ReleaseDialog
@@ -1746,6 +1879,14 @@ export function SpreadsheetGrid({
           onConfirm={handleStudentRelease}
         />
       )}
+
+      <BatchUnreleaseDialog
+        open={batchUnreleaseOpen}
+        onOpenChange={setBatchUnreleaseOpen}
+        onConfirm={handleBatchUnrelease}
+        loading={batchUnreleaseLoading}
+        releasedCount={releasedCount}
+      />
 
     </div>
   )
