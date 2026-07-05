@@ -38,6 +38,8 @@ import {
 } from "../data/portal-data"
 import type { CsoInfoRecord, SemesterRecord, SubjectRecord } from "@/lib/types"
 import { csvEscape, downloadFile } from "../lib/downloads"
+import jsPDF from "jspdf"
+import html2canvas from "html2canvas"
 import { computeDeansList, transmutedToEquivalent } from "../lib/grades"
 import { parseScheduleWorkbook } from "../lib/xlsx"
 import type { ModuleId } from "../types/navigation"
@@ -1225,103 +1227,82 @@ export function usePortalDashboardModel(role: Role) {
           : ""
     ) : ""
 
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Grade Report — ${escHtml(studentName)}</title>
-<style>
-  @page { size: A4; margin: 0; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Calibri','Segoe UI',Arial,sans-serif; font-size: 12px; color: #1e293b; padding: 0.5in; }
-  .header { display: flex; align-items: center; gap: 20px; margin-bottom: 32px; border-bottom: 2px solid #1e293b; padding-bottom: 16px; }
-  .logo { flex-shrink: 0; }
-  .logo img { height: 70px; width: auto; display: block; }
-  .inst { display: flex; flex-direction: column; gap: 1px; }
-  .rep { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; }
-  .name { font-size: 16px; font-weight: 800; color: #0f172a; letter-spacing: 0.04em; line-height: 1.2; }
-  .campus { font-size: 11px; color: #64748b; }
-  h1 { text-align: center; font-size: 22px; font-weight: 700; margin-bottom: 20px; }
-  .info-grid { display: flex; gap: 48px; margin-bottom: 36px; font-size: 14px; }
-  .info-grid div { display: flex; flex-direction: column; gap: 2px; }
-  .info-grid .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: #94a3b8; font-weight: 600; }
-  .info-grid .value { font-weight: 600; }
-  table { width: 100%; border-collapse: collapse; font-size: 11px; }
-  th { background: #f1f5f9; text-align: left; padding: 8px 6px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #475569; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
-  td { padding: 7px 6px; border-bottom: 1px solid #e2e8f0; }
-  td.num { text-align: center; }
-  .gwa-line { margin-top: 16px; font-size: 14px; font-weight: 600; color: #0f172a; }
-  .total-units-line { margin-top: 6px; font-size: 13px; color: #475569; }
-  .deans-section { margin-top: 16px; }
-  .footer { margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 14px; }
-  .disclaimer { font-size: 12px; color: #475569; text-align: left; }
-  .footer .credit { margin-top: 14px; display: block; }
-  @media print { @page { margin: 0.25in; } body { padding: 0.3in 0.5in; } }
-</style>
-</head>
-<body>
-  <div class="header">
-    <div class="logo">
-      ${LOGO_IMG_TAG}
+    const html = `<div style="font-family:'Calibri','Segoe UI',Arial,sans-serif;font-size:12px;color:#1e293b;padding:20px;max-width:800px;">
+  <div style="display:flex;align-items:center;gap:20px;margin-bottom:32px;border-bottom:2px solid #1e293b;padding-bottom:16px;">
+    <div style="flex-shrink:0;">
+      ${LOGO_IMG_TAG.replace('<img', '<img style="width:70px;height:70px;"')}
     </div>
-    <div class="inst">
-      <div class="rep">Republic of the Philippines</div>
-      <div class="name">ILOCOS SUR POLYTECHNIC STATE COLLEGE - MAIN CAMPUS</div>
-      <div class="campus">San Nicolas, Candon City, Ilocos Sur</div>
+    <div style="display:flex;flex-direction:column;gap:1px;">
+      <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.1em;">Republic of the Philippines</div>
+      <div style="font-size:16px;font-weight:800;color:#0f172a;letter-spacing:0.04em;line-height:1.2;">ILOCOS SUR POLYTECHNIC STATE COLLEGE - MAIN CAMPUS</div>
+      <div style="font-size:11px;color:#64748b;">San Nicolas, Candon City, Ilocos Sur</div>
     </div>
   </div>
 
-  <h1>Grade Report</h1>
-  <div class="info-grid">
-    <div>
-      <span class="label">Student Name</span>
-      <span class="value">${escHtml(studentName)}</span>
+  <h1 style="text-align:center;font-size:22px;font-weight:700;margin-bottom:20px;">Grade Report</h1>
+  <div style="display:flex;gap:48px;margin-bottom:36px;font-size:14px;">
+    <div style="display:flex;flex-direction:column;gap:2px;">
+      <span style="font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:#94a3b8;font-weight:600;">Student Name</span>
+      <span style="font-weight:600;">${escHtml(studentName)}</span>
     </div>
-    <div>
-      <span class="label">Section</span>
-      <span class="value">${escHtml(studentSection)}</span>
+    <div style="display:flex;flex-direction:column;gap:2px;">
+      <span style="font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:#94a3b8;font-weight:600;">Section</span>
+      <span style="font-weight:600;">${escHtml(studentSection)}</span>
     </div>
-    <div>
-      <span class="label">School Year</span>
-      <span class="value">${escHtml(syLabel)}</span>
+    <div style="display:flex;flex-direction:column;gap:2px;">
+      <span style="font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:#94a3b8;font-weight:600;">School Year</span>
+      <span style="font-weight:600;">${escHtml(syLabel)}</span>
     </div>
   </div>
-  <table>
+  <table style="width:100%;border-collapse:collapse;font-size:11px;">
     <thead>
       <tr>
-        <th>Subject</th>
-        <th>Code</th>
-        <th>Transmuted Grade</th>
-        <th>Units</th>
+        <th style="background:#f1f5f9;text-align:left;padding:8px 6px;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;white-space:nowrap;">Subject</th>
+        <th style="background:#f1f5f9;text-align:left;padding:8px 6px;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;white-space:nowrap;">Code</th>
+        <th style="background:#f1f5f9;text-align:left;padding:8px 6px;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;white-space:nowrap;">Transmuted Grade</th>
+        <th style="background:#f1f5f9;text-align:left;padding:8px 6px;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;white-space:nowrap;">Units</th>
       </tr>
     </thead>
     <tbody>
       ${rows}
     </tbody>
   </table>
-  <div class="gwa-line">
+  <div style="margin-top:16px;font-size:14px;font-weight:600;color:#0f172a;">
     <span>General Weighted Average:</span> ${gwa}
   </div>
-  <div class="total-units-line">
+  <div style="margin-top:6px;font-size:13px;color:#475569;">
     <span>Total Units:</span> ${totalUnits}
   </div>
-  ${deansHtml ? `<div class="deans-section">${deansHtml}</div>` : ""}
-  <div class="footer">
-    <p class="disclaimer">Disclaimer: This portal export is for informational purposes only and is not an official academic record. The signed Final Report from the College Registrar remains the sole authoritative document, and the Registrar's official records shall prevail in case of any discrepancy.</p>
-    <p class="credit">&copy; ComScite Portal. 2026</p>
+  ${deansHtml ? `<div style="margin-top:16px;">${deansHtml}</div>` : ""}
+  <div style="margin-top:40px;border-top:1px solid #e2e8f0;padding-top:14px;">
+    <p style="font-size:12px;color:#475569;text-align:left;">Disclaimer: This portal export is for informational purposes only and is not an official academic record. The signed Final Report from the College Registrar remains the sole authoritative document, and the Registrar's official records shall prevail in case of any discrepancy.</p>
+    <p style="margin-top:14px;">&copy; ComScite Portal. 2026</p>
   </div>
-</body>
-</html>`
+</div>`
 
-    const win = window.open("", "_blank")
-    if (win) {
-      win.document.write(html)
-      win.document.close()
-      const img = win.document.querySelector("img")
-      if (img?.complete) win.print()
-      else if (img) img.onload = () => win.print()
-      win.onafterprint = () => win.close()
-    }
+    const container = document.createElement("div")
+    container.style.position = "fixed"
+    container.style.left = "-9999px"
+    container.style.top = "0"
+    container.innerHTML = html
+    document.body.appendChild(container)
+
+    html2canvas(container, { scale: 2, useCORS: true, backgroundColor: "#ffffff" }).then((canvas) => {
+      const imgData = canvas.toDataURL("image/png")
+      const pdf = new jsPDF("p", "mm", "a4")
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pdfHeight = pdf.internal.pageSize.getHeight()
+      const imgWidth = canvas.width
+      const imgHeight = canvas.height
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight)
+      const imgX = (pdfWidth - imgWidth * ratio) / 2
+      pdf.addImage(imgData, "PNG", imgX, 0, imgWidth * ratio, imgHeight * ratio)
+      pdf.save(`Grade Report - ${studentName}.pdf`)
+      document.body.removeChild(container)
+    }).catch(() => {
+      document.body.removeChild(container)
+      toast.error("Failed to generate PDF")
+    })
   }
 
 
@@ -1369,31 +1350,31 @@ export function usePortalDashboardModel(role: Role) {
       const rows = yearTerms.flatMap((term) => {
         const semester = term.semester as string
         const subjects = (term.subjects as Array<Record<string, unknown>>) ?? []
-        const semHeader = `<tr class="sem-header"><td colspan="5">${escHtml(semester)}</td></tr>`
+        const semHeader = `<tr style="background:#e2e8f0;"><td colspan="5" style="font-weight:800;color:#0f172a;padding:4px 6px;border-bottom:2px solid #94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;">${escHtml(semester)}</td></tr>`
         const subjectRows = subjects.map((sub) => {
           const code = sub.code as string
           const gradeVal = findGrade(code)
           const remarksVal = findRemarks(code)
           return `<tr>
-            <td>${escHtml(code)}</td>
-            <td>${escHtml(sub.name as string)}</td>
-            <td class="num">${sub.total ?? "—"}</td>
-            <td class="num">${gradeVal}</td>
-            <td class="num">${remarksVal ? escHtml(remarksVal) : "—"}</td>
+            <td style="padding:3px 6px;border-bottom:1px solid #e2e8f0;color:#334155;">${escHtml(code)}</td>
+            <td style="padding:3px 6px;border-bottom:1px solid #e2e8f0;color:#334155;">${escHtml(sub.name as string)}</td>
+            <td style="padding:3px 6px;border-bottom:1px solid #e2e8f0;color:#334155;text-align:center;">${sub.total ?? "—"}</td>
+            <td style="padding:3px 6px;border-bottom:1px solid #e2e8f0;color:#334155;text-align:center;font-weight:600;">${gradeVal}</td>
+            <td style="padding:3px 6px;border-bottom:1px solid #e2e8f0;color:#334155;text-align:center;">${remarksVal ? escHtml(remarksVal) : "—"}</td>
           </tr>`
         })
         return [semHeader, ...subjectRows]
       })
       return `
-        <div class="year-title">${escHtml(year)}</div>
-        <table>
+        <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;margin-top:8px;">${escHtml(year)}</div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:11px;">
           <thead>
             <tr>
-              <th>Subject Code</th>
-              <th>Descriptive Title</th>
-              <th>Units</th>
-              <th>Grade</th>
-              <th>Remarks</th>
+              <th style="background:#f1f5f9;text-align:left;padding:4px 6px;font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;">Subject Code</th>
+              <th style="background:#f1f5f9;text-align:left;padding:4px 6px;font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;">Descriptive Title</th>
+              <th style="background:#f1f5f9;text-align:left;padding:4px 6px;font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;">Units</th>
+              <th style="background:#f1f5f9;text-align:left;padding:4px 6px;font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;">Grade</th>
+              <th style="background:#f1f5f9;text-align:left;padding:4px 6px;font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;border-bottom:2px solid #e2e8f0;">Remarks</th>
             </tr>
           </thead>
           <tbody>
@@ -1402,107 +1383,58 @@ export function usePortalDashboardModel(role: Role) {
         </table>`
     }).join("\n")
 
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Appraisal Sheet — ${escHtml(profile.name)}</title>
-<style>
-  @page { size: 8.5in 13in; margin: 0.15in; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Calibri','Segoe UI',Arial,sans-serif; font-size: 12px; color: #1e293b; padding: 0.2in 0.3in; }
-  .header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; border-bottom: 2px solid #1e293b; padding-bottom: 8px; }
-  .logo { flex-shrink: 0; }
-  .logo img { height: 50px; width: auto; display: block; }
-  .inst { display: flex; flex-direction: column; gap: 1px; }
-  .rep { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; }
-  .name { font-size: 16px; font-weight: 800; color: #0f172a; letter-spacing: 0.04em; line-height: 1.2; }
-  .campus { font-size: 11px; color: #64748b; }
-  h1 { text-align: center; font-size: 28px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
-  .curriculum-line { text-align: center; font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 16px; }
-  .info-block { margin-bottom: 16px; }
-  .info-block p { font-size: 17px; line-height: 1.3; color: #334155; }
-  .info-block p strong { display: inline-block; min-width: 160px; color: #0f172a; }
-  .info-row { display: flex; gap: 20px; margin-bottom: 2px; }
-  .info-col { flex: 1; }
-  .info-col p { font-size: 17px; color: #334155; }
-  .info-col p strong { display: inline-block; min-width: 80px; color: #0f172a; }
-  .year-title { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 4px; margin-top: 8px; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 11px; }
-  thead th { background: #f1f5f9; text-align: left; padding: 4px 6px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: #475569; border-bottom: 2px solid #e2e8f0; }
-  thead th:last-child { text-align: center; }
-  tbody td { padding: 3px 6px; border-bottom: 1px solid #e2e8f0; color: #334155; }
-  tbody td.num { text-align: center; font-weight: 600; }
-  .sem-header td { background: #e2e8f0; font-weight: 800; color: #0f172a; padding: 4px 6px; border-bottom: 2px solid #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
-</style>
-</head>
-<body>
-  <div class="header">
-    <div class="logo">
-      ${LOGO_IMG_TAG}
+    const html = `<div style="font-family:'Calibri','Segoe UI',Arial,sans-serif;font-size:12px;color:#1e293b;padding:15px;max-width:800px;">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;border-bottom:2px solid #1e293b;padding-bottom:8px;">
+    <div style="flex-shrink:0;">
+      ${LOGO_IMG_TAG.replace('<img', '<img style="width:50px;height:50px;"')}
     </div>
-    <div class="inst">
-      <div class="rep">Republic of the Philippines</div>
-      <div class="name">ILOCOS SUR POLYTECHNIC STATE COLLEGE - MAIN CAMPUS</div>
-      <div class="campus">San Nicolas, Candon City, Ilocos Sur</div>
+    <div style="display:flex;flex-direction:column;gap:1px;">
+      <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.1em;">Republic of the Philippines</div>
+      <div style="font-size:16px;font-weight:800;color:#0f172a;letter-spacing:0.04em;line-height:1.2;">ILOCOS SUR POLYTECHNIC STATE COLLEGE - MAIN CAMPUS</div>
+      <div style="font-size:11px;color:#64748b;">San Nicolas, Candon City, Ilocos Sur</div>
     </div>
   </div>
 
-  <h1>APPRAISAL SHEET</h1>
-  <p class="curriculum-line">${escHtml((enrolledCurriculum.name as string) ?? "")}</p>
+  <h1 style="text-align:center;font-size:28px;font-weight:800;color:#0f172a;margin-bottom:8px;">APPRAISAL SHEET</h1>
+  <p style="text-align:center;font-size:14px;font-weight:600;color:#475569;margin-bottom:16px;">${escHtml((enrolledCurriculum.name as string) ?? "")}</p>
 
-  <div class="info-block">
-    <div class="info-row">
-      <div class="info-col">
-        <p><strong>Student Name:</strong> ${escHtml(profile.name)}</p>
+  <div style="margin-bottom:16px;">
+    <div style="display:flex;gap:20px;margin-bottom:2px;">
+      <div style="flex:1;">
+        <p style="font-size:17px;line-height:1.3;color:#334155;"><strong style="display:inline-block;min-width:160px;color:#0f172a;">Student Name:</strong> ${escHtml(profile.name)}</p>
       </div>
-      <div class="info-col">
-        <p><strong>Student ID:</strong> ${escHtml(profile.id)}</p>
+      <div style="flex:1;">
+        <p style="font-size:17px;line-height:1.3;color:#334155;"><strong style="display:inline-block;min-width:80px;color:#0f172a;">Student ID:</strong> ${escHtml(profile.id)}</p>
       </div>
     </div>
   </div>
 
   ${tablesHtml}
-</body>
-</html>`
+</div>`
 
-    const win = window.open("", "_blank")
-    if (win) {
-      const w = win
-      w.document.write(html)
-      w.document.close()
+    const container = document.createElement("div")
+    container.style.position = "fixed"
+    container.style.left = "-9999px"
+    container.style.top = "0"
+    container.innerHTML = html
+    document.body.appendChild(container)
 
-      let printed = false
-      function printDoc() {
-        if (printed) return
-        printed = true
-        w.print()
-      }
-
-      const imgs = w.document.querySelectorAll("img")
-      if (imgs.length === 0) {
-        w.print()
-      } else {
-        let loaded = 0
-        imgs.forEach((img) => {
-          if (img.complete) {
-            loaded++
-            if (loaded === imgs.length) w.print()
-          } else {
-            img.onload = () => {
-              loaded++
-              if (loaded === imgs.length) w.print()
-            }
-            img.onerror = () => {
-              loaded++
-              if (loaded === imgs.length) w.print()
-            }
-          }
-        })
-        setTimeout(printDoc, 3000)
-      }
-      w.onafterprint = () => w.close()
-    }
+    html2canvas(container, { scale: 2, useCORS: true, backgroundColor: "#ffffff" }).then((canvas) => {
+      const imgData = canvas.toDataURL("image/png")
+      const pdf = new jsPDF("p", "mm", "legal")
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pdfHeight = pdf.internal.pageSize.getHeight()
+      const imgWidth = canvas.width
+      const imgHeight = canvas.height
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight)
+      const imgX = (pdfWidth - imgWidth * ratio) / 2
+      pdf.addImage(imgData, "PNG", imgX, 0, imgWidth * ratio, imgHeight * ratio)
+      pdf.save(`Appraisal Sheet - ${profile.name}.pdf`)
+      document.body.removeChild(container)
+    }).catch(() => {
+      document.body.removeChild(container)
+      toast.error("Failed to generate PDF")
+    })
   }
 
 

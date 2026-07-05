@@ -1,4 +1,4 @@
-⨯ ./features/portal/components/role-dashboard.tsx:30:1
+        ⨯ ./features/portal/components/role-dashboard.tsx:30:1
 Module not found: Can't resolve './modules/profile-module'
   [90m28 |[0m [36mimport[0m { [33mInstructorsModule[0m } [36mfrom[0m [32m"./modules/instructors-module"[0m
   [90m29 |[0m [36mimport[0m { [33mOverviewModule[0m } [36mfrom[0m [32m"./modules/overview-module"[0m

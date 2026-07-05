@@ -6,12 +6,50 @@ import { gradeColumnRepository } from "@/features/portal/repositories/grade-colu
 import { schedulesRepository } from "@/features/portal/repositories/schedules.repository"
 import { semestersRepository } from "@/features/portal/repositories/semesters.repository"
 import { usersRepository } from "@/features/portal/repositories/users.repository"
-import { gradeCategoryMatches } from "@/features/portal/lib/grade-engine"
+import { gradeCategoryMatches, computeLivePreview } from "@/features/portal/lib/grade-engine"
+import { gradingSchemeRepository } from "@/features/portal/repositories/grading-scheme.repository"
+import { assessmentRepository } from "@/features/portal/repositories/assessment.repository"
 import type { GradeRecord } from "@/lib/types/grade"
 import type { GradeColumn } from "@/lib/types/grade-column"
+import type { Assessment } from "@/lib/types/assessment"
+import type { GradingScheme } from "@/lib/types/grading-scheme"
 
 const TEMPLATES_DIR = path.join(process.cwd(), "templates")
 const TEMPLATE_FILE = "2SSY2526 CS4A IAS Class Record (gsheetv4.2).xlsx"
+
+// Fallback grading schemes matching grades-module.tsx grid behavior
+const DEFAULT_LECTURE_SCHEME: GradingScheme = {
+  id: "GS-DEFAULT-LECTURE",
+  name: "Default Lecture",
+  subjectType: "Lecture",
+  isDefault: true,
+  isActive: true,
+  components: [
+    { name: "Class Standing", weight: 60, categories: [{ name: "Quizzes", weight: 25 }, { name: "Performance", weight: 25 }, { name: "Assignments", weight: 25 }, { name: "Attendance", weight: 25 }] },
+    { name: "Exam", weight: 40, categories: [{ name: "Exam", weight: 100 }] },
+  ],
+  createdAt: "",
+  updatedAt: "",
+}
+
+const DEFAULT_LAB_SCHEME: GradingScheme = {
+  id: "GS-DEFAULT-LAB",
+  name: "Default Lecture with Lab",
+  subjectType: "Lecture with Lab",
+  isDefault: true,
+  isActive: true,
+  lectureWeight: 40,
+  laboratoryWeight: 60,
+  components: [
+    { name: "Lecture Class Standing", weight: 60, categories: [{ name: "Quizzes", weight: 10 }, { name: "Performance", weight: 30 }, { name: "Assignments", weight: 30 }, { name: "Attendance", weight: 30 }] },
+    { name: "Lecture Exam", weight: 40, categories: [{ name: "Exam", weight: 100 }] },
+  ],
+  labComponents: [
+    { name: "Laboratory", weight: 100, categories: [{ name: "Exercises", weight: 35 }, { name: "Work Attitude", weight: 35 }, { name: "Project", weight: 15 }, { name: "Attendance", weight: 15 }] },
+  ],
+  createdAt: "",
+  updatedAt: "",
+}
 
 const HEADER_CELLS: Record<string, Array<{ row: number; col: number; key: string }>> = {
   "CLASS RECORD": [
@@ -63,6 +101,7 @@ interface TemplatePeriodMap {
   categories: TemplateCategory[]
   examCol?: number
   csCol?: number
+  cs60Col?: number
   totalCol?: number
   labTotalCol?: number
   absencesCol?: number
@@ -84,19 +123,24 @@ function scanTemplateColumnMap(sheet: ExcelJS.Worksheet, startCol: number, endCo
   const map: TemplatePeriodMap = { categories: [] }
 
   const row7Lbl = (c: number): unknown => sheet.getCell(7, c).value
+  const row6Lbl = (c: number): unknown => sheet.getCell(6, c).value
   const row9Val = (c: number): unknown => sheet.getCell(9, c).value
 
   let col = startCol
   while (col <= endCol) {
-    const label = row7Lbl(col)
+    let label = row7Lbl(col)
+    if (label == null) label = row6Lbl(col)
     if (label == null) {
       col++
       continue
     }
 
     let regionEnd = col
-    while (regionEnd < endCol && row7Lbl(regionEnd + 1) === label) {
-      regionEnd++
+    while (regionEnd < endCol) {
+      let nextLabel = row7Lbl(regionEnd + 1)
+      if (nextLabel == null) nextLabel = row6Lbl(regionEnd + 1)
+      if (nextLabel === label) regionEnd++
+      else break
     }
 
     if (typeof label === "number") {
@@ -112,8 +156,14 @@ function scanTemplateColumnMap(sheet: ExcelJS.Worksheet, startCol: number, endCo
     const baseName = rawLabel.replace(CATEGORY_LABEL_REGEX, "").trim().toLowerCase()
     const normalized = baseName.replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ")
 
-    if (normalized === "cs" || normalized === "mg" || normalized === "fg") {
-      if (normalized === "cs") map.csCol = col
+    if (
+      normalized === "cs" || normalized.startsWith("cs ") ||
+      normalized === "class standing" || normalized.startsWith("class standing ") ||
+      normalized === "mg" || normalized.startsWith("mg ") ||
+      normalized === "fg" || normalized.startsWith("fg ")
+    ) {
+      if (normalized === "cs" || normalized.startsWith("cs ")) map.cs60Col = col
+      else if (normalized === "class standing" || normalized.startsWith("class standing ")) map.csCol = col
       else map.periodGradeCol = col
       col = regionEnd + 1
       continue
@@ -191,16 +241,12 @@ function scanTemplateColumnMap(sheet: ExcelJS.Worksheet, startCol: number, endCo
   return map
 }
 
-function scoreKey(colName: string, gradingPeriod?: string): string {
-  return gradingPeriod && gradingPeriod !== "both"
-    ? `${gradingPeriod}_${colName}`
-    : colName
-}
-
-function getAbsences(grade: GradeRecord, period: string): number {
+function getAbsences(grade: GradeRecord, period: string, lab: boolean = false): number {
   for (const [key, val] of Object.entries(grade.scores ?? {})) {
     if (key.startsWith(`${period}_absences_`)) {
-      return Number(val) || 0
+      const suffix = key.replace(`${period}_absences_`, "").toLowerCase()
+      const isLab = suffix.includes("lab") || suffix.includes("laboratory")
+      if (lab === isLab) return Number(val) || 0
     }
   }
   return 0
@@ -223,6 +269,7 @@ function populatePeriodSection(
   rowIdx: number,
   periodMap: TemplatePeriodMap,
   period: "midterm" | "final",
+  preview?: { classStanding: number; lectureGrade: number; periodGrade: number; categoryGrades?: Array<{ category: string; totalStudentScore: number; totalPossibleScore: number }>; laboratoryGrade?: number } | null,
 ): void {
   const grouped: Record<string, GradeColumn[]> = {}
 
@@ -238,7 +285,7 @@ function populatePeriodSection(
     grouped[key].sort((a, b) => a.order - b.order)
   }
 
-  const absences = getAbsences(grade, period)
+  const absences = getAbsences(grade, period, false)
 
   for (const cat of periodMap.categories) {
     const items: GradeColumn[] = []
@@ -251,9 +298,42 @@ function populatePeriodSection(
     items.sort((a, b) => a.order - b.order)
     for (let j = 0; j < items.length && j < cat.itemColumns.length; j++) {
       const targetCol = cat.itemColumns[j]
-      const key = scoreKey(items[j].name, items[j].gradingPeriod)
-      const score = grade.scores?.[key] ?? grade.scores?.[items[j].name]
+      const col = items[j]
+      const score = grade.scores?.[col.id] ?? grade.scores?.[`${col.gradingPeriod}_${col.name}`] ?? grade.scores?.[col.name]
       sheet.getCell(rowIdx, targetCol).value = score ?? null
+      if (rowIdx <= 12 && cat.alias === "project") {
+        console.log(`[EXPORT DIAG] Writing project raw score: row ${rowIdx} col ${targetCol} = ${score}`)
+      }
+    }
+    // Write Project's 15% contribution to the second item column
+    if (cat.alias === "project" && cat.itemColumns.length >= 2 && items.length > 0) {
+      let totalStudentScore = 0
+      let totalPossibleScore = 0
+      for (const item of items) {
+        const s = grade.scores?.[item.id] ?? grade.scores?.[`${item.gradingPeriod}_${item.name}`] ?? grade.scores?.[item.name]
+        if (s != null) totalStudentScore += Number(s)
+        totalPossibleScore += item.maxScore ?? 0
+      }
+      if (totalPossibleScore > 0) {
+        const ps = totalStudentScore / totalPossibleScore
+        const pct = ps * 50 + 50
+        sheet.getCell(rowIdx, cat.itemColumns[1]).value = pct * 0.15
+      }
+    }
+    // Write Project's weighted score to its WS column ((raw/max × 50 + 50) × 15%)
+    else if (cat.alias === "project" && cat.wsCol != null && items.length > 0) {
+      let totalStudentScore = 0
+      let totalPossibleScore = 0
+      for (const item of items) {
+        const s = grade.scores?.[item.id] ?? grade.scores?.[`${item.gradingPeriod}_${item.name}`] ?? grade.scores?.[item.name]
+        if (s != null) totalStudentScore += Number(s)
+        totalPossibleScore += item.maxScore ?? 0
+      }
+      if (totalPossibleScore > 0) {
+        const ps = totalStudentScore / totalPossibleScore
+        const pct = ps * 50 + 50
+        sheet.getCell(rowIdx, cat.wsCol).value = pct * 0.15
+      }
     }
   }
 
@@ -265,9 +345,13 @@ function populatePeriodSection(
       }
     }
     if (examItems.length > 0) {
-      const key = scoreKey(examItems[0].name, examItems[0].gradingPeriod)
-      const examScore = grade.scores?.[key] ?? grade.scores?.[examItems[0].name]
-      sheet.getCell(rowIdx, periodMap.examCol).value = examScore ?? null
+      let totalRaw = 0
+      let found = false
+      for (const item of examItems) {
+        const s = grade.scores?.[item.id] ?? grade.scores?.[`${period}_${item.name}`] ?? grade.scores?.[item.name]
+        if (s != null) { totalRaw += Number(s); found = true }
+      }
+      sheet.getCell(rowIdx, periodMap.examCol).value = found ? totalRaw : null
     }
   }
 
@@ -276,30 +360,87 @@ function populatePeriodSection(
   }
 
   if (periodMap.labAbsencesCol != null) {
-    const labAbsences = getAbsences(grade, period)
+    const labAbsences = getAbsences(grade, period, true)
     sheet.getCell(rowIdx, periodMap.labAbsencesCol).value = labAbsences || null
   }
 
   if (period === "midterm") {
-    if (periodMap.csCol != null) sheet.getCell(rowIdx, periodMap.csCol).value = grade.midtermClassStanding ?? null
-    if (periodMap.examCol != null) {
-      sheet.getCell(rowIdx, periodMap.examCol + 1).value = grade.midtermExam ?? null
+    if (periodMap.csCol != null) {
+      sheet.getCell(rowIdx, periodMap.csCol).value = preview?.lectureGrade ?? grade.lectureGrade ?? (grade.midtermClassStanding != null && grade.midtermExam != null
+        ? (grade.midtermClassStanding * 60 + grade.midtermExam * 40) / 100
+        : null)
     }
-    if (periodMap.totalCol != null) sheet.getCell(rowIdx, periodMap.totalCol).value = grade.midtermGrade ?? null
-    if (periodMap.periodGradeCol != null) sheet.getCell(rowIdx, periodMap.periodGradeCol).value = grade.midtermGrade ?? null
+    if (periodMap.cs60Col != null) {
+      const cs60Val = preview?.classStanding != null ? preview.classStanding * 0.60 : grade.midtermClassStanding != null ? grade.midtermClassStanding * 0.60 : null
+      sheet.getCell(rowIdx, periodMap.cs60Col).value = cs60Val
+    }
+    if (periodMap.examCol != null) {
+      sheet.getCell(rowIdx, periodMap.examCol + 1).value = grade.midtermExam != null ? grade.midtermExam * 0.40 : null
+    }
+    if (periodMap.totalCol != null) {
+      const totalVal = preview?.lectureGrade ?? grade.lectureGrade ??
+        (grade.midtermClassStanding != null && grade.midtermExam != null
+          ? (grade.midtermClassStanding * 60 + grade.midtermExam * 40) / 100
+          : null)
+      sheet.getCell(rowIdx, periodMap.totalCol).value = totalVal
+    }
+    if (periodMap.periodGradeCol != null) {
+      sheet.getCell(rowIdx, periodMap.periodGradeCol).value = grade.midtermGrade ?? null
+    }
     if (periodMap.transmutedCol != null) sheet.getCell(rowIdx, periodMap.transmutedCol).value = grade.midtermTransmuted ?? null
     if (periodMap.remarksCol != null) sheet.getCell(rowIdx, periodMap.remarksCol).value = grade.midtermRemarks ?? ""
     if (periodMap.labTotalCol != null) sheet.getCell(rowIdx, periodMap.labTotalCol).value = grade.midtermLaboratoryGrade ?? null
-  } else {
-    if (periodMap.csCol != null) sheet.getCell(rowIdx, periodMap.csCol).value = grade.finalClassStanding ?? null
-    if (periodMap.examCol != null) {
-      sheet.getCell(rowIdx, periodMap.examCol + 1).value = grade.finalExam ?? null
+    if (periodMap.labAttendanceCol != null) {
+      if (preview?.categoryGrades) {
+        const labAtt = [...preview.categoryGrades].reverse().find(c => c.category.toLowerCase().includes("attendance"))
+        if (labAtt) {
+          if (rowIdx <= 12) console.log(`[EXPORT DIAG] midterm row ${rowIdx}: category="${labAtt.category}" totalStudentScore=${labAtt.totalStudentScore}`)
+          sheet.getCell(rowIdx, periodMap.labAttendanceCol).value = labAtt.totalStudentScore
+          if (rowIdx <= 12) console.log(`[EXPORT DIAG] midterm row ${rowIdx}: wrote to col ${periodMap.labAttendanceCol}`)
+        } else if (rowIdx <= 12) {
+          console.log(`[EXPORT DIAG] midterm row ${rowIdx}: NO attendance match in categoryGrades:`, preview.categoryGrades.map(c => `${c.category}=${c.totalStudentScore}`))
+        }
+      } else if (rowIdx <= 12) {
+        console.log(`[EXPORT DIAG] midterm row ${rowIdx}: preview or categoryGrades is null - fallback to template formula`)
+      }
     }
-    if (periodMap.totalCol != null) sheet.getCell(rowIdx, periodMap.totalCol).value = grade.tentativeFinalGrade ?? null
-    if (periodMap.periodGradeCol != null) sheet.getCell(rowIdx, periodMap.periodGradeCol).value = grade.tentativeFinalGrade ?? null
+  } else {
+    if (periodMap.csCol != null) {
+      sheet.getCell(rowIdx, periodMap.csCol).value = preview?.lectureGrade ?? (grade.finalClassStanding != null && grade.finalExam != null
+        ? (grade.finalClassStanding * 60 + grade.finalExam * 40) / 100
+        : null)
+    }
+    if (periodMap.cs60Col != null) {
+      const cs60Val = preview?.classStanding != null ? preview.classStanding * 0.60 : grade.finalClassStanding != null ? grade.finalClassStanding * 0.60 : null
+      sheet.getCell(rowIdx, periodMap.cs60Col).value = cs60Val
+    }
+    if (periodMap.totalCol != null) {
+      const totalVal = preview?.lectureGrade ??
+        (grade.finalClassStanding != null && grade.finalExam != null
+          ? (grade.finalClassStanding * 60 + grade.finalExam * 40) / 100
+          : null)
+      sheet.getCell(rowIdx, periodMap.totalCol).value = totalVal
+    }
+    if (periodMap.periodGradeCol != null) {
+      sheet.getCell(rowIdx, periodMap.periodGradeCol).value = grade.tentativeFinalGrade ?? null
+    }
     if (periodMap.transmutedCol != null) sheet.getCell(rowIdx, periodMap.transmutedCol).value = grade.finalTransmuted ?? null
     if (periodMap.remarksCol != null) sheet.getCell(rowIdx, periodMap.remarksCol).value = grade.finalRemarks ?? ""
     if (periodMap.labTotalCol != null) sheet.getCell(rowIdx, periodMap.labTotalCol).value = grade.finalLaboratoryGrade ?? null
+    if (periodMap.labAttendanceCol != null) {
+      if (preview?.categoryGrades) {
+        const labAtt = [...preview.categoryGrades].reverse().find(c => c.category.toLowerCase().includes("attendance"))
+        if (labAtt) {
+          if (rowIdx <= 12) console.log(`[EXPORT DIAG] final row ${rowIdx}: category="${labAtt.category}" totalStudentScore=${labAtt.totalStudentScore}`)
+          sheet.getCell(rowIdx, periodMap.labAttendanceCol).value = labAtt.totalStudentScore
+          if (rowIdx <= 12) console.log(`[EXPORT DIAG] final row ${rowIdx}: wrote to col ${periodMap.labAttendanceCol}`)
+        } else if (rowIdx <= 12) {
+          console.log(`[EXPORT DIAG] final row ${rowIdx}: NO attendance match in categoryGrades:`, preview.categoryGrades.map(c => `${c.category}=${c.totalStudentScore}`))
+        }
+      } else if (rowIdx <= 12) {
+        console.log(`[EXPORT DIAG] final row ${rowIdx}: preview or categoryGrades is null - fallback to template formula`)
+      }
+    }
   }
 }
 
@@ -354,7 +495,8 @@ function populateHPSRow(
       }
     }
     if (examItems.length > 0) {
-      sheet.getCell(hpsRow, periodMap.examCol).value = examItems[0].maxScore ?? 0
+      const totalMax = examItems.reduce((sum, item) => sum + Number(item.maxScore ?? 0), 0)
+      sheet.getCell(hpsRow, periodMap.examCol).value = totalMax
     }
   }
 }
@@ -382,6 +524,19 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
     gradeColumnRepository.findByClass(classId) as Promise<GradeColumn[]>,
     schedulesRepository.findAll({ id: classId }) as Promise<Record<string, unknown>[]>,
   ])
+
+  const schedule = schedulesData[0] ?? {}
+  const hasLabCategories = columns.some(c =>
+    gradeCategoryMatches("exercise", c.category) ||
+    gradeCategoryMatches("work attitude", c.category) ||
+    gradeCategoryMatches("project", c.category)
+  )
+  const subjectType = hasLabCategories ? "Lecture with Lab" : "Lecture"
+  let gradingScheme = await gradingSchemeRepository.findActiveBySubjectType(subjectType) as GradingScheme | null
+  if (!gradingScheme) {
+    gradingScheme = subjectType === "Lecture with Lab" ? DEFAULT_LAB_SCHEME : DEFAULT_LECTURE_SCHEME
+  }
+  const assessments = await assessmentRepository.findByClass(classId) as Assessment[]
 
   // Build sex lookup map and sort key map from student records
   const studentIds = [...new Set(grades.map((g) => g.studentId).filter(Boolean))] as string[]
@@ -416,7 +571,6 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
     throw new Error("No grades found for this class.")
   }
 
-  const schedule = schedulesData[0] ?? {}
   const semesterId = schedule.semesterId as string | undefined
 
   let semesterName = ""
@@ -507,6 +661,9 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
   const midtermMap = scanTemplateColumnMap(crSheet, 1, finalsStartCol - 1)
   const finalsMap = scanTemplateColumnMap(crSheet, finalsStartCol, totalCols)
 
+  console.log("[EXPORT DIAG] Midterm categories:", midtermMap.categories.map(c => ({ alias: c.alias, itemColumns: c.itemColumns, psCol: c.psCol, wsCol: c.wsCol })))
+  console.log("[EXPORT DIAG] Finals categories:", finalsMap.categories.map(c => ({ alias: c.alias, itemColumns: c.itemColumns, psCol: c.psCol, wsCol: c.wsCol })))
+
   // Rename "RECITATION - N%" to "PERFORMANCE/RECITATION - N%" in finals section
   for (const cat of finalsMap.categories) {
     if (cat.alias === "performance recitation" && cat.itemColumns.length > 0) {
@@ -518,7 +675,7 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
     }
   }
 
-  const isLabSubject = grades.some((g) =>
+  const isLabSubject = hasLabCategories || grades.some((g) =>
     g.midtermLaboratoryGrade != null ||
     g.finalLaboratoryGrade != null ||
     g.laboratoryGrade != null
@@ -527,16 +684,74 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
   {
     const dataStartRow = 10
 
+    // Clear template placeholder raw scores from all student data rows
+    for (let r = dataStartRow; r <= dataStartRow + 89; r++) {
+      for (const cat of midtermMap.categories) {
+        for (const c of cat.itemColumns) crSheet.getCell(r, c).value = null
+      }
+      for (const cat of finalsMap.categories) {
+        for (const c of cat.itemColumns) crSheet.getCell(r, c).value = null
+      }
+      if (midtermMap.examCol != null) crSheet.getCell(r, midtermMap.examCol).value = null
+      if (finalsMap.examCol != null) crSheet.getCell(r, finalsMap.examCol).value = null
+    }
+
+
+    const labAttendanceOverrides: Array<{ row: number; col: number; value: number }> = []
+
     for (let i = 0; i < grades.length; i++) {
       const grade = grades[i]
       const rowIdx = dataStartRow + i
+
+      // Compute live previews matching the grid's logic (period-filtered assessments)
+      const scores = grade.scores ?? {}
+      const midtermColumns = columns.filter(c => !c.gradingPeriod || c.gradingPeriod === "midterm" || c.gradingPeriod === "both")
+      const finalColumns = columns.filter(c => !c.gradingPeriod || c.gradingPeriod === "final" || c.gradingPeriod === "both")
+      const midtermAssessments = assessments.filter(a => a.gradingPeriod === "midterm" || a.gradingPeriod === "both").map(a => ({ name: a.name, category: a.category, maxScore: a.maxScore, scores: a.scores }))
+      const finalAssessments = assessments.filter(a => a.gradingPeriod === "final" || a.gradingPeriod === "both").map(a => ({ name: a.name, category: a.category, maxScore: a.maxScore, scores: a.scores }))
+
+      const midtermPreview = gradingScheme ? computeLivePreview({
+        scores,
+        columns: midtermColumns,
+        assessments: midtermAssessments,
+        studentId: grade.studentId,
+        components: gradingScheme.components,
+        labComponents: gradingScheme.labComponents,
+        subjectType: gradingScheme.subjectType,
+        lectureWeight: gradingScheme.lectureWeight,
+        laboratoryWeight: gradingScheme.laboratoryWeight,
+        period: "midterm",
+      }) : null
+
+      const finalPreview = gradingScheme ? computeLivePreview({
+        scores,
+        columns: finalColumns,
+        assessments: finalAssessments,
+        studentId: grade.studentId,
+        components: gradingScheme.components,
+        labComponents: gradingScheme.labComponents,
+        subjectType: gradingScheme.subjectType,
+        lectureWeight: gradingScheme.lectureWeight,
+        laboratoryWeight: gradingScheme.laboratoryWeight,
+        midtermGrade: grade.midtermGrade,
+        period: "final",
+      }) : null
 
       crSheet.getCell(rowIdx, 1).value = i + 1
       crSheet.getCell(rowIdx, 2).value = formatStudentName(grade.student ?? "")
       crSheet.getCell(rowIdx, 3).value = sexMap.get(grade.studentId) ?? ""
 
-      populatePeriodSection(crSheet, grade, columns, rowIdx, midtermMap, "midterm")
-      populatePeriodSection(crSheet, grade, columns, rowIdx, finalsMap, "final")
+      populatePeriodSection(crSheet, grade, columns, rowIdx, midtermMap, "midterm", midtermPreview)
+      populatePeriodSection(crSheet, grade, columns, rowIdx, finalsMap, "final", finalPreview)
+
+      if (midtermPreview?.categoryGrades && midtermMap.labAttendanceCol != null) {
+        const labAtt = [...midtermPreview.categoryGrades].reverse().find(c => c.category.toLowerCase().includes("attendance"))
+        if (labAtt) labAttendanceOverrides.push({ row: rowIdx, col: midtermMap.labAttendanceCol, value: labAtt.totalStudentScore })
+      }
+      if (finalPreview?.categoryGrades && finalsMap.labAttendanceCol != null) {
+        const labAtt = [...finalPreview.categoryGrades].reverse().find(c => c.category.toLowerCase().includes("attendance"))
+        if (labAtt) labAttendanceOverrides.push({ row: rowIdx, col: finalsMap.labAttendanceCol, value: labAtt.totalStudentScore })
+      }
 
       if (grade.finalGrade != null && grade.finalGrade > 0) {
         crSheet.getCell(rowIdx, 154).value = grade.midtermGrade ?? null
@@ -547,6 +762,16 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
         crSheet.getCell(rowIdx, 159).value = grade.remarks ?? ""
       }
     }
+
+    // Clear template placeholder HPS from row 5 (prevents ghost max scores)
+    for (const cat of midtermMap.categories) {
+      for (const c of cat.itemColumns) crSheet.getCell(5, c).value = null
+    }
+    for (const cat of finalsMap.categories) {
+      for (const c of cat.itemColumns) crSheet.getCell(5, c).value = null
+    }
+    if (midtermMap.examCol != null) crSheet.getCell(5, midtermMap.examCol).value = null
+    if (finalsMap.examCol != null) crSheet.getCell(5, finalsMap.examCol).value = null
 
     populateHPSRow(crSheet, columns, midtermMap, "midterm")
     populateHPSRow(crSheet, columns, finalsMap, "final")
@@ -602,10 +827,18 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
 
       if (midtermMap.categories.length > 0) {
         const firstCatStart = midtermMap.categories[0].itemColumns[0] ?? midtermMap.examCol ?? 0
-        crSheet.getCell(6, firstCatStart).value = "CLASS STANDING - 40%"
+        crSheet.getCell(6, firstCatStart).value = "CLASS STANDING - 60%"
       }
       if (midtermMap.labStartCol != null) {
         crSheet.getCell(6, midtermMap.labStartCol).value = ""
+      }
+
+      if (finalsMap.categories.length > 0) {
+        const finalsFirstCatStart = finalsMap.categories[0].itemColumns[0] ?? finalsMap.examCol ?? finalsStartCol
+        crSheet.getCell(6, finalsFirstCatStart).value = "CLASS STANDING - 60%"
+      }
+      if (finalsMap.labStartCol != null) {
+        crSheet.getCell(6, finalsMap.labStartCol).value = ""
       }
     }
 
@@ -638,8 +871,36 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
         const cell = row.getCell(c)
         const cellModel = (cell as unknown as { model: { sharedFormula?: string; result?: unknown } }).model
         if (cellModel.sharedFormula && cellModel.result != null) {
+          // Skip item, PS, and WS columns — preserve manually written values and formulas
+          const isItemOrWsOrPsCol = [...midtermMap.categories, ...finalsMap.categories].some(cat =>
+            cat.itemColumns.includes(c) || cat.wsCol === c || cat.psCol === c
+          )
+          if (isItemOrWsOrPsCol) {
+            if (r <= 12) console.log(`[EXPORT DIAG] Skipping shared formula override at row ${r} col ${c} (item/PS/WS column)`)
+            continue
+          }
+          if (r <= 12 && (c === (midtermMap.labAttendanceCol ?? 0) || c === (midtermMap.labTotalCol ?? 0) || c === (finalsMap.labAttendanceCol ?? 0) || c === (finalsMap.labTotalCol ?? 0))) {
+            console.log(`[EXPORT DIAG] sharedFormulaOverride row ${r} col ${c}: cachedResult=${cellModel.result}`)
+          }
           cell.value = cellModel.result
         }
+      }
+    }
+
+    // Re-apply lab attendance overrides that may have been overwritten by shared formula cache
+    for (const override of labAttendanceOverrides) {
+      crSheet.getCell(override.row, override.col).value = override.value
+    }
+
+    // Readback check after shared formula processing
+    for (let r = dataStartRow; r <= Math.min(dataStartRow + 2, dataStartRow + grades.length - 1); r++) {
+      if (midtermMap.labAttendanceCol != null) {
+        const v = crSheet.getCell(r, midtermMap.labAttendanceCol).value
+        console.log(`[EXPORT DIAG] FINAL midterm row ${r} col ${midtermMap.labAttendanceCol}: ${JSON.stringify(v)}`)
+      }
+      if (midtermMap.labTotalCol != null) {
+        const v = crSheet.getCell(r, midtermMap.labTotalCol).value
+        console.log(`[EXPORT DIAG] FINAL midterm row ${r} col ${midtermMap.labTotalCol}: ${JSON.stringify(v)}`)
       }
     }
 
@@ -660,12 +921,13 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
     // Guarantee period headers are present on the green row (after all clearing)
     crSheet.getCell(3, 4).value = "MIDTERM"
     crSheet.getCell(3, 78).value = "FINALS"
+
   }
 
   if (!isLabSubject) {
     const gsMid = wb.getWorksheet("GS MID")
     if (gsMid) {
-      gsMid.getCell(7, 4).value = "CLASS STANDING 40%"
+      gsMid.getCell(7, 4).value = "CLASS STANDING 60%"
       for (let c = 15; c <= 23; c++) {
         gsMid.getCell(7, c).value = ""
         gsMid.getColumn(c).hidden = true
@@ -673,7 +935,7 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
     }
     const gsFin = wb.getWorksheet("GS FIN")
     if (gsFin) {
-      gsFin.getCell(7, 3).value = "CLASS STANDING 40%"
+      gsFin.getCell(7, 3).value = "CLASS STANDING 60%"
       for (let c = 14; c <= 22; c++) {
         gsFin.getCell(7, c).value = ""
         gsFin.getColumn(c).hidden = true
