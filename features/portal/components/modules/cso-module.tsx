@@ -1257,7 +1257,7 @@ function CsoInfoFormDialog({
           </div>
 
           <div className="grid gap-1.5">
-            <label className="text-sm font-medium text-foreground">CSO Logo</label>
+            <label className="text-sm font-medium text-foreground">CSSO Logo</label>
             <input
               type="file"
               accept="image/*"

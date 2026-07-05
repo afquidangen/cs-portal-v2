@@ -3797,7 +3797,7 @@ export function usePortalDashboardModel(role: Role) {
       toast.error("Failed to create CSSO report.")
       console.error(e)
     })
-    addAuditLog(`Created CSO report "${report.title}"`)
+    addAuditLog(`Created CSSO report "${report.title}"`)
   }
 
   function handleUpdateCsoReport(report: CsoReport) {
@@ -3807,22 +3807,22 @@ export function usePortalDashboardModel(role: Role) {
     syncApi("PUT", `/api/portal/cso-reports/${report.id}`, report).then(() =>
       toast.success("CSSO report updated.")
     ).catch((e) => {
-      toast.error("Failed to update CSO report.")
+      toast.error("Failed to update CSSO report.")
       console.error(e)
     })
-    addAuditLog(`Updated CSO report "${report.title}"`)
+    addAuditLog(`Updated CSSO report "${report.title}"`)
   }
 
   function handleDeleteCsoReport(id: string) {
     const item = csoReports.find((r) => r.id === id)
     setCsoReports((current) => current.filter((r) => r.id !== id))
     syncApi("DELETE", `/api/portal/cso-reports/${id}`).then(() =>
-      toast.success("CSO report deleted.")
+      toast.success("CSSO report deleted.")
     ).catch((e) => {
-      toast.error("Failed to delete CSO report.")
+      toast.error("Failed to delete CSSO report.")
       console.error(e)
     })
-    if (item) addAuditLog(`Deleted CSO report "${item.title}"`)
+    if (item) addAuditLog(`Deleted CSSO report "${item.title}"`)
   }
 
   async function handleUpdateCsoInfo(data: CsoInfoRecord) {
@@ -3834,11 +3834,11 @@ export function usePortalDashboardModel(role: Role) {
         body: JSON.stringify(data),
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? "Failed to update CSO info.")
+      if (!res.ok) throw new Error(json.error ?? "Failed to update CSSO info.")
       setCsoInfo(json.data as CsoInfoRecord)
-      toast.success("CSO info updated.")
+      toast.success("CSSO info updated.")
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to update CSO info.")
+      toast.error(e instanceof Error ? e.message : "Failed to update CSSO info.")
       if (existing) setCsoInfo(existing)
       console.error(e)
     }

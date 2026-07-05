@@ -66,7 +66,7 @@ const CATEGORIES = [
   { value: "Theses", label: "Theses", keywords: ["thesis"] },
   { value: "Announcements", label: "Announcements", keywords: ["announcement"] },
   { value: "Quick Links / Downloads", label: "Quick Links / Downloads", keywords: ["quick link", "manual", "downloadable"] },
-  { value: "CSO / Gallery", label: "CSO / Gallery", keywords: ["cso", "gallery", "event"] },
+  { value: "CSSO / Gallery", label: "CSSO / Gallery", keywords: ["cso", "gallery", "event"] },
 ]
 
 function getCategory(action: string): string {
@@ -240,7 +240,7 @@ export function AuditModule({ model }: PortalModuleProps) {
           <SelectTrigger className="h-8 w-40 text-xs">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="max-h-[200px] overflow-y-auto">
             {CATEGORIES.map((cat) => (
               <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
             ))}

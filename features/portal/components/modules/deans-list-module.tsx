@@ -232,10 +232,10 @@ export function DeansListModule({ model }: PortalModuleProps) {
     <Panel title="Dean's List" className="[&>div:first-child]:hidden">
       <div className="space-y-5">
         <div className="pt-4">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Dean's List Management
           </h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-muted-foreground">
             Evaluate, override, and publish Dean's List qualifications per
             semester.
           </p>
@@ -291,55 +291,55 @@ export function DeansListModule({ model }: PortalModuleProps) {
           <>
             {/* Summary Cards */}
             <div className="grid gap-4 sm:grid-cols-4">
-              <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+              <Card className="rounded-lg border border-border bg-card shadow-sm">
                 <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                     <Award className="size-4" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-slate-500">
+                    <p className="text-xs font-medium text-muted-foreground">
                       Total Students
                     </p>
-                    <p className="text-xl font-bold text-slate-950">
+                    <p className="text-xl font-bold text-foreground">
                       {entries.length}
                     </p>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+              <Card className="rounded-lg border border-border bg-card shadow-sm">
                 <CardContent className="flex items-center gap-3 p-4">
                   <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
                     <CheckCircle2 className="size-4" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-slate-500">
+                    <p className="text-xs font-medium text-muted-foreground">
                       Qualified
                     </p>
-                    <p className="text-xl font-bold text-slate-950">
+                    <p className="text-xl font-bold text-foreground">
                       {qualifiedCount}
                     </p>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+              <Card className="rounded-lg border border-border bg-card shadow-sm">
                 <CardContent className="flex items-center gap-3 p-4">
                   <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-600">
                     <XCircle className="size-4" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-slate-500">
+                    <p className="text-xs font-medium text-muted-foreground">
                       Not Qualified
                     </p>
-                    <p className="text-xl font-bold text-slate-950">
+                    <p className="text-xl font-bold text-foreground">
                       {notQualifiedCount}
                     </p>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+              <Card className="rounded-lg border border-border bg-card shadow-sm">
                 <CardContent className="flex items-center gap-3 p-4">
                   <div className={cn(
                     "flex size-10 shrink-0 items-center justify-center rounded-lg",
@@ -348,10 +348,10 @@ export function DeansListModule({ model }: PortalModuleProps) {
                     <Trophy className="size-4" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-slate-500">
+                    <p className="text-xs font-medium text-muted-foreground">
                       Status
                     </p>
-                    <p className="text-xl font-bold text-slate-950">
+                    <p className="text-xl font-bold text-foreground">
                       {entries.length > 0 && entries.some((e) => e.needsRecalculation)
                         ? "Outdated — Needs Re-publishing"
                         : entries[0]?.published
@@ -366,7 +366,7 @@ export function DeansListModule({ model }: PortalModuleProps) {
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Search students..."
@@ -386,10 +386,10 @@ export function DeansListModule({ model }: PortalModuleProps) {
             {/* Table */}
             {loading ? (
               <div className="flex items-center justify-center py-20">
-                <Loader2 className="size-8 animate-spin text-slate-400" />
+                <Loader2 className="size-8 animate-spin text-muted-foreground" />
               </div>
             ) : filteredEntries.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-200 bg-white py-14 text-center text-sm text-slate-500">
+              <div className="rounded-xl border border-dashed border-border bg-card py-14 text-center text-sm text-muted-foreground">
                 {entries.length === 0
                   ? 'Click "Recompute" to evaluate students for this semester.'
                   : "No entries match the current filters."}
@@ -400,7 +400,7 @@ export function DeansListModule({ model }: PortalModuleProps) {
                   const group = groupedByYearLevel[yearLevel]
                   return (
                     <div key={yearLevel}>
-                      <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-slate-500">
+                      <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
                         {yearLevel} ({group.length})
                       </h3>
                       <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
@@ -496,7 +496,7 @@ export function DeansListModule({ model }: PortalModuleProps) {
                                       )}
                                     </div>
                                   </td>
-                                  <td className="max-w-[200px] px-4 py-3 text-xs text-slate-500">
+                                  <td className="max-w-[200px] px-4 py-3 text-xs text-muted-foreground">
                                     {entry.disqualificationReasons.length > 0
                                       ? entry.disqualificationReasons.map((r, i) => (
                                           <span key={i} className="block">
