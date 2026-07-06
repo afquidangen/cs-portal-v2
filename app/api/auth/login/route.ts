@@ -1,7 +1,9 @@
+import crypto from "crypto"
 import { authenticateAccount } from "@/features/auth/repositories/auth.repository"
-import { signToken } from "@/lib/jwt"
+import { signToken, signTempToken } from "@/lib/jwt"
 import { connectToDatabase } from "@/lib/mongodb"
-import { MaintenanceSettingModel } from "@/lib/models"
+import { MaintenanceSettingModel, UserModel, OtpModel } from "@/lib/models"
+import { sendOtpEmail } from "@/lib/email"
 
 export const runtime = "nodejs"
 
@@ -34,6 +36,32 @@ export async function POST(request: Request) {
         { error: "System is currently under maintenance. Please try again later." },
         { status: 503 }
       )
+    }
+
+    const user = await UserModel.findOne({ email: account.email })
+    if (user?.twoFactorEnabled) {
+      await OtpModel.updateMany(
+        { email: account.email, used: false },
+        { $set: { used: true } }
+      )
+
+      const code = crypto.randomInt(100_000, 999_999).toString()
+      const otp = new OtpModel({
+        email: account.email,
+        code,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      })
+      await otp.save()
+
+      const tempToken = await signTempToken({ email: account.email, purpose: "2fa" })
+
+      await sendOtpEmail(account.email, account.name, code).catch(() => {})
+
+      return Response.json({
+        twoFactorRequired: true,
+        email: account.email,
+        tempToken,
+      })
     }
 
     const token = await signToken({

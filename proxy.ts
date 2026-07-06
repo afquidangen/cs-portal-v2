@@ -8,7 +8,7 @@ const secret = new TextEncoder().encode(
 
 const protectedPaths = ["/admin", "/faculty", "/student"]
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname, origin } = request.nextUrl
 
   const isProtected = protectedPaths.some(
@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
     const data = await res.json()
 
     if (data.maintenanceMode && role !== "admin") {
-      return NextResponse.redirect(new URL("/maintenance", request.url))
+      return NextResponse.redirect(new URL("/maintenance.html", request.url))
     }
 
     return NextResponse.next()

@@ -160,6 +160,7 @@ export type ProfileDetails = {
   birthday: string
   address: string
   deansListVisibility: "public" | "private"
+  twoFactorEnabled: boolean
 }
 
 export type SeminarRecord = {

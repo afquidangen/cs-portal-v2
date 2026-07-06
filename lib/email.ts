@@ -40,3 +40,28 @@ export async function sendPasswordResetEmail(
     `,
   })
 }
+
+export async function sendOtpEmail(
+  to: string,
+  name: string,
+  code: string
+): Promise<void> {
+  await transporter.sendMail({
+    from: `"CS Portal" <${process.env.GMAIL_USER}>`,
+    to,
+    subject: "Your 2FA verification code",
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;">
+        <h2>Two-Factor Authentication</h2>
+        <p>Hi ${name},</p>
+        <p>Your verification code is:</p>
+        <div style="background:#f3f4f6;border-radius:8px;padding:16px;text-align:center;font-size:32px;font-weight:700;letter-spacing:8px;margin:16px 0;color:#111827;">
+          ${code}
+        </div>
+        <p style="color:#6b7280;font-size:14px;">
+          This code expires in 10 minutes. If you didn't attempt to sign in, you can ignore this email.
+        </p>
+      </div>
+    `,
+  })
+}

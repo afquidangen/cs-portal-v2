@@ -1,6 +1,6 @@
 "use client"
 
-import { CalendarDays, Eye, EyeOff, Loader2, Lock, Mail, MapPin, Save, Trash2, Undo2, Upload, User } from "lucide-react"
+import { CalendarDays, Eye, EyeOff, Loader2, Lock, Mail, MapPin, Save, ShieldCheck, Trash2, Undo2, Upload, User } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
@@ -331,6 +331,49 @@ export function ProfileModule({ model }: PortalModuleProps) {
                 </CardContent>
               </Card>
             )}
+            <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+                <CardHeader className="px-6 pb-0 pt-6">
+                  <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
+                    <ShieldCheck className="size-5 text-slate-700" />
+                    Security
+                  </CardTitle>
+                  <p className="pt-1 text-sm text-slate-500">Add an extra layer of security to your account.</p>
+                </CardHeader>
+                <CardContent className="px-6 pb-6 pt-7">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-slate-700">Two-Factor Authentication</p>
+                      <p className="text-xs text-slate-500">
+                        {draft.twoFactorEnabled
+                          ? "A verification code will be sent to your email each time you sign in."
+                          : "Secure your account with an additional verification step."}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={cn("text-xs font-semibold", draft.twoFactorEnabled ? "text-slate-400" : "text-blue-600")}>Off</span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={draft.twoFactorEnabled}
+                        onClick={() => setDraft((prev: typeof profileDetails) => ({
+                          ...prev,
+                          twoFactorEnabled: !prev.twoFactorEnabled,
+                        }))}
+                        className={cn(
+                          "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
+                          draft.twoFactorEnabled ? "bg-blue-600" : "bg-slate-300"
+                        )}
+                      >
+                        <span className={cn(
+                          "pointer-events-none inline-block size-5 rounded-full bg-white shadow ring-0 transition-transform",
+                          draft.twoFactorEnabled ? "translate-x-5" : "translate-x-0"
+                        )} />
+                      </button>
+                      <span className={cn("text-xs font-semibold", draft.twoFactorEnabled ? "text-blue-600" : "text-slate-400")}>On</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </>)}
 
             {activeSection === "password" && (

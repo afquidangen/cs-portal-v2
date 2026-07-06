@@ -396,6 +396,7 @@ export function usePortalDashboardModel(role: Role) {
     photoUrl: "", firstName: "", middleName: "", lastName: "",
     email: "", contactNumber: "", sex: "", birthday: "", address: "",
     deansListVisibility: "public",
+    twoFactorEnabled: false,
   })
   const profileName = getProfileFullName(profileDetails)
   const profile = authenticatedUser ?? {
@@ -419,6 +420,7 @@ export function usePortalDashboardModel(role: Role) {
         birthday: profileUser?.birthday ?? "",
         address: profileUser?.address ?? "",
         deansListVisibility: (profileUser as unknown as Record<string, unknown>)?.deansListVisibility as "public" | "private" ?? "public",
+        twoFactorEnabled: (profileUser as unknown as Record<string, unknown>)?.twoFactorEnabled as boolean ?? false,
       })
     )
   }, [authenticatedUser, profileUser])
@@ -2712,6 +2714,7 @@ export function usePortalDashboardModel(role: Role) {
       birthday: draft.birthday,
       address: draft.address,
       deansListVisibility: draft.deansListVisibility,
+      twoFactorEnabled: draft.twoFactorEnabled,
     }
     if (draft.photoUrl !== previousPhotoUrl) {
       if (draft.photoUrl === "" && previousPhotoUrl) {
@@ -2746,6 +2749,7 @@ export function usePortalDashboardModel(role: Role) {
               photoUrl,
               cloudinaryPublicId,
               deansListVisibility: draft.deansListVisibility,
+              twoFactorEnabled: draft.twoFactorEnabled,
             }
           : user
       )
