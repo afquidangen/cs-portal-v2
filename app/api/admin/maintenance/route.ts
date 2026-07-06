@@ -5,18 +5,23 @@ import { requireAdmin } from "@/lib/api-auth"
 
 export const runtime = "nodejs"
 
+const STRING_FIELDS = [
+  "logoText",
+  "maintenanceHeading",
+  "maintenanceSubheading",
+  "maintenanceDescription",
+  "maintenanceCardTitle",
+  "maintenanceCardBody",
+  "estimatedCompletionTime",
+  "contactEmail",
+] as const
+
 export async function PUT(request: NextRequest) {
   const auth = await requireAdmin(request)
   if (auth instanceof Response) return auth
 
   try {
-    const body = (await request.json()) as {
-      maintenanceMode?: boolean
-      maintenanceTitle?: string
-      maintenanceDescription?: string
-      maintenanceNoticeTitle?: string
-      maintenanceNoticeMessage?: string
-    }
+    const body = (await request.json()) as Record<string, unknown>
 
     if (typeof body.maintenanceMode !== "boolean") {
       return Response.json({ error: "maintenanceMode (boolean) is required" }, { status: 400 })
@@ -30,10 +35,11 @@ export async function PUT(request: NextRequest) {
       updatedAt: new Date(),
     }
 
-    if (body.maintenanceTitle !== undefined) update.maintenanceTitle = body.maintenanceTitle
-    if (body.maintenanceDescription !== undefined) update.maintenanceDescription = body.maintenanceDescription
-    if (body.maintenanceNoticeTitle !== undefined) update.maintenanceNoticeTitle = body.maintenanceNoticeTitle
-    if (body.maintenanceNoticeMessage !== undefined) update.maintenanceNoticeMessage = body.maintenanceNoticeMessage
+    for (const field of STRING_FIELDS) {
+      if (body[field] !== undefined) {
+        update[field] = body[field]
+      }
+    }
 
     const setting = await MaintenanceSettingModel.findOneAndUpdate({}, update, {
       upsert: true,
@@ -42,10 +48,14 @@ export async function PUT(request: NextRequest) {
 
     return Response.json({
       maintenanceMode: setting.maintenanceMode,
-      maintenanceTitle: setting.maintenanceTitle,
+      logoText: setting.logoText,
+      maintenanceHeading: setting.maintenanceHeading,
+      maintenanceSubheading: setting.maintenanceSubheading,
       maintenanceDescription: setting.maintenanceDescription,
-      maintenanceNoticeTitle: setting.maintenanceNoticeTitle,
-      maintenanceNoticeMessage: setting.maintenanceNoticeMessage,
+      maintenanceCardTitle: setting.maintenanceCardTitle,
+      maintenanceCardBody: setting.maintenanceCardBody,
+      estimatedCompletionTime: setting.estimatedCompletionTime,
+      contactEmail: setting.contactEmail,
       updatedBy: setting.updatedBy,
     })
   } catch (error) {

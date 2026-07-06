@@ -20,20 +20,27 @@ import { Separator } from "@/components/ui/separator"
 
 type MaintenanceData = {
   maintenanceMode: boolean
-  maintenanceTitle: string
+  logoText: string
+  maintenanceHeading: string
+  maintenanceSubheading: string
   maintenanceDescription: string
-  maintenanceNoticeTitle: string
-  maintenanceNoticeMessage: string
+  maintenanceCardTitle: string
+  maintenanceCardBody: string
+  estimatedCompletionTime: string
+  contactEmail: string
 }
 
 const DEFAULTS: MaintenanceData = {
   maintenanceMode: false,
-  maintenanceTitle: "We're currently performing scheduled maintenance.",
-  maintenanceDescription:
-    "We're currently performing scheduled maintenance to improve your experience. Please check back again later.",
-  maintenanceNoticeTitle: "Thank you for your patience!",
-  maintenanceNoticeMessage:
-    "Our team is working to restore the service as quickly as possible. We appreciate your understanding.",
+  logoText: "ComScite",
+  maintenanceHeading: "The site is currently\ndown for maintenance",
+  maintenanceSubheading: "",
+  maintenanceDescription: "We apologize for any inconvenience caused.\nWe've almost done.",
+  maintenanceCardTitle: "Thank you for your patience!",
+  maintenanceCardBody:
+    "Our team is working hard to improve your experience.\nWe appreciate your understanding.",
+  estimatedCompletionTime: "",
+  contactEmail: "",
 }
 
 export default function MaintenanceModule() {
@@ -41,7 +48,6 @@ export default function MaintenanceModule() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const [pendingMode, setPendingMode] = useState(false)
 
   const fetchStatus = useCallback(async () => {
     setLoading(true)
@@ -61,9 +67,7 @@ export default function MaintenanceModule() {
   }, [fetchStatus])
 
   function handleToggle() {
-    const newValue = !data.maintenanceMode
-    if (newValue) {
-      setPendingMode(true)
+    if (!data.maintenanceMode) {
       setShowConfirm(true)
     } else {
       save({ ...data, maintenanceMode: false })
@@ -100,25 +104,16 @@ export default function MaintenanceModule() {
     }
   }
 
-  function handleSave() {
-    save(data)
-  }
-
-  const hasChanges =
-    data.maintenanceMode !== DEFAULTS.maintenanceMode ||
-    (data.maintenanceMode &&
-      (data.maintenanceTitle !== DEFAULTS.maintenanceTitle ||
-        data.maintenanceDescription !== DEFAULTS.maintenanceDescription ||
-        data.maintenanceNoticeTitle !== DEFAULTS.maintenanceNoticeTitle ||
-        data.maintenanceNoticeMessage !== DEFAULTS.maintenanceNoticeMessage))
-
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Maintenance Mode</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Maintenance Mode
+          </h1>
           <p className="text-muted-foreground text-sm">
-            Control system-wide access and customize the maintenance page content.
+            Control system-wide access and customize the maintenance page
+            content.
           </p>
         </div>
         <Badge
@@ -126,9 +121,13 @@ export default function MaintenanceModule() {
           className="gap-1.5 text-sm"
         >
           {data.maintenanceMode ? (
-            <><ShieldOff className="size-3.5" /> Active</>
+            <>
+              <ShieldOff className="size-3.5" /> Active
+            </>
           ) : (
-            <><ShieldCheck className="size-3.5" /> Inactive</>
+            <>
+              <ShieldCheck className="size-3.5" /> Inactive
+            </>
           )}
         </Badge>
       </div>
@@ -136,7 +135,9 @@ export default function MaintenanceModule() {
       <Card>
         <CardHeader>
           <CardTitle>System Access</CardTitle>
-          <CardDescription>Toggle maintenance mode on or off</CardDescription>
+          <CardDescription>
+            Toggle maintenance mode on or off
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
@@ -147,9 +148,13 @@ export default function MaintenanceModule() {
               className="gap-2"
             >
               {data.maintenanceMode ? (
-                <><ShieldOff className="size-4" /> Disable Maintenance</>
+                <>
+                  <ShieldOff className="size-4" /> Disable Maintenance
+                </>
               ) : (
-                <><ShieldCheck className="size-4" /> Enable Maintenance</>
+                <>
+                  <ShieldCheck className="size-4" /> Enable Maintenance
+                </>
               )}
             </Button>
             {saving && (
@@ -174,64 +179,133 @@ export default function MaintenanceModule() {
         <CardHeader>
           <CardTitle>Page Content</CardTitle>
           <CardDescription>
-            Customize the text displayed on the maintenance page
+            Customize every piece of text displayed on the maintenance page
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
+          {/* Logo */}
           <div className="space-y-2">
-            <Label htmlFor="maintenanceTitle">Maintenance Title</Label>
+            <Label htmlFor="logoText">Logo Text</Label>
             <Input
-              id="maintenanceTitle"
-              value={data.maintenanceTitle}
+              id="logoText"
+              value={data.logoText}
               onChange={(e) =>
-                setData({ ...data, maintenanceTitle: e.target.value })
+                setData({ ...data, logoText: e.target.value })
               }
             />
           </div>
 
+          <Separator />
+
+          {/* Heading */}
           <div className="space-y-2">
-            <Label htmlFor="maintenanceDescription">
-              Maintenance Description
+            <Label htmlFor="maintenanceHeading">Main Heading</Label>
+            <textarea
+              id="maintenanceHeading"
+              value={data.maintenanceHeading}
+              onChange={(
+                e: React.ChangeEvent<HTMLTextAreaElement>
+              ) => setData({ ...data, maintenanceHeading: e.target.value })}
+              rows={2}
+              className="border-input placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="maintenanceSubheading">
+              Subheading <span className="text-muted-foreground">(optional)</span>
             </Label>
+            <Input
+              id="maintenanceSubheading"
+              value={data.maintenanceSubheading}
+              onChange={(e) =>
+                setData({ ...data, maintenanceSubheading: e.target.value })
+              }
+            />
+          </div>
+
+          <Separator />
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="maintenanceDescription">Description</Label>
             <textarea
               id="maintenanceDescription"
               value={data.maintenanceDescription}
               onChange={(
                 e: React.ChangeEvent<HTMLTextAreaElement>
               ) => setData({ ...data, maintenanceDescription: e.target.value })}
-              rows={3}
+              rows={2}
               className="border-input placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
           <Separator />
 
+          {/* Notice Card */}
           <div className="space-y-2">
-            <Label htmlFor="maintenanceNoticeTitle">Notice Title</Label>
+            <Label htmlFor="maintenanceCardTitle">Card Title</Label>
             <Input
-              id="maintenanceNoticeTitle"
-              value={data.maintenanceNoticeTitle}
+              id="maintenanceCardTitle"
+              value={data.maintenanceCardTitle}
               onChange={(e) =>
-                setData({ ...data, maintenanceNoticeTitle: e.target.value })
+                setData({ ...data, maintenanceCardTitle: e.target.value })
               }
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="maintenanceNoticeMessage">Notice Message</Label>
+            <Label htmlFor="maintenanceCardBody">Card Message</Label>
             <textarea
-              id="maintenanceNoticeMessage"
-              value={data.maintenanceNoticeMessage}
+              id="maintenanceCardBody"
+              value={data.maintenanceCardBody}
               onChange={(
                 e: React.ChangeEvent<HTMLTextAreaElement>
-              ) => setData({ ...data, maintenanceNoticeMessage: e.target.value })}
-              rows={3}
+              ) => setData({ ...data, maintenanceCardBody: e.target.value })}
+              rows={2}
               className="border-input placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
+          <Separator />
+
+          {/* Optional fields */}
+          <div className="space-y-2">
+            <Label htmlFor="estimatedCompletionTime">
+              Estimated Completion{" "}
+              <span className="text-muted-foreground">(optional)</span>
+            </Label>
+            <Input
+              id="estimatedCompletionTime"
+              placeholder="e.g. 2:00 PM"
+              value={data.estimatedCompletionTime}
+              onChange={(e) =>
+                setData({
+                  ...data,
+                  estimatedCompletionTime: e.target.value,
+                })
+              }
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contactEmail">
+              Contact Email{" "}
+              <span className="text-muted-foreground">(optional)</span>
+            </Label>
+            <Input
+              id="contactEmail"
+              type="email"
+              placeholder="support@comscite.edu"
+              value={data.contactEmail}
+              onChange={(e) =>
+                setData({ ...data, contactEmail: e.target.value })
+              }
+            />
+          </div>
+
           <Button
-            onClick={handleSave}
+            onClick={() => save(data)}
             disabled={saving || loading}
             className="gap-2"
           >

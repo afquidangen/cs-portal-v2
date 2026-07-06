@@ -2,10 +2,14 @@ import mongoose, { Schema, type Document, type Model } from "mongoose"
 
 export interface IMaintenanceSetting extends Document {
   maintenanceMode: boolean
-  maintenanceTitle: string
+  logoText: string
+  maintenanceHeading: string
+  maintenanceSubheading: string
   maintenanceDescription: string
-  maintenanceNoticeTitle: string
-  maintenanceNoticeMessage: string
+  maintenanceCardTitle: string
+  maintenanceCardBody: string
+  estimatedCompletionTime: string
+  contactEmail: string
   updatedBy: string
   updatedAt: Date
 }
@@ -17,24 +21,27 @@ if (mongoose.models.MaintenanceSetting) {
 const MaintenanceSettingSchema = new Schema<IMaintenanceSetting>(
   {
     maintenanceMode: { type: Boolean, default: false },
-    maintenanceTitle: {
+    logoText: { type: String, default: "ComScite" },
+    maintenanceHeading: {
       type: String,
-      default: "We're currently performing scheduled maintenance.",
+      default: "The site is currently\ndown for maintenance",
     },
+    maintenanceSubheading: { type: String, default: "" },
     maintenanceDescription: {
       type: String,
-      default:
-        "We're currently performing scheduled maintenance to improve your experience. Please check back again later.",
+      default: "We apologize for any inconvenience caused.\nWe've almost done.",
     },
-    maintenanceNoticeTitle: {
+    maintenanceCardTitle: {
       type: String,
       default: "Thank you for your patience!",
     },
-    maintenanceNoticeMessage: {
+    maintenanceCardBody: {
       type: String,
       default:
-        "Our team is working to restore the service as quickly as possible. We appreciate your understanding.",
+        "Our team is working hard to improve your experience.\nWe appreciate your understanding.",
     },
+    estimatedCompletionTime: { type: String, default: "" },
+    contactEmail: { type: String, default: "" },
     updatedBy: { type: String },
     updatedAt: { type: Date, default: Date.now },
   },
