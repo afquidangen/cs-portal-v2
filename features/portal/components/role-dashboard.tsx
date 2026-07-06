@@ -117,6 +117,7 @@ import { CurriculumModule } from "./modules/curriculum-module"
 import { FeedbackModule } from "./modules/feedback-module"
 import { GradeHistoryModule } from "./modules/grade-history-module"
 import { DeansListModule } from "./modules/deans-list-module"
+import MaintenanceModule from "./modules/maintenance-module"
 import { GradesModule } from "./modules/grades-module"
 import { IrregularStudentsModule } from "./modules/irregular-students-module"
 import { StudentRosterModule } from "./modules/student-roster-module"
@@ -523,6 +524,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       "irregular-students": <IrregularStudentsModule model={model} />,
       "student-roster": <StudentRosterModule model={model} />,
       about: <AboutModule model={model} />,
+      maintenance: <MaintenanceModule />,
     }
 
     return moduleMap[model.activeModule] || <OverviewModule model={model} />
@@ -556,7 +558,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       role === "admin"
         ? [
             { label: "Navigation", items: pick(["overview", "profile"]) },
-            { label: "Management", items: pick(["users", "audit"]) },
+            { label: "Management", items: pick(["users", "audit", "maintenance"]) },
             { label: "Academic", items: pick(["academic", "classes", "semester-admin", "curriculum", "grading-admin", "deans-list"]) },
             { label: "Campus", items: pick(["announcements", "availability", "instructors"]) },
             { label: "Resources", items: pick(["thesis", "quick-links", "cso", "templates", "feedback"]) },

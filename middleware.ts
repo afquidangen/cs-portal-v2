@@ -9,7 +9,7 @@ const secret = new TextEncoder().encode(
 const protectedPaths = ["/admin", "/faculty", "/student"]
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  const { pathname, origin } = request.nextUrl
 
   const isProtected = protectedPaths.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`)
@@ -22,7 +22,16 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    await jwtVerify(token, secret)
+    const { payload } = await jwtVerify(token, secret)
+    const role = payload.role as string | undefined
+
+    const res = await fetch(`${origin}/api/maintenance/status`)
+    const data = await res.json()
+
+    if (data.maintenanceMode && role !== "admin") {
+      return NextResponse.redirect(new URL("/maintenance.html", request.url))
+    }
+
     return NextResponse.next()
   } catch {
     return NextResponse.redirect(new URL("/", request.url))

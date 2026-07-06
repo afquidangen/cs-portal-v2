@@ -15,6 +15,7 @@ import {
   Link as LinkIcon,
   Megaphone,
   Network,
+  ShieldCheck,
   UserCircle,
   Settings,
   Users,
@@ -67,6 +68,7 @@ export const roleNavigation: Record<Role, NavItem[]> = {
     { id: "grading-admin", label: "Grading Rules", icon: Settings },
     { id: "deans-list", label: "Dean's List", icon: Award },
     { id: "admin-semester-archive", label: "Semester Archive", icon: History },
+    { id: "maintenance", label: "Maintenance", icon: ShieldCheck },
     { id: "quick-links", label: "Quick Links", icon: LinkIcon },
   ],
   csso_officer: [

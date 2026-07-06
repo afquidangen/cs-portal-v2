@@ -29,6 +29,15 @@ export function LoginPage() {
   const router = useRouter()
 
   useEffect(() => {
+    fetch("/api/maintenance/status")
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data?.maintenanceMode) router.push("/maintenance.html")
+      })
+      .catch(() => {})
+  }, [router])
+
+  useEffect(() => {
     fetch("/api/portal/cso-info")
       .then((res) => res.ok ? res.json() : null)
       .then((json) => {
@@ -67,6 +76,10 @@ export function LoginPage() {
       const json = await res.json()
 
       if (!res.ok) {
+        if (res.status === 503) {
+          router.push("/maintenance.html")
+          return
+        }
         setMessage(json.error ?? "Invalid email or password.")
         setLoading(false)
         return

@@ -1,5 +1,7 @@
 import { authenticateAccount } from "@/features/auth/repositories/auth.repository"
 import { signToken } from "@/lib/jwt"
+import { connectToDatabase } from "@/lib/mongodb"
+import { MaintenanceSettingModel } from "@/lib/models"
 
 export const runtime = "nodejs"
 
@@ -22,6 +24,15 @@ export async function POST(request: Request) {
       return Response.json(
         { error: "Invalid email or password." },
         { status: 401 }
+      )
+    }
+
+    await connectToDatabase()
+    const setting = await MaintenanceSettingModel.findOne()
+    if (setting?.maintenanceMode && account.role !== "admin") {
+      return Response.json(
+        { error: "System is currently under maintenance. Please try again later." },
+        { status: 503 }
       )
     }
 

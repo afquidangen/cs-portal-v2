@@ -1,6 +1,19 @@
 import { connectToDatabase } from "@/lib/mongodb"
 import { verifyToken } from "@/lib/jwt"
 import { UserModel } from "@/lib/models/user.model"
+import { MaintenanceSettingModel } from "@/lib/models/maintenance-setting.model"
+
+async function checkMaintenanceMode(user: { role: string }): Promise<Response | null> {
+  if (user.role === "admin") return null
+  const setting = await MaintenanceSettingModel.findOne()
+  if (setting?.maintenanceMode) {
+    return Response.json(
+      { error: "System is under maintenance. Please try again later." },
+      { status: 503 }
+    )
+  }
+  return null
+}
 
 function getToken(request: Request): string | null {
   const cookie = request.headers.get("cookie")
@@ -34,6 +47,9 @@ export async function requireCsoAccess(request: Request) {
     return Response.json({ error: "Insufficient permissions" }, { status: 403 })
   }
 
+  const maintenanceBlock = await checkMaintenanceMode(user)
+  if (maintenanceBlock) return maintenanceBlock
+
   return { user }
 }
 
@@ -61,6 +77,9 @@ export async function requireAdmin(request: Request) {
     return Response.json({ error: "Admin access required" }, { status: 403 })
   }
 
+  const maintenanceBlock = await checkMaintenanceMode(user)
+  if (maintenanceBlock) return maintenanceBlock
+
   return { user }
 }
 
@@ -83,6 +102,9 @@ export async function requireAuth(request: Request) {
   if (user.status !== "Active") {
     return Response.json({ error: "Account is inactive" }, { status: 403 })
   }
+
+  const maintenanceBlock = await checkMaintenanceMode(user)
+  if (maintenanceBlock) return maintenanceBlock
 
   return { user }
 }
@@ -110,6 +132,9 @@ export async function requireFacultyOrAdmin(request: Request) {
   if (user.role !== "admin" && user.role !== "faculty") {
     return Response.json({ error: "Faculty or admin access required" }, { status: 403 })
   }
+
+  const maintenanceBlock = await checkMaintenanceMode(user)
+  if (maintenanceBlock) return maintenanceBlock
 
   return { user }
 }
