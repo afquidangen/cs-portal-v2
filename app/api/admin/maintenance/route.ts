@@ -12,7 +12,10 @@ export async function PUT(request: NextRequest) {
   try {
     const body = (await request.json()) as {
       maintenanceMode?: boolean
-      message?: string
+      maintenanceTitle?: string
+      maintenanceDescription?: string
+      maintenanceNoticeTitle?: string
+      maintenanceNoticeMessage?: string
     }
 
     if (typeof body.maintenanceMode !== "boolean") {
@@ -21,20 +24,28 @@ export async function PUT(request: NextRequest) {
 
     await connectToDatabase()
 
-    const setting = await MaintenanceSettingModel.findOneAndUpdate(
-      {},
-      {
-        maintenanceMode: body.maintenanceMode,
-        message: body.message ?? "System is currently under maintenance. Please check back later.",
-        updatedBy: auth.user.email,
-        updatedAt: new Date(),
-      },
-      { upsert: true, new: true }
-    )
+    const update: Record<string, unknown> = {
+      maintenanceMode: body.maintenanceMode,
+      updatedBy: auth.user.email,
+      updatedAt: new Date(),
+    }
+
+    if (body.maintenanceTitle !== undefined) update.maintenanceTitle = body.maintenanceTitle
+    if (body.maintenanceDescription !== undefined) update.maintenanceDescription = body.maintenanceDescription
+    if (body.maintenanceNoticeTitle !== undefined) update.maintenanceNoticeTitle = body.maintenanceNoticeTitle
+    if (body.maintenanceNoticeMessage !== undefined) update.maintenanceNoticeMessage = body.maintenanceNoticeMessage
+
+    const setting = await MaintenanceSettingModel.findOneAndUpdate({}, update, {
+      upsert: true,
+      new: true,
+    })
 
     return Response.json({
       maintenanceMode: setting.maintenanceMode,
-      message: setting.message,
+      maintenanceTitle: setting.maintenanceTitle,
+      maintenanceDescription: setting.maintenanceDescription,
+      maintenanceNoticeTitle: setting.maintenanceNoticeTitle,
+      maintenanceNoticeMessage: setting.maintenanceNoticeMessage,
       updatedBy: setting.updatedBy,
     })
   } catch (error) {

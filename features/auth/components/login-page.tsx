@@ -32,7 +32,7 @@ export function LoginPage() {
     fetch("/api/maintenance/status")
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
-        if (data?.maintenanceMode) router.push("/maintenance.html")
+        if (data?.maintenanceMode) router.push("/maintenance")
       })
       .catch(() => {})
   }, [router])
@@ -77,7 +77,7 @@ export function LoginPage() {
 
       if (!res.ok) {
         if (res.status === 503) {
-          router.push("/maintenance.html")
+          router.push("/maintenance")
           return
         }
         setMessage(json.error ?? "Invalid email or password.")

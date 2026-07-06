@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
     const data = await res.json()
 
     if (data.maintenanceMode && role !== "admin") {
-      return NextResponse.redirect(new URL("/maintenance.html", request.url))
+      return NextResponse.redirect(new URL("/maintenance", request.url))
     }
 
     return NextResponse.next()
