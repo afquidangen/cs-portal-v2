@@ -636,7 +636,7 @@ export function usePortalDashboardModel(role: Role) {
       if (g.studentId !== profile.id) return false
       if (g.deletedAt) return false
       return (
-        activeIds.has(g.semesterId) ||
+        (g.semesterId && activeIds.has(g.semesterId)) ||
         (g.classId && activeScheduleIds.has(g.classId)) ||
         activePairs.has(`${g.section}|${g.subject}`)
       )
@@ -647,9 +647,9 @@ export function usePortalDashboardModel(role: Role) {
       const existing = gradeMap.get(g.code)
       if (!existing) {
         gradeMap.set(g.code, g)
-      } else if (activeIds.has(g.semesterId) && !activeIds.has(existing.semesterId)) {
+      } else if (g.semesterId && activeIds.has(g.semesterId) && !(existing.semesterId && activeIds.has(existing.semesterId))) {
         gradeMap.set(g.code, g)
-      } else if (!activeIds.has(g.semesterId) && activeIds.has(existing.semesterId)) {
+      } else if (!(g.semesterId && activeIds.has(g.semesterId)) && existing.semesterId && activeIds.has(existing.semesterId)) {
         continue
       } else if (g.released && !existing.released) {
         gradeMap.set(g.code, g)
@@ -679,7 +679,7 @@ export function usePortalDashboardModel(role: Role) {
     const gradesFinalizedCodes = new Set(
       allGradesArray
         .filter((g) => {
-          if (activeIds.has(g.semesterId)) return false
+          if (g.semesterId && activeIds.has(g.semesterId)) return false
           const r = (g.remarks || g.finalRemarks || "").toLowerCase()
           return finalizedStatuses.has(r)
         })
@@ -699,7 +699,7 @@ export function usePortalDashboardModel(role: Role) {
     const gradesRetakeCodes = new Set(
       allGradesArray
         .filter((g) => {
-          if (activeIds.has(g.semesterId)) return false
+          if (g.semesterId && activeIds.has(g.semesterId)) return false
           const r = (g.remarks || g.finalRemarks || "").toLowerCase()
           return r !== "passed" && finalizedStatuses.has(r)
         })
@@ -2575,6 +2575,18 @@ export function usePortalDashboardModel(role: Role) {
     }
   }
 
+  function releaseGradesForSection(_section: string, _subject: string) {
+    toast.info("Release grades functionality is not yet implemented.")
+  }
+
+  function updateGrade(_id: string, _field: string, _value: string) {
+    toast.info("Update grade functionality is not yet implemented.")
+  }
+
+  function updateGradeRemarks(_id: string, _value: string) {
+    toast.info("Update grade remarks functionality is not yet implemented.")
+  }
+
   function handleSaveGwa(
     studentId: string,
     semesterId: string,
@@ -3649,7 +3661,7 @@ export function usePortalDashboardModel(role: Role) {
 
   async function fetchTrashedAnnouncements() {
     try {
-      const params = role !== "admin" && role !== "superadmin" ? `?deletedBy=${encodeURIComponent(profile.name)}` : ""
+      const params = role !== "admin" ? `?deletedBy=${encodeURIComponent(profile.name)}` : ""
       const res = await syncApi<{ data: Announcement[] }>("GET", `/api/portal/announcements/trash${params}`)
       setTrashedAnnouncements(res.data ?? [])
     } catch (e) {
@@ -4146,6 +4158,9 @@ export function usePortalDashboardModel(role: Role) {
     handleCreateGalleryItem,
     handleUpdateGalleryItem,
     handleDeleteGalleryItem,
+    releaseGradesForSection,
+    updateGrade,
+    updateGradeRemarks,
   }
 }
 

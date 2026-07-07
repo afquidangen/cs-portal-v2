@@ -626,23 +626,27 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
   const rogSheet = wb.getWorksheet("REPORTS OF GRADE")
   if (rogSheet) {
     const valueWidth = Math.max(headerData.subject.length + 2, headerData.courseNo.length + 2, 14)
-    if (rogSheet.getColumn(3).width < valueWidth) {
-      rogSheet.getColumn(3).width = valueWidth
+    const col3 = rogSheet.getColumn(3)
+    if (col3 && (col3.width ?? 0) < valueWidth) {
+      col3.width = valueWidth
     }
     const semWidth = Math.max(headerData.semester.length + 2, 12)
-    if (rogSheet.getColumn(12).width < semWidth) {
-      rogSheet.getColumn(12).width = semWidth
+    const col12 = rogSheet.getColumn(12)
+    if (col12 && (col12.width ?? 0) < semWidth) {
+      col12.width = semWidth
     }
   }
 
   // Widen dean name column in GS MID and GS FIN footers
   const gsMidSheet = wb.getWorksheet("GS MID")
-  if (gsMidSheet && (gsMidSheet.getColumn(14).width ?? 0) < 30) {
-    gsMidSheet.getColumn(14).width = 38
+  const gsMidCol14 = gsMidSheet?.getColumn(14)
+  if (gsMidCol14 && (gsMidCol14.width ?? 0) < 30) {
+    gsMidCol14.width = 38
   }
   const gsFinSheet = wb.getWorksheet("GS FIN")
-  if (gsFinSheet && (gsFinSheet.getColumn(13).width ?? 0) < 38) {
-    gsFinSheet.getColumn(13).width = 38
+  const gsFinCol13 = gsFinSheet?.getColumn(13)
+  if (gsFinCol13 && (gsFinCol13.width ?? 0) < 38) {
+    gsFinCol13.width = 38
   }
 
   const crSheet = wb.getWorksheet("CLASS RECORD")
@@ -882,7 +886,7 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
           if (r <= 12 && (c === (midtermMap.labAttendanceCol ?? 0) || c === (midtermMap.labTotalCol ?? 0) || c === (finalsMap.labAttendanceCol ?? 0) || c === (finalsMap.labTotalCol ?? 0))) {
             console.log(`[EXPORT DIAG] sharedFormulaOverride row ${r} col ${c}: cachedResult=${cellModel.result}`)
           }
-          cell.value = cellModel.result
+          cell.value = cellModel.result as import("exceljs").CellValue
         }
       }
     }
@@ -947,7 +951,7 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
 
   // Remove sheet protection so all cells are editable in the exported file
   for (const sheet of wb.worksheets) {
-    sheet.sheetProtection = null
+    (sheet as any).sheetProtection = null
   }
 
   for (const sheetName of ["LOOKUP", "PERCENTAGE"]) {

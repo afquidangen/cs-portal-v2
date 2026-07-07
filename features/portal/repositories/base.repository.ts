@@ -78,7 +78,7 @@ export class BaseRepository {
       { returnDocument: "after" }
     )
     if (!result) return null
-    if (typeof result === "object" && "value" in result) return (result as { value: unknown }).value
+    if (typeof result === "object" && "value" in result) return (result as unknown as { value: unknown }).value
     return result
   }
 

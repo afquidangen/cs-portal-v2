@@ -83,7 +83,7 @@ export async function POST(request: Request) {
       const user = await UserModel.findOne({ id: studentId }).lean()
       if (!user) continue
       
-      const gradeHistory = ((user as Record<string, unknown>).gradeHistory ?? []) as Array<Record<string, unknown>>
+      const gradeHistory = (user.gradeHistory ?? []) as Array<Record<string, unknown>>
       // Case-insensitive comparison to match curriculum module behavior
       const normalizedCodes = new Set(Array.from(subjectCodes).map(code => code.trim().toLowerCase().replace(/[^a-z0-9]/g, "")))
       const filteredHistory = gradeHistory.filter(

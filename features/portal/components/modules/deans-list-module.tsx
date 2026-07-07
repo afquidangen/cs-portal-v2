@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils"
 import { Panel, Select, StatusBadge } from "../shared/dashboard-ui"
 import { YEAR_LEVELS } from "@/features/portal/lib/year-level"
 import type { PortalModuleProps } from "./types"
-import type { SemesterRecord } from "../../data/portal-data"
+import type { SemesterRecord } from "@/lib/types"
 
 type DeansListEntry = {
   id: string

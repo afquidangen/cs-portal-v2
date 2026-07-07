@@ -760,16 +760,13 @@ export function GradesModule({ model }: PortalModuleProps) {
 
 function FacultyGradesPanel({ model }: PortalModuleProps) {
   const {
-    downloadGradeTemplate,
     grades,
     setGrades,
     roster,
     users,
-    handleGradeWorkbookUpload,
     releaseGradesForSection,
     updateGrade,
     updateGradeRemarks,
-    uploadName,
     visibleSchedules,
     semesters,
     subjects,
@@ -782,6 +779,12 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
   const [gradingSchemes, setGradingSchemes] = useState<GradingScheme[]>([])
   const [transmutationTables, setTransmutationTables] = useState<TransmutationTable[]>([])
 
+  const selectedSubjectCode = selectedSubject.split(" - ")[0]?.trim() ?? selectedSubject
+  const selectedSubjectRecord = subjects.find(
+    (subject) => subject.code === selectedSubjectCode || `${subject.code} - ${subject.name}` === selectedSubject
+  )
+  const selectedSubjectType: "Lecture" | "Lecture with Lab" =
+    selectedSubjectRecord?.type === "Lecture with Lab" ? "Lecture with Lab" : "Lecture"
 
   useEffect(() => {
     let cancelled = false
@@ -965,12 +968,6 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
     return map
   }, [grades, selectedSubject])
 
-  const selectedSubjectCode = selectedSubject.split(" - ")[0]?.trim() ?? selectedSubject
-  const selectedSubjectRecord = subjects.find(
-    (subject) => subject.code === selectedSubjectCode || `${subject.code} - ${subject.name}` === selectedSubject
-  )
-  const selectedSubjectType: "Lecture" | "Lecture with Lab" =
-    selectedSubjectRecord?.type === "Lecture with Lab" ? "Lecture with Lab" : "Lecture"
   const activeScheme = useMemo(() => {
     const configured = gradingSchemes.find((scheme) => scheme.isActive && scheme.subjectType === selectedSubjectType)
     if (configured) return configured
@@ -1021,10 +1018,6 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
             Manage Grades
           </h3>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Button size="sm" onClick={downloadGradeTemplate} className="rounded-lg">
-              <Download className="size-4" />
-              Template
-            </Button>
             <Button
               size="sm"
               variant="outline"
@@ -1113,27 +1106,6 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
           )}
         </div>
       )}
-
-      {/* Upload */}
-      <div className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
-        <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          <Upload className="size-4" />
-          Workbook Upload
-        </p>
-        <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-          <Input
-            type="file"
-            accept=".xlsx"
-            onChange={handleGradeWorkbookUpload}
-            className="h-10 rounded-lg"
-          />
-          <Button type="button" variant="outline" className="rounded-lg">
-            <Upload className="size-4" />
-            Upload Excel
-          </Button>
-        </div>
-        <p className="mt-3 text-sm text-muted-foreground">{uploadName}</p>
-      </div>
 
       {/* Section selector */}
       {selectedSubject && subjectSections.length > 0 && (

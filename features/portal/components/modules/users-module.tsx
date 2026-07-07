@@ -112,7 +112,18 @@ export function UsersModule({ model }: PortalModuleProps) {
     newSemester: string
   } | null>(null)
   const [gradeHistoryUser, setGradeHistoryUser] = useState<UserRecord | null>(null)
-  const [gradeHistoryEntry, setGradeHistoryEntry] = useState({
+  const [gradeHistoryEntry, setGradeHistoryEntry] = useState<{
+    subjectCode: string
+    subjectName: string
+    finalPercentile: number | undefined
+    transmutedGrade: number
+    remarks: string
+    curriculumId: string
+    yearLevel: string
+    semester: string
+    section: string
+    units: number
+  }>({
     subjectCode: "",
     subjectName: "",
     finalPercentile: undefined,

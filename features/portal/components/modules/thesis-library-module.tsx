@@ -202,7 +202,7 @@ export function ThesisLibraryModule({ model }: PortalModuleProps) {
         year: "2026",
         category: "Software Engineering",
         adviser: "",
-
+        abstract: "",
         pdfUrl: "",
         fileName: "",
       })

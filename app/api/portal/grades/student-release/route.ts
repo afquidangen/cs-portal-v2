@@ -82,7 +82,7 @@ export async function POST(request: Request) {
 
       const user = await UserModel.findOne({ id: studentId }).lean()
       if (user) {
-        const gradeHistory = ((user as Record<string, unknown>).gradeHistory ?? []) as Array<Record<string, unknown>>
+        const gradeHistory = (user.gradeHistory ?? []) as Array<Record<string, unknown>>
         // Case-insensitive comparison to match curriculum module behavior
         const targetCode = (g.code as string || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "")
         const filteredHistory = gradeHistory.filter(
@@ -149,12 +149,12 @@ export async function POST(request: Request) {
 
         const existingIdx = history.findIndex((h) => h.subjectCode === g.code)
         const entry = {
-          subjectCode: g.code,
-          subjectName: g.subject,
+          subjectCode: g.code as string,
+          subjectName: g.subject as string,
           finalPercentile: finalGrade ?? 0,
           transmutedGrade: transmuted ?? 0,
-          remarks,
-          section: g.section,
+          remarks: remarks as string,
+          section: g.section as string,
           curriculumId: (user as any).curriculumId ?? "",
           yearLevel: (user as any).currentYearLevel ?? "",
           semester: (user as any).currentSemester ?? "",
@@ -175,10 +175,10 @@ export async function POST(request: Request) {
             ? await SemesterModel.findOne({ id: schedule.semesterId }).lean()
             : null
           
-          const semesterName = (semester as Record<string, unknown> | null)?.semester ?? ""
-          const syStart = (semester as Record<string, unknown> | null)?.schoolYearStart ?? 0
-          const syEnd = (semester as Record<string, unknown> | null)?.schoolYearEnd ?? 0
-          const facultyName = (schedule as Record<string, unknown> | null)?.instructor
+          const semesterName = ((semester as Record<string, unknown> | null)?.semester ?? "") as string
+          const syStart = ((semester as Record<string, unknown> | null)?.schoolYearStart ?? 0) as number
+          const syEnd = ((semester as Record<string, unknown> | null)?.schoolYearEnd ?? 0) as number
+          const facultyName = (schedule as Record<string, unknown> | null)?.instructor as string
           
           // Send email
           await sendGradeReleasedEmail({

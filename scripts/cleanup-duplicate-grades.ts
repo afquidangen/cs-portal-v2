@@ -36,8 +36,8 @@ async function main() {
     const goodDoc = await GradeModel.findOne({
       studentId,
       code,
-      ...(semesterId ? { semesterId } : { semesterId: { $in: [null, undefined, ""] } }),
-      id: { $nin: [null, "", undefined] },
+      ...(semesterId ? { semesterId } : { semesterId: { $in: [null, ""] } }),
+      id: { $nin: [null, ""] },
     }).lean()
 
     for (const doc of docs) {
