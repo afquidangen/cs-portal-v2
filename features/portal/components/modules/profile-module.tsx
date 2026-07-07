@@ -296,8 +296,8 @@ export function ProfileModule({ model }: PortalModuleProps) {
                   <p className="pt-1 text-sm text-slate-500">Control how your information appears in Dean's List rankings.</p>
                 </CardHeader>
                 <CardContent className="px-6 pb-6 pt-7">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0 space-y-1">
                       <p className="text-sm font-semibold text-slate-700">Dean's List Ranking Visibility</p>
                       <p className="text-xs text-slate-500">
                         {draft.deansListVisibility === "public"
@@ -305,7 +305,7 @@ export function ProfileModule({ model }: PortalModuleProps) {
                           : "Your rank will be preserved but your name will be hidden as 'Private Student'."}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 shrink-0">
                       <span className={cn("text-xs font-semibold", draft.deansListVisibility === "private" ? "text-slate-400" : "text-blue-600")}>Public</span>
                       <button
                         type="button"
@@ -340,8 +340,8 @@ export function ProfileModule({ model }: PortalModuleProps) {
                   <p className="pt-1 text-sm text-slate-500">Add an extra layer of security to your account.</p>
                 </CardHeader>
                 <CardContent className="px-6 pb-6 pt-7">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0 space-y-1">
                       <p className="text-sm font-semibold text-slate-700">Two-Factor Authentication</p>
                       <p className="text-xs text-slate-500">
                         {draft.twoFactorEnabled
@@ -349,7 +349,7 @@ export function ProfileModule({ model }: PortalModuleProps) {
                           : "Secure your account with an additional verification step."}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 shrink-0">
                       <span className={cn("text-xs font-semibold", draft.twoFactorEnabled ? "text-slate-400" : "text-blue-600")}>Off</span>
                       <button
                         type="button"

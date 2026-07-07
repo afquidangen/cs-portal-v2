@@ -106,7 +106,7 @@ export function ProfileDialog({
       if (!o) setDraft(profileDetails)
       onOpenChange(o)
     }}>
-      <DialogContent className="w-full max-w-5xl p-0">
+      <DialogContent className="w-[95vw] sm:max-w-5xl max-h-[90dvh] overflow-y-auto p-0">
         <div className="border-b border-border px-6 py-4 sm:px-8 sm:py-5">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-foreground">

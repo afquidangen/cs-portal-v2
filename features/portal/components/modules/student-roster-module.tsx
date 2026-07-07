@@ -327,7 +327,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
       </Dialog>
 
       <Dialog open={addDialog} onOpenChange={(o) => { if (!o) { setAddDialog(false); setStudentSearch(""); setAddSection("") } }}>
-        <DialogContent className="w-[95vw] sm:max-w-md">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[85dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-slate-950">Add Student</DialogTitle>
           </DialogHeader>

@@ -356,7 +356,7 @@ export function UsersModule({ model }: PortalModuleProps) {
       </div>
 
       <Card className="rounded-lg border-border bg-card shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between gap-4 px-6 pb-0 pt-6">
+        <CardHeader className="flex flex-col items-start gap-4 px-6 pb-0 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="flex items-center gap-3 text-base font-semibold text-foreground">
               <Users className="size-5 text-blue-600" />
@@ -364,7 +364,7 @@ export function UsersModule({ model }: PortalModuleProps) {
             </CardTitle>
             <p className="pt-1 text-sm text-muted-foreground">{trashView ? "Deleted accounts" : "Search and filter accounts."}</p>
           </div>
-          <div className="min-w-0 w-full max-w-sm shrink-0">
+          <div className="w-full sm:max-w-sm">
             <SearchBox
               value={query}
               onChange={(v) => {

@@ -192,7 +192,35 @@ export function MyClassesModule({ model }: PortalModuleProps) {
             ) : null}
 
             <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
-              <table className="w-full min-w-[800px] text-left text-sm">
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-3 p-4">
+                {timeSlots.map((slot, row) => (
+                  <div key={slot} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="mb-3 pb-2 border-b border-slate-200">
+                      <p className="text-sm font-semibold text-slate-950">{formatScheduleTime(slot)}</p>
+                    </div>
+                    <div className="space-y-2">
+                      {scheduleGrid[row].map((items, col) => {
+                        if (items.length === 0) return null
+                        return items.map((item) => (
+                          <div key={item.id} className="rounded-lg border border-slate-200 border-l-blue-500 bg-blue-50/40 px-3 py-2.5">
+                            <p className="text-sm font-semibold leading-snug text-slate-950">{item.subject}</p>
+                            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                              {DAYS_LONG[col]} · {item.room} - {item.instructor}
+                            </p>
+                          </div>
+                        ))
+                      })}
+                      {scheduleGrid[row].every((items) => items.length === 0) && (
+                        <p className="text-center text-xs text-muted-foreground/40 py-2">No classes</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <table className="hidden md:table w-full min-w-[800px] text-left text-sm">
                 <thead className="bg-muted text-foreground">
                   <tr className="border-b border-border">
                     <th className="w-32 px-4 py-3.5 text-xs font-semibold uppercase tracking-wide text-foreground/80">Time</th>

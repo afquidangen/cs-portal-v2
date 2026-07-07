@@ -313,10 +313,9 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
           <CardContent className="flex justify-center p-0">
             <iframe
               src={`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(model.csoInfo.facebookLink)}&tabs=timeline&width=500&height=600&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`}
-              width="500"
-              height="600"
-              className="w-full max-w-[500px] h-[400px] sm:h-[500px]"
-              style={{ border: "none", overflow: "hidden", display: "block" }}
+              height="500"
+              className="block h-[400px] w-full max-w-[500px] sm:h-[500px] mx-auto"
+              style={{ border: "none", overflow: "hidden" }}
               scrolling="no"
               frameBorder={0}
               allowFullScreen
@@ -684,7 +683,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
       </Dialog>
 
       <Dialog open={!!viewingReport} onOpenChange={(open) => { if (!open) setViewingReport(null) }}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="w-[95vw] sm:max-w-4xl max-h-[90dvh] overflow-y-auto">
           {viewingReport ? (
             <>
               <DialogHeader>
@@ -1001,7 +1000,7 @@ function ConstitutionUploadDialog({
 
   return (
     <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-[95vw] sm:max-w-md max-h-[85dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl text-foreground">Upload Constitution and By Laws</DialogTitle>
         </DialogHeader>
@@ -1067,7 +1066,7 @@ function OrgChartUploadDialog({
 
   return (
     <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-[95vw] sm:max-w-md max-h-[85dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl text-foreground">Upload Organizational Chart</DialogTitle>
         </DialogHeader>
@@ -1219,7 +1218,7 @@ function CsoInfoFormDialog({
 
   return (
     <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="w-[95vw] sm:max-w-lg max-h-[85dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl text-foreground">Edit CSSO Info</DialogTitle>
         </DialogHeader>
@@ -1433,7 +1432,7 @@ function GalleryFormDialog({
 
   return (
     <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="w-[95vw] sm:max-w-lg max-h-[85dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl text-foreground">
             {item ? "Edit Photo" : "Add Photo"}
@@ -1580,7 +1579,7 @@ function ReportFormDialog({
 
   return (
     <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="w-[95vw] sm:max-w-lg max-h-[85dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl text-foreground">
             {report ? "Edit Report" : "Add Report"}

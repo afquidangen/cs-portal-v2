@@ -2043,7 +2043,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       </div>
 
       <Dialog open={!!selectedNews} onOpenChange={(open) => !open && setSelectedNews(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90dvh] overflow-y-auto">
           {selectedNews ? (
             <>
               <DialogHeader>
@@ -2098,9 +2098,9 @@ export function RoleDashboard({ role }: { role: Role }) {
             <p className="text-sm leading-6 font-semibold text-[#68778f] dark:text-slate-400">
               End the current portal session for <span className="text-[#08142c] dark:text-white">{model.profile.name}</span>?
             </p>
-            <DialogFooter className="mt-5 gap-2">
+            <DialogFooter className="mt-5 gap-2 flex-col sm:flex-row">
               <DialogClose asChild>
-                <Button variant="outline" className="border-[#d8e0ea] dark:border-slate-600 bg-white/70 dark:bg-slate-700/70 text-[#08142c] dark:text-white font-semibold hover:bg-[#e6eef9] dark:hover:bg-slate-600">
+                <Button variant="outline" className="border-[#d8e0ea] dark:border-slate-600 bg-white/70 dark:bg-slate-700/70 text-[#08142c] dark:text-white font-semibold hover:bg-[#e6eef9] dark:hover:bg-slate-600 w-full sm:w-auto">
                   Cancel
                 </Button>
               </DialogClose>
@@ -2109,7 +2109,7 @@ export function RoleDashboard({ role }: { role: Role }) {
                   model.handleLogout()
                   setLogoutOpen(false)
                 }}
-                className="bg-white/90 dark:bg-slate-700 text-[#08142c] dark:text-white font-semibold border border-[#d8e0ea] dark:border-slate-600 hover:bg-[#e6eef9] dark:hover:bg-slate-600"
+                className="bg-white/90 dark:bg-slate-700 text-[#08142c] dark:text-white font-semibold border border-[#d8e0ea] dark:border-slate-600 hover:bg-[#e6eef9] dark:hover:bg-slate-600 w-full sm:w-auto"
               >
                 Logout
               </Button>
@@ -2119,7 +2119,7 @@ export function RoleDashboard({ role }: { role: Role }) {
       </Dialog>
 
       <Dialog open={!!viewingAnnouncement} onOpenChange={(open) => { if (!open) setViewingAnnouncement(null) }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[90dvh] overflow-y-auto">
           {viewingAnnouncement ? (
             <>
               <DialogHeader>

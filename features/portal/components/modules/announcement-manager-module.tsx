@@ -44,7 +44,7 @@ export function AnnouncementManagerModule({ model }: PortalModuleProps) {
       )}
 
       <Dialog open={showAnnouncementForm} onOpenChange={setShowAnnouncementForm}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="w-[95vw] sm:max-w-xl max-h-[85dvh] overflow-y-auto">
           <form onSubmit={handleCreateAnnouncement}>
             <DialogHeader>
               <div className="flex items-start gap-3">

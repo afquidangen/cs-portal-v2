@@ -572,7 +572,80 @@ export function GradesModule({ model }: PortalModuleProps) {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border shadow-sm">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {visibleGrades.length === 0 && (
+          <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+            No grade records yet.
+          </div>
+        )}
+        {visibleGrades.length > 0 && visibleGrades.map((grade) => (
+          <div key={grade.id} className="rounded-lg border border-border bg-card p-4 shadow-sm">
+            <div className="mb-3 pb-3 border-b border-border">
+              <p className="font-semibold text-foreground">{grade.subject}</p>
+              <p className="text-xs text-foreground/70">{grade.code}</p>
+              <p className="text-xs text-muted-foreground mt-1">{grade.units} units</p>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-medium text-muted-foreground">Midterm</span>
+                <span className="text-sm text-foreground">
+                  {grade.midtermReleased && (grade.releasedMidtermGrade ?? grade.midtermGrade) !== undefined
+                    ? (grade.releasedMidtermGrade ?? grade.midtermGrade)!.toFixed(2)
+                    : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-medium text-muted-foreground">Midterm Remarks</span>
+                {grade.midtermReleased && (grade.releasedMidtermRemarks ?? grade.midtermRemarks)
+                  ? <StatusBadge value={grade.releasedMidtermRemarks ?? grade.midtermRemarks!} />
+                  : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-medium text-muted-foreground">Final Term</span>
+                <span className="text-sm text-foreground">
+                  {grade.finalReleased && (grade.releasedTentativeFinalGrade ?? grade.tentativeFinalGrade) !== undefined
+                    ? (grade.releasedTentativeFinalGrade ?? grade.tentativeFinalGrade)!.toFixed(2)
+                    : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-medium text-muted-foreground">Final Remarks</span>
+                {grade.finalReleased && (grade.releasedFinalRemarks ?? grade.finalRemarks)
+                  ? <StatusBadge value={grade.releasedFinalRemarks ?? grade.finalRemarks!} />
+                  : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-medium text-muted-foreground">Grade %</span>
+                <span className="text-sm text-foreground">
+                  {grade.finalReleased && (grade.releasedFinalGrade ?? grade.finalGrade) !== undefined
+                    ? (grade.releasedFinalGrade ?? grade.finalGrade)!.toFixed(2)
+                    : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-medium text-muted-foreground">Final Rating</span>
+                <span className="text-sm text-foreground">
+                  {grade.finalReleased && (grade.releasedFinalGrade ?? grade.finalGrade) !== undefined
+                    ? (grade.releasedFinalGrade ?? grade.finalGrade)!.toFixed(0)
+                    : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-border">
+                <span className="text-xs font-semibold text-foreground">Equivalent</span>
+                <span className="text-sm font-semibold text-foreground">
+                  {grade.finalReleased && (grade.releasedTransmutedGrade ?? grade.transmutedGrade) !== undefined
+                    ? (grade.releasedTransmutedGrade ?? grade.transmutedGrade)!.toFixed(2)
+                    : <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto rounded-lg border border-border shadow-sm">
         <table className="w-full min-w-[740px] text-left text-sm">
           <thead className="bg-muted/80 text-foreground">
             <tr className="border-b border-border">

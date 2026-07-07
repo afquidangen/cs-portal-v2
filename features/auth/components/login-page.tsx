@@ -25,7 +25,6 @@ export function LoginPage() {
   const [message, setMessage] = useState("")
   const [forgotSent, setForgotSent] = useState(false)
   const [forgotLoading, setForgotLoading] = useState(false)
-  const [portalLogo, setPortalLogo] = useState("/portal-logo.svg")
 
   const [twoFactorRequired, setTwoFactorRequired] = useState(false)
   const [twoFactorEmail, setTwoFactorEmail] = useState("")
@@ -36,15 +35,6 @@ export function LoginPage() {
   const [resendCooldown, setResendCooldown] = useState(0)
 
   const router = useRouter()
-
-  useEffect(() => {
-    fetch("/api/portal/cso-info")
-      .then((res) => res.ok ? res.json() : null)
-      .then((json) => {
-        if (json?.data?.portalLogoUrl) setPortalLogo(json.data.portalLogoUrl)
-      })
-      .catch(() => {})
-  }, [])
 
   useEffect(() => {
     document.documentElement.classList.remove("dark")
@@ -380,7 +370,7 @@ export function LoginPage() {
       <div className="relative z-10 mx-auto grid min-h-dvh w-full max-w-5xl items-center gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(340px,380px)_1px_minmax(340px,380px)] lg:justify-center lg:gap-10 lg:px-8">
         <section className="flex flex-col items-center text-center">
           <Image
-            src={portalLogo}
+            src="/portal-logo.svg"
             alt="ComScite Portal logo"
             width={340}
             height={340}

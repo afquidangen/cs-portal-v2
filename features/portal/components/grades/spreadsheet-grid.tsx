@@ -14,6 +14,7 @@ import {
   DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import type { PortalModuleProps } from "../modules/types"
 import type { GradeRecord, GradeWorkflowStatus, GradeColumn, Assessment, ReleaseHistoryEntry } from "@/lib/types"
@@ -280,7 +281,7 @@ function UndoReleaseDialog({
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
                 rows={3}
                 placeholder="Explain why you are undoing the release..."
               />
@@ -332,21 +333,22 @@ function BatchUnreleaseDialog({
         <div className="space-y-3 py-2">
           <div>
             <label className="text-xs font-medium text-muted-foreground">Period *</label>
-            <select
-              value={period}
-              onChange={(e) => setPeriod(e.target.value as "midterm" | "final")}
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            >
-              <option value="midterm">Midterm</option>
-              <option value="final">Final</option>
-            </select>
+            <Select value={period} onValueChange={(v) => setPeriod(v as "midterm" | "final")}>
+              <SelectTrigger className="mt-1 rounded-lg">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="midterm">Midterm</SelectItem>
+                <SelectItem value="final">Final</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">Reason *</label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
               rows={3}
               placeholder="Explain why you are unreleasing grades..."
             />
@@ -356,7 +358,7 @@ function BatchUnreleaseDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-lg" disabled={loading}>Cancel</Button>
           <Button 
             onClick={handleConfirm} 
-            className="rounded-lg bg-red-600 hover:bg-red-700" 
+            className="rounded-lg bg-red-600 text-white hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800" 
             disabled={!reason.trim() || loading}
           >
             {loading ? "Unreleasing..." : `Unrelease ${releasedCount} Grades`}
@@ -1732,17 +1734,16 @@ export function SpreadsheetGrid({
       <style>{`.score-cell-missing { background-color: #fef2f2; box-shadow: inset 0 0 0 1px #fca5a5; } .dark .score-cell-missing { background-color: rgba(239, 68, 68, 0.12); box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.4); }`}</style>
 
       <div className="egrades-grid-shell overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-        <div className="overflow-auto">
-          <AgGridReact
-            key={`grid-${filteredColumns.length}-${activeTab}`}
-            ref={gridRef}
-            rowData={gridData}
-            columnDefs={colDefs}
-            domLayout="normal"
-            alwaysShowHorizontalScroll={true}
-            rowHeight={38}
-            headerHeight={38}
-            groupHeaderHeight={34}
+        <AgGridReact
+          key={`grid-${filteredColumns.length}-${activeTab}`}
+          ref={gridRef}
+          rowData={gridData}
+          columnDefs={colDefs}
+          domLayout="normal"
+          alwaysShowHorizontalScroll={true}
+          rowHeight={38}
+          headerHeight={38}
+          groupHeaderHeight={34}
           defaultColDef={{
             resizable: true,
             sortable: true,
@@ -1779,7 +1780,6 @@ export function SpreadsheetGrid({
           enableCellTextSelection
           ensureDomOrder
         />
-        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-3 shadow-sm">
@@ -1827,12 +1827,12 @@ export function SpreadsheetGrid({
               description: `There are ${missingCount} empty assessment score(s). These have been highlighted in red for your review. You may still continue working, save your changes, or release grades if necessary.`,
             })
           }
-        }} className="h-9 rounded-md bg-blue-600 shadow-sm hover:bg-blue-700">
+        }} className="h-9 rounded-md">
           <Save className="size-4" /> Save
         </Button>
         <SaveStatusIndicator status={saveStatus} lastSaved={lastSaved} />
 
-        <Button size="default" variant="outline" onClick={() => setReleaseOpen(true)} className="h-9 rounded-md border-border">
+        <Button size="default" variant="outline" onClick={() => setReleaseOpen(true)} className="h-9 rounded-md">
           <Megaphone className="size-4" /> Release
         </Button>
         {hasReleasedGrades && (
@@ -1840,7 +1840,7 @@ export function SpreadsheetGrid({
             size="default" 
             variant="outline" 
             onClick={() => setBatchUnreleaseOpen(true)} 
-            className="h-9 rounded-md border-border text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
+            className="h-9 rounded-md text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
           >
             <Undo2 className="size-4" /> Unrelease All ({releasedCount})
           </Button>

@@ -349,7 +349,7 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
 
       {/* Quick Links Dialog */}
       <Dialog open={showQuickLinkForm} onOpenChange={handleCloseDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[85dvh] overflow-y-auto">
           <form onSubmit={handleQuickLinkSubmit}>
             <DialogHeader>
               <DialogTitle className="text-xl text-foreground">
@@ -487,7 +487,7 @@ export function QuickLinksModule({ model }: PortalModuleProps) {
 
       {/* Downloadables Dialog */}
       <Dialog open={showDownloadableForm} onOpenChange={setShowDownloadableForm}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[85dvh] overflow-y-auto">
           <form onSubmit={handleSubmitDownloadable}>
             <DialogHeader>
               <DialogTitle className="text-xl text-foreground">Upload PDF</DialogTitle>

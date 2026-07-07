@@ -277,29 +277,32 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
             </div>
 
             {activeTerm ? (
-              <div className="overflow-x-auto rounded-2xl border border-border">
-                <table className="w-full min-w-[640px] text-left text-sm">
-                  <thead className="bg-muted text-foreground">
-                    <tr className="border-b border-border">
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Code</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Subject</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Lec</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Lab</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Units</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border bg-card">
-                    {activeTerm.subjects.map((subject, i) => {
-                      const status = getSubjectStatus(subject.code, subject.name, activeTerm.year, activeTerm.semester)
-                      return (
-                        <tr key={`${subject.code}-${i}`} className="transition-colors hover:bg-muted/40">
-                          <td className="px-4 py-3 font-medium text-foreground">{subject.code}</td>
-                          <td className="px-4 py-3 text-foreground/80">{subject.name}</td>
-                          <td className="px-4 py-3 text-foreground/80">{subject.lec}</td>
-                          <td className="px-4 py-3 text-foreground/80">{subject.lab}</td>
-                          <td className="px-4 py-3 text-foreground/80">{subject.total}</td>
-                          <td className="px-4 py-3">
+              <>
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-3">
+                  {activeTerm.subjects.map((subject, i) => {
+                    const status = getSubjectStatus(subject.code, subject.name, activeTerm.year, activeTerm.semester)
+                    return (
+                      <div key={`${subject.code}-${i}`} className="rounded-lg border border-border bg-card p-4 shadow-sm">
+                        <div className="mb-3 pb-2 border-b border-border">
+                          <p className="font-semibold text-foreground">{subject.code}</p>
+                          <p className="text-sm text-foreground/80">{subject.name}</p>
+                        </div>
+                        <div className="space-y-1.5 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-xs font-medium text-muted-foreground">Lecture</span>
+                            <span className="text-foreground/80">{subject.lec}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-xs font-medium text-muted-foreground">Laboratory</span>
+                            <span className="text-foreground/80">{subject.lab}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-xs font-medium text-muted-foreground">Total Units</span>
+                            <span className="text-foreground/80">{subject.total}</span>
+                          </div>
+                          <div className="flex justify-between pt-2 border-t border-border">
+                            <span className="text-xs font-medium text-muted-foreground">Status</span>
                             {status ? (
                               <span className={cn("inline-flex items-center gap-1 text-xs font-semibold", status.className)}>
                                 {status.label === "Passed" ? (
@@ -315,13 +318,60 @@ function StudentCurriculumView({ model }: { model: NonNullable<PortalModuleProps
                             ) : (
                               <span className="text-xs text-muted-foreground">—</span>
                             )}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto rounded-2xl border border-border">
+                  <table className="w-full min-w-[640px] text-left text-sm">
+                    <thead className="bg-muted text-foreground">
+                      <tr className="border-b border-border">
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Code</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Subject</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Lec</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Lab</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Units</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border bg-card">
+                      {activeTerm.subjects.map((subject, i) => {
+                        const status = getSubjectStatus(subject.code, subject.name, activeTerm.year, activeTerm.semester)
+                        return (
+                          <tr key={`${subject.code}-${i}`} className="transition-colors hover:bg-muted/40">
+                            <td className="px-4 py-3 font-medium text-foreground">{subject.code}</td>
+                            <td className="px-4 py-3 text-foreground/80">{subject.name}</td>
+                            <td className="px-4 py-3 text-foreground/80">{subject.lec}</td>
+                            <td className="px-4 py-3 text-foreground/80">{subject.lab}</td>
+                            <td className="px-4 py-3 text-foreground/80">{subject.total}</td>
+                            <td className="px-4 py-3">
+                              {status ? (
+                                <span className={cn("inline-flex items-center gap-1 text-xs font-semibold", status.className)}>
+                                  {status.label === "Passed" ? (
+                                    <svg className="size-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg>
+                                  ) : null}
+                                  {status.label}
+                                  {isRetake(subject.code) && status.label === "Current" && (
+                                    <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                                      RETAKE
+                                    </span>
+                                  )}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             ) : null}
           </div>
         )}
@@ -584,7 +634,52 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
           </form>
         ) : null}
 
-        <div className="overflow-x-auto rounded-2xl border border-border">
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-3">
+          {visibleCurricula.map((curriculum) => (
+            <div
+              key={curriculum.id}
+              className={cn(
+                "rounded-lg border border-border bg-card p-4 shadow-sm cursor-pointer transition-colors",
+                curriculum.id === selectedCurriculum?.id ? "bg-muted" : "hover:bg-muted/50"
+              )}
+              onClick={() => {
+                setSelectedCurriculumId(curriculum.id)
+                setSelectedYearIndex(0)
+              }}
+            >
+              <div className="mb-3 pb-2 border-b border-border">
+                <p className="font-semibold text-foreground">{curriculum.id}</p>
+                <p className="text-sm text-foreground/80">{curriculum.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{curriculum.major}</p>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-sm">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Total Units</p>
+                    <p className="text-foreground/80">{curriculum.totalUnits}</p>
+                  </div>
+                </div>
+                <StatusBadge value={curriculum.status} />
+              </div>
+              <div className="mt-3 pt-3 border-t border-border flex gap-2">
+                <Tooltip content="Edit curriculum">
+                  <Button size="sm" variant="outline" className="rounded-xl flex-1" onClick={(e) => { e.stopPropagation(); setEditCurr(curriculum) }}>
+                    <Edit className="size-3.5" /> Edit
+                  </Button>
+                </Tooltip>
+                <Tooltip content="Delete curriculum">
+                  <Button size="sm" variant="outline" className="rounded-xl flex-1 text-red-600 hover:text-red-700" onClick={(e) => { e.stopPropagation(); setDeleteCurrId(curriculum.id) }}>
+                    <Trash2 className="size-3.5" /> Delete
+                  </Button>
+                </Tooltip>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto rounded-2xl border border-border">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="bg-muted text-foreground">
               <tr className="border-b border-border">
@@ -800,29 +895,31 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
                         </div>
                       </div>
 
-                      <div className="overflow-x-auto">
-                        <table className="w-full min-w-[760px] text-left text-sm">
-                          <thead className="bg-muted text-foreground">
-                            <tr className="border-b border-border">
-                              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Code</th>
-                              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Subject</th>
-                              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Lec</th>
-                              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Lab</th>
-                              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Units</th>
-                              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border bg-card">
-                            {term.subjects.map((subject, sIdx) => (
-                              <tr key={`${subject.code}-${sIdx}`} className="transition-colors hover:bg-muted/40">
-                                <td className="px-4 py-3 font-medium text-foreground">{subject.code}</td>
-                                <td className="px-4 py-3 text-foreground/80">{subject.name}</td>
-                                <td className="px-4 py-3 text-foreground/80">{subject.lec}</td>
-                                <td className="px-4 py-3 text-foreground/80">{subject.lab}</td>
-                                <td className="px-4 py-3 text-foreground/80">{subject.total}</td>
-                                <td className="px-4 py-3">
-                                  <div className="flex gap-1">
-                                    <Tooltip content="Edit subject">
+                      {/* Mobile Card View */}
+                      <div className="md:hidden space-y-2">
+                        {term.subjects.map((subject, sIdx) => (
+                          <div key={`${subject.code}-${sIdx}`} className="rounded-lg border border-border bg-card p-3 shadow-sm">
+                            <div className="mb-2 pb-2 border-b border-border">
+                              <p className="font-medium text-foreground">{subject.code}</p>
+                              <p className="text-sm text-foreground/80">{subject.name}</p>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <div className="flex gap-3">
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Lec</p>
+                                  <p className="text-foreground/80">{subject.lec}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Lab</p>
+                                  <p className="text-foreground/80">{subject.lab}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Units</p>
+                                  <p className="text-foreground/80">{subject.total}</p>
+                                </div>
+                              </div>
+                              <div className="flex gap-1">
+                                <Tooltip content="Edit subject">
                                   <Button
                                     size="sm"
                                     variant="outline"
@@ -847,7 +944,7 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="rounded-xl"
+                                    className="rounded-xl text-red-600 hover:text-red-700"
                                     onClick={() =>
                                       setDeleteSubjectKey({
                                         currId: selectedCurriculum.id,
@@ -859,6 +956,72 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
                                     <Trash2 className="size-3.5" />
                                   </Button>
                                 </Tooltip>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Desktop Table View */}
+                      <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full min-w-[760px] text-left text-sm">
+                          <thead className="bg-muted text-foreground">
+                            <tr className="border-b border-border">
+                              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Code</th>
+                              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Subject</th>
+                              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Lec</th>
+                              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Lab</th>
+                              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Units</th>
+                              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/80">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border bg-card">
+                            {term.subjects.map((subject, sIdx) => (
+                              <tr key={`${subject.code}-${sIdx}`} className="transition-colors hover:bg-muted/40">
+                                <td className="px-4 py-3 font-medium text-foreground">{subject.code}</td>
+                                <td className="px-4 py-3 text-foreground/80">{subject.name}</td>
+                                <td className="px-4 py-3 text-foreground/80">{subject.lec}</td>
+                                <td className="px-4 py-3 text-foreground/80">{subject.lab}</td>
+                                <td className="px-4 py-3 text-foreground/80">{subject.total}</td>
+                                <td className="px-4 py-3">
+                                  <div className="flex gap-1">
+                                    <Tooltip content="Edit subject">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="rounded-xl"
+                                        onClick={() =>
+                                          setEditSubjectKey({
+                                            currId: selectedCurriculum.id,
+                                            termIndex: globalTermIndex,
+                                            subjectIndex: sIdx,
+                                            code: subject.code,
+                                            name: subject.name,
+                                            lec: String(subject.lec),
+                                            lab: String(subject.lab),
+                                            total: String(subject.total),
+                                          })
+                                        }
+                                      >
+                                        <Edit className="size-3.5" />
+                                      </Button>
+                                    </Tooltip>
+                                    <Tooltip content="Delete subject">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="rounded-xl"
+                                        onClick={() =>
+                                          setDeleteSubjectKey({
+                                            currId: selectedCurriculum.id,
+                                            termIndex: globalTermIndex,
+                                            subjectIndex: sIdx,
+                                          })
+                                        }
+                                      >
+                                        <Trash2 className="size-3.5" />
+                                      </Button>
+                                    </Tooltip>
                                   </div>
                                 </td>
                               </tr>
@@ -881,7 +1044,7 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
 
       {/* Edit Curriculum */}
       <Dialog open={!!editCurr} onOpenChange={(o) => !o && setEditCurr(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[85dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl text-foreground">Edit Curriculum</DialogTitle>
             <DialogDescription className="pt-1 text-muted-foreground">Update curriculum details</DialogDescription>
@@ -939,7 +1102,7 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
 
       {/* Add Term */}
       <Dialog open={!!addTermCurrId} onOpenChange={(o) => !o && setAddTermCurrId(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[85dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl text-foreground">Add Term</DialogTitle>
             <DialogDescription className="pt-1 text-muted-foreground">Add a new term to the curriculum</DialogDescription>
@@ -995,7 +1158,7 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
 
       {/* Add Subject to Term */}
       <Dialog open={!!addSubjectKey} onOpenChange={(o) => !o && setAddSubjectKey(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[85dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl text-foreground">Add Subject</DialogTitle>
             <DialogDescription className="pt-1 text-muted-foreground">Add a subject to this term</DialogDescription>
@@ -1048,7 +1211,7 @@ function AdminCurriculumView({ model }: { model: NonNullable<PortalModuleProps["
 
       {/* Edit Subject in Term */}
       <Dialog open={!!editSubjectKey} onOpenChange={(o) => !o && setEditSubjectKey(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[85dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl text-foreground">Edit Subject</DialogTitle>
             <DialogDescription className="pt-1 text-muted-foreground">Update subject details</DialogDescription>

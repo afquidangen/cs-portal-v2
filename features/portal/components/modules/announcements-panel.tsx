@@ -335,7 +335,7 @@ export function AnnouncementsPanel({ model, onShowTrash }: AnnouncementsPanelPro
 
       {/* ── Edit Dialog ── */}
       <Dialog open={!!editingAnn} onOpenChange={(o) => { if (!o) setEditingAnn(null) }}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="w-[95vw] sm:max-w-xl max-h-[85dvh] overflow-y-auto">
           {editingAnn ? (
             <form
               onSubmit={(e) => {

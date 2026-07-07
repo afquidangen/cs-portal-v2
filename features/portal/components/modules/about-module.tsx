@@ -101,7 +101,7 @@ export function AboutModule({ model }: PortalModuleProps) {
   const [data, setData] = useState<AboutData>({
     teamName: "GIT LOST",
     description:
-      "Developed by a team of incoming fourth-year student interns during the 2025\u20132026 academic year at ISPSC, the ComScite Portal was designed as a unified academic workspace.",
+      "Developed by a team of student interns during the Academic Year 2025–2026 at ISPSC - Main, the ComScite Portal was created as a unified academic workspace to streamline academic processes, enhance communication, and improve access to essential resources for students, faculty, and administrators.",
     acknowledgment:
       "This project stands on the foundation built by the initial contributors of CCIS Portal v1, whose early concepts made this portal possible.",
     teamPictureUrl: undefined,
@@ -254,7 +254,7 @@ export function AboutModule({ model }: PortalModuleProps) {
       </div>
 
       <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
             <div className="flex flex-col justify-center text-center xl:text-left">
               <h2 className="text-2xl font-bold tracking-tight text-slate-950">
@@ -278,10 +278,10 @@ export function AboutModule({ model }: PortalModuleProps) {
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="flex min-h-[260px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white text-center">
+            <div className="rounded-lg border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+              <div className="flex min-h-[200px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white text-center sm:min-h-[260px]">
                 {data.teamPictureUrl ? (
-                  <div className="relative h-full min-h-[260px] w-full">
+                  <div className="relative h-full min-h-[200px] w-full sm:min-h-[260px]">
                     <Image
                       src={data.teamPictureUrl}
                       alt="Team picture"
