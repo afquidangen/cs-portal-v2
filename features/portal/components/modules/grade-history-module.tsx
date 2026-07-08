@@ -55,12 +55,8 @@ export function GradeHistoryModule({ model }: PortalModuleProps) {
         g.finalGrade !== undefined && 
         g.transmutedGrade !== undefined
     ) ?? []
-    // Case-insensitive comparison
-    const releasedCodes = new Set(releasedGrades.map(g => (g.code || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "")))
-    const filteredBase = base.filter(entry => {
-      const entryCode = (entry.subjectCode || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "")
-      return releasedCodes.has(entryCode)
-    })
+    // Include all grade history entries (admin-added + released)
+    const filteredBase = [...base]
     const curriculumId = studentUser?.curriculumId ?? ""
     const curriculum = (model.curricula as CurriculumRecord[] | undefined)?.find((c) => c.id === curriculumId)
 
