@@ -703,6 +703,10 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
 
     const labAttendanceOverrides: Array<{ row: number; col: number; value: number }> = []
 
+    const gsMidSheet = wb.getWorksheet("GS MID")
+    const gsFinSheet = wb.getWorksheet("GS FIN")
+    const rogSheet = wb.getWorksheet("REPORTS OF GRADE")
+
     for (let i = 0; i < grades.length; i++) {
       const grade = grades[i]
       const rowIdx = dataStartRow + i
@@ -764,6 +768,57 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
         crSheet.getCell(rowIdx, 157).value = grade.transmutedGrade ?? null
         crSheet.getCell(rowIdx, 158).value = grade.finalGrade ?? null
         crSheet.getCell(rowIdx, 159).value = grade.remarks ?? ""
+      }
+
+      // --- Directly populate GS MID, GS FIN, and REPORTS OF GRADE ---
+      // (bypasses broken cross-sheet formulas that reference wrong columns)
+
+      if (gsMidSheet) {
+        const gsR = 9 + i
+        gsMidSheet.getCell(gsR, 1).value = i + 1
+        gsMidSheet.getCell(gsR, 2).value = formatStudentName(grade.student ?? "")
+        const cs60 = midtermPreview?.classStanding != null
+          ? midtermPreview.classStanding * 0.60
+          : grade.midtermClassStanding != null
+            ? grade.midtermClassStanding * 0.60 : null
+        gsMidSheet.getCell(gsR, 11).value = cs60
+        gsMidSheet.getCell(gsR, 12).value = grade.midtermExam != null ? grade.midtermExam * 0.40 : null
+        gsMidSheet.getCell(gsR, 13).value = midtermPreview?.lectureGrade ??
+          (grade.midtermClassStanding != null && grade.midtermExam != null
+            ? (grade.midtermClassStanding * 60 + grade.midtermExam * 40) / 100 : null)
+        gsMidSheet.getCell(gsR, 23).value = grade.midtermTransmuted ?? null
+        gsMidSheet.getCell(gsR, 24).value = grade.midtermGrade ?? null
+      }
+
+      if (gsFinSheet) {
+        const gsR = 9 + i
+        gsFinSheet.getCell(gsR, 1).value = i + 1
+        gsFinSheet.getCell(gsR, 2).value = formatStudentName(grade.student ?? "")
+        const cs60 = finalPreview?.classStanding != null
+          ? finalPreview.classStanding * 0.60
+          : grade.finalClassStanding != null
+            ? grade.finalClassStanding * 0.60 : null
+        gsFinSheet.getCell(gsR, 11).value = cs60
+        gsFinSheet.getCell(gsR, 12).value = grade.finalExam != null ? grade.finalExam * 0.40 : null
+        gsFinSheet.getCell(gsR, 13).value = finalPreview?.lectureGrade ??
+          (grade.finalClassStanding != null && grade.finalExam != null
+            ? (grade.finalClassStanding * 60 + grade.finalExam * 40) / 100 : null)
+        gsFinSheet.getCell(gsR, 23).value = grade.finalTransmuted ?? null
+        gsFinSheet.getCell(gsR, 24).value = grade.tentativeFinalGrade ?? null
+      }
+
+      if (rogSheet) {
+        const rogGroup = i % 3
+        const rogRow = 12 + Math.floor(i / 3)
+        const rogOff = rogGroup * 15
+        rogSheet.getCell(rogRow, 1 + rogOff).value = i + 1
+        rogSheet.getCell(rogRow, 2 + rogOff).value = formatStudentName(grade.student ?? "")
+        rogSheet.getCell(rogRow, 5 + rogOff).value = headerData.section
+        rogSheet.getCell(rogRow, 7 + rogOff).value = grade.midtermGrade ?? null
+        rogSheet.getCell(rogRow, 8 + rogOff).value = grade.tentativeFinalGrade ?? null
+        rogSheet.getCell(rogRow, 9 + rogOff).value = grade.finalGrade ?? null
+        rogSheet.getCell(rogRow, 13 + rogOff).value = grade.transmutedGrade ?? null
+        rogSheet.getCell(rogRow, 15 + rogOff).value = grade.remarks ?? ""
       }
     }
 
@@ -960,24 +1015,6 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
         if (cell.formula) {
           cell.value = { formula: cell.formula as string }
         }
-      }
-    }
-  }
-
-  // Clear old template placeholder values from non-formula cells
-  const DATA_REGIONS: Record<string, { startRow: number; endRow: number }> = {
-    "GS MID": { startRow: 9, endRow: 123 },
-    "GS FIN": { startRow: 9, endRow: 123 },
-    "REPORTS OF GRADE": { startRow: 12, endRow: 77 },
-  }
-  for (const [sheetName, region] of Object.entries(DATA_REGIONS)) {
-    const sheet = wb.getWorksheet(sheetName)
-    if (!sheet) continue
-    for (let r = region.startRow; r <= region.endRow; r++) {
-      for (let c = 1; c <= sheet.columnCount; c++) {
-        const cell = sheet.getCell(r, c)
-        if (cell.formula) continue // already handled above
-        cell.value = null
       }
     }
   }
