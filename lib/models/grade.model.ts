@@ -164,7 +164,6 @@ const GradeSchema = new Schema<IGrade>(
     releasedTransmutedGrade: Number,
     releasedRemarks: String,
 
-    updatedAt: String,
     deletedAt: { type: String, default: null },
   },
   { timestamps: true }

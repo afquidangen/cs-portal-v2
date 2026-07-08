@@ -15,6 +15,7 @@ const OtpSchema = new Schema<IOtp>({
 })
 
 OtpSchema.index({ email: 1, expiresAt: -1 })
+OtpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 })
 
 export const OtpModel: Model<IOtp> =
   (mongoose.models.Otp as Model<IOtp> | undefined) ??

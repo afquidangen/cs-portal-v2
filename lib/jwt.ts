@@ -5,6 +5,16 @@ const secret = new TextEncoder().encode(
   process.env.JWT_SECRET ?? "fallback-secret-not-for-production"
 )
 
+if (
+  !process.env.JWT_SECRET ||
+  process.env.JWT_SECRET === "cs-portal-jwt-secret-change-in-production"
+) {
+  console.error(
+    "[JWT] CRITICAL: Using default or missing JWT_SECRET. " +
+    "Set a strong, unique JWT_SECRET environment variable in production."
+  )
+}
+
 export type JwtPayload = {
   email: string
   role: Role

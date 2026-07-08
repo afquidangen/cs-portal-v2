@@ -5,6 +5,7 @@ import { MaintenanceSettingModel } from "@/lib/models/maintenance-setting.model"
 
 async function checkMaintenanceMode(user: { role: string }): Promise<Response | null> {
   if (user.role === "admin") return null
+  await connectToDatabase()
   const setting = await MaintenanceSettingModel.findOne()
   if (setting?.maintenanceMode) {
     return Response.json(

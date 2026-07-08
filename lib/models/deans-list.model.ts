@@ -49,8 +49,6 @@ const DeansListEntrySchema = new Schema<IDeansListEntry>(
     published: { type: Boolean, default: false },
     publishedAt: { type: String, default: null },
     needsRecalculation: { type: Boolean, default: false },
-    createdAt: String,
-    updatedAt: String,
   },
   { timestamps: true }
 )

@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server"
-import { connectToDatabase } from "@/lib/mongodb"
 import { MaintenanceSettingModel } from "@/lib/models"
 import { requireAdmin } from "@/lib/api-auth"
 
@@ -27,12 +26,9 @@ export async function PUT(request: NextRequest) {
       return Response.json({ error: "maintenanceMode (boolean) is required" }, { status: 400 })
     }
 
-    await connectToDatabase()
-
     const update: Record<string, unknown> = {
       maintenanceMode: body.maintenanceMode,
       updatedBy: auth.user.email,
-      updatedAt: new Date(),
     }
 
     for (const field of STRING_FIELDS) {

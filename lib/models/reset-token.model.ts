@@ -14,6 +14,8 @@ const ResetTokenSchema = new Schema<IResetToken>({
   used: { type: Boolean, default: false },
 })
 
+ResetTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 })
+
 export const ResetTokenModel: Model<IResetToken> =
   (mongoose.models.ResetToken as Model<IResetToken> | undefined) ??
   mongoose.model<IResetToken>("ResetToken", ResetTokenSchema)

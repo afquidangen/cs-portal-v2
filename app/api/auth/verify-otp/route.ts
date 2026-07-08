@@ -1,6 +1,7 @@
+import { cookies } from "next/headers"
 import { signToken, verifyTempToken } from "@/lib/jwt"
 import { connectToDatabase } from "@/lib/mongodb"
-import { UserModel, OtpModel } from "@/lib/models"
+import { MaintenanceSettingModel, UserModel, OtpModel } from "@/lib/models"
 
 export const runtime = "nodejs"
 
@@ -54,6 +55,21 @@ export async function POST(request: Request) {
       )
     }
 
+    if (user.status !== "Active") {
+      return Response.json(
+        { error: "Account is inactive." },
+        { status: 403 }
+      )
+    }
+
+    const setting = await MaintenanceSettingModel.findOne()
+    if (setting?.maintenanceMode && user.role !== "admin") {
+      return Response.json(
+        { error: "System is under maintenance. Please try again later." },
+        { status: 503 }
+      )
+    }
+
     const token = await signToken({
       email: user.email,
       role: user.role,
@@ -77,13 +93,16 @@ export async function POST(request: Request) {
             : user.position ?? "System Administrator - CS Department",
     }
 
-    const response = Response.json({ account })
-    response.headers.set(
-      "Set-Cookie",
-      `session=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}`
-    )
+    const cookieStore = await cookies()
+    cookieStore.set("session", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    })
 
-    return response
+    return Response.json({ account })
   } catch (error) {
     return Response.json(
       {

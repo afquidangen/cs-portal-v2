@@ -1,7 +1,7 @@
 import crypto from "crypto"
 import { verifyTempToken } from "@/lib/jwt"
 import { connectToDatabase } from "@/lib/mongodb"
-import { UserModel, OtpModel } from "@/lib/models"
+import { MaintenanceSettingModel, UserModel, OtpModel } from "@/lib/models"
 import { sendOtpEmail } from "@/lib/email"
 
 export const runtime = "nodejs"
@@ -44,7 +44,26 @@ export async function POST(request: Request) {
     await otp.save()
 
     const user = await UserModel.findOne({ email: body.email })
-    await sendOtpEmail(body.email, user?.name ?? "User", code).catch(() => {})
+    if (!user) {
+      return Response.json(
+        { error: "Account not found." },
+        { status: 404 }
+      )
+    }
+    if (user.status !== "Active") {
+      return Response.json(
+        { error: "Account is inactive." },
+        { status: 403 }
+      )
+    }
+    const setting = await MaintenanceSettingModel.findOne()
+    if (setting?.maintenanceMode && user.role !== "admin") {
+      return Response.json(
+        { error: "System is under maintenance. Please try again later." },
+        { status: 503 }
+      )
+    }
+    await sendOtpEmail(body.email, user.name, code).catch(() => {})
 
     return Response.json({ message: "Verification code sent." })
   } catch (error) {

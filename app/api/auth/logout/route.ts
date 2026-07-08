@@ -1,10 +1,15 @@
+import { cookies } from "next/headers"
+
 export const runtime = "nodejs"
 
 export async function POST() {
-  const response = Response.json({ success: true })
-  response.headers.set(
-    "Set-Cookie",
-    "session=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0"
-  )
-  return response
+  const cookieStore = await cookies()
+  cookieStore.set("session", "", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  })
+  return Response.json({ success: true })
 }

@@ -22,7 +22,11 @@ function buildUri(): string {
   const base = process.env.MONGODB_URI
   if (!base) throw new Error("MONGODB_URI is not configured.")
   const separator = base.includes("?") ? "&" : "?"
-  return `${base}${separator}tlsInsecure=true&serverSelectionTimeoutMS=15000`
+  const params = [`serverSelectionTimeoutMS=15000`]
+  if (process.env.NODE_ENV !== "production") {
+    params.push("tlsInsecure=true")
+  }
+  return `${base}${separator}${params.join("&")}`
 }
 
 export async function connectToDatabase() {

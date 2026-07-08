@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { jwtVerify } from "jose"
+import { connectToDatabase } from "@/lib/mongodb"
+import { MaintenanceSettingModel } from "@/lib/models/maintenance-setting.model"
 
 const secret = new TextEncoder().encode(
   process.env.JWT_SECRET ?? "fallback-secret-not-for-production"
@@ -9,7 +11,7 @@ const secret = new TextEncoder().encode(
 const protectedPaths = ["/admin", "/faculty", "/student"]
 
 export async function proxy(request: NextRequest) {
-  const { pathname, origin } = request.nextUrl
+  const { pathname } = request.nextUrl
 
   const isProtected = protectedPaths.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`)
@@ -25,15 +27,17 @@ export async function proxy(request: NextRequest) {
     const { payload } = await jwtVerify(token, secret)
     const role = payload.role as string | undefined
 
-    const res = await fetch(`${origin}/api/maintenance/status`)
-    const data = await res.json()
+    await connectToDatabase()
+    const setting = await MaintenanceSettingModel.findOne()
+    const maintenanceMode = setting?.maintenanceMode ?? false
 
-    if (data.maintenanceMode && role !== "admin") {
+    if (maintenanceMode && role !== "admin") {
       return NextResponse.redirect(new URL("/maintenance.html", request.url))
     }
 
     return NextResponse.next()
-  } catch {
+  } catch (err) {
+    console.error("PROXY ERROR:", err)
     return NextResponse.redirect(new URL("/", request.url))
   }
 }

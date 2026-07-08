@@ -1,4 +1,5 @@
 import crypto from "crypto"
+import { cookies } from "next/headers"
 import { authenticateAccount } from "@/features/auth/repositories/auth.repository"
 import { signToken, signTempToken } from "@/lib/jwt"
 import { connectToDatabase } from "@/lib/mongodb"
@@ -21,20 +22,23 @@ export async function POST(request: Request) {
       )
     }
 
+    await connectToDatabase()
+    const setting = await MaintenanceSettingModel.findOne()
+    if (setting?.maintenanceMode) {
+      const userCheck = await UserModel.findOne({ email: body.email.toLowerCase().trim() })
+      if (!userCheck || userCheck.role !== "admin") {
+        return Response.json(
+          { error: "System is currently under maintenance. Please try again later." },
+          { status: 503 }
+        )
+      }
+    }
+
     const account = await authenticateAccount(body.email, body.password)
     if (!account) {
       return Response.json(
         { error: "Invalid email or password." },
         { status: 401 }
-      )
-    }
-
-    await connectToDatabase()
-    const setting = await MaintenanceSettingModel.findOne()
-    if (setting?.maintenanceMode && account.role !== "admin") {
-      return Response.json(
-        { error: "System is currently under maintenance. Please try again later." },
-        { status: 503 }
       )
     }
 
@@ -72,13 +76,16 @@ export async function POST(request: Request) {
       id: account.id,
     })
 
-    const response = Response.json({ account })
-    response.headers.set(
-      "Set-Cookie",
-      `session=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}`
-    )
+    const cookieStore = await cookies()
+    cookieStore.set("session", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    })
 
-    return response
+    return Response.json({ account })
   } catch (error) {
     return Response.json(
       {

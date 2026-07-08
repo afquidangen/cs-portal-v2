@@ -43,7 +43,6 @@ const MaintenanceSettingSchema = new Schema<IMaintenanceSetting>(
     estimatedCompletionTime: { type: String, default: "" },
     contactEmail: { type: String, default: "" },
     updatedBy: { type: String },
-    updatedAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 )

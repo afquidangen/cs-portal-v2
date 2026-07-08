@@ -2,10 +2,13 @@
   "name": "cs-portal",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=18.17.0"
+  },
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--openssl-legacy-provider next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node .next/standalone/server.js",
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
     "seed:schemes": "tsx scripts/seed-grading-schemes.ts",

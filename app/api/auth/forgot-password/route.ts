@@ -21,9 +21,11 @@ export async function POST(request: Request) {
 
     await ResetTokenModel.create({ email: user.email, token, expiresAt, used: false })
 
-    const host = request.headers.get("host") ?? "localhost:3000"
-    const proto = request.headers.get("x-forwarded-proto") ?? "http"
-    const appUrl = `${proto}://${host}`
+    const appUrl =
+      process.env.APP_URL ??
+      (process.env.NODE_ENV === "production"
+        ? `https://${request.headers.get("host") ?? "localhost:3000"}`
+        : `http://${request.headers.get("host") ?? "localhost:3000"}`)
 
     await sendPasswordResetEmail(user.email, user.name, token, appUrl)
 

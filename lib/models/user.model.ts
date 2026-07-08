@@ -124,7 +124,6 @@ const UserSchema = new Schema<IUser>(
     deansListVisibility: { type: String, enum: ["public", "private"], default: "public" },
     pushNotificationsEnabled: { type: Boolean, default: true },
     status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
-    createdAt: String,
     lastLogin: String,
     deletedAt: { type: String, default: null },
   },
