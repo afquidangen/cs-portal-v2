@@ -33,7 +33,8 @@ export async function proxy(request: NextRequest) {
     }
 
     return NextResponse.next()
-  } catch {
+  } catch (err){
+    console.error("PROXY ERROR:", err);
     return NextResponse.redirect(new URL("/", request.url))
   }
 }
