@@ -36,8 +36,13 @@ export async function proxy(request: NextRequest) {
     }
 
     return NextResponse.next()
+<<<<<<< HEAD
   } catch (err) {
     console.error("PROXY ERROR:", err)
+=======
+  } catch (err){
+    console.error("PROXY ERROR:", err);
+>>>>>>> a125655f274c10862513d6025800c58857f25ded
     return NextResponse.redirect(new URL("/", request.url))
   }
 }
