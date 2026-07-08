@@ -4,6 +4,7 @@ import { requireFacultyOrAdmin } from "@/lib/api-auth"
 import { exportTemplate } from "@/features/portal/lib/export-template-engine"
 
 export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
 
 async function getSectionLabel(classId: string): Promise<string> {
   try {
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "no-cache, no-store, must-revalidate",
       },
     })
   } catch (err) {
