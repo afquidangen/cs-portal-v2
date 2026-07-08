@@ -949,6 +949,39 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
 
   wb.calcProperties = { fullCalcOnLoad: true }
 
+  // Clear cached formula results in GS MID, GS FIN, and REPORTS OF GRADE
+  // so Excel recalculates from the populated CLASS RECORD data
+  for (const sheetName of ["GS MID", "GS FIN", "REPORTS OF GRADE"]) {
+    const sheet = wb.getWorksheet(sheetName)
+    if (!sheet) continue
+    for (let r = 1; r <= sheet.rowCount; r++) {
+      for (let c = 1; c <= sheet.columnCount; c++) {
+        const cell = sheet.getCell(r, c)
+        if (cell.formula) {
+          cell.value = { formula: cell.formula as string }
+        }
+      }
+    }
+  }
+
+  // Clear old template placeholder values from non-formula cells
+  const DATA_REGIONS: Record<string, { startRow: number; endRow: number }> = {
+    "GS MID": { startRow: 9, endRow: 123 },
+    "GS FIN": { startRow: 9, endRow: 123 },
+    "REPORTS OF GRADE": { startRow: 12, endRow: 77 },
+  }
+  for (const [sheetName, region] of Object.entries(DATA_REGIONS)) {
+    const sheet = wb.getWorksheet(sheetName)
+    if (!sheet) continue
+    for (let r = region.startRow; r <= region.endRow; r++) {
+      for (let c = 1; c <= sheet.columnCount; c++) {
+        const cell = sheet.getCell(r, c)
+        if (cell.formula) continue // already handled above
+        cell.value = null
+      }
+    }
+  }
+
   // Remove sheet protection so all cells are editable in the exported file
   for (const sheet of wb.worksheets) {
     (sheet as any).sheetProtection = null
