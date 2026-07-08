@@ -292,7 +292,7 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
       </section>
 
       {model.csoInfo?.facebookLink ? (
-        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <Card className="rounded-lg border-slate-200 bg-white shadow-sm mx-auto max-w-[500px]">
           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
             <div className="flex items-center gap-2.5">
               <svg viewBox="0 0 24 24" className="size-4 shrink-0 text-[#1877F2]" fill="currentColor">
@@ -310,11 +310,11 @@ export function CsoModule({ model }: { model: PortalDashboardModel }) {
               </a>
             </Button>
           </div>
-          <CardContent className="flex justify-center p-0">
+          <CardContent className="flex justify-center px-5 py-0 overflow-hidden">
             <iframe
-              src={`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(model.csoInfo.facebookLink)}&tabs=timeline&width=500&height=600&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`}
+              src={`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(model.csoInfo.facebookLink)}&tabs=timeline&width=320&height=600&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`}
               height="500"
-              className="block h-[400px] w-full max-w-[500px] sm:h-[500px] mx-auto"
+              className="block h-[400px] w-full sm:h-[500px]"
               style={{ border: "none", overflow: "hidden" }}
               scrolling="no"
               frameBorder={0}

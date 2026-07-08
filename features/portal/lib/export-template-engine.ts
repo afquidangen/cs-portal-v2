@@ -622,6 +622,17 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
     }
   }
 
+  // Replicate REPORTS OF GRADE headers to column groups 2 and 3 (offsets +15, +30)
+  const rogSheetHeaders = wb.getWorksheet("REPORTS OF GRADE")
+  if (rogSheetHeaders) {
+    const rogHeaderCells = HEADER_CELLS["REPORTS OF GRADE"]
+    for (const offset of [15, 30]) {
+      for (const cell of rogHeaderCells) {
+        rogSheetHeaders.getCell(cell.row, cell.col + offset).value = headerData[cell.key] ?? ""
+      }
+    }
+  }
+
   // Ensure REPORTS OF GRADE header columns are wide enough for their content
   const rogSheet = wb.getWorksheet("REPORTS OF GRADE")
   if (rogSheet) {
@@ -803,22 +814,28 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
         gsFinSheet.getCell(gsR, 13).value = finalPreview?.lectureGrade ??
           (grade.finalClassStanding != null && grade.finalExam != null
             ? (grade.finalClassStanding * 60 + grade.finalExam * 40) / 100 : null)
-        gsFinSheet.getCell(gsR, 23).value = grade.finalTransmuted ?? null
-        gsFinSheet.getCell(gsR, 24).value = grade.tentativeFinalGrade ?? null
+        gsFinSheet.getCell(gsR, 23).value = grade.tentativeFinalGrade ?? null
+        gsFinSheet.getCell(gsR, 24).value = grade.finalTransmuted ?? null
       }
 
       if (rogSheet) {
-        const rogGroup = i % 3
-        const rogRow = 12 + Math.floor(i / 3)
-        const rogOff = rogGroup * 15
-        rogSheet.getCell(rogRow, 1 + rogOff).value = i + 1
-        rogSheet.getCell(rogRow, 2 + rogOff).value = formatStudentName(grade.student ?? "")
-        rogSheet.getCell(rogRow, 5 + rogOff).value = headerData.section
-        rogSheet.getCell(rogRow, 7 + rogOff).value = grade.midtermGrade ?? null
-        rogSheet.getCell(rogRow, 8 + rogOff).value = grade.tentativeFinalGrade ?? null
-        rogSheet.getCell(rogRow, 9 + rogOff).value = grade.finalGrade ?? null
-        rogSheet.getCell(rogRow, 13 + rogOff).value = grade.transmutedGrade ?? null
-        rogSheet.getCell(rogRow, 15 + rogOff).value = grade.remarks ?? ""
+        const rogStudentsPerPage = 25
+        const rogPage = Math.floor(i / rogStudentsPerPage)
+        const rogRow = 12 + (i % rogStudentsPerPage)
+        const rogOff = rogPage * 15
+        const rogCell = (col: number, val: any) => {
+          const cell = rogSheet.getCell(rogRow, col)
+          cell.value = val
+          cell.font = { color: { argb: 'FF000000' }, bold: true, size: 12 }
+        }
+        rogCell(1 + rogOff, i + 1)
+        rogCell(2 + rogOff, formatStudentName(grade.student ?? ""))
+        rogCell(5 + rogOff, headerData.section)
+        rogCell(7 + rogOff, grade.midtermGrade ?? null)
+        rogCell(8 + rogOff, grade.tentativeFinalGrade ?? null)
+        rogCell(9 + rogOff, grade.finalGrade ?? null)
+        rogCell(13 + rogOff, grade.transmutedGrade ?? null)
+        rogCell(15 + rogOff, grade.remarks ?? "")
       }
     }
 
@@ -922,6 +939,35 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
       }
     }
 
+    // Clear unused ROG student data cells in all column groups
+    const clearSheetCols = (sheet: ExcelJS.Worksheet | undefined, startRow: number, endRow: number, cols: number[]) => {
+      if (!sheet) return
+      for (let r = startRow; r <= endRow; r++) {
+        for (const c of cols) {
+          sheet.getCell(r, c).value = null
+        }
+      }
+    }
+    const rogStudentsPerPage = 25
+    const rogDataCols = [1, 2, 5, 7, 8, 9, 13, 15]
+    const rogLastRow = 12 + Math.min(grades.length, rogStudentsPerPage) - 1
+    clearSheetCols(rogSheet, rogLastRow + 1, 12 + rogStudentsPerPage - 1, rogDataCols)
+    if (grades.length <= rogStudentsPerPage) {
+      clearSheetCols(rogSheet, 12, 12 + rogStudentsPerPage - 1, [16, 17, 20, 22, 23, 24, 28, 30])
+      clearSheetCols(rogSheet, 12, 12 + rogStudentsPerPage - 1, [31, 32, 35, 37, 38, 39, 43, 45])
+    } else {
+      const rogDataCols2 = rogDataCols.map(c => c + 15)
+      const rogLastRow2 = 12 + Math.min(grades.length - rogStudentsPerPage, rogStudentsPerPage) - 1
+      clearSheetCols(rogSheet, rogLastRow2 + 1, 12 + rogStudentsPerPage - 1, rogDataCols2)
+      if (grades.length <= rogStudentsPerPage * 2) {
+        clearSheetCols(rogSheet, 12, 12 + rogStudentsPerPage - 1, [31, 32, 35, 37, 38, 39, 43, 45])
+      } else {
+        const rogDataCols3 = rogDataCols.map(c => c + 30)
+        const rogLastRow3 = 12 + Math.min(grades.length - rogStudentsPerPage * 2, rogStudentsPerPage) - 1
+        clearSheetCols(rogSheet, rogLastRow3 + 1, 12 + rogStudentsPerPage - 1, rogDataCols3)
+      }
+    }
+
     // Replace shared formula cells with cached results where available
     // (keeps formulas alive when no cache exists — Excel recalculates on open)
     for (let r = dataStartRow; r <= dataStartRow + 89; r++) {
@@ -1006,14 +1052,30 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
 
   // Clear cached formula results in GS MID, GS FIN, and REPORTS OF GRADE
   // so Excel recalculates from the populated CLASS RECORD data
+  // NOTE: Use cell.model instead of cell.formula getter to avoid exceljs slideFormula crash
   for (const sheetName of ["GS MID", "GS FIN", "REPORTS OF GRADE"]) {
     const sheet = wb.getWorksheet(sheetName)
     if (!sheet) continue
     for (let r = 1; r <= sheet.rowCount; r++) {
       for (let c = 1; c <= sheet.columnCount; c++) {
         const cell = sheet.getCell(r, c)
-        if (cell.formula) {
-          cell.value = { formula: cell.formula as string }
+        const cellModel = (cell as unknown as { model?: { formula?: string; sharedFormula?: string } }).model
+        const rawFormula = cellModel?.formula ?? cellModel?.sharedFormula
+        if (rawFormula) {
+          cell.value = { formula: rawFormula }
+        }
+      }
+    }
+  }
+
+  // Fix watermark white font in REPORTS OF GRADE
+  const rogFontFix = wb.getWorksheet("REPORTS OF GRADE")
+  if (rogFontFix) {
+    for (let r = 1; r <= rogFontFix.rowCount; r++) {
+      for (let c = 1; c <= rogFontFix.columnCount; c++) {
+        const cell = rogFontFix.getCell(r, c)
+        if (cell.value != null) {
+          cell.font = { ...(cell.font || {}), color: { argb: 'FF000000' } }
         }
       }
     }
