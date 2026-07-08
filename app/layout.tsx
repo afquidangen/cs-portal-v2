@@ -1,8 +1,17 @@
+import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { Toaster } from "sonner"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
+
+export const metadata: Metadata = {
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/portal-logo.svg",
+    apple: "/icons/apple-touch-icon.png",
+  },
+}
 
 export default function RootLayout({
   children,

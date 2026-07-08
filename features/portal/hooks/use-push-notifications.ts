@@ -65,9 +65,18 @@ export function usePushNotifications(userId?: string) {
           console.warn("[PushNotifications] NEXT_PUBLIC_VAPID_PUBLIC_KEY is not set")
           return
         }
+        const applicationServerKey = urlBase64ToUint8Array(key)
+        if (applicationServerKey.length !== 65) {
+          console.warn(
+            "[PushNotifications] Invalid VAPID key: expected 65 bytes, got",
+            applicationServerKey.length,
+            "— regenerate keys with 'npx web-push generate-vapid-keys --json'"
+          )
+          return
+        }
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(key) as BufferSource,
+          applicationServerKey: applicationServerKey as BufferSource,
         })
       }
 
@@ -103,7 +112,14 @@ export function usePushNotifications(userId?: string) {
         console.warn("[PushNotifications] Subscription saved")
       }
     } catch (err) {
-      console.warn("[PushNotifications] Setup failed:", err)
+      const msg = (err as Error)?.message || String(err)
+      console.warn("[PushNotifications] Setup failed:", msg)
+      if (msg.includes("push service") || msg.includes("AbortError")) {
+        console.warn(
+          "[PushNotifications] Push service unreachable or blocked — " +
+          "check if fcm.googleapis.com is reachable from your network"
+        )
+      }
     }
   }, [userId, ensureServiceWorker, requestPermission])
 
