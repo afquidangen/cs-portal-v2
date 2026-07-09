@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { CalendarDays, MapPinned } from "lucide-react"
 
 import { Panel, Select } from "../shared/dashboard-ui"
-import { formatScheduleTime } from "@/components/ui/time-picker"
+import { formatScheduleTime, to12h } from "@/components/ui/time-picker"
 import type { PortalModuleProps } from "./types"
 
 const DAYS_LONG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
@@ -58,7 +58,7 @@ export function SchedulePanel({ model }: PortalModuleProps) {
   const timeSlots = useMemo(() => {
     const set = new Set<string>()
     filteredSchedules.forEach((s) => set.add(getStartTime(s.time)))
-    return Array.from(set).sort((a, b) => parseTimeToMinutes(a) - parseTimeToMinutes(b))
+    return Array.from(set).sort((a, b) => parseTimeToMinutes(to12h(a)) - parseTimeToMinutes(to12h(b)))
   }, [filteredSchedules])
 
   const scheduleGrid = useMemo(() => {
