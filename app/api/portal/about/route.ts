@@ -1,6 +1,7 @@
 import { aboutRepository } from "@/features/portal/repositories/about.repository"
 import { success, error, notFound } from "@/lib/api-response"
 import { uploadFile, destroyFile } from "@/lib/cloudinary"
+import { AboutModel } from "@/lib/models"
 
 export const runtime = "nodejs"
 
@@ -99,7 +100,16 @@ export async function PUT(request: Request) {
 
     let saved
     if (existing) {
-      saved = await aboutRepository.update({ _id: existing._id }, data)
+      const setFields: Record<string, unknown> = {}
+      const unsetFields: Record<string, unknown> = {}
+      for (const [key, value] of Object.entries(data)) {
+        if (value === undefined) unsetFields[key] = ""
+        else setFields[key] = value
+      }
+      const update: Record<string, unknown> = {}
+      if (Object.keys(setFields).length) update.$set = setFields
+      if (Object.keys(unsetFields).length) update.$unset = unsetFields
+      saved = await AboutModel.findOneAndUpdate({ _id: existing._id }, update, { new: true }).lean()
     } else {
       saved = await aboutRepository.create(data)
     }

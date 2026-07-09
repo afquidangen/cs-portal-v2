@@ -87,9 +87,16 @@ const LOGO_IMG_TAG = `<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAe
 
 export function usePortalDashboardModel(role: Role) {
   const router = useRouter()
-  const [activeModule, setActiveModule] = useState<ModuleId>(
-    initialModule[role]
-  )
+  const roleNav = roleNavigation[role]
+  const [activeModule, setActiveModule] = useState<ModuleId>(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search)
+      const m = p.get("module") as ModuleId
+      const extraModules: ModuleId[] = ["about"]
+      if (m && (roleNav.some((n) => n.id === m) || extraModules.includes(m))) return m
+    }
+    return initialModule[role]
+  })
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [query, setQuery] = useState("")
 
@@ -1038,13 +1045,19 @@ export function usePortalDashboardModel(role: Role) {
   )
 
   const canManageCso = role === "admin" || profile.roles?.includes("csso_officer")
+  const moduleTitles: Partial<Record<ModuleId, string>> = {
+    about: "About Us",
+  }
   const selectedNav = navigation.find((item) => item.id === activeModule)
-  const currentTitle = selectedNav?.label ?? "Home"
+  const currentTitle = selectedNav?.label ?? moduleTitles[activeModule] ?? "Home"
 
   function selectModule(moduleId: ModuleId) {
     setActiveModule(moduleId)
     setQuery("")
     setSidebarOpen(false)
+    const params = new URLSearchParams(window.location.search)
+    params.set("module", moduleId)
+    window.history.replaceState(null, "", `?${params.toString()}`)
   }
 
   async function handleLogout() {
