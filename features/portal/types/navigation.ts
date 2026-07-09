@@ -31,6 +31,7 @@ export type ModuleId =
   | "faculty-semester-archive"
   | "deans-list"
   | "maintenance"
+  | "about"
 
 export type NavItem = {
   id: ModuleId
