@@ -696,6 +696,23 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
     g.laboratoryGrade != null
   )
 
+  // Preserve formulas in GS MID, GS FIN, and REPORTS OF GRADE BEFORE writing direct values
+  // so that direct values overwrite stale formula references, not the other way around.
+  for (const sheetName of ["GS MID", "GS FIN", "REPORTS OF GRADE"]) {
+    const sheet = wb.getWorksheet(sheetName)
+    if (!sheet) continue
+    for (let r = 1; r <= sheet.rowCount; r++) {
+      for (let c = 1; c <= sheet.columnCount; c++) {
+        const cell = sheet.getCell(r, c)
+        const cellModel = (cell as unknown as { model?: { formula?: string; sharedFormula?: string } }).model
+        const rawFormula = cellModel?.formula ?? cellModel?.sharedFormula
+        if (rawFormula) {
+          cell.value = { formula: rawFormula }
+        }
+      }
+    }
+  }
+
   {
     const dataStartRow = 10
 
@@ -1099,24 +1116,6 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
   }
 
   wb.calcProperties = { fullCalcOnLoad: true }
-
-  // Clear cached formula results in GS MID, GS FIN, and REPORTS OF GRADE
-  // so Excel recalculates from the populated CLASS RECORD data
-  // NOTE: Use cell.model instead of cell.formula getter to avoid exceljs slideFormula crash
-  for (const sheetName of ["GS MID", "GS FIN", "REPORTS OF GRADE"]) {
-    const sheet = wb.getWorksheet(sheetName)
-    if (!sheet) continue
-    for (let r = 1; r <= sheet.rowCount; r++) {
-      for (let c = 1; c <= sheet.columnCount; c++) {
-        const cell = sheet.getCell(r, c)
-        const cellModel = (cell as unknown as { model?: { formula?: string; sharedFormula?: string } }).model
-        const rawFormula = cellModel?.formula ?? cellModel?.sharedFormula
-        if (rawFormula) {
-          cell.value = { formula: rawFormula }
-        }
-      }
-    }
-  }
 
   // Fix watermark white font in REPORTS OF GRADE
   const rogFontFix = wb.getWorksheet("REPORTS OF GRADE")
