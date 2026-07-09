@@ -119,12 +119,22 @@ interface TemplatePeriodMap {
 
 const CATEGORY_LABEL_REGEX = /\s*-?\s*\d+%\s*$/
 
+function getEffectiveValue(sheet: ExcelJS.Worksheet, row: number, col: number): unknown {
+  const cell = sheet.getCell(row, col)
+  if (cell.value != null) return cell.value
+  // Merged cells: master cell holds the actual typed value
+  if ((cell as any).isMerged && (cell as any).master) {
+    return (cell as any).master.value
+  }
+  return undefined
+}
+
 function scanTemplateColumnMap(sheet: ExcelJS.Worksheet, startCol: number, endCol: number): TemplatePeriodMap {
   const map: TemplatePeriodMap = { categories: [] }
 
-  const row7Lbl = (c: number): unknown => sheet.getCell(7, c).value
-  const row6Lbl = (c: number): unknown => sheet.getCell(6, c).value
-  const row9Val = (c: number): unknown => sheet.getCell(9, c).value
+  const row7Lbl = (c: number): unknown => getEffectiveValue(sheet, 7, c)
+  const row6Lbl = (c: number): unknown => getEffectiveValue(sheet, 6, c)
+  const row9Val = (c: number): unknown => getEffectiveValue(sheet, 9, c)
 
   let col = startCol
   while (col <= endCol) {
@@ -236,6 +246,48 @@ function scanTemplateColumnMap(sheet: ExcelJS.Worksheet, startCol: number, endCo
 
   if (map.labEndCol == null && map.labStartCol != null) {
     map.labEndCol = endCol
+  }
+
+  return map
+}
+
+interface GsColumnMap {
+  csCol?: number
+  examCol?: number
+  totalCol?: number
+  labTotalCol?: number
+  initialCol?: number
+  finalCol?: number
+  absencesCol?: number
+  attendanceCol?: number
+}
+
+function scanGsColumns(sheet: ExcelJS.Worksheet): GsColumnMap {
+  const map: GsColumnMap = {}
+  let totalCount = 0
+
+  for (let c = 1; c <= (sheet.columnCount || 200); c++) {
+    const v = String(getEffectiveValue(sheet, 8, c) ?? "").toLowerCase().trim()
+    if (!v) continue
+
+    if (v.includes("cs") && v.includes("60%")) map.csCol = c
+    else if (v.includes("exam") && v.includes("40%")) map.examCol = c
+    else if (v === "total") {
+      totalCount++
+      if (totalCount === 1) map.totalCol = c
+      else map.labTotalCol = c
+    }
+    else if (v === "initial") map.initialCol = c
+    else if (v === "final") map.finalCol = c
+  }
+
+  for (let c = 1; c <= (sheet.columnCount || 200); c++) {
+    const v = String(getEffectiveValue(sheet, 8, c) ?? "").toLowerCase().trim()
+    if (v.includes("attend")) {
+      const r9 = String(getEffectiveValue(sheet, 9, c) ?? "").toUpperCase()
+      if (r9 === "ABS") map.absencesCol = c
+      else if (r9 === "ATT") map.attendanceCol = c
+    }
   }
 
   return map
@@ -735,6 +787,9 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
     const gsFinSheet = wb.getWorksheet("GS FIN")
     const rogSheet = wb.getWorksheet("REPORTS OF GRADE")
 
+    const gsMidCols = gsMidSheet ? scanGsColumns(gsMidSheet) : {}
+    const gsFinCols = gsFinSheet ? scanGsColumns(gsFinSheet) : {}
+
     for (let i = 0; i < grades.length; i++) {
       const grade = grades[i]
       const rowIdx = dataStartRow + i
@@ -806,48 +861,49 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
         gsMidSheet.getCell(gsR, 1).value = i + 1
         gsMidSheet.getCell(gsR, 2).value = formatStudentName(grade.student ?? "")
 
-        // Col 10: ABSENCES
+        // ABSENCES
         const midAbsences = getAbsences(grade, "midterm", false)
-        gsMidSheet.getCell(gsR, 10).value = midAbsences || null
+        gsMidSheet.getCell(gsR, gsMidCols.absencesCol ?? 10).value = midAbsences || null
 
-        // Col 11: ATTENDANCE score from categoryGrades
+        // ATTENDANCE score from categoryGrades
         if (midtermPreview?.categoryGrades) {
           const midAtt = [...midtermPreview.categoryGrades].reverse()
             .find(c => c.category.toLowerCase().includes("attendance"))
           if (midAtt) {
-            const attCell = gsMidSheet.getCell(gsR, 11)
+            const attCell = gsMidSheet.getCell(gsR, gsMidCols.attendanceCol ?? 11)
             attCell.value = Number(Number(midAtt.totalStudentScore).toFixed(2))
             attCell.numFmt = '0.00'
           }
         }
 
-        // Col 12: CS 60%
+        // CS 60%
         const cs60 = midtermPreview?.classStanding != null
           ? midtermPreview.classStanding * 0.60
           : grade.midtermClassStanding != null
             ? grade.midtermClassStanding * 0.60 : null
-        const csCell = gsMidSheet.getCell(gsR, 12)
+        const csCell = gsMidSheet.getCell(gsR, gsMidCols.csCol ?? 12)
         csCell.value = cs60 != null ? Number(cs60.toFixed(2)) : null
         csCell.numFmt = '0.00'
 
-        // Col 13: EXAM 40%
+        // EXAM 40%
         const exam40 = midtermPreview?.examGrade != null
           ? midtermPreview.examGrade * 0.40
           : grade.midtermExam != null ? grade.midtermExam * 0.40 : null
-        const examCell = gsMidSheet.getCell(gsR, 13)
+        const examCell = gsMidSheet.getCell(gsR, gsMidCols.examCol ?? 13)
         examCell.value = exam40 != null ? Number(exam40.toFixed(2)) : null
         examCell.numFmt = '0.00'
 
-        // Col 14: TOTAL (lectureGrade)
+        // TOTAL (lectureGrade)
         const midTotal = midtermPreview?.lectureGrade ??
           (grade.midtermClassStanding != null && grade.midtermExam != null
             ? (grade.midtermClassStanding * 60 + grade.midtermExam * 40) / 100 : null)
-        const totalCell = gsMidSheet.getCell(gsR, 14)
+        const totalCell = gsMidSheet.getCell(gsR, gsMidCols.totalCol ?? 14)
         totalCell.value = midTotal != null ? Number(Number(midTotal).toFixed(2)) : null
         totalCell.numFmt = '0.00'
 
-        gsMidSheet.getCell(gsR, 23).value = grade.midtermTransmuted ?? null
-        gsMidSheet.getCell(gsR, 24).value = grade.midtermGrade ?? null
+        // OVERALL TOTAL (midtermGrade) and INITIAL (transmuted)
+        gsMidSheet.getCell(gsR, gsMidCols.labTotalCol ?? 23).value = grade.midtermGrade ?? null
+        gsMidSheet.getCell(gsR, gsMidCols.initialCol ?? 24).value = grade.midtermTransmuted ?? null
       }
 
       if (gsFinSheet) {
@@ -855,34 +911,34 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
         gsFinSheet.getCell(gsR, 1).value = i + 1
         gsFinSheet.getCell(gsR, 2).value = formatStudentName(grade.student ?? "")
 
-        // Col 11: CS 60%
+        // CS 60%
         const finCs60 = finalPreview?.classStanding != null
           ? finalPreview.classStanding * 0.60
           : grade.finalClassStanding != null
             ? grade.finalClassStanding * 0.60 : null
-        const finCsCell = gsFinSheet.getCell(gsR, 11)
+        const finCsCell = gsFinSheet.getCell(gsR, gsFinCols.csCol ?? 11)
         finCsCell.value = finCs60 != null ? Number(finCs60.toFixed(2)) : null
         finCsCell.numFmt = '0.00'
 
-        // Col 12: EXAM 40%
+        // EXAM 40%
         const finExam40 = grade.finalExam != null ? grade.finalExam * 0.40 : null
-        const finExamCell = gsFinSheet.getCell(gsR, 12)
+        const finExamCell = gsFinSheet.getCell(gsR, gsFinCols.examCol ?? 12)
         finExamCell.value = finExam40 != null ? Number(finExam40.toFixed(2)) : null
         finExamCell.numFmt = '0.00'
 
-        // Col 13: TOTAL (lectureGrade)
+        // TOTAL (lectureGrade)
         const finTotal = finalPreview?.lectureGrade ??
           (grade.finalClassStanding != null && grade.finalExam != null
             ? (grade.finalClassStanding * 60 + grade.finalExam * 40) / 100 : null)
-        const finTotalCell = gsFinSheet.getCell(gsR, 13)
+        const finTotalCell = gsFinSheet.getCell(gsR, gsFinCols.totalCol ?? 13)
         finTotalCell.value = finTotal != null ? Number(Number(finTotal).toFixed(2)) : null
         finTotalCell.numFmt = '0.00'
 
         const finRaw = finalPreview?.periodGrade ?? grade.tentativeFinalGrade
-        const initCell = gsFinSheet.getCell(gsR, 23)
+        const initCell = gsFinSheet.getCell(gsR, gsFinCols.initialCol ?? 23)
         initCell.value = finRaw != null ? Number(Number(finRaw).toFixed(2)) : null
         initCell.numFmt = '0.00'
-        gsFinSheet.getCell(gsR, 24).value = grade.finalTransmuted ?? null
+        gsFinSheet.getCell(gsR, gsFinCols.finalCol ?? 24).value = grade.finalTransmuted ?? null
       }
 
       if (rogSheet) {
