@@ -109,7 +109,11 @@ export async function PUT(request: Request) {
       const update: Record<string, unknown> = {}
       if (Object.keys(setFields).length) update.$set = setFields
       if (Object.keys(unsetFields).length) update.$unset = unsetFields
-      saved = await AboutModel.findOneAndUpdate({ _id: existing._id }, update, { new: true }).lean()
+      saved = await AboutModel.findOneAndUpdate(
+        { _id: String(existing._id) },
+        update,
+        { new: true }
+      ).lean()
     } else {
       saved = await aboutRepository.create(data)
     }
