@@ -47,14 +47,18 @@ export async function PATCH(
     const newKey = scoreKey(gradingPeriod, newName)
 
     if (oldKey !== newKey) {
-      await connectToDatabase()
-      await GradeModel.updateMany(
-        { classId, [`scores.${oldKey}`]: { $exists: true } },
-        [
-          { $set: { [`scores.${newKey}`]: `$scores.${oldKey}` } },
-          { $unset: [`scores.${oldKey}`] },
-        ]
-      )
+      try {
+        await connectToDatabase()
+        await GradeModel.updateMany(
+          { classId, [`scores.${oldKey}`]: { $exists: true } },
+          [
+            { $set: { [`scores.${newKey}`]: `$scores.${oldKey}` } },
+            { $unset: [`scores.${oldKey}`] },
+          ]
+        )
+      } catch (migrateErr) {
+        console.warn("Score key migration failed after rename:", migrateErr)
+      }
     }
 
     return success(updated)

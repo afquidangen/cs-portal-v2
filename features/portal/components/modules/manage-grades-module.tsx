@@ -228,7 +228,13 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
       .sort((a, b) => {
         const aLast = a.lastName ?? a.name.split(" ").pop() ?? ""
         const bLast = b.lastName ?? b.name.split(" ").pop() ?? ""
-        return aLast.localeCompare(bLast)
+        const lastCmp = aLast.localeCompare(bLast)
+        if (lastCmp !== 0) return lastCmp
+        const aFirst = a.firstName ?? a.name.split(" ")[0] ?? ""
+        const bFirst = b.firstName ?? b.name.split(" ")[0] ?? ""
+        const firstCmp = aFirst.localeCompare(bFirst)
+        if (firstCmp !== 0) return firstCmp
+        return a.id.localeCompare(b.id)
       })
       .filter((student) => {
         if (!q) return true

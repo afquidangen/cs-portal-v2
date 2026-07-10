@@ -608,7 +608,7 @@ export function SpreadsheetGrid({
       workflowStatus: "Draft",
       updatedAt: new Date().toISOString(),
     }
-    setGrades((prev) => [newGrade, ...prev])
+    setGrades((prev) => [...prev, newGrade])
     return newGrade
   }
 
