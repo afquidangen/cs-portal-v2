@@ -203,7 +203,7 @@ export function MyClassesModule({ model }: PortalModuleProps) {
                       {scheduleGrid[row].map((items, col) => {
                         if (items.length === 0) return null
                         return items.map((item) => (
-                          <div key={item.id} className="rounded-lg border border-slate-200 border-l-blue-500 bg-blue-50/40 px-3 py-2.5">
+                          <div key={item.id} className="rounded-lg border border-slate-200 border-l-emerald-500 bg-emerald-50/40 px-3 py-2.5">
                             <p className="text-sm font-semibold leading-snug text-slate-950">{item.subject}</p>
                             <p className="mt-1 text-xs leading-relaxed text-slate-500">
                               {DAYS_LONG[col]} · {item.room} - {item.instructor}
@@ -240,7 +240,7 @@ export function MyClassesModule({ model }: PortalModuleProps) {
                           ) : (
                             <div className="space-y-2">
                               {items.map((item) => (
-                                <div key={item.id} className="rounded-lg border border-slate-200 border-l-blue-500 bg-blue-50/40 px-3 py-2.5">
+                                <div key={item.id} className="rounded-lg border border-slate-200 border-l-emerald-500 bg-emerald-50/40 px-3 py-2.5">
                                   <p className="text-sm font-semibold leading-snug text-slate-950">{item.subject}</p>
                                   <p className="mt-1 text-xs leading-relaxed text-slate-500">{item.room} - {item.instructor}</p>
                                 </div>

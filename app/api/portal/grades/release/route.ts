@@ -236,7 +236,7 @@ export async function POST(request: Request) {
                 {
                   title: "Student Portal",
                   body: `Your ${gradingPeriodLabel} grade${gradingPeriod === "both" ? "s" : ""} for ${subjectList} ${subjectList ? "have" : "has"} been released.`,
-                  icon: "/portal-logo.svg",
+                  icon: "/logo-source.svg",
                   url: "/student",
                 },
               )

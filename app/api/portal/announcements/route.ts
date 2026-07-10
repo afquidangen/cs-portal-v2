@@ -106,7 +106,7 @@ export async function POST(request: Request) {
               {
                 title: "Student Portal",
                 body,
-                icon: "/portal-logo.svg",
+                icon: "/logo-source.svg",
                 url: "/student",
               },
             )

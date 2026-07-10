@@ -199,7 +199,7 @@ export async function POST(request: Request) {
               await sendPushToSubscriptions(subscriptions, {
                 title: "Student Portal",
                 body: `Your ${period === "midterm" ? "midterm" : "final"} grade for ${subjectName} has been updated.`,
-                icon: "/portal-logo.svg",
+                icon: "/logo-source.svg",
                 url: "/student",
               })
             }

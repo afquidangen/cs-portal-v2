@@ -8,8 +8,13 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
-    icon: "/portal-logo.svg",
+    icon: "/logo-source.svg",
     apple: "/icons/apple-touch-icon.png",
+  },
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "default",
+    "theme-color": "#ffffff",
   },
 }
 
