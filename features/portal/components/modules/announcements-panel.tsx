@@ -136,6 +136,24 @@ export function AnnouncementsPanel({ model, onShowTrash }: AnnouncementsPanelPro
             </div>
           ) : null}
 
+          {role !== "student" ? (
+            <button
+              type="button"
+              onClick={() => setShowAnnouncementForm(true)}
+              className="group flex w-full items-center gap-4 rounded-lg border border-dashed border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-blue-200 hover:bg-slate-50"
+            >
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+                <Plus className="size-6" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-base font-semibold text-slate-950">Add Announcement</span>
+                <span className="mt-1 block text-sm leading-6 text-slate-500">
+                  Compose a new CS update, choose the audience, and set its priority.
+                </span>
+              </span>
+            </button>
+          ) : null}
+
           {filtered.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-200 bg-white py-10 text-center">
               <Bell className="mx-auto size-8 text-muted-foreground" />
@@ -146,24 +164,6 @@ export function AnnouncementsPanel({ model, onShowTrash }: AnnouncementsPanelPro
             </div>
           ) : (
             <>
-              {role !== "student" ? (
-                <button
-                  type="button"
-                  onClick={() => setShowAnnouncementForm(true)}
-                  className="group flex w-full items-center gap-4 rounded-lg border border-dashed border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-blue-200 hover:bg-slate-50"
-                >
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
-                    <Plus className="size-6" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-base font-semibold text-slate-950">Add Announcement</span>
-                    <span className="mt-1 block text-sm leading-6 text-slate-500">
-                      Compose a new CS update, choose the audience, and set its priority.
-                    </span>
-                  </span>
-                </button>
-              ) : null}
-
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
                 {leadAnnouncement ? (
                   <article className={`relative overflow-hidden rounded-lg border bg-white p-5 shadow-sm ${getPriorityStyles(leadAnnouncement.priority).ring}`}>

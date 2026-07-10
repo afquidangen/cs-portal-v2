@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     if (auth instanceof Response) return auth
     const { user: currentUser } = auth
 
-    if (currentUser.role !== "student" && currentUser.role !== "admin") {
+    if (currentUser.role !== "student" && currentUser.role !== "admin" && currentUser.role !== "faculty") {
       return error("Unauthorized", 403)
     }
 

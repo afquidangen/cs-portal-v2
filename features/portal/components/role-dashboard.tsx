@@ -1588,7 +1588,7 @@ export function RoleDashboard({ role }: { role: Role }) {
         </DialogContent>
       </Dialog>
 
-      {role === "student" && model.activeModule === "overview" && (
+      {(role === "student" || role === "faculty") && model.activeModule === "overview" && (
         <>
           <Tooltip content="Search students" side="left">
             <button
