@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { CheckCircle2, Clock, DoorOpen, Mail, RefreshCw, ShieldCheck, Trash2, UserRoundCheck, Users } from "lucide-react"
+import { CheckCircle2, Clock, DoorOpen, Mail, RefreshCw, Trash2, UserRoundCheck, Users } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -13,19 +13,19 @@ import type { PortalModuleProps } from "./types"
 const STATUS_COLORS: Record<string, { icon: typeof CheckCircle2; className: string }> = {
   Available: {
     icon: CheckCircle2,
-    className: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-200",
+    className: "rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-300",
   },
   "In Class": {
     icon: Clock,
-    className: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/25 dark:bg-sky-500/10 dark:text-sky-200",
+    className: "rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-sky-700 dark:border-sky-500/25 dark:bg-sky-500/10 dark:text-sky-300",
   },
   "Consultation Only": {
     icon: Users,
-    className: "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/25 dark:bg-violet-500/10 dark:text-violet-200",
+    className: "rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-violet-700 dark:border-violet-500/25 dark:bg-violet-500/10 dark:text-violet-300",
   },
   "Out of Office": {
     icon: DoorOpen,
-    className: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-100",
+    className: "rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300",
   },
 }
 
@@ -215,26 +215,23 @@ export function InstructorsModule({ model }: PortalModuleProps) {
               key={member.id}
               className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md"
             >
-              <div className="flex gap-4">
-                <Avatar className="mt-1 size-16 shrink-0 ring-2 ring-border">
+              <div className="flex gap-3 sm:gap-4">
+                <Avatar className="size-12 shrink-0 ring-2 ring-border sm:size-16">
                   <AvatarImage src={member.photoUrl} alt={member.name} className="object-cover" />
-                  <AvatarFallback className="bg-primary/10 text-lg font-bold text-primary">
+                  <AvatarFallback className="bg-primary/10 text-sm font-bold text-primary sm:text-lg">
                     {getInitials(member.name)}
                   </AvatarFallback>
                 </Avatar>
 
-                <div className="min-w-0 flex-1 space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h4 className="truncate text-lg font-semibold tracking-tight text-slate-950">
+                <div className="min-w-0 flex-1 space-y-2 sm:space-y-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="line-clamp-2 text-base font-semibold leading-snug tracking-tight text-slate-950 sm:text-lg">
                         {member.name}
                       </h4>
-                      <p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-blue-600">
-                        <ShieldCheck className="size-4" />
-                        {member.position}
-                      </p>
+                      <span className="inline-flex items-center rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:border-blue-500/25 dark:bg-blue-500/10 dark:text-blue-300">BSCS</span>
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1.5">
+                    <div className="flex shrink-0 items-center gap-1.5 sm:flex-col sm:items-end sm:gap-1.5">
                       {role === "admin" ? (
                         <select
                           value={member.status}
@@ -247,13 +244,13 @@ export function InstructorsModule({ model }: PortalModuleProps) {
                           <option value="Out of Office">Out of Office</option>
                         </select>
                       ) : (
-                        <span className={cn("inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold", statusColor.className)}>
+                        <span className={cn("inline-flex items-center gap-1.5 text-xs font-semibold", statusColor.className)}>
                           <StatusIcon className="size-3.5" />
                           {member.status}
                         </span>
                       )}
                       {member.statusUpdatedAt ? (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-400 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 whitespace-nowrap">
                           <Clock className="size-3" />
                           {timeAgo(member.statusUpdatedAt)}
                         </span>

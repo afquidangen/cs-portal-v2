@@ -460,7 +460,10 @@ export function FacultyAvailabilityPanel({ model }: PortalModuleProps) {
                   <button
                     key={status}
                     type="button"
-                    onClick={() => setMyFacultyStatus(status)}
+                    onClick={() => {
+                      setMyFacultyStatus(status)
+                      setMyFacultyNotes("")
+                    }}
                     className={cn(
                       "rounded-xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm",
                       active ? statusUi.className : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
@@ -487,7 +490,15 @@ export function FacultyAvailabilityPanel({ model }: PortalModuleProps) {
                 <Textarea
                   value={myFacultyNotes}
                   onChange={setMyFacultyNotes}
-                  placeholder="Daily note"
+                  placeholder={
+                    myFacultyStatus === "Available"
+                      ? "Add a note, e.g. 'In room 302 until 2pm'"
+                      : myFacultyStatus === "In Class"
+                      ? "Add a note, e.g. 'Back after 3pm'"
+                      : myFacultyStatus === "Consultation Only"
+                      ? "Add a note, e.g. 'By appointment only today'"
+                      : "Add a note, e.g. 'Attending a seminar'"
+                  }
                   rows={3}
                 />
               </div>

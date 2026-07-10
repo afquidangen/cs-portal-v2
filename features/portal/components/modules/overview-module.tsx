@@ -416,8 +416,9 @@ export function OverviewModule({ model }: PortalModuleProps) {
                           type="button"
                           onClick={() => {
                             model.setMyFacultyStatus(status)
+                            model.setMyFacultyNotes("")
                             if (!facultyMember) return
-                            model.updateFacultyStatus(facultyMember.id, status, model.myFacultyNotes)
+                            model.updateFacultyStatus(facultyMember.id, status, "")
                           }}
                           className={cn(
                             "rounded-md border px-3 py-1.5 text-xs font-semibold transition",

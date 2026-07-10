@@ -312,7 +312,7 @@ export function usePortalDashboardModel(role: Role) {
   const [myFacultyStatus, setMyFacultyStatus] =
     useState<AvailabilityStatus>("Available")
   const [myFacultyNotes, setMyFacultyNotes] = useState(
-    "Available for consultation."
+    ""
   )
   const [authenticatedUser, setAuthenticatedUser] = useState<SessionUser | null>(null)
 
