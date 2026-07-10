@@ -259,9 +259,9 @@ export function InstructorsModule({ model }: PortalModuleProps) {
                   </div>
 
                   <div className="space-y-1.5 text-sm text-foreground/80">
-                    <p className="flex items-center gap-2">
-                      <Mail className="size-4 shrink-0 text-muted-foreground" />
-                      <span className="min-w-0 truncate">{member.email}</span>
+                    <p className="flex items-start gap-2">
+                      <Mail className="size-4 shrink-0 text-muted-foreground mt-0.5" />
+                      <span className="min-w-0 break-words">{member.email}</span>
                     </p>
                   </div>
 
