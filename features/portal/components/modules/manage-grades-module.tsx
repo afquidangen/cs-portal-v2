@@ -397,13 +397,13 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
         </div>
       ) : selectedSubject && classId ? (
         <div className="space-y-4">
-          <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+          <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">
             <button type="button"
               onClick={() => setEgradesTab("gradesheet")}
               className={`flex-1 rounded-lg px-4 py-2 text-xs font-semibold transition-all ${
                 egradesTab === "gradesheet"
-                  ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200"
-                  : "text-slate-600 hover:bg-white/70 hover:text-slate-950"
+                  ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200 dark:bg-slate-700 dark:text-blue-400 dark:ring-slate-600"
+                  : "text-slate-600 hover:bg-white/70 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-700/70 dark:hover:text-slate-100"
               }`}
             >
               Gradesheet
@@ -412,8 +412,8 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
               onClick={() => setEgradesTab("workbook")}
               className={`flex-1 rounded-lg px-4 py-2 text-xs font-semibold transition-all ${
                 egradesTab === "workbook"
-                  ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200"
-                  : "text-slate-600 hover:bg-white/70 hover:text-slate-950"
+                  ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200 dark:bg-slate-700 dark:text-blue-400 dark:ring-slate-600"
+                  : "text-slate-600 hover:bg-white/70 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-700/70 dark:hover:text-slate-100"
               }`}
             >
               Grading Workbook

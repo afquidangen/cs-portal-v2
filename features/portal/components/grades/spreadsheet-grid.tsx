@@ -1625,35 +1625,37 @@ export function SpreadsheetGrid({
     )
   }, [schemeInfo, schemeOpen])
 
-  const tabLabels: { key: TabKey; label: string }[] = [
-    { key: "midterm", label: "Midterm" },
-    { key: "final", label: "Final" },
-    { key: "summary", label: "Summary" },
+  const tabLabels: { key: TabKey; label: string; color: string }[] = [
+    { key: "midterm", label: "Midterm", color: "blue" },
+    { key: "final", label: "Final", color: "purple" },
+    { key: "summary", label: "Summary", color: "amber" },
   ]
 
   return (
     <div className="space-y-3">
-      <div className="rounded-lg border border-border bg-card px-4 py-4 shadow-sm sm:px-5">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0">
-            <h2 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-              {selectedSubject.split(" - ")[0]?.trim()}{selectedSubject.includes(" - ") ? ": " : ""}{selectedSubject.split(" - ")[1]?.trim() ?? selectedSubject}
-            </h2>
+      <div className="rounded-xl border border-border bg-gradient-to-br from-card via-card to-muted/30 px-4 py-4 shadow-sm sm:px-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2.5 dark:from-blue-950/40 dark:to-indigo-950/40">
+              <h2 className="truncate text-lg font-bold tracking-tight text-foreground sm:text-xl">
+                {selectedSubject.split(" - ")[0]?.trim()}{selectedSubject.includes(" - ") ? ": " : ""}{selectedSubject.split(" - ")[1]?.trim() ?? selectedSubject}
+              </h2>
+            </div>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               {scheduleInfo.section ? (
-                <span className="rounded-md border border-border bg-muted px-2.5 py-1 font-medium text-muted-foreground">{scheduleInfo.section}</span>
+                <span className="rounded-md border border-border bg-background px-2.5 py-1 font-semibold text-foreground/90">{scheduleInfo.section}</span>
               ) : null}
               {scheduleInfo.instructor ? (
-                <span><span className="font-medium text-foreground/80">Faculty:</span> {scheduleInfo.instructor}</span>
+                <span className="flex items-center gap-1"><span className="font-semibold text-foreground/80">Faculty:</span> <span className="text-foreground/70">{scheduleInfo.instructor}</span></span>
               ) : null}
             </div>
           </div>
-          <span className={`inline-block rounded-full px-3 py-0.5 text-xs font-bold uppercase tracking-wider ${
+          <span className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider shadow-sm ${
             activeTab === "midterm"
-              ? "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"
+              ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white dark:from-blue-600 dark:to-blue-700"
               : activeTab === "final"
-              ? "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300"
-              : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+              ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white dark:from-purple-600 dark:to-purple-700"
+              : "bg-gradient-to-r from-teal-600 to-teal-700 text-white dark:from-teal-600 dark:to-teal-700"
           }`}>
             {(() => {
             const active = (model.semesters as Array<{ semester: string; schoolYearStart: number; schoolYearEnd: number; status: string }>)?.find((s) => s.status === "Active")
@@ -1673,18 +1675,33 @@ export function SpreadsheetGrid({
             placeholder="Search students..." className="h-10 rounded-md border-border pl-9 text-sm" />
         </div>
 
-        <div className="grid w-full grid-cols-3 gap-1 rounded-md bg-muted p-1 lg:max-w-xs">
-          {tabLabels.map(({ key, label }) => (
-            <Button
-              key={key}
-              size="sm"
-              variant="ghost"
-              onClick={() => setActiveTab(key)}
-              className={`h-8 rounded-md text-xs ${activeTab === key ? "bg-card font-semibold text-primary shadow-sm ring-1 ring-border hover:bg-card" : "text-muted-foreground hover:bg-card/70 hover:text-foreground"}`}
-            >
-              {label}
-            </Button>
-          ))}
+        <div className="flex w-full gap-2 lg:max-w-xs">
+          {tabLabels.map(({ key, label, color }) => {
+            const isActive = activeTab === key
+            const colorClasses = {
+              blue: isActive 
+                ? "bg-blue-700 text-white font-semibold shadow-lg shadow-blue-500/30 hover:bg-blue-800 dark:bg-blue-700 dark:hover:bg-blue-800 dark:shadow-blue-500/40" 
+                : "bg-blue-50 text-blue-700 font-medium hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-300 dark:hover:bg-blue-950/50 border border-blue-200 dark:border-blue-800",
+              purple: isActive 
+                ? "bg-purple-700 text-white font-semibold shadow-lg shadow-purple-500/30 hover:bg-purple-800 dark:bg-purple-700 dark:hover:bg-purple-800 dark:shadow-purple-500/40" 
+                : "bg-purple-50 text-purple-700 font-medium hover:bg-purple-100 dark:bg-purple-950/30 dark:text-purple-300 dark:hover:bg-purple-950/50 border border-purple-200 dark:border-purple-800",
+              amber: isActive 
+                ? "bg-teal-700 text-white font-semibold shadow-lg shadow-teal-500/30 hover:bg-teal-800 dark:bg-teal-700 dark:hover:bg-teal-800 dark:shadow-teal-500/40" 
+                : "bg-teal-50 text-teal-700 font-medium hover:bg-teal-100 dark:bg-teal-950/30 dark:text-teal-300 dark:hover:bg-teal-950/50 border border-teal-200 dark:border-teal-800",
+            }
+            
+            return (
+              <Button
+                key={key}
+                size="sm"
+                variant="ghost"
+                onClick={() => setActiveTab(key)}
+                className={`h-9 flex-1 rounded-md text-xs font-semibold transition-all ${colorClasses[color as keyof typeof colorClasses]}`}
+              >
+                {label}
+              </Button>
+            )
+          })}
         </div>
       </div>
 
@@ -1827,20 +1844,20 @@ export function SpreadsheetGrid({
               description: `There are ${missingCount} empty assessment score(s). These have been highlighted in red for your review. You may still continue working, save your changes, or release grades if necessary.`,
             })
           }
-        }} className="h-9 rounded-md">
+        }} className="h-9 rounded-md bg-emerald-700 text-white font-semibold shadow-md shadow-emerald-500/25 hover:bg-emerald-800 dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:shadow-emerald-400/30">
           <Save className="size-4" /> Save
         </Button>
         <SaveStatusIndicator status={saveStatus} lastSaved={lastSaved} />
 
-        <Button size="default" variant="outline" onClick={() => setReleaseOpen(true)} className="h-9 rounded-md">
+        <Button size="default" variant="default" onClick={() => setReleaseOpen(true)} className="h-9 rounded-md bg-blue-700 text-white font-semibold shadow-md shadow-blue-500/25 hover:bg-blue-800 dark:bg-blue-700 dark:hover:bg-blue-800 dark:shadow-blue-400/30">
           <Megaphone className="size-4" /> Release
         </Button>
         {hasReleasedGrades && (
           <Button 
             size="default" 
-            variant="outline" 
+            variant="default" 
             onClick={() => setBatchUnreleaseOpen(true)} 
-            className="h-9 rounded-md text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
+            className="h-9 rounded-md bg-red-700 text-white font-semibold shadow-md shadow-red-500/25 hover:bg-red-800 dark:bg-red-700 dark:hover:bg-red-800 dark:shadow-red-400/30"
           >
             <Undo2 className="size-4" /> Unrelease All ({releasedCount})
           </Button>

@@ -14,11 +14,13 @@ import {
   Link as LinkIcon,
   Megaphone,
   MessageSquare,
+  Monitor,
   Quote,
+  ShieldCheck,
   Target,
   Users,
 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { type PointerEvent, type ReactNode, useEffect, useRef, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -106,76 +108,310 @@ function MiniSparkline({ tone = "blue" }: { tone?: "blue" | "purple" | "orange" 
   )
 }
 
-function HeroArt() {
+function GreetingMotionStyles() {
   return (
-    <div className="relative mx-auto flex min-h-[150px] w-full max-w-[320px] items-center justify-center sm:min-h-[180px] lg:min-h-[210px] lg:max-w-none" aria-hidden="true">
-      <div className="absolute inset-x-5 bottom-0 h-24 rounded-full bg-blue-50/80 blur-xl" />
-      <div className="absolute bottom-2 left-[7%] h-16 w-12 rounded-[50%_50%_12px_12px] bg-emerald-400/20 sm:h-20 sm:w-16 lg:left-8" />
-      <div className="absolute bottom-8 left-[12%] h-16 w-4 rounded-full bg-emerald-500 sm:bottom-9 sm:h-20 sm:w-5 lg:left-12" />
-      <div className="absolute bottom-9 left-[4%] h-12 w-4 -rotate-[35deg] rounded-full bg-emerald-400 sm:bottom-10 sm:h-16 sm:w-5 lg:left-5" />
-      <div className="absolute bottom-9 left-[20%] h-12 w-4 rotate-[35deg] rounded-full bg-emerald-400 sm:bottom-10 sm:h-16 sm:w-5 lg:left-20" />
-      <div className="absolute bottom-0 left-[11%] h-9 w-12 rounded-b-2xl rounded-t-md bg-blue-100 shadow-sm sm:h-11 sm:w-16 lg:left-10" />
+    <style>{`
+      @keyframes portalHeroIn {
+        from { opacity: 0; transform: translate3d(0, 12px, 0); }
+        to { opacity: 1; transform: translate3d(0, 0, 0); }
+      }
+      @keyframes portalIllustrationIn {
+        from { opacity: 0; transform: translate3d(var(--portal-parallax-x, 0px), var(--portal-parallax-y, 0px), 0) scale(.98); }
+        to { opacity: 1; transform: translate3d(var(--portal-parallax-x, 0px), var(--portal-parallax-y, 0px), 0) scale(1); }
+      }
+      @keyframes portalFloatSoft {
+        0%, 100% { transform: translate3d(0, 0, 0) rotate(var(--portal-rotate, 0deg)); }
+        50% { transform: translate3d(0, var(--portal-float, -9px), 0) rotate(calc(var(--portal-rotate, 0deg) * -1)); }
+      }
+      @keyframes portalParticleDrift {
+        0%, 100% { opacity: .42; transform: translate3d(0, 0, 0) scale(.95); }
+        50% { opacity: .95; transform: translate3d(var(--portal-drift-x, 8px), var(--portal-drift-y, -10px), 0) scale(1.08); }
+      }
+      @keyframes portalSparkle {
+        0%, 100% { opacity: .18; transform: scale(.7) rotate(0deg); }
+        45% { opacity: .95; transform: scale(1.08) rotate(12deg); }
+      }
+      @keyframes portalLeafSway {
+        0%, 100% { transform: rotate(var(--portal-leaf-rotate, 0deg)); }
+        50% { transform: rotate(calc(var(--portal-leaf-rotate, 0deg) + 5deg)); }
+      }
+      .portal-hero-copy { animation: portalHeroIn .62s ease-out both; }
+      .portal-hero-illustration { animation: portalIllustrationIn .7s ease-out both; transition: transform .18s ease-out; }
+      .portal-float { animation: portalFloatSoft var(--portal-duration, 5.8s) ease-in-out infinite; animation-delay: var(--portal-delay, 0s); }
+      .portal-particle { animation: portalParticleDrift var(--portal-duration, 6.8s) ease-in-out infinite; animation-delay: var(--portal-delay, 0s); }
+      .portal-sparkle { animation: portalSparkle var(--portal-duration, 3.8s) ease-in-out infinite; animation-delay: var(--portal-delay, 0s); }
+      .portal-leaf { transform-origin: bottom center; animation: portalLeafSway var(--portal-duration, 4.8s) ease-in-out infinite; animation-delay: var(--portal-delay, 0s); }
+      @media (prefers-reduced-motion: reduce) {
+        .portal-hero-copy,
+        .portal-hero-illustration,
+        .portal-float,
+        .portal-particle,
+        .portal-sparkle,
+        .portal-leaf {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    `}</style>
+  )
+}
 
-      <div className="absolute bottom-8 right-[20%] h-11 w-32 -rotate-12 rounded-lg bg-blue-100 shadow-xl sm:bottom-10 sm:right-16 sm:h-14 sm:w-44" />
-      <div className="absolute bottom-12 right-[24%] h-11 w-32 -rotate-12 rounded-lg bg-pink-100 shadow-xl sm:bottom-16 sm:right-20 sm:h-14 sm:w-44" />
-      <div className="absolute bottom-16 right-[28%] h-11 w-32 -rotate-12 rounded-lg bg-white shadow-xl ring-1 ring-slate-200 sm:bottom-[5.5rem] sm:right-24 sm:h-14 sm:w-44" />
-      <div className="absolute bottom-[6.6rem] right-[32%] h-14 w-24 -rotate-12 rounded-sm bg-blue-600 shadow-2xl sm:bottom-[8.5rem] sm:right-28 sm:h-20 sm:w-36">
-        <div className="absolute -left-8 top-5 h-1 w-20 bg-blue-800 sm:-left-10 sm:top-7 sm:w-28" />
-        <div className="absolute -left-10 top-5 size-2.5 rounded-full bg-blue-900 sm:-left-12 sm:top-6 sm:size-3" />
-        <div className="absolute -bottom-8 left-6 h-12 w-1 rounded-full bg-orange-400 sm:-bottom-10 sm:left-9 sm:h-16" />
-        <div className="absolute -bottom-10 left-4 h-5 w-4 rounded-full bg-orange-400 sm:-bottom-[3.25rem] sm:left-7 sm:h-6 sm:w-5" />
+function IllustrationStage({ children, compact = false }: { children: ReactNode; compact?: boolean }) {
+  const artRef = useRef<HTMLDivElement>(null)
+
+  function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== "mouse" || !artRef.current) return
+    if (typeof window !== "undefined" && !window.matchMedia("(pointer: fine)").matches) return
+    const rect = event.currentTarget.getBoundingClientRect()
+    const x = ((event.clientX - rect.left) / rect.width - 0.5) * 20
+    const y = ((event.clientY - rect.top) / rect.height - 0.5) * 20
+    artRef.current.style.setProperty("--portal-parallax-x", `${x.toFixed(1)}px`)
+    artRef.current.style.setProperty("--portal-parallax-y", `${y.toFixed(1)}px`)
+  }
+
+  function handlePointerLeave() {
+    if (!artRef.current) return
+    artRef.current.style.setProperty("--portal-parallax-x", "0px")
+    artRef.current.style.setProperty("--portal-parallax-y", "0px")
+  }
+
+  return (
+    <div
+      className={cn(
+        "relative mx-auto flex w-full items-center justify-center",
+        compact
+          ? "min-h-[112px] max-w-[178px] sm:min-h-[150px]"
+          : "min-h-[148px] max-w-[310px] sm:min-h-[178px] lg:min-h-[210px] lg:max-w-none"
+      )}
+      aria-hidden="true"
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+    >
+      <div ref={artRef} className="portal-hero-illustration relative h-full min-h-[inherit] w-full [--portal-parallax-x:0px] [--portal-parallax-y:0px]">
+        {children}
       </div>
-      <div className="absolute bottom-5 right-[3%] h-12 w-24 rotate-12 rounded-full bg-blue-500 shadow-lg sm:bottom-6 sm:right-4 sm:h-16 sm:w-32" />
-      <div className="absolute bottom-10 right-[2%] size-11 rounded-full bg-blue-600 shadow-lg sm:bottom-12 sm:right-3 sm:size-14" />
-      <span className="absolute right-4 top-8 size-2 rounded-full bg-fuchsia-500" />
-      <span className="absolute right-[58%] top-10 size-4 rounded-full bg-blue-200 sm:right-48 sm:top-16 sm:size-5" />
     </div>
+  )
+}
+
+function Plant({ className }: { className?: string }) {
+  return (
+    <div className={cn("absolute h-20 w-16", className)}>
+      <span className="portal-leaf absolute bottom-8 left-6 h-11 w-4 rounded-full bg-emerald-500 [--portal-delay:-.4s] [--portal-leaf-rotate:0deg]" />
+      <span className="portal-leaf absolute bottom-7 left-3 h-10 w-4 rounded-full bg-emerald-400 [--portal-delay:-1.1s] [--portal-leaf-rotate:-33deg]" />
+      <span className="portal-leaf absolute bottom-7 right-3 h-10 w-4 rounded-full bg-emerald-400 [--portal-delay:-1.7s] [--portal-leaf-rotate:33deg]" />
+      <span className="absolute bottom-0 left-1/2 h-9 w-12 -translate-x-1/2 rounded-b-2xl rounded-t-md bg-blue-100 shadow-sm ring-1 ring-blue-200/70 dark:bg-blue-900 dark:ring-blue-400/20" />
+    </div>
+  )
+}
+
+function Sparkles() {
+  return (
+    <>
+      <span className="portal-sparkle absolute right-[16%] top-6 size-2 rounded-full bg-white shadow-[0_0_16px_rgba(255,255,255,.9)] [--portal-delay:-.8s]" />
+      <span className="portal-sparkle absolute left-[28%] top-10 size-1.5 rounded-full bg-cyan-300 [--portal-delay:-2.1s] [--portal-duration:4.4s]" />
+      <span className="portal-sparkle absolute right-[44%] bottom-10 size-1.5 rounded-full bg-violet-400 [--portal-delay:-1.4s]" />
+      <span className="portal-particle absolute left-[14%] bottom-16 size-2 rounded-full bg-sky-400 [--portal-delay:-1.8s] [--portal-drift-x:10px] [--portal-drift-y:-7px]" />
+      <span className="portal-particle absolute right-[8%] top-16 size-3 rounded-full bg-fuchsia-500 [--portal-delay:-.9s] [--portal-duration:7.4s] [--portal-drift-x:-9px] [--portal-drift-y:8px]" />
+      <span className="portal-particle absolute left-[48%] top-3 size-2.5 rounded-full bg-blue-300 [--portal-delay:-2.8s] [--portal-duration:8s] [--portal-drift-x:6px] [--portal-drift-y:11px]" />
+    </>
+  )
+}
+
+type StudentHeroVariant = "boy" | "girl" | "neutral"
+
+function studentHeroVariantFromSex(sex?: string): StudentHeroVariant {
+  const normalized = sex?.trim().toLowerCase()
+  if (normalized === "female" || normalized === "f") return "girl"
+  if (normalized === "male" || normalized === "m") return "boy"
+  return "neutral"
+}
+
+function LaptopWorkspace({ faculty = false }: { faculty?: boolean }) {
+  return (
+    <>
+      <div className="portal-float absolute bottom-8 left-[23%] h-20 w-32 -rotate-12 rounded-lg bg-blue-100 shadow-xl ring-1 ring-blue-200/70 [--portal-delay:-1.1s] [--portal-float:-7px] sm:h-24 sm:w-40" />
+      <div className="portal-float absolute bottom-12 left-[30%] h-20 w-32 -rotate-12 rounded-lg bg-white shadow-xl ring-1 ring-slate-200 [--portal-delay:-2s] [--portal-float:-9px] sm:h-24 sm:w-40">
+        <div className="m-3 h-3 w-16 rounded-full bg-blue-100" />
+        <div className="mx-3 mt-3 h-2 w-24 rounded-full bg-slate-100" />
+        <div className="mx-3 mt-2 h-2 w-20 rounded-full bg-slate-100" />
+      </div>
+      <div className="absolute bottom-5 right-[17%] h-24 w-40 rounded-xl border border-slate-200 bg-slate-900 shadow-2xl sm:h-32 sm:w-52">
+        <div className="absolute inset-2 rounded-lg bg-white p-2 shadow-inner">
+          <div className="grid h-full grid-cols-[1fr_.75fr] gap-2">
+            <div className="rounded-md bg-violet-500/85 p-2">
+              <span className="block h-2 w-10 rounded-full bg-white/70" />
+              <span className="mt-8 block h-7 w-7 rounded-full border-2 border-white/80" />
+            </div>
+            <div className="space-y-1.5">
+              <span className="block h-3 rounded bg-blue-100" />
+              <span className="block h-3 rounded bg-emerald-100" />
+              <span className="block h-10 rounded bg-slate-100" />
+            </div>
+          </div>
+        </div>
+        <span className="absolute -bottom-3 left-1/2 h-3 w-24 -translate-x-1/2 rounded-b-lg bg-slate-700" />
+      </div>
+      {faculty ? (
+        <div className="portal-float absolute right-[5%] top-12 grid h-20 w-24 rotate-6 place-items-center rounded-xl bg-white text-blue-600 shadow-xl ring-1 ring-slate-200 [--portal-delay:-1.5s] [--portal-float:-10px]">
+          <BarChart3 className="size-10" />
+        </div>
+      ) : (
+        <div className="portal-float absolute right-[5%] top-10 grid h-20 w-24 rotate-6 place-items-center rounded-xl bg-blue-600 text-white shadow-xl [--portal-delay:-1.5s] [--portal-float:-10px]">
+          <GraduationCap className="size-11" />
+        </div>
+      )}
+      <Plant className="bottom-0 right-[2%]" />
+    </>
+  )
+}
+
+function StudentCharacter({ variant }: { variant: StudentHeroVariant }) {
+  const isGirl = variant === "girl"
+
+  return (
+    <div className="portal-float absolute bottom-5 right-[20%] h-32 w-24 [--portal-delay:-.9s] [--portal-duration:6.2s] [--portal-float:-6px] sm:bottom-6 sm:right-[20%] sm:h-40 sm:w-[7.5rem]">
+      <div className={cn(
+        "absolute left-1/2 top-2 -translate-x-1/2 rounded-full shadow-lg",
+        isGirl
+          ? "h-20 w-20 bg-slate-900 sm:h-24 sm:w-24"
+          : "h-16 w-20 bg-slate-900 sm:h-20 sm:w-24"
+      )} />
+      {isGirl ? (
+        <>
+          <span className="absolute left-2 top-12 h-16 w-7 rounded-full bg-slate-900 sm:left-1 sm:top-14 sm:h-20 sm:w-8" />
+          <span className="absolute right-2 top-12 h-16 w-7 rounded-full bg-slate-900 sm:right-1 sm:top-14 sm:h-20 sm:w-8" />
+        </>
+      ) : null}
+      <div className="absolute left-1/2 top-8 h-14 w-14 -translate-x-1/2 rounded-full bg-[#ffd5bd] shadow-md sm:top-10 sm:h-16 sm:w-16">
+        <span className="absolute left-3 top-6 size-1.5 rounded-full bg-slate-900 sm:left-4" />
+        <span className="absolute right-3 top-6 size-1.5 rounded-full bg-slate-900 sm:right-4" />
+        <span className="absolute bottom-4 left-1/2 h-1.5 w-5 -translate-x-1/2 rounded-b-full border-b-2 border-slate-700" />
+      </div>
+      <div className={cn(
+        "absolute left-1/2 top-[4.7rem] h-16 w-20 -translate-x-1/2 rounded-t-[2rem] shadow-xl sm:top-[5.6rem] sm:h-20 sm:w-24",
+        isGirl ? "bg-violet-600" : "bg-blue-600"
+      )}>
+        <span className="absolute left-1/2 top-3 h-8 w-10 -translate-x-1/2 rounded-b-full border-x-2 border-b-2 border-white/35" />
+        <span className="absolute -left-4 top-6 h-10 w-5 rotate-[35deg] rounded-full bg-[#ffd5bd] sm:-left-5 sm:h-12" />
+        <span className="absolute -right-4 top-6 h-10 w-5 -rotate-[35deg] rounded-full bg-[#ffd5bd] sm:-right-5 sm:h-12" />
+      </div>
+    </div>
+  )
+}
+
+function StudentGreetingIllustration({ variant }: { variant: StudentHeroVariant }) {
+  return (
+    <IllustrationStage>
+      <div className="absolute inset-x-5 bottom-0 h-24 rounded-full bg-blue-100/80 blur-xl dark:bg-blue-500/15" />
+      <Sparkles />
+      <div className="absolute bottom-4 right-[13%] h-24 w-40 rounded-xl border border-slate-200 bg-slate-900 shadow-2xl sm:bottom-5 sm:h-[7.5rem] sm:w-52">
+        <div className="absolute inset-2 rounded-lg bg-white p-2 shadow-inner">
+          <div className="h-5 rounded-md bg-blue-50" />
+          <div className="mt-2 grid grid-cols-[.7fr_1fr] gap-2">
+            <div className="h-12 rounded-md bg-violet-500/85 sm:h-16" />
+            <div className="space-y-1.5">
+              <span className="block h-3 rounded bg-blue-100" />
+              <span className="block h-3 rounded bg-emerald-100" />
+              <span className="block h-6 rounded bg-slate-100 sm:h-9" />
+            </div>
+          </div>
+        </div>
+        <span className="absolute -bottom-3 left-1/2 h-3 w-24 -translate-x-1/2 rounded-b-lg bg-slate-700 sm:w-32" />
+      </div>
+      <div className="portal-float absolute right-[3%] top-10 grid size-16 rotate-6 place-items-center rounded-xl bg-white text-blue-600 shadow-xl ring-1 ring-slate-200 [--portal-delay:-1.8s] [--portal-float:-9px] sm:size-20">
+        <BarChart3 className="size-8 sm:size-10" />
+      </div>
+      <div className="portal-float absolute right-[40%] top-2 h-12 w-20 -rotate-12 rounded-sm bg-slate-900 shadow-2xl [--portal-delay:-.8s] [--portal-duration:5.2s] [--portal-float:-11px] sm:h-16 sm:w-24">
+        <div className="absolute -left-6 top-5 h-1 w-16 bg-slate-800 sm:-left-8 sm:top-7 sm:w-20" />
+        <div className="absolute -left-7 top-4 size-2.5 rounded-full bg-slate-950 sm:-left-9 sm:top-6" />
+        <div className="absolute left-5 top-10 h-8 w-1 rounded-full bg-orange-400 sm:left-7 sm:top-14 sm:h-10" />
+        <div className="absolute left-3 top-[4.1rem] h-4 w-4 rounded-full bg-orange-400 sm:left-5 sm:top-[5.4rem]" />
+      </div>
+      <div className="portal-float absolute left-[8%] top-11 h-16 w-12 rounded-lg bg-white p-2 shadow-xl ring-1 ring-slate-200 [--portal-delay:-.5s] [--portal-float:-8px] sm:left-[10%] sm:h-20 sm:w-14">
+        <span className="block h-2 w-8 rounded bg-blue-200" />
+        <span className="mt-2 block h-2 w-6 rounded bg-blue-100" />
+        <span className="mt-2 block h-2 w-7 rounded bg-emerald-100" />
+        <span className="mt-3 block size-3 rounded-full border-2 border-blue-500" />
+      </div>
+      <div className="portal-float absolute right-[1%] top-2 h-12 w-16 rotate-12 rounded-lg bg-white shadow-xl ring-1 ring-slate-200 [--portal-delay:-2.6s] [--portal-float:-7px] sm:h-16 sm:w-20">
+        <span className="absolute left-4 top-4 h-8 w-1.5 rounded-full bg-blue-500 sm:h-10" />
+        <span className="absolute left-7 top-7 h-5 w-1.5 rounded-full bg-violet-400 sm:left-8 sm:h-7" />
+        <span className="absolute left-10 top-3 h-9 w-1.5 rounded-full bg-sky-400 sm:left-12 sm:h-11" />
+      </div>
+      <div className="portal-float absolute left-[1%] bottom-8 h-8 w-20 -rotate-6 rounded-md bg-blue-500 shadow-lg [--portal-delay:-2.3s] [--portal-float:-7px] sm:h-9 sm:w-24" />
+      <div className="portal-float absolute bottom-[3.25rem] left-[5%] h-8 w-20 -rotate-6 rounded-md bg-amber-200 shadow-lg [--portal-delay:-1.6s] [--portal-float:-9px] sm:h-9 sm:w-24" />
+      <Plant className="bottom-0 right-[2%] scale-90 sm:scale-100" />
+      <div className="absolute bottom-0 left-[23%] h-10 w-14 rounded-b-2xl rounded-t-md bg-blue-600 shadow-lg sm:h-11 sm:w-16">
+        <span className="absolute left-3 top-4 h-4 w-8 rounded-full border-2 border-blue-300 sm:w-9" />
+      </div>
+    </IllustrationStage>
+  )
+}
+
+function FacultyGreetingIllustration() {
+  return (
+    <IllustrationStage>
+      <div className="absolute inset-x-5 bottom-0 h-24 rounded-full bg-violet-100/80 blur-xl dark:bg-violet-500/15" />
+      <Sparkles />
+      <LaptopWorkspace faculty />
+      <div className="portal-float absolute left-[5%] top-6 grid h-16 w-14 place-items-center rounded-xl bg-white text-blue-600 shadow-xl ring-1 ring-slate-200 [--portal-delay:-.7s] [--portal-float:-9px]">
+        <CalendarDays className="size-7" />
+      </div>
+      <div className="portal-float absolute left-[8%] bottom-10 h-10 w-24 -rotate-6 rounded-md bg-white shadow-lg ring-1 ring-slate-200 [--portal-delay:-2.2s] [--portal-float:-7px]" />
+      <div className="absolute bottom-1 left-[18%] h-10 w-16 rounded-xl bg-blue-600 shadow-lg">
+        <span className="absolute left-3 top-4 h-4 w-9 rounded-full border-2 border-blue-300" />
+      </div>
+    </IllustrationStage>
+  )
+}
+
+function AdminGreetingIllustration() {
+  return (
+    <IllustrationStage>
+      <div className="absolute inset-x-5 bottom-2 h-24 rounded-full bg-blue-100/80 blur-xl dark:bg-blue-500/15" />
+      <Sparkles />
+      <Plant className="bottom-0 left-[12%]" />
+      <div className="absolute bottom-5 left-[25%] h-28 w-44 rounded-xl border border-slate-200 bg-white shadow-2xl sm:h-32 sm:w-52">
+        <div className="flex h-8 items-center gap-1.5 border-b border-slate-100 px-3">
+          <span className="size-2 rounded-full bg-red-300" />
+          <span className="size-2 rounded-full bg-amber-300" />
+          <span className="size-2 rounded-full bg-emerald-300" />
+        </div>
+        <div className="grid h-[calc(100%-2rem)] grid-cols-4 items-end gap-2 px-4 pb-4">
+          <span className="h-8 rounded-t-md bg-blue-200" />
+          <span className="h-14 rounded-t-md bg-blue-500" />
+          <span className="h-11 rounded-t-md bg-violet-300" />
+          <span className="h-[4.5rem] rounded-t-md bg-emerald-400" />
+        </div>
+        <Monitor className="absolute -bottom-6 left-1/2 size-10 -translate-x-1/2 text-slate-700" />
+      </div>
+      <div className="portal-float absolute right-[8%] top-8 grid size-24 place-items-center rounded-2xl bg-blue-600 text-white shadow-2xl [--portal-delay:-1.2s] [--portal-float:-10px] sm:size-32">
+        <Users className="size-11 sm:size-14" />
+      </div>
+      <div className="portal-float absolute right-[31%] bottom-6 grid size-16 rotate-12 place-items-center rounded-2xl bg-white text-orange-500 shadow-xl ring-1 ring-slate-200 [--portal-delay:-2.1s] [--portal-float:-8px] sm:size-20">
+        <FileSpreadsheet className="size-8 sm:size-10" />
+      </div>
+      <div className="portal-float absolute right-[4%] bottom-5 grid size-14 -rotate-6 place-items-center rounded-2xl bg-white text-blue-600 shadow-xl ring-1 ring-slate-200 [--portal-delay:-.6s] [--portal-float:-7px] sm:size-16">
+        <ShieldCheck className="size-8" />
+      </div>
+    </IllustrationStage>
   )
 }
 
 function AnnouncementArt() {
   return (
-    <div className="relative mx-auto flex min-h-[110px] w-full max-w-[170px] items-center justify-center sm:min-h-[150px]" aria-hidden="true">
-      <div className="absolute inset-x-2 bottom-5 h-16 rounded-full bg-blue-50 blur-xl" />
-      <div className="size-20 rotate-12 rounded-sm bg-blue-600 shadow-xl sm:size-24" />
-      <div className="absolute top-12 h-1 w-28 bg-blue-800 sm:top-16 sm:w-32" />
-      <div className="absolute right-9 top-11 size-3 rounded-full bg-blue-900 sm:right-8 sm:top-[3.75rem]" />
-      <span className="absolute left-2 top-5 size-1.5 rounded-full bg-orange-500" />
-      <span className="absolute right-1 top-1 size-1.5 rounded-full bg-fuchsia-500" />
-      <span className="absolute bottom-5 left-5 size-1.5 rounded-full bg-emerald-500" />
-      <span className="absolute bottom-7 right-4 size-1.5 rounded-full bg-orange-400" />
-    </div>
-  )
-}
-
-function AdminArt() {
-  return (
-    <div className="relative mx-auto flex min-h-[150px] w-full max-w-[330px] items-center justify-center sm:min-h-[190px] lg:min-h-[220px] lg:max-w-none" aria-hidden="true">
-      <div className="absolute inset-x-5 bottom-2 h-24 rounded-full bg-blue-50 blur-xl" />
-      <div className="absolute bottom-3 left-[8%] h-28 w-40 rounded-lg border border-slate-200 bg-white shadow-xl sm:h-32 sm:w-48">
-        <div className="flex h-9 items-center gap-1.5 border-b border-slate-100 px-3">
-          <span className="size-2 rounded-full bg-red-300" />
-          <span className="size-2 rounded-full bg-amber-300" />
-          <span className="size-2 rounded-full bg-emerald-300" />
-        </div>
-        <div className="grid h-[calc(100%-2.25rem)] grid-cols-4 items-end gap-2 px-4 pb-4">
-          <span className="h-10 rounded-t-md bg-blue-200" />
-          <span className="h-16 rounded-t-md bg-blue-500" />
-          <span className="h-12 rounded-t-md bg-violet-300" />
-          <span className="h-20 rounded-t-md bg-emerald-400" />
-        </div>
+    <IllustrationStage compact>
+      <div className="absolute inset-x-2 bottom-5 h-16 rounded-full bg-blue-100/80 blur-xl dark:bg-blue-500/15" />
+      <Sparkles />
+      <div className="portal-float absolute left-[22%] top-10 h-16 w-24 rotate-[-20deg] rounded-[55%_45%_45%_55%] bg-gradient-to-br from-blue-500 to-violet-600 shadow-xl [--portal-delay:-.8s] [--portal-float:-8px] sm:h-20 sm:w-28">
+        <span className="absolute right-2 top-2 h-12 w-8 rounded-full border-4 border-blue-200/80 sm:h-16 sm:w-10" />
+        <span className="absolute -right-6 bottom-0 h-9 w-8 rotate-[35deg] rounded-lg bg-blue-500 shadow-lg sm:-right-7 sm:h-11" />
       </div>
-      <div className="absolute bottom-12 right-[8%] size-28 rounded-2xl bg-blue-600 shadow-2xl sm:size-36">
-        <div className="absolute inset-5 rounded-xl border border-white/20" />
-        <Users className="absolute left-1/2 top-1/2 size-12 -translate-x-1/2 -translate-y-1/2 text-white sm:size-16" />
-      </div>
-      <div className="absolute bottom-5 right-[34%] flex size-16 rotate-12 items-center justify-center rounded-2xl bg-white text-orange-500 shadow-xl ring-1 ring-slate-200 sm:size-20">
-        <FileSpreadsheet className="size-8 sm:size-10" />
-      </div>
-      <span className="absolute right-8 top-8 size-2 rounded-full bg-fuchsia-500" />
-      <span className="absolute left-[40%] top-10 size-5 rounded-full bg-blue-200" />
-      <span className="absolute right-[42%] bottom-9 size-3 rounded-full bg-emerald-300" />
-    </div>
+      <span className="portal-float absolute left-[8%] top-8 h-1.5 w-9 rotate-12 rounded-full bg-fuchsia-500 [--portal-delay:-1.4s] [--portal-float:-6px]" />
+      <span className="portal-float absolute right-[12%] top-4 h-9 w-1.5 rotate-[-26deg] rounded-full bg-emerald-400 [--portal-delay:-.6s] [--portal-float:-7px]" />
+      <span className="portal-float absolute right-[4%] top-14 h-2 w-8 rotate-12 rounded-full bg-orange-300 [--portal-delay:-2s] [--portal-float:-6px]" />
+    </IllustrationStage>
   )
 }
 
@@ -253,10 +489,10 @@ export function OverviewModule({ model }: PortalModuleProps) {
     }
     const currentStatusUi = statusUi[facultyStatus]
     const facultyFacts = [
-      { label: "Classes Today", value: String(todaySchedules.length), icon: BookOpen },
-      { label: "Handled Subjects", value: String(handledSubjects), icon: BookOpen },
-      { label: "Advisory Class", value: advisoryClass, icon: Users },
-      { label: "Department", value: facultyUser?.course ? abbreviateCourse(facultyUser.course) : "N/A", icon: GraduationCap },
+      { label: "Classes", value: String(todaySchedules.length), icon: BookOpen },
+      { label: "Subjects", value: String(handledSubjects), icon: BookOpen },
+      { label: "Advisory", value: advisoryClass, icon: Users },
+      { label: "Program", value: facultyUser?.course ? abbreviateCourse(facultyUser.course) : "N/A", icon: GraduationCap },
     ]
     const facultyStats = [
       {
@@ -302,10 +538,12 @@ export function OverviewModule({ model }: PortalModuleProps) {
 
     return (
       <div className="space-y-4 pb-4 pt-4">
+        <GreetingMotionStyles />
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.95fr)]">
-          <Card className="overflow-hidden rounded-lg border-border bg-card shadow-sm">
-            <CardContent className="grid min-h-[252px] gap-5 p-5 sm:gap-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_370px] lg:items-center">
-              <div className="min-w-0">
+          <Card className="relative overflow-hidden rounded-lg border-border bg-[linear-gradient(118deg,#ffffff_0%,#eef6ff_48%,#efe9ff_100%)] shadow-sm dark:bg-[linear-gradient(118deg,#07111f_0%,#10213d_52%,#251943_100%)]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,rgba(123,92,255,.28),transparent_34%),radial-gradient(circle_at_15%_100%,rgba(56,189,248,.22),transparent_38%)]" />
+            <CardContent className="relative grid min-h-[252px] gap-5 p-5 sm:gap-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_370px] lg:items-center">
+              <div className="portal-hero-copy min-w-0">
                 <span className="inline-flex min-h-11 items-center gap-2 rounded-md border border-border bg-background px-4 text-xs font-semibold text-blue-600 shadow-sm">
                   <CalendarDays className="size-4" />
                   {formatDate()}
@@ -316,24 +554,24 @@ export function OverviewModule({ model }: PortalModuleProps) {
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
                   Here&apos;s what&apos;s happening with your classes today.
                 </p>
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
                   {facultyFacts.map((fact) => {
                     const Icon = fact.icon
                     return (
-                      <div key={fact.label} className="flex min-h-16 items-center gap-3 rounded-lg border border-border bg-card px-4 shadow-sm">
-                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                          <Icon className="size-5" />
+                      <div key={fact.label} className="flex min-h-14 items-center gap-2 rounded-lg border border-border bg-card px-3 shadow-sm sm:min-h-16 sm:gap-3 sm:px-4">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 sm:size-10">
+                          <Icon className="size-4 sm:size-5" />
                         </span>
                         <span className="min-w-0">
-                          <p className="truncate text-xs font-semibold text-muted-foreground">{fact.label}</p>
-                          <p className="mt-1 truncate text-base font-semibold text-foreground">{fact.value}</p>
+                          <p className="text-[11px] font-semibold text-muted-foreground sm:text-xs">{fact.label}</p>
+                          <p className="mt-0.5 text-sm font-semibold text-foreground sm:mt-1 sm:text-base">{fact.value}</p>
                         </span>
                       </div>
                     )
                   })}
                 </div>
               </div>
-              <HeroArt />
+              <FacultyGreetingIllustration />
             </CardContent>
           </Card>
 
@@ -587,10 +825,12 @@ export function OverviewModule({ model }: PortalModuleProps) {
 
     return (
       <div className="space-y-4 pb-4 pt-4">
+        <GreetingMotionStyles />
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.95fr)]">
-          <Card className="overflow-hidden rounded-lg border-slate-200 bg-white shadow-sm">
-            <CardContent className="grid min-h-[252px] gap-5 p-5 sm:gap-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_370px] lg:items-center">
-              <div className="flex min-w-0 flex-col justify-center">
+          <Card className="relative overflow-hidden rounded-lg border-slate-200 bg-[linear-gradient(118deg,#ffffff_0%,#eef6ff_48%,#efe9ff_100%)] shadow-sm dark:border-border dark:bg-[linear-gradient(118deg,#07111f_0%,#10213d_52%,#251943_100%)]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,rgba(123,92,255,.28),transparent_34%),radial-gradient(circle_at_15%_100%,rgba(56,189,248,.22),transparent_38%)]" />
+            <CardContent className="relative grid min-h-[252px] gap-5 p-5 sm:gap-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_370px] lg:items-center">
+              <div className="portal-hero-copy flex min-w-0 flex-col justify-center">
                 <span className="inline-flex min-h-11 w-fit items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-xs font-semibold text-blue-600 shadow-sm dark:border-blue-400/25 dark:bg-blue-400/15 dark:text-blue-200">
                   <CalendarDays className="size-4" />
                   {formatDate()}
@@ -616,7 +856,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
                   })}
                 </div>
               </div>
-              <AdminArt />
+              <AdminGreetingIllustration />
             </CardContent>
           </Card>
 
@@ -837,6 +1077,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
   if (model.role !== "student") return null
 
   const user = model.users.find((item) => item.id === model.profile.id)
+  const studentHeroVariant = studentHeroVariantFromSex(user?.sex)
   const displayGwa = model.currentSemesterGwa !== null
     ? model.currentSemesterGwa.toFixed(2)
     : model.currentSemesterGwaPending
@@ -909,10 +1150,12 @@ export function OverviewModule({ model }: PortalModuleProps) {
 
   return (
     <div className="space-y-4 pb-4 pt-4">
+      <GreetingMotionStyles />
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.95fr)]">
-        <Card className="overflow-hidden rounded-lg border-border bg-card shadow-sm">
-          <CardContent className="grid min-h-[252px] gap-5 p-5 sm:gap-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
-            <div className="flex min-w-0 flex-col justify-center">
+        <Card className="relative overflow-hidden rounded-lg border-border bg-[linear-gradient(118deg,#ffffff_0%,#edf7ff_48%,#f1eaff_100%)] shadow-sm dark:bg-[linear-gradient(118deg,#07111f_0%,#10213d_52%,#251943_100%)]">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,rgba(123,92,255,.28),transparent_34%),radial-gradient(circle_at_15%_100%,rgba(56,189,248,.22),transparent_38%)]" />
+          <CardContent className="relative grid min-h-[252px] gap-5 p-5 sm:gap-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
+            <div className="portal-hero-copy flex min-w-0 flex-col justify-center">
               <span className="inline-flex min-h-11 w-fit items-center gap-2 rounded-md border border-border bg-background px-4 text-xs font-semibold text-blue-600 shadow-sm">
                 <CalendarDays className="size-4" />
                 {formatDate()}
@@ -938,7 +1181,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
                 })}
               </div>
             </div>
-            <HeroArt />
+            <StudentGreetingIllustration variant={studentHeroVariant} />
           </CardContent>
         </Card>
 
