@@ -58,6 +58,20 @@ export async function POST(request: Request) {
       const orderMap = new Map<string, number>()
 
       for (const nc of newColumns) {
+        // Check if a column with the same (classId, name, gradingPeriod) already exists
+        const existingCol = await gradeColumnRepository.findOne({
+          classId,
+          name: nc.name,
+          gradingPeriod: nc.gradingPeriod,
+          isDeleted: { $ne: true },
+        }) as { id: string } | null
+
+        if (existingCol) {
+          const colKey = `${nc.gradingPeriod}_${nc.category}_${nc.order}`
+          newColIdMap.set(colKey, existingCol.id)
+          continue
+        }
+
         const groupKey = `${nc.gradingPeriod}_${nc.category}`
         const existingCols = await gradeColumnRepository.findAll({
           classId,

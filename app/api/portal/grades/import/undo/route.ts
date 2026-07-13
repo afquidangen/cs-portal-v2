@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     const undoData = retrieveUndoData(undoToken)
     if (!undoData) {
       return badRequest(
-        "Undo session expired or not found. Imports can only be undone within 10 minutes."
+        "Undo session not found. The import may be from a previous server session."
       )
     }
 

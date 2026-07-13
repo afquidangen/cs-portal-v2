@@ -161,25 +161,11 @@ export function retrieveUndoData(token: string): UndoData | null {
   const cache = getUndoCache()
   const entry = cache.get(token)
   if (!entry) return null
-  if (Date.now() - entry.createdAt > CACHE_TTL) {
-    cache.delete(token)
-    return null
-  }
   return entry.data
 }
 
 export function deleteUndoData(token: string): void {
   getUndoCache().delete(token)
-}
-
-if (typeof setInterval !== "undefined") {
-  setInterval(() => {
-    const now = Date.now()
-    const cache = getUndoCache()
-    for (const [key, entry] of cache) {
-      if (now - entry.createdAt > CACHE_TTL) cache.delete(key)
-    }
-  }, 60_000)
 }
 
 // ---------------------------------------------------------------------------

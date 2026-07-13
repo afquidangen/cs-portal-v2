@@ -959,13 +959,14 @@ function FacultyGradesPanel({ model }: PortalModuleProps) {
   const gradeMap = useMemo(() => {
     const map = new Map()
     if (!selectedSubject) return map
+    const sectionSet = new Set(subjectSections)
     for (const g of grades) {
-      if (g.subject === selectedSubject) {
-        map.set(g.studentId, g)
-      }
+      if (g.subject !== selectedSubject) continue
+      if (!sectionSet.has(g.section ?? "")) continue
+      map.set(g.studentId, g)
     }
     return map
-  }, [grades, selectedSubject])
+  }, [grades, selectedSubject, subjectSections])
 
   const activeScheme = useMemo(() => {
     const configured = gradingSchemes.find((scheme) => scheme.isActive && scheme.subjectType === selectedSubjectType)

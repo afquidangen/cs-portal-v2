@@ -102,6 +102,7 @@ export async function PUT(
       }
 
       const filter: Record<string, unknown> = { studentId: grade.studentId, code: grade.code }
+      if (upsertData.semesterId) filter.semesterId = upsertData.semesterId
       const updated = await gradesRepository.upsert(filter, { ...upsertData, classId })
       results.push(updated)
     }

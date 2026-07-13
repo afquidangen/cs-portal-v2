@@ -197,11 +197,14 @@ export function ManageGradesModule({ model, darkMode }: PortalModuleProps & { da
   const gradeMap = useMemo(() => {
     const map = new Map<string, GradeRecord>()
     if (!selectedSubject) return map
+    const sectionSet = new Set(subjectSections)
     for (const g of grades) {
-      if (g.subject === selectedSubject) map.set(g.studentId, g)
+      if (g.subject !== selectedSubject) continue
+      if (!sectionSet.has(g.section ?? "")) continue
+      map.set(g.studentId, g)
     }
     return map
-  }, [grades, selectedSubject])
+  }, [grades, selectedSubject, subjectSections])
 
   const filterSchedules = useMemo(() => {
     const semesterIds = new Set(visibleSchedules.map((s) => s.semesterId))
