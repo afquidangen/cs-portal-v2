@@ -273,3 +273,126 @@ Replaced all hardcoded column indices and scheme-based matching with a dynamic t
 ### Pre-existing issues (unchanged)
 - TypeScript errors in `deans-list-module.tsx`, `grades-module.tsx`, `role-dashboard.tsx`, `base.repository.ts`
 <!-- END:session-6 -->
+
+<!-- BEGIN:session-7 -->
+## Session 7 — Import Auto-Create Grade Records from Roster
+
+### Summary
+When a class has no grade records but has enrolled students in the roster (`ClassStudent`), the import preview was previously blocked by "No grades found" or silently skipped all students. Fixed by auto-creating Grade records from the roster during the preview phase, matching the same logic as `handleCreateSchedule` in the frontend hook.
+
+### Root Cause
+Grade records are NOT automatically created from enrollment. There is no server-side cascade from `ClassStudent` → `Grade`. Records are created only when:
+- A schedule/class is created (trigger A: `handleCreateSchedule`)
+- A student account is created (trigger B: `handleCreateUser`)
+- A student is manually added in the spreadsheet (trigger C: `handleAddStudentToSubject`)
+
+The import only works with Grade records — if none exist, there's nothing to match against.
+
+### Fix
+In `app/api/portal/grades/import/preview/route.ts`: when `grades.length === 0`, fetch the schedule and roster, then create missing Grade records for each enrolled student:
+
+1. Fetch `ScheduleModel.findOne({ id: classId })` — gets section, subject, semesterId
+2. Derive `code` from subject string (split on " - ") — same logic as hook
+3. Fetch `ClassStudentModel.find({ section, enrolled: true, deletedAt: null })`
+4. For each roster student, check if Grade exists; if not, create via `gradesRepository.create()`
+5. Re-fetch grades and proceed with normal import
+
+### Key Design
+- Only creates records for roster-enrolled students — no file-to-DB injection
+- Students in file but NOT in roster → skipped with warning (matching logic unchanged)
+- Students in roster but NOT in file → empty grade record exists (no scores)
+- Matching remains name-based (Session 6 fix) after records exist
+
+### Files Modified
+| File | Changes |
+|---|---|
+| `app/api/portal/grades/import/preview/route.ts` | Added ScheduleModel/ClassStudentModel imports, auto-create block when grades empty, changed `const grades` → `let grades` |
+
+### Relevant Files
+- `lib/models/grade.model.ts` — Grade schema with unique index on `(studentId, code, semesterId)`
+- `lib/models/schedule.model.ts` — Schedule (class) schema
+- `lib/models/class-student.model.ts` — Roster (enrollment) schema
+- `features/portal/hooks/use-portal-dashboard-model.ts` — Reference implementation of grade record creation in `handleCreateSchedule`
+<!-- END:session-7 -->
+
+<!-- BEGIN:session-8 -->
+## Session 8 — Import Attendance Key Fix & Diagnostic Visibility
+
+### Summary
+Fixed two import issues:
+1. Attendance absences written to wrong scores key (wouldn't display in grid)
+2. Diagnostic preview didn't show exam scores when no system GradeColumn existed for the finals period
+
+### Attendance Key Fix
+**Root cause:** `readPeriodScores` wrote absences to `scores[`${period}_absences_lecture`]`, but the grid reads from `scores[`${activeTab}_absences_${absenceCatKey}`]` where `absenceCatKey` = normalized grading scheme category name (e.g., `"attendance"` for "Attendance" category). No matching GradeColumn exists for attendance — it's a virtual column derived from the grading scheme.
+
+**Fix:** Removed `findAttendanceCol()` (searched for GradeColumn — none exists). Changed fallback keys:
+- `lecture` → `attendance` (grid key for "Attendance" scheme category)
+- `lab` → `labattendance` (grid key for "Lab Attendance" scheme category)
+
+### Diagnostic Exam Scores Fix
+**Root cause:** When no system GradeColumn matches the finals period's exam category, `readPeriodScores` puts the exam score in `newColScores` (not `scores`). The diagnostic only captured `fin.scores`, so the preview dialog showed no exam entry for finals.
+
+**Fix:** Merged `newColScores` entries into diagnostic `midScores`/`finScores` arrays alongside regular `scores` entries. Now the preview shows `final_exam_1=XX` when no existing column is found.
+
+### Bonus Fix
+- `spreadsheet-grid.tsx` — `importPreview` state was missing `gradeCount`, `rosterSection`, `rosterCount` fields required by `ImportPreviewData` type, causing TS build error. Added them.
+
+### Files Modified
+| File | Changes |
+|---|---|
+| `features/portal/lib/import-template-engine.ts` | Removed `findAttendanceCol()`, changed attendance keys to grid-compatible format, added `newColScores` to diagnostic |
+| `features/portal/components/grades/spreadsheet-grid.tsx` | Added missing fields to `importPreview` state type |
+
+### Relevant Context
+- Grid attendance: virtual column at `spreadsheet-grid.tsx:1412` reads `scores[`${period}_absences_${absenceCatKey}`]`
+- Attendance category key normalized from scheme category name (e.g., "Attendance" → "attendance")
+- No GradeColumn record exists for attendance — entirely grading-scheme-derived
+<!-- END:session-8 -->
+
+<!-- BEGIN:session-9 -->
+## Session 9 — Import Formula Cells, Lab Attendance Detection, Upsert Race Condition
+
+### Summary
+Three fixes:
+1. `getEffectiveValue` didn't handle Excel formula cells (returned `{ formula, result }` object → `Number()` = `NaN`)
+2. Lab attendance columns weren't detected in `scanTemplateColumnMap` because `labStartCol` wasn't set when ATTEN was processed
+3. `upsert` in `base.repository.ts` used `$set: { id, ... }` causing race condition on duplicate `id` key
+
+### Formula Cell Fix
+**Root cause:** `getEffectiveValue` returned raw ExcelJS formula objects (`{ formula: "CD10", result: 45 }`) as-is. `Number(object)` = `NaN` → score skipped.
+
+**Fix:** Added `result` property extraction before returning:
+```ts
+if ("result" in (value as any) && (value as any).result !== undefined) {
+  return (value as any).result
+}
+```
+Handles both `{ formula, result }` and `{ sharedFormula, result }` objects.
+
+### Lab Attendance Detection Fix
+**Root cause:** `scanTemplateColumnMap` used `map.labStartCol` to distinguish lecture vs lab ABS/ATT columns. In the template, ATTEN section comes BEFORE lab categories (exercises/work attitude/project), so `labStartCol` wasn't set yet. Both ABS columns overwrote `map.absencesCol` and `labAbsencesCol` stayed null.
+
+**Fix:** Changed to first-ABS/second-ABS detection:
+- First ABS → `map.absencesCol` (lecture)
+- Second ABS → `map.labAbsencesCol` (lab)
+Same logic for ATT → `attendanceCol` / `labAttendanceCol`.
+
+### Upsert Race Condition Fix
+**Root cause:** `base.repository.ts:upsert` used `$set: data` where `data` included `id`. If two saves raced (e.g., auto-save during import refresh), the second `findOneAndUpdate` with `upsert: true` could try to insert a doc with conflicting `id`.
+
+**Fix:** Separated `id` into `$setOnInsert`:
+```ts
+const { id, ...setData } = data
+this.model.findOneAndUpdate(filter, { $set: setData, $setOnInsert: { id } }, { upsert: true })
+```
+
+### Files Modified
+| File | Changes |
+|---|---|
+| `features/portal/lib/export-template-engine.ts` | `getEffectiveValue` handles formula objects (`result` property); `scanTemplateColumnMap` uses first-/second-found for ABS/ATT instead of `labStartCol` |
+| `features/portal/repositories/base.repository.ts` | `upsert` uses `$setOnInsert` for `id` |
+| `app/api/portal/grades/import/execute/route.ts` | Removed temporary diagnostic logs |
+| `features/portal/components/grades/spreadsheet-grid.tsx` | Removed temporary diagnostic logs |
+| `features/portal/lib/import-template-engine.ts` | Removed temporary diagnostic logs |
+<!-- END:session-9 -->

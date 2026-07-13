@@ -65,6 +65,7 @@ export async function POST(request: Request) {
     const users = await UserModel.find({
       id: { $in: allStudentIds },
       role: "student",
+      deletedAt: null,
     }).lean()
 
     const entries: Array<Record<string, unknown>> = []

@@ -9,6 +9,7 @@ import { usersRepository } from "@/features/portal/repositories/users.repository
 import { gradeCategoryMatches, computeLivePreview } from "@/features/portal/lib/grade-engine"
 import { gradingSchemeRepository } from "@/features/portal/repositories/grading-scheme.repository"
 import { assessmentRepository } from "@/features/portal/repositories/assessment.repository"
+import { ClassStudentModel } from "@/lib/models"
 import type { GradeRecord } from "@/lib/types/grade"
 import type { GradeColumn } from "@/lib/types/grade-column"
 import type { Assessment } from "@/lib/types/assessment"
@@ -51,7 +52,7 @@ const DEFAULT_LAB_SCHEME: GradingScheme = {
   updatedAt: "",
 }
 
-const HEADER_CELLS: Record<string, Array<{ row: number; col: number; key: string }>> = {
+export const HEADER_CELLS: Record<string, Array<{ row: number; col: number; key: string }>> = {
   "CLASS RECORD": [
     { row: 2, col: 2, key: "subject" },
     { row: 2, col: 4, key: "courseNo" },
@@ -90,14 +91,14 @@ const HEADER_CELLS: Record<string, Array<{ row: number; col: number; key: string
   ],
 }
 
-interface TemplateCategory {
+export interface TemplateCategory {
   alias: string
   itemColumns: number[]
   psCol?: number
   wsCol?: number
 }
 
-interface TemplatePeriodMap {
+export interface TemplatePeriodMap {
   categories: TemplateCategory[]
   examCol?: number
   csCol?: number
@@ -117,19 +118,28 @@ interface TemplatePeriodMap {
   attendanceEndCol?: number
 }
 
-const CATEGORY_LABEL_REGEX = /\s*-?\s*\d+%\s*$/
+export const CATEGORY_LABEL_REGEX = /\s*-?\s*\d+\s*%\s*$|\(\s*\d+\s*%\s*\)\s*$/
 
-function getEffectiveValue(sheet: ExcelJS.Worksheet, row: number, col: number): unknown {
+export function getEffectiveValue(sheet: ExcelJS.Worksheet, row: number, col: number): unknown {
   const cell = sheet.getCell(row, col)
-  if (cell.value != null) return cell.value
-  // Merged cells: master cell holds the actual typed value
-  if ((cell as any).isMerged && (cell as any).master) {
-    return (cell as any).master.value
+  let value = cell.value
+  if (value == null && (cell as any).isMerged && (cell as any).master) {
+    value = (cell as any).master.value
   }
-  return undefined
+  if (typeof value === "object" && value !== null) {
+    // Formula cell → use the cached result
+    if ("result" in (value as any) && (value as any).result !== undefined) {
+      return (value as any).result
+    }
+    // Rich text (bold/italic/color within a cell) → extract plain text
+    if ("richText" in (value as any)) {
+      return (value as any).richText.map((r: any) => r.text).join("")
+    }
+  }
+  return value
 }
 
-function scanTemplateColumnMap(sheet: ExcelJS.Worksheet, startCol: number, endCol: number): TemplatePeriodMap {
+export function scanTemplateColumnMap(sheet: ExcelJS.Worksheet, startCol: number, endCol: number): TemplatePeriodMap {
   const map: TemplatePeriodMap = { categories: [] }
 
   const row7Lbl = (c: number): unknown => getEffectiveValue(sheet, 7, c)
@@ -203,11 +213,11 @@ function scanTemplateColumnMap(sheet: ExcelJS.Worksheet, startCol: number, endCo
       for (let c = col; c <= regionEnd; c++) {
         const r9 = row9Val(c)
         if (r9 === "ABS") {
-          if (map.labStartCol && c >= map.labStartCol) map.labAbsencesCol = c
-          else map.absencesCol = c
+          if (map.absencesCol == null) map.absencesCol = c
+          else map.labAbsencesCol = c
         } else if (r9 === "ATT") {
-          if (map.labStartCol && c >= map.labStartCol) map.labAttendanceCol = c
-          else map.attendanceCol = c
+          if (map.attendanceCol == null) map.attendanceCol = c
+          else map.labAttendanceCol = c
         }
       }
       col = regionEnd + 1
@@ -230,7 +240,10 @@ function scanTemplateColumnMap(sheet: ExcelJS.Worksheet, startCol: number, endCo
         if (!cat.itemColumns.includes(c)) cat.itemColumns.push(c)
       }
     }
-    map.categories.push(cat)
+    // Skip categories with no items and no PS/WS columns (noise like "BSCS")
+    if (cat.itemColumns.length > 0 || cat.psCol != null || cat.wsCol != null) {
+      map.categories.push(cat)
+    }
 
     if (
       gradeCategoryMatches("exercise", normalized) ||
@@ -496,7 +509,7 @@ function populatePeriodSection(
   }
 }
 
-function formatStudentName(name: string): string {
+export function formatStudentName(name: string): string {
   if (!name || name.includes(",")) return name
   const parts = name.trim().split(/\s+/).filter(Boolean)
   if (parts.length <= 1) return name
@@ -606,6 +619,14 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
       if (s.sex) sexMap.set(s.id, s.sex)
       const key = (s.lastName ?? s.name?.split(" ").pop() ?? "").toLowerCase()
       studentSortMap.set(s.id, key)
+    }
+    const missingIds = studentIds.filter((id) => !sexMap.has(id))
+    if (missingIds.length > 0) {
+      const rosterEntries = await ClassStudentModel.find({ id: { $in: missingIds } })
+        .lean() as Array<{ id: string; sex?: string }>
+      for (const r of rosterEntries) {
+        if (r.sex) sexMap.set(r.id, r.sex)
+      }
     }
   }
 
@@ -1104,7 +1125,7 @@ async function exportTemplateImpl(classId: string, section?: string | null): Pro
           const isItemOrWsOrPsCol = [...midtermMap.categories, ...finalsMap.categories].some(cat =>
             cat.itemColumns.includes(c) || cat.wsCol === c || cat.psCol === c
           )
-          if (isItemOrWsOrPsCol) {
+          if (isItemOrWsOrPsCol || c <= 3) {
             if (r <= 12) console.log(`[EXPORT DIAG] Skipping shared formula override at row ${r} col ${c} (item/PS/WS column)`)
             continue
           }

@@ -11,6 +11,7 @@ export interface IClassStudent extends Document {
   currentYearLevel?: string
   currentSemester?: string
   studentType?: string
+  sex?: string
 }
 
 const ClassStudentSchema = new Schema<IClassStudent>(
@@ -25,6 +26,7 @@ const ClassStudentSchema = new Schema<IClassStudent>(
     currentYearLevel: String,
     currentSemester: String,
     studentType: String,
+    sex: String,
   },
   { timestamps: true }
 )

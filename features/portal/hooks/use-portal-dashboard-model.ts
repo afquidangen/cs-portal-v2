@@ -1613,7 +1613,12 @@ export function usePortalDashboardModel(role: Role) {
       const grade = grades.find((g) => g.id === gradeId)
       setGrades((current) => current.filter((g) => g.id !== gradeId))
       if (grade) {
+        const isExternal = studentId.startsWith("STU-")
         syncApi("DELETE", `/api/portal/grades/${gradeId}`, {}).then(() => {
+          if (isExternal) {
+            setRoster((current) => current.filter((r) => r.id !== studentId))
+            syncApi("DELETE", `/api/portal/roster/${studentId}`, {}).catch(() => {})
+          }
           toast.success("Student unenrolled.")
         }).catch((e) => {
           if (e.message.includes("(404)")) {
@@ -1710,6 +1715,72 @@ export function usePortalDashboardModel(role: Role) {
 
     addAuditLog(`Added student ${studentName} to ${subjectLabel} (${section})`)
     setTimeout(() => refreshDashboardData(), 300)
+  }
+
+  function handleCreateExternalStudent(
+    lastName: string,
+    firstName: string,
+    middleName: string,
+    sex: string,
+    subjectLabel: string,
+    section: string,
+    subjectCode: string
+  ) {
+    const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase()
+    const normSubject = normalize(subjectLabel)
+    const normSection = normalize(section)
+
+    const schedule = classSchedules.find(
+      (s) => normalize(s.subject ?? "") === normSubject && normalize(s.section ?? "") === normSection
+    )
+    const classId = schedule?.id
+
+    if (!classId) {
+      toast.error("No class schedule found for this subject and section.")
+      return
+    }
+
+    const middle = middleName.trim() ? ` ${middleName.trim()}` : ""
+    const name = `${lastName.trim()}, ${firstName.trim()}${middle}`
+
+    syncApi<{ data: { studentId: string; gradeId: string; name: string } }>("POST", "/api/portal/external-student", {
+      lastName,
+      firstName,
+      middleName,
+      sex,
+      section,
+      subject: subjectLabel,
+      subjectCode,
+      classId,
+      semesterId: schedule?.semesterId,
+    }).then((res) => {
+      const { studentId, gradeId, name: studentName } = res.data
+      const nowStr = new Date().toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+      setRoster((current) => [{ id: studentId, name: studentName, section, enrolled: true } as ClassStudent, ...current])
+      setGrades((current) => [{
+        id: gradeId,
+        studentId,
+        student: studentName,
+        section,
+        subject: subjectLabel,
+        code: subjectCode,
+        units: 3,
+        classId,
+        semesterId: schedule?.semesterId,
+        scores: {},
+        released: false,
+        updatedAt: nowStr,
+      } as GradeRecord, ...current])
+      toast.success(`Created student "${studentName}" in ${subjectLabel} (${section})`)
+      addAuditLog(`Created external student ${studentName} in ${subjectLabel} (${section})`)
+      setTimeout(() => refreshDashboardData(), 300)
+    }).catch(() => {
+      toast.error("Failed to create external student.")
+    })
   }
 
   function handleUpsertCompletedGrade(
@@ -4085,6 +4156,7 @@ export function usePortalDashboardModel(role: Role) {
     refreshDashboardData,
     handleUnenrollFromSubject,
     handleAddStudentToSubject,
+    handleCreateExternalStudent,
     handleUpsertCompletedGrade,
     handleDeleteCompletedGrade,
     updateTicketStatus,

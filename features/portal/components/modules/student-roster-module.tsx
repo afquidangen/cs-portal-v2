@@ -42,6 +42,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
     roster,
     handleUnenrollFromSubject,
     handleAddStudentToSubject,
+    handleCreateExternalStudent,
   } = model
 
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null)
@@ -67,6 +68,13 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
   const [addDialog, setAddDialog] = useState(false)
   const [studentSearch, setStudentSearch] = useState("")
   const [addSection, setAddSection] = useState("")
+
+  const [createDialog, setCreateDialog] = useState(false)
+  const [createSection, setCreateSection] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [middleName, setMiddleName] = useState("")
+  const [sex, setSex] = useState("")
 
   const filteredUsers = useMemo(() => {
     const search = studentSearch.replace(/\s+/g, "").toLowerCase()
@@ -106,6 +114,29 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
     setStudentSearch("")
     setAddSection(selectedSection ?? sectionOptions[0] ?? "")
     setAddDialog(true)
+  }
+
+  function openCreateDialog() {
+    setCreateSection(selectedSection ?? sectionOptions[0] ?? "")
+    setLastName("")
+    setFirstName("")
+    setMiddleName("")
+    setSex("")
+    setCreateDialog(true)
+  }
+
+  function handleCreate() {
+    if (!lastName.trim() || !firstName.trim() || !createSection || !currentSubject?.code) return
+    handleCreateExternalStudent(
+      lastName.trim(),
+      firstName.trim(),
+      middleName.trim(),
+      sex,
+      selectedSubject!,
+      createSection,
+      currentSubject.code
+    )
+    setCreateDialog(false)
   }
 
   const rosterStudents = useMemo(() => {
@@ -211,7 +242,16 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
             title="Student Roster"
             eyebrow={`${selectedSubject} - ${sectionOptions.join(", ")} - ${rosterStudents.length} students`}
           >
-            <div className="mb-3 flex justify-end">
+            <div className="mb-3 flex justify-end gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-9 rounded-md border-slate-200"
+                onClick={openCreateDialog}
+              >
+                <UserPlus className="size-3.5 mr-1" /> Create Student
+              </Button>
               <Button
                 type="button"
                 size="sm"
@@ -219,7 +259,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
                 className="h-9 rounded-md border-slate-200"
                 onClick={openAddDialog}
               >
-                <UserPlus className="size-3.5 mr-1" /> Add Student
+                <Search className="size-3.5 mr-1" /> Add Student
               </Button>
             </div>
             {rosterStudents.length === 0 ? (
@@ -254,7 +294,7 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
                               </Avatar>
                               <div className="min-w-0">
                                 <p className="truncate font-medium text-slate-950">{entry.lastName ? `${entry.lastName}, ${entry.firstName ?? ""}${entry.middleName ? ` ${entry.middleName}` : ""}` : entry.name}</p>
-                                <p className="truncate text-xs text-slate-500">{entry.id}</p>
+                                {!entry.id.startsWith("STU-") && <p className="truncate text-xs text-slate-500">{entry.id}</p>}
                                 {studentType && IRREGULAR_TYPES.includes(studentType) ? (
                                   <StatusBadge value={studentType} />
                                 ) : null}
@@ -305,6 +345,92 @@ export function StudentRosterModule({ model }: PortalModuleProps) {
           </div>
         </Panel>
       )}
+
+      <Dialog open={createDialog} onOpenChange={(o) => { if (!o) { setCreateDialog(false); setLastName(""); setFirstName(""); setMiddleName(""); setSex("") } }}>
+        <DialogContent className="w-[95vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-slate-950">Create Student</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-slate-700">Section</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {sectionOptions.map((sec) => (
+                  <button
+                    key={sec}
+                    type="button"
+                    onClick={() => setCreateSection(sec)}
+                    className={
+                      createSection === sec
+                        ? "rounded-md border border-blue-600 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600 shadow-sm"
+                        : "rounded-md border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-950"
+                    }
+                  >
+                    {sec}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="last-name" className="text-sm font-medium text-slate-700">Last Name</Label>
+              <Input
+                id="last-name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Dela Cruz"
+                className="h-10 rounded-md border-slate-200 bg-white text-slate-950 placeholder:text-slate-400"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="first-name" className="text-sm font-medium text-slate-700">First Name</Label>
+              <Input
+                id="first-name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Juan"
+                className="h-10 rounded-md border-slate-200 bg-white text-slate-950 placeholder:text-slate-400"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="middle-name" className="text-sm font-medium text-slate-700">Middle Name</Label>
+              <Input
+                id="middle-name"
+                value={middleName}
+                onChange={(e) => setMiddleName(e.target.value)}
+                placeholder="(optional)"
+                className="h-10 rounded-md border-slate-200 bg-white text-slate-950 placeholder:text-slate-400"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="sex" className="text-sm font-medium text-slate-700">Sex</Label>
+              <div className="flex gap-3">
+                {["Male", "Female"].map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setSex(option)}
+                    className={
+                      sex === option
+                        ? "rounded-md border border-blue-600 bg-blue-50 px-4 py-1.5 text-xs font-semibold text-blue-600 shadow-sm"
+                        : "rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-950"
+                    }
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" className="rounded-md border-slate-200" onClick={() => setCreateDialog(false)}>
+              Cancel
+            </Button>
+            <Button type="button" className="rounded-md bg-blue-600 text-white hover:bg-blue-700" onClick={handleCreate}>
+              <UserPlus className="size-3.5 mr-1" /> Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!confirmUnenroll} onOpenChange={(o) => { if (!o) setConfirmUnenroll(null) }}>
         <DialogContent className="w-[95vw] sm:max-w-sm">

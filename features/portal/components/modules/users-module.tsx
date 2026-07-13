@@ -1238,7 +1238,7 @@ export function UsersModule({ model }: PortalModuleProps) {
           </DialogHeader>
           <div className="overflow-y-auto px-6 py-5 space-y-5 grow">
             {(() => {
-              const student = gradeHistoryUser
+              const student = users.find(u => u.id === gradeHistoryUser?.id) ?? gradeHistoryUser
               if (!student) return null
               const curriculum = curricula.find((c) => c.id === student.curriculumId)
               const history = student.gradeHistory ?? []

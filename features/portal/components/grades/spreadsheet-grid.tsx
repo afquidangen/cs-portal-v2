@@ -26,6 +26,8 @@ import { RenameColumnDialog } from "./rename-column-dialog"
 import { DeleteColumnDialog } from "./delete-column-dialog"
 import { AddColumnDialog } from "../modules/add-column-dialog"
 import { SaveStatusIndicator } from "../modules/save-status-indicator"
+import { ImportPreviewDialog } from "./import-preview-dialog"
+import type { ImportColumnDef } from "../../lib/import-template-engine"
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
@@ -481,6 +483,42 @@ export function SpreadsheetGrid({
   const [batchUnreleaseOpen, setBatchUnreleaseOpen] = useState(false)
   const [batchUnreleaseLoading, setBatchUnreleaseLoading] = useState(false)
   const [isFullScreen, setIsFullScreen] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [importPreview, setImportPreview] = useState<{
+    importToken: string
+    gradeCount: number
+    rosterSection: string
+    rosterCount: number
+    studentsInFile: number
+    studentsMatched: number
+    studentsSkipped: number
+    scoreUpdates: number
+    newColumns: ImportColumnDef[]
+    warnings: string[]
+      diagnostic?: {
+        firstStudentName: string
+        gradeCount: number
+        firstGradeName: string
+        fileKey: string
+        firstGradeKey: string
+        row5Labels: string[]
+        row6Labels: string[]
+        row7Labels: string[]
+        row8Labels: string[]
+        midScores: Array<{ colId: string; value: number }>
+        finScores: Array<{ colId: string; value: number }>
+        templateCats: Array<{ alias: string; itemCount: number }>
+        periodColCounts: { midterm: number; final: number }
+        midAbsences: number | null
+        midLabAbsences: number | null
+        finAbsences: number | null
+        finLabAbsences: number | null
+      }
+  } | null>(null)
+  const [importPreviewOpen, setImportPreviewOpen] = useState(false)
+  const [importUndoToken, setImportUndoToken] = useState<string | null>(null)
+  const [undoConfirmOpen, setUndoConfirmOpen] = useState(false)
+  const [undoLoading, setUndoLoading] = useState(false)
 
   const gradeMapRef = useRef(gradeMap)
   gradeMapRef.current = gradeMap
@@ -828,6 +866,118 @@ export function SpreadsheetGrid({
     }
   }
 
+  async function handleImportFile(file: File) {
+    if (!classId) return
+    setImportPreview(null)
+    setImporting(true)
+    try {
+      const form = new FormData()
+      form.append("classId", classId)
+      form.append("file", file)
+      const res = await fetch("/api/portal/grades/import/preview", {
+        method: "POST",
+        body: form,
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        toast.error(json.error || "Failed to preview import.")
+        return
+      }
+      setImportPreview(json.data)
+      setImportPreviewOpen(true)
+    } catch {
+      toast.error("Failed to preview import.")
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  async function handleImportConfirm(token: string) {
+    if (!classId) return
+    setImporting(true)
+    setImportPreviewOpen(false)
+    try {
+      const res = await fetch("/api/portal/grades/import/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ importToken: token }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        toast.error(json.error || "Failed to execute import.")
+        return
+      }
+
+      const { processed, columnsCreated, undoToken, warnings } = json.data
+
+      if (undoToken) {
+        setImportUndoToken(undoToken)
+        toast.success(
+          `Imported ${processed} students.`,
+          {
+            action: {
+              label: "Undo",
+              onClick: () => setUndoConfirmOpen(true),
+            },
+            duration: 10_000,
+          }
+        )
+      } else {
+        if (columnsCreated > 0) {
+          toast.success(
+            `Imported ${processed} students. ${columnsCreated} column(s) auto-created.`
+          )
+        } else {
+          toast.success(`Imported ${processed} students.`)
+        }
+      }
+
+      if (warnings.length > 0) {
+        const shortWarnings = warnings.slice(0, 3)
+        for (const w of shortWarnings) {
+          toast.warning(w)
+        }
+        if (warnings.length > 3) {
+          toast.warning(`...and ${warnings.length - 3} more warnings.`)
+        }
+      }
+
+      handleRefresh()
+    } catch {
+      toast.error("Failed to execute import.")
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  async function handleImportUndo() {
+    if (!importUndoToken || !classId) return
+    setUndoLoading(true)
+    setUndoConfirmOpen(false)
+    try {
+      const res = await fetch("/api/portal/grades/import/undo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ undoToken: importUndoToken }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        toast.error(json.error || "Failed to undo import.")
+        return
+      }
+      const { restoredGrades, deletedColumns } = json.data
+      toast.success(
+        `Import undone. ${restoredGrades} grade(s) restored, ${deletedColumns} column(s) removed.`
+      )
+      setImportUndoToken(null)
+      handleRefresh()
+    } catch {
+      toast.error("Failed to undo import.")
+    } finally {
+      setUndoLoading(false)
+    }
+  }
+
   async function handleAddColumn(name: string, category: string, maxScore: number, gradingPeriod?: string) {
     const period = gradingPeriod || (activeTab === "summary" ? "midterm" : activeTab)
     const collision = gradeColumns.some(c =>
@@ -941,6 +1091,8 @@ export function SpreadsheetGrid({
       case "renameColumn": setRenameOpen(true); break
       case "deleteColumn": setDeleteColOpen(true); break
       case "export": handleExport(); break
+      case "import": break // handled via onImportFile prop
+      case "undoImport": setUndoConfirmOpen(true); break
       case "refresh": handleRefresh(); break
       case "save": autoSave.saveNow({ grades: Array.from(gradeMap.values()), cid: classId, showToast: true }).then().catch(() => {}); break
       case "fullscreen": toggleFullScreen(); break
@@ -1736,8 +1888,55 @@ export function SpreadsheetGrid({
         saveStatus={saveStatus}
         section={section}
         exporting={exporting}
+        importing={importing}
         isFullScreen={isFullScreen}
+        onImportFile={handleImportFile}
+        importUndoToken={importUndoToken}
       />
+
+      <ImportPreviewDialog
+        open={importPreviewOpen}
+        onOpenChange={setImportPreviewOpen}
+        preview={importPreview}
+        loading={importing}
+        onConfirm={handleImportConfirm}
+      />
+
+      <Dialog open={undoConfirmOpen} onOpenChange={setUndoConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Undo2 className="size-5 text-amber-600" />
+              Undo Import
+            </DialogTitle>
+            <DialogDescription>
+              This will restore all grade scores and computed values to their
+              state before the last import, and remove any columns that were
+              auto-created during the import.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setUndoConfirmOpen(false)}
+              disabled={undoLoading}
+              className="rounded-lg"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              onClick={handleImportUndo}
+              disabled={undoLoading}
+              className="rounded-lg bg-amber-600 text-white hover:bg-amber-700"
+            >
+              {undoLoading ? "Undoing..." : "Undo Import"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {missingCount > 0 && (
         <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">

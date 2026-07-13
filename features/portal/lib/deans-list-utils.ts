@@ -33,6 +33,7 @@ export async function recomputeDeansListForSemester(semesterId: string): Promise
   const users = await UserModel.find({
     id: { $in: allStudentIds },
     role: "student",
+    deletedAt: null,
   }).lean()
 
   const semesterRecord = semester as unknown as Record<string, unknown>

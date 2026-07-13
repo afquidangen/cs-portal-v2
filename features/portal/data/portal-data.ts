@@ -264,6 +264,7 @@ export type ClassStudent = {
   currentYearLevel?: string
   currentSemester?: string
   studentType?: string
+  sex?: string
 }
 
 export type CsoReport = {

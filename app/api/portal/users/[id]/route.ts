@@ -5,7 +5,7 @@ import { facultyRepository } from "@/features/portal/repositories/faculty.reposi
 import { schedulesRepository } from "@/features/portal/repositories/schedules.repository"
 import { gradeColumnRepository } from "@/features/portal/repositories/grade-column.repository"
 import { assessmentRepository } from "@/features/portal/repositories/assessment.repository"
-import { UserModel } from "@/lib/models"
+import { UserModel, DeansListModel } from "@/lib/models"
 import { success, error, notFound } from "@/lib/api-response"
 import { uploadProfilePhoto, destroyFile } from "@/lib/cloudinary"
 import { validatePassword } from "@/lib/validators"
@@ -109,6 +109,7 @@ export async function DELETE(
     await Promise.all([
       rosterRepository.softDelete({ id }).catch(() => {}),
       gradesRepository.softDelete({ studentId: id }).catch(() => {}),
+      DeansListModel.deleteMany({ studentId: id }).catch(() => {}),
     ])
     return success({ deleted: true })
   } catch (err) {

@@ -98,8 +98,9 @@ export class BaseRepository {
     data: Record<string, unknown>
   ): Promise<unknown> {
     await connectToDatabase()
+    const { id, ...setData } = data
     return this.model
-      .findOneAndUpdate(filter, { $set: data } as Record<string, unknown>, {
+      .findOneAndUpdate(filter, { $set: setData, $setOnInsert: { id } } as Record<string, unknown>, {
         upsert: true,
         returnDocument: "after",
       })
