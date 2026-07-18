@@ -676,6 +676,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
 
         <DeansListRankingsCard
           facultyView={true}
+          users={model.users}
         />
 
         <div className="grid gap-4 xl:grid-cols-[minmax(320px,1fr)_minmax(320px,0.95fr)_minmax(320px,1.08fr)]">
@@ -1276,6 +1277,7 @@ export function OverviewModule({ model }: PortalModuleProps) {
 
       <DeansListRankingsCard
         facultyView={false}
+        users={model.users}
       />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(300px,0.95fr)_minmax(360px,1.1fr)_minmax(320px,1.15fr)]">

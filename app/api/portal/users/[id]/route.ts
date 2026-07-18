@@ -5,7 +5,7 @@ import { facultyRepository } from "@/features/portal/repositories/faculty.reposi
 import { schedulesRepository } from "@/features/portal/repositories/schedules.repository"
 import { gradeColumnRepository } from "@/features/portal/repositories/grade-column.repository"
 import { assessmentRepository } from "@/features/portal/repositories/assessment.repository"
-import { UserModel, DeansListModel } from "@/lib/models"
+import { UserModel, DeansListModel, OtpModel } from "@/lib/models"
 import { success, error, notFound } from "@/lib/api-response"
 import { uploadProfilePhoto, destroyFile } from "@/lib/cloudinary"
 import { validatePassword } from "@/lib/validators"
@@ -72,6 +72,17 @@ export async function PUT(
       await user.save()
       delete body.password
       delete body.currentPassword
+    }
+
+    if (typeof body.email === "string") {
+      const existingUser = await UserModel.findOne({ id })
+      if (existingUser && existingUser.email !== body.email.toLowerCase().trim()) {
+        body.twoFactorEnabled = false
+        await OtpModel.updateMany(
+          { email: existingUser.email, used: false },
+          { $set: { used: true } }
+        ).catch(() => {})
+      }
     }
 
     const updated = await usersRepository.update({ id }, body)

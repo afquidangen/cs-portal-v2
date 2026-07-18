@@ -243,9 +243,12 @@ export function ProfileModule({ model }: PortalModuleProps) {
                   <label className="space-y-2">
                     <span className={labelClass}>Email Address</span>
                     <div className="relative">
-                      <Input className={cn(fieldClass, "pl-10")} placeholder="Email address" value={draft.email} onChange={(event) => setDraft((current: ProfileDetails) => ({ ...current, email: event.target.value }))} />
+                      <Input className={cn(fieldClass, "pl-10", role !== "admin" && "cursor-not-allowed bg-slate-50 text-slate-500")} placeholder="Email address" value={draft.email} readOnly={role !== "admin"} onChange={(event) => setDraft((current: ProfileDetails) => ({ ...current, email: event.target.value }))} />
                       <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                     </div>
+                    {role !== "admin" && (
+                      <p className="text-xs text-slate-500">Contact your administrator to update your email address.</p>
+                    )}
                   </label>
                   <label className="space-y-2">
                     <span className={labelClass}>Contact Number</span>

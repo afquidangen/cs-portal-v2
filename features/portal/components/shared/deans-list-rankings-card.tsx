@@ -1,7 +1,7 @@
 "use client"
 
 import { Award, EyeOff, Loader2 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -23,16 +23,28 @@ type RankingsEntry = {
   schoolYearEnd: number
 }
 
+import type { UserRecord } from "../../data/portal-data"
+
 type Props = {
   semesterId?: string
   facultyView?: boolean
   refreshTrigger?: number
+  users?: UserRecord[]
 }
 
-export function DeansListRankingsCard({ semesterId, facultyView, refreshTrigger }: Props) {
+export function DeansListRankingsCard({ semesterId, facultyView, refreshTrigger, users }: Props) {
   const [entries, setEntries] = useState<RankingsEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [activeYearLevel, setActiveYearLevel] = useState<"all" | YearLevel>("all")
+
+  const activeStudentIds = useMemo(() => {
+    if (!users) return null
+    return new Set(
+      users
+        .filter(u => u.role === "student" && !u.deletedAt)
+        .map(u => u.id)
+    )
+  }, [users])
 
   useEffect(() => {
     setLoading(true)
@@ -45,13 +57,17 @@ export function DeansListRankingsCard({ semesterId, facultyView, refreshTrigger 
     fetch(`/api/portal/deans-list/rankings?${params}`)
       .then((res) => res.json())
       .then((json) => {
-        setEntries(json?.data ?? [])
+        const data = json?.data ?? []
+        const filtered = activeStudentIds
+          ? data.filter((entry: RankingsEntry) => activeStudentIds.has(entry.studentId))
+          : data
+        setEntries(filtered)
       })
       .catch(() => {
         setEntries([])
       })
       .finally(() => setLoading(false))
-  }, [semesterId, refreshTrigger])
+  }, [semesterId, refreshTrigger, activeStudentIds])
 
   const grouped = facultyView
     ? entries.reduce<Record<string, RankingsEntry[]>>((acc, e) => {

@@ -42,7 +42,8 @@ type DeansListEntry = {
 }
 
 export function DeansListModule({ model }: PortalModuleProps) {
-  const semesters = model.semesters as SemesterRecord[]
+  const { users, semesters } = model
+  const semestersList = semesters as SemesterRecord[]
   const allSemesters = useMemo(
     () =>
       [...semesters]
@@ -63,6 +64,14 @@ export function DeansListModule({ model }: PortalModuleProps) {
   const [search, setSearch] = useState("")
   const [filterStatus, setFilterStatus] = useState<string>("all")
 
+  const activeStudentIds = useMemo(() => {
+    return new Set(
+      users
+        .filter(u => u.role === "student" && !u.deletedAt)
+        .map(u => u.id)
+    )
+  }, [users])
+
   const selectedSemester = allSemesters.find(
     (s) => s.id === selectedSemesterId
   )
@@ -76,7 +85,10 @@ export function DeansListModule({ model }: PortalModuleProps) {
       )
       const json = await res.json()
       if (res.ok) {
-        setEntries(json.data ?? [])
+        const filteredEntries = (json.data ?? []).filter(
+          (entry: DeansListEntry) => activeStudentIds.has(entry.studentId)
+        )
+        setEntries(filteredEntries)
       } else {
         toast.error(json.error || "Failed to load entries.")
       }
@@ -85,7 +97,7 @@ export function DeansListModule({ model }: PortalModuleProps) {
     } finally {
       setLoading(false)
     }
-  }, [selectedSemesterId])
+  }, [selectedSemesterId, activeStudentIds])
 
   useEffect(() => {
     setEntries([])
@@ -103,7 +115,10 @@ export function DeansListModule({ model }: PortalModuleProps) {
       })
       const json = await res.json()
       if (res.ok) {
-        setEntries(json.data ?? [])
+        const filteredEntries = (json.data ?? []).filter(
+          (entry: DeansListEntry) => activeStudentIds.has(entry.studentId)
+        )
+        setEntries(filteredEntries)
         toast.success("Dean's List recomputed.")
       } else {
         toast.error(json.error || "Failed to compute.")
@@ -113,7 +128,7 @@ export function DeansListModule({ model }: PortalModuleProps) {
     } finally {
       setComputing(false)
     }
-  }, [selectedSemesterId])
+  }, [selectedSemesterId, activeStudentIds])
 
   const handlePublish = useCallback(async () => {
     if (!selectedSemesterId) return
@@ -126,7 +141,10 @@ export function DeansListModule({ model }: PortalModuleProps) {
       })
       const json = await res.json()
       if (res.ok) {
-        setEntries(json.data ?? [])
+        const filteredEntries = (json.data ?? []).filter(
+          (entry: DeansListEntry) => activeStudentIds.has(entry.studentId)
+        )
+        setEntries(filteredEntries)
         toast.success("Dean's List published.")
       } else {
         toast.error(json.error || "Failed to publish.")
@@ -136,7 +154,7 @@ export function DeansListModule({ model }: PortalModuleProps) {
     } finally {
       setPublishing(false)
     }
-  }, [selectedSemesterId])
+  }, [selectedSemesterId, activeStudentIds])
 
   const handleOverride = useCallback(
     async (entryId: string, override: "none" | "include" | "exclude") => {

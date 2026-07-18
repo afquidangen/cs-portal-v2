@@ -1892,6 +1892,7 @@ export function SpreadsheetGrid({
         isFullScreen={isFullScreen}
         onImportFile={handleImportFile}
         importUndoToken={importUndoToken}
+        subjectType={effectiveScheme?.subjectType}
       />
 
       <ImportPreviewDialog

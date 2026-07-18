@@ -1,11 +1,12 @@
 "use client"
 
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import {
-  Columns, Columns3, Download, Loader2, Maximize2, Minimize2,
+  Columns, Columns3, Download, FileDown, Loader2, Maximize2, Minimize2,
   RotateCcw, Save, Trash2, Undo2, Upload,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 
 export type ToolbarAction =
   | "addColumn"
@@ -27,6 +28,7 @@ export function SpreadsheetToolbar({
   isFullScreen,
   onImportFile,
   importUndoToken,
+  subjectType,
 }: {
   onAction: (action: ToolbarAction) => void
   columnCount: number
@@ -37,8 +39,41 @@ export function SpreadsheetToolbar({
   isFullScreen: boolean
   onImportFile?: (file: File) => void
   importUndoToken?: string | null
+  subjectType?: "Lecture" | "Lecture with Lab"
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [downloadingTemplate, setDownloadingTemplate] = useState(false)
+
+  async function handleDownloadTemplate() {
+    if (!subjectType) return
+    setDownloadingTemplate(true)
+    try {
+      const res = await fetch(`/api/portal/import-template?subjectType=${encodeURIComponent(subjectType)}`)
+      if (!res.ok) {
+        toast.error("No template available. Contact your administrator.")
+        return
+      }
+      const data = await res.json()
+      if (data.data?.fileUrl) {
+        const fileRes = await fetch(data.data.fileUrl)
+        const blob = await fileRes.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = data.data.fileName || "template.xlsx"
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      } else {
+        toast.error("No template available. Contact your administrator.")
+      }
+    } catch {
+      toast.error("Failed to download template.")
+    } finally {
+      setDownloadingTemplate(false)
+    }
+  }
   return (
     <div className="sticky top-0 z-20 flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-card p-2 shadow-sm">
       <div className="flex items-center gap-1 border-r border-border pr-2">
@@ -104,6 +139,13 @@ export function SpreadsheetToolbar({
             <span className="ms-1.5 hidden text-xs md:inline">Undo Import</span>
           </Button>
         )}
+        <Button size="sm" variant="outline" onClick={handleDownloadTemplate}
+          disabled={!section || downloadingTemplate}
+          className="h-8 rounded-md px-3"
+          title={!section ? "Select a section first" : "Download grade import template"}>
+          {downloadingTemplate ? <Loader2 className="size-4 animate-spin" /> : <FileDown className="size-4" />}
+          <span className="ms-1.5 hidden text-xs md:inline">Template</span>
+        </Button>
       </div>
 
       <div className="ml-auto flex items-center gap-1 border-l border-border pl-2">

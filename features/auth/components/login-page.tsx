@@ -191,7 +191,7 @@ export function LoginPage() {
       </div>
 
       <div className="mt-6 space-y-5">
-        <div className="flex justify-center gap-2 sm:gap-3">
+        <div className="flex justify-center gap-1.5 sm:gap-2">
           {otpCode.map((digit, i) => (
             <Input
               key={i}
@@ -202,7 +202,7 @@ export function LoginPage() {
               value={digit}
               onChange={(e) => handleOtpDigitInput(i, e.target.value)}
               onKeyDown={(e) => handleOtpKeyDown(i, e)}
-              className="h-14 w-12 rounded-lg border-[#d8e0ea] bg-white/70 text-center text-xl font-bold text-[#08142c] shadow-[0_8px_18px_rgb(72_101_140_/_0.08)] focus-visible:border-[#1f6fe5] focus-visible:ring-[#1f6fe5]/20 sm:h-16 sm:w-14 sm:text-2xl"
+              className="h-12 w-9 rounded-lg border-[#d8e0ea] bg-white/70 px-1 text-center text-base font-bold text-[#08142c] shadow-[0_8px_18px_rgb(72_101_140_/_0.08)] focus-visible:border-[#1f6fe5] focus-visible:ring-[#1f6fe5]/20 sm:h-14 sm:w-11 sm:px-1.5 sm:text-lg"
               autoFocus={i === 0}
             />
           ))}
@@ -361,13 +361,13 @@ export function LoginPage() {
   )
 
   return (
-    <main className="login-shell relative min-h-screen overflow-hidden bg-[#eaf2ff] text-[#08142c]">
+    <main className="login-shell relative min-h-screen overflow-x-hidden bg-[#eaf2ff] text-[#08142c]">
       <div className="login-circuit login-circuit-left" />
       <div className="login-circuit login-circuit-right" />
       <div className="login-halftone login-halftone-top" />
       <div className="login-halftone login-halftone-bottom" />
 
-      <div className="relative z-10 mx-auto grid min-h-dvh w-full max-w-5xl items-center gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(340px,380px)_1px_minmax(340px,380px)] lg:justify-center lg:gap-10 lg:px-8">
+      <div className="relative z-10 mx-auto grid min-h-dvh w-full max-w-5xl items-start gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(340px,380px)_1px_minmax(340px,380px)] lg:items-center lg:justify-center lg:gap-10 lg:px-8">
         <section className="flex flex-col items-center text-center">
           <Image
             src="/portal-logo.svg"
