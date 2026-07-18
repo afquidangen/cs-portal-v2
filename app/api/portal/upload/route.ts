@@ -1,10 +1,19 @@
 import { success, error, badRequest } from "@/lib/api-response"
 import { uploadFile } from "@/lib/cloudinary"
+import { requireAuth } from "@/lib/api-auth"
+import { checkRateLimit } from "@/lib/security/rate-limit"
+import { RATE_LIMITS } from "@/lib/security/constants"
 
 export const runtime = "nodejs"
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAuth(request)
+    if (auth instanceof Response) return auth
+
+    const rl = await checkRateLimit(request, RATE_LIMITS.FILE_UPLOAD, auth.user.id)
+    if (rl) return rl
+
     const formData = await request.formData()
     const file = formData.get("file") as File | null
     if (!file) return badRequest("File is required.")

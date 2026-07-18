@@ -4,7 +4,6 @@ import { UserModel } from "@/lib/models/user.model"
 import { success, error, badRequest } from "@/lib/api-response"
 import { GradeModel } from "@/lib/models/grade.model"
 import { ScheduleModel } from "@/lib/models"
-
 export const runtime = "nodejs"
 
 export async function GET() {

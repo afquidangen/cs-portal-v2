@@ -77,6 +77,11 @@ export function LoginPage() {
           router.push("/maintenance.html")
           return
         }
+        if (res.status === 429) {
+          setMessage(json.message ?? "Too many requests. Please try again later.")
+          setLoading(false)
+          return
+        }
         setMessage(json.error ?? "Invalid email or password.")
         setLoading(false)
         return
@@ -118,6 +123,11 @@ export function LoginPage() {
       const json = await res.json()
 
       if (!res.ok) {
+        if (res.status === 429) {
+          setOtpError(json.message ?? "Too many requests. Please try again later.")
+          setOtpLoading(false)
+          return
+        }
         setOtpError(json.error ?? "Invalid code. Please try again.")
         setOtpLoading(false)
         return
@@ -136,11 +146,15 @@ export function LoginPage() {
     setOtpError("")
 
     try {
-      await fetch("/api/auth/resend-otp", {
+      const res = await fetch("/api/auth/resend-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: twoFactorEmail, tempToken }),
       })
+      if (res.status === 429) {
+        const json = await res.json()
+        setOtpError(json.message ?? "Too many requests. Please try again later.")
+      }
     } catch {
       setOtpError("Unable to resend code.")
     }
@@ -323,6 +337,11 @@ export function LoginPage() {
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ email }),
                 })
+                if (res.status === 429) {
+                  const json = await res.json()
+                  setMessage(json.message ?? "Too many requests. Please try again later.")
+                  return
+                }
                 await res.json()
                 setForgotSent(true)
                 setMessage("If that email is registered, a reset link has been sent.")

@@ -5,6 +5,9 @@ import { signToken, signTempToken } from "@/lib/jwt"
 import { connectToDatabase } from "@/lib/mongodb"
 import { MaintenanceSettingModel, UserModel, OtpModel } from "@/lib/models"
 import { sendOtpEmail } from "@/lib/email"
+import { checkRateLimit } from "@/lib/security/rate-limit"
+import { getClientIp } from "@/lib/security/ip"
+import { RATE_LIMITS } from "@/lib/security/constants"
 
 export const runtime = "nodejs"
 
@@ -21,6 +24,9 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+
+    const rl = await checkRateLimit(request, RATE_LIMITS.LOGIN, getClientIp(request))
+    if (rl) return rl
 
     await connectToDatabase()
     const setting = await MaintenanceSettingModel.findOne()

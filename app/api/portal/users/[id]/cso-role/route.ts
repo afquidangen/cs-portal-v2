@@ -1,6 +1,8 @@
 import { usersRepository } from "@/features/portal/repositories/users.repository"
 import { success, error, badRequest, notFound } from "@/lib/api-response"
 import { requireAdmin } from "@/lib/api-auth"
+import { checkRateLimit } from "@/lib/security/rate-limit"
+import { RATE_LIMITS } from "@/lib/security/constants"
 
 export const runtime = "nodejs"
 
@@ -11,6 +13,10 @@ export async function PATCH(
   try {
     const auth = await requireAdmin(request)
     if (auth instanceof Response) return auth
+
+    const rl = await checkRateLimit(request, RATE_LIMITS.ADMIN_SENSITIVE, auth.user.id)
+    if (rl) return rl
+
     const { id } = await params
     const body = await request.json() as { action: "assign" | "revoke" }
     if (!body.action || !["assign", "revoke"].includes(body.action)) {

@@ -3,6 +3,8 @@ import { UserModel, ResetTokenModel } from "@/lib/models"
 import { connectToDatabase } from "@/lib/mongodb"
 import { sendPasswordResetEmail } from "@/lib/email"
 import { success, error, badRequest } from "@/lib/api-response"
+import { checkRateLimit } from "@/lib/security/rate-limit"
+import { RATE_LIMITS } from "@/lib/security/constants"
 
 export const runtime = "nodejs"
 
@@ -10,6 +12,9 @@ export async function POST(request: Request) {
   try {
     const { email } = await request.json()
     if (!email) return badRequest("Email is required.")
+
+    const rl = await checkRateLimit(request, RATE_LIMITS.FORGOT_PASSWORD, email)
+    if (rl) return rl
 
     await connectToDatabase()
 

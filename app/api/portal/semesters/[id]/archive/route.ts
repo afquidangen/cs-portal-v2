@@ -4,14 +4,23 @@ import { semestersRepository } from "@/features/portal/repositories/semesters.re
 import { schedulesRepository } from "@/features/portal/repositories/schedules.repository"
 import { success, error, notFound } from "@/lib/api-response"
 import { recomputeDeansListForSemester } from "@/features/portal/lib/deans-list-utils"
+import { requireAdmin } from "@/lib/api-auth"
+import { checkRateLimit } from "@/lib/security/rate-limit"
+import { RATE_LIMITS } from "@/lib/security/constants"
 
 export const runtime = "nodejs"
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin(request)
+    if (auth instanceof Response) return auth
+
+    const rl = await checkRateLimit(request, RATE_LIMITS.ADMIN_SENSITIVE, auth.user.id)
+    if (rl) return rl
+
     const { id } = await params
     await connectToDatabase()
 

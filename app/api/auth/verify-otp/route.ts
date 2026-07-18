@@ -2,6 +2,9 @@ import { cookies } from "next/headers"
 import { signToken, verifyTempToken } from "@/lib/jwt"
 import { connectToDatabase } from "@/lib/mongodb"
 import { MaintenanceSettingModel, UserModel, OtpModel } from "@/lib/models"
+import { checkRateLimit } from "@/lib/security/rate-limit"
+import { getClientIp } from "@/lib/security/ip"
+import { RATE_LIMITS } from "@/lib/security/constants"
 
 export const runtime = "nodejs"
 
@@ -19,6 +22,13 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+
+    const rl = await checkRateLimit(
+      request,
+      RATE_LIMITS.OTP_VERIFY,
+      `${body.email}:${getClientIp(request)}`
+    )
+    if (rl) return rl
 
     const payload = await verifyTempToken(body.tempToken)
     if (!payload || payload.email !== body.email) {
