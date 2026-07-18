@@ -62,6 +62,7 @@ export async function POST(request: Request) {
         const existingCol = await gradeColumnRepository.findOne({
           classId,
           name: nc.name,
+          category: nc.category,
           gradingPeriod: nc.gradingPeriod,
           isDeleted: { $ne: true },
         }) as { id: string } | null

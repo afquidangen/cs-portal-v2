@@ -290,7 +290,6 @@ function readPeriodScores(
     }
     matchedCols.sort((a, b) => a.order - b.order)
 
-    let templateOrder = 0
     for (let i = 0; i < cat.itemColumns.length; i++) {
       const colNum = cat.itemColumns[i]
 
@@ -299,17 +298,11 @@ function readPeriodScores(
       const hps = hpsVal != null ? Number(hpsVal) : NaN
       if (hps <= 0 || isNaN(hps)) continue
 
-      const cellVal = getEffectiveValue(sheet, rowIdx, colNum)
+      const order = i + 1
 
-      if (cellVal == null || cellVal === "") continue
-
-      const score = Number(cellVal)
-      if (isNaN(score)) continue
-
-      if (templateOrder < matchedCols.length) {
-        scores[matchedCols[templateOrder].id] = score
-      } else {
-        const order = templateOrder + 1
+      // Ensure new column definition exists if no matching system column
+      // (based on template structure alone, not per-student cell data)
+      if (i >= matchedCols.length) {
         const existing = newCols.find(
           (nc) =>
             nc.category === cat.alias &&
@@ -325,10 +318,21 @@ function readPeriodScores(
             order,
           })
         }
+      }
+
+      const cellVal = getEffectiveValue(sheet, rowIdx, colNum)
+
+      if (cellVal == null || cellVal === "") continue
+
+      const score = Number(cellVal)
+      if (isNaN(score)) continue
+
+      if (i < matchedCols.length) {
+        scores[matchedCols[i].id] = score
+      } else {
         const colKey = `${period}_${cat.alias}_${order}`
         newColScores.push({ key: colKey, score })
       }
-      templateOrder++
     }
   }
 
