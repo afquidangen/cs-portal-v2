@@ -834,11 +834,11 @@ export function usePortalDashboardModel(role: Role) {
         const code = normalizeCode(grade.code)
         if (scheduleCodes.has(code)) continue
 
-        // Use existing schedule data when available (even if section didn't match)
         const existing = classSchedules.find(
           (s) =>
             belongsToActive(s) &&
-            normalizeCode(s.subject.split(" - ")[0]?.trim() ?? "") === code
+            normalizeCode(s.subject.split(" - ")[0]?.trim() ?? "") === code &&
+            normalizedStudentSecs.some((sec) => normalize(s.section ?? "").includes(sec))
         )
 
         if (existing) {
@@ -851,7 +851,7 @@ export function usePortalDashboardModel(role: Role) {
             subject: grade.subject,
             room: "—",
             instructor: "—",
-            section: grade.section,
+            section: studentSections[0] ?? grade.section,
             semesterId: grade.semesterId ?? "",
           })
         }
@@ -2407,9 +2407,72 @@ export function usePortalDashboardModel(role: Role) {
       )
       for (const grade of grades) {
         if (grade.studentId === updatedUser.id) {
-          syncApi("PUT", `/api/portal/grades/${grade.id}`, { student: updatedUser.name, section }).catch((e) =>
+          const newSchedule = classSchedules.find(
+            (s) => s.section === section && s.subject === grade.subject
+          )
+          const updateData: Record<string, unknown> = {
+            student: updatedUser.name,
+            section,
+          }
+          if (newSchedule) {
+            updateData.classId = newSchedule.id
+          }
+          syncApi("PUT", `/api/portal/grades/${grade.id}`, updateData).catch((e) =>
             console.error(`Failed to sync grade ${grade.id}:`, e)
           )
+        }
+      }
+
+      const oldSection = oldUser?.section
+      if (section !== oldSection) {
+        const activeSemesterIds = new Set(
+          semesters.filter((s) => s.status === "Active").map((s) => s.id)
+        )
+        const belongsToActive = (s: ScheduleItem) =>
+          !s.semesterId || activeSemesterIds.has(s.semesterId)
+        const newSectionSchedules = classSchedules.filter(
+          (s) => s.section === section && belongsToActive(s)
+        )
+        const normalizeCode = (s: string) => s.replace(/\s+/g, "").toLowerCase()
+
+        for (const schedule of newSectionSchedules) {
+          const code = schedule.subject.split(" - ")[0]?.trim() ?? schedule.subject
+          const normCode = normalizeCode(code)
+
+          const alreadyHasGrade = grades.some(
+            (g) =>
+              g.studentId === updatedUser.id &&
+              normalizeCode(g.code) === normCode &&
+              (g.semesterId ?? "") === (schedule.semesterId ?? "")
+          )
+          if (alreadyHasGrade) continue
+
+          const now = new Date().toLocaleDateString("en-US", {
+            month: "long", day: "numeric", year: "numeric",
+          })
+          const newId = `GRD-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+          const newGrade: GradeRecord = {
+            id: newId,
+            studentId: updatedUser.id,
+            student: updatedUser.name,
+            section,
+            subject: schedule.subject,
+            code,
+            units: 3,
+            classId: schedule.id,
+            semesterId: schedule.semesterId,
+            released: false,
+            updatedAt: now,
+          }
+          setGrades((current) => [newGrade, ...current])
+          syncApi("POST", "/api/portal/grades", newGrade).catch((e) => {
+            if (String(e?.message ?? "").includes("E11000")) {
+              setGrades((current) => current.filter((g) => g.id !== newId))
+              return
+            }
+            console.error(`Failed to create grade for ${updatedUser.id}, subject ${code}:`, e)
+            setGrades((current) => current.filter((g) => g.id !== newId))
+          })
         }
       }
     }

@@ -101,8 +101,13 @@ export async function PUT(
         upsertData.remarks = midtermRemarks
       }
 
-      const filter: Record<string, unknown> = { studentId: grade.studentId, code: grade.code }
-      if (upsertData.semesterId) filter.semesterId = upsertData.semesterId
+      let filter: Record<string, unknown>
+      if (grade.id && !String(grade.id).startsWith("pending-")) {
+        filter = { id: grade.id }
+      } else {
+        filter = { studentId: grade.studentId, code: grade.code }
+        if (upsertData.semesterId) filter.semesterId = upsertData.semesterId
+      }
       const updated = await gradesRepository.upsert(filter, { ...upsertData, classId })
       results.push(updated)
     }

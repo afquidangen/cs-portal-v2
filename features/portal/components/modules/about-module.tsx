@@ -103,7 +103,7 @@ export function AboutModule({ model }: PortalModuleProps) {
     description:
       "Developed by a team of student interns during the Academic Year 2025–2026 at ISPSC - Main, the ComScite Portal was created as a unified academic workspace to streamline academic processes, enhance communication, and improve access to essential resources for students, faculty, and administrators.",
     acknowledgment:
-      "This project stands on the foundation built by the initial contributors of CCIS Portal v1, whose early concepts made this portal possible.",
+      "We recognize the team behind CCIS Portal v1 for introducing the initial concept of a departmental academic portal. While the current ComSite platform was independently redesigned and developed from the ground up with a new architecture, features, and implementation, we acknowledge their early contribution that helped inspire this initiative.",
     teamPictureUrl: undefined,
     teamPicturePublicId: undefined,
     teamMembers: defaultMembers,

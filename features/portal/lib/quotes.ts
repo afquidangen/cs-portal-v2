@@ -516,6 +516,12 @@ export function getDailyQuote() {
   const startOfYear = new Date(now.getFullYear(), 0, 0)
   const diff = now.getTime() - startOfYear.getTime()
   const dayOfYear = Math.floor(diff / 86400000)
-  const index = dayOfYear % quotes.length
+  let index = dayOfYear % quotes.length
+  const yesterdayAuthor = quotes[(dayOfYear - 1 + quotes.length) % quotes.length].author
+  let attempts = 0
+  while (quotes[index].author === yesterdayAuthor && attempts < quotes.length) {
+    index = (index + 1) % quotes.length
+    attempts++
+  }
   return quotes[index]
 }
