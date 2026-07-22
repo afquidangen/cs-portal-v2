@@ -916,6 +916,64 @@ export function usePortalDashboardModel(role: Role) {
     )
   }, [users, profile.id, curricula])
 
+  const totalSubjects = useMemo(() => {
+    const studentUser = users.find((u) => u.id === profile.id)
+    const curriculum = curricula.find((c) => c.id === studentUser?.curriculumId)
+    if (!curriculum) return 0
+    return curriculum.terms.reduce((sum, term) => sum + term.subjects.length, 0)
+  }, [users, profile.id, curricula])
+
+  const totalCompletedSubjects = useMemo(() => {
+    const studentUser = users.find((u) => u.id === profile.id)
+    const curriculum = curricula.find((c) => c.id === studentUser?.curriculumId)
+    if (!curriculum || !studentUser) return 0
+
+    const normalize = (s: string) => s.trim().toLowerCase().replace(/[^a-z0-9]/g, "")
+    const codeMatches = (a: string, b: string) => normalize(a) === normalize(b)
+    const studentGradeHistory = studentUser.gradeHistory ?? []
+
+    let completed = 0
+
+    for (const term of curriculum.terms) {
+      for (const subject of term.subjects) {
+        const gradeRecord = grades.find(
+          (g) => g.studentId === profile.id && g.midtermReleased && g.finalReleased && codeMatches(g.code, subject.code)
+        )
+        if (gradeRecord) {
+          const mr = gradeRecord.releasedMidtermRemarks ?? gradeRecord.midtermRemarks
+          const fr = gradeRecord.releasedFinalRemarks ?? gradeRecord.finalRemarks
+          const mrLower = String(mr ?? "").toLowerCase()
+          const frLower = String(fr ?? "").toLowerCase()
+          const bothPassed = fr && mr && frLower === "passed" && mrLower === "passed"
+          const r = bothPassed ? "passed" : (mr && mrLower !== "passed" ? mrLower : frLower || ((gradeRecord.releasedRemarks ?? gradeRecord.remarks) || "").toLowerCase())
+
+          if (r === "passed") {
+            completed++
+            continue
+          }
+          if (r === "" || r === undefined) {
+            const pct = gradeRecord.releasedFinalGrade ?? gradeRecord.finalGrade ?? gradeRecord.gradePercentage ?? 0
+            if (pct >= 75) {
+              completed++
+              continue
+            }
+          }
+        } else {
+          const historyEntry = studentGradeHistory.find((h) => codeMatches(h.subjectCode, subject.code))
+          if (historyEntry && historyEntry.remarks?.toLowerCase() === "passed") {
+            completed++
+          }
+        }
+      }
+    }
+
+    return completed
+  }, [users, profile.id, curricula, grades])
+
+  const completionPct = useMemo(() => {
+    return totalSubjects > 0 ? Math.round((totalCompletedSubjects / totalSubjects) * 100) : 0
+  }, [totalSubjects, totalCompletedSubjects])
+
   const filteredTheses = useMemo(() => {
     const search = query.toLowerCase()
     return theses.filter((thesis) => {
@@ -4170,6 +4228,9 @@ export function usePortalDashboardModel(role: Role) {
     currentSemesterPassedUnits,
     totalCompletedUnits,
     totalCurriculumUnits,
+    totalSubjects,
+    totalCompletedSubjects,
+    completionPct,
     gradeAverage,
     filteredTheses,
     filteredSeminars,

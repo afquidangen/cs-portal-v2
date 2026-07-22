@@ -1088,9 +1088,9 @@ export function OverviewModule({ model }: PortalModuleProps) {
   const visibleGrades = (model.visibleGrades as GradeRecord[]) ?? []
   const activeSubjectCount = new Set(visibleGrades.map((g) => g.code).filter(Boolean)).size
   const unitsTaken = visibleGrades.reduce((s, g) => s + (g.units || 0), 0)
-  const progress = model.totalCurriculumUnits > 0
+  const progress = model.completionPct ?? (model.totalCurriculumUnits > 0
     ? Math.min(100, Math.round((model.totalCompletedUnits / model.totalCurriculumUnits) * 100))
-    : 0
+    : 0)
   const DAY_ABBR: Record<string, string> = { Sunday: "S", Monday: "M", Tuesday: "T", Wednesday: "W", Thursday: "Th", Friday: "F", Saturday: "S" }
   const today = new Date().toLocaleDateString("en-US", { weekday: "long" })
   const shortToday = DAY_ABBR[today] ?? ""
